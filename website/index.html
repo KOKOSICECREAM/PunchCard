@@ -110,7 +110,48 @@
   .hero-image-wrap img {
     width: 100%;
     display: block;
-    filter: sepia(30%) contrast(1.06) brightness(0.96) saturate(0.8);
+    filter: sepia(45%) contrast(1.08) brightness(0.95) saturate(1.1) hue-rotate(-8deg);
+  }
+
+  .card-logo-overlay {
+    position: absolute;
+    top: 44%;
+    left: 51%;
+    transform: translate(-50%, -50%) rotate(-3deg);
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    pointer-events: none;
+  }
+
+  .card-logo-text {
+    font-family: 'Special Elite', cursive;
+    font-size: clamp(0.7rem, 1.6vw, 1.15rem);
+    line-height: 1;
+    letter-spacing: 0.04em;
+    color: #f2ead8;
+    text-shadow: 0 1px 3px rgba(28,24,18,0.35);
+  }
+
+  .card-logo-text .card-logo-accent {
+    color: #f2ead8;
+    opacity: 0.75;
+  }
+
+  .card-logo-dots {
+    display: flex;
+    gap: 3px;
+    margin-top: 3px;
+  }
+
+  .card-logo-dots span {
+    width: clamp(3px, 0.5vw, 5px);
+    height: clamp(3px, 0.5vw, 5px);
+    background: #f2ead8;
+    border-radius: 50%;
+    opacity: 0.55;
   }
 
   .hero-image-wrap::before {
@@ -979,6 +1020,13 @@
 <section class="hero">
   <div class="hero-image-wrap">
     <img src="punchbari.jpg" alt="Customer receiving a punchcard at a coffee bar">
+    <div class="card-logo-overlay">
+      <div class="card-logo-text">Punch<span class="card-logo-accent">Card</span></div>
+      <div class="card-logo-dots">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </div>
+    </div>
     <div class="hero-image-caption">Nashville, TN · 2026</div>
   </div>
   <div class="edition-line">Nashville · Est. 2026 · Base Mainnet</div>
