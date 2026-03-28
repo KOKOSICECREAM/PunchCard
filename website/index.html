@@ -539,6 +539,16 @@
   .check { color: var(--terra); font-weight: 700; }
   .cross { color: var(--ink-ghost); }
 
+  /* HOW WE WORK */
+  .how-we-work-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-top:3rem; }
+  .hww-card { background:var(--paper-card); border:1px solid var(--border); border-radius:8px; padding:2rem 1.75rem; transition:box-shadow 0.2s; }
+  .hww-card:hover { box-shadow:var(--shadow-md); }
+  .hww-num { font-family:'Special Elite',cursive; font-size:2.2rem; color:rgba(168,58,32,0.12); line-height:1; margin-bottom:0.75rem; }
+  .hww-card h3 { font-family:'Lora',serif; font-size:1rem; font-weight:600; margin-bottom:0.5rem; }
+  .hww-card p { font-size:0.88rem; color:var(--ink-mid); line-height:1.7; }
+  .hww-footer { margin-top:3rem; padding-top:2.5rem; border-top:1px solid var(--border); max-width:58ch; }
+  .hww-footer p { font-size:1rem; color:var(--ink-mid); line-height:1.75; font-style:italic; }
+
   /* PRICING */
   .pricing-grid {
     display: grid;
@@ -830,7 +840,7 @@
     .problem-grid { grid-template-columns:1fr; gap:2rem; }
     .steps { grid-template-columns:1fr 1fr; gap:1.5rem; }
     .deliverables { grid-template-columns:1fr; }
-    .pricing-grid { grid-template-columns:1fr; }
+    .how-we-work-grid { grid-template-columns:1fr; }
     .proof-card { grid-template-columns:1fr; gap:2.5rem; padding:2.5rem; }
     .why-grid { grid-template-columns:1fr; gap:2rem; }
     .contact-grid { grid-template-columns:1fr; gap:2rem; }
@@ -848,7 +858,7 @@
   <ul class="nav-links">
     <li><a href="#how">How It Works</a></li>
     <li><a href="#what">What You Get</a></li>
-    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#pricing">How We Work</a></li>
     <li><a href="#why">Why Crypto</a></li>
     <li><a href="#contact" class="nav-cta">Get Started</a></li>
   </ul>
@@ -1051,57 +1061,32 @@
   </div>
 </div>
 
-<!-- PRICING -->
+<!-- HOW WE WORK -->
 <div class="section-alt" id="pricing">
   <div class="section-wrap">
-    <div class="section-label">Pricing</div>
-    <h2 class="section-heading">Simple pricing.<br>No surprises.</h2>
-    <p class="section-sub">One setup fee gets you live. Optional ongoing support keeps you growing. No monthly platform fee — ever.</p>
-    <div class="pricing-grid">
-      <div class="pricing-card fade-up">
-        <div class="pricing-tier">Starter</div>
-        <div class="pricing-price">$2,500</div>
-        <div class="pricing-billing">One-time deployment fee</div>
-        <ul class="pricing-features">
-          <li>Token contract on Base mainnet</li>
-          <li>POS terminal app</li>
-          <li>Customer portal</li>
-          <li>Basic owner dashboard</li>
-          <li>30-day email support</li>
-          <li>GitHub Pages hosting</li>
-        </ul>
-        <a href="#contact" class="pricing-cta">Get Started</a>
+    <div class="section-label">How We Work</div>
+    <h2 class="section-heading">Every deployment starts<br>with a <em>conversation.</em></h2>
+    <p class="section-sub">We learn about your business, recommend a token structure, and give you a clear scope and quote — usually within a day. No pressure, no obligation.</p>
+    <div class="how-we-work-grid">
+      <div class="hww-card fade-up">
+        <div class="hww-num">01</div>
+        <h3>Tell us about your business</h3>
+        <p>Fill out the form below. Business type, location, what you're hoping loyalty does for your customers. That's it. No technical knowledge required.</p>
       </div>
-      <div class="pricing-card featured fade-up" style="transition-delay:0.1s">
-        <div class="pricing-badge">Most Popular</div>
-        <div class="pricing-tier">Full Stack</div>
-        <div class="pricing-price">$4,500</div>
-        <div class="pricing-billing">Setup + optional $350/mo support</div>
-        <ul class="pricing-features">
-          <li>Everything in Starter</li>
-          <li>Team vesting contract</li>
-          <li>LP bootstrapping strategy</li>
-          <li>Tokenomics consultation</li>
-          <li>Custom domain setup</li>
-          <li>Monthly analytics review</li>
-          <li>Priority ongoing support</li>
-        </ul>
-        <a href="#contact" class="pricing-cta">Get Started</a>
+      <div class="hww-card fade-up" style="transition-delay:0.1s">
+        <div class="hww-num">02</div>
+        <h3>We send you a custom proposal</h3>
+        <p>Within one business day you'll have a deployment plan, tokenomics recommendations, and a clear quote scoped to exactly what your business needs — nothing more.</p>
       </div>
-      <div class="pricing-card fade-up" style="transition-delay:0.2s">
-        <div class="pricing-tier">Enterprise</div>
-        <div class="pricing-price">Custom</div>
-        <div class="pricing-billing">Multi-location & franchise</div>
-        <ul class="pricing-features">
-          <li>Everything in Full Stack</li>
-          <li>Multi-location deployment</li>
-          <li>Custom contract architecture</li>
-          <li>White-label frontend</li>
-          <li>Dedicated deployment support</li>
-          <li>Revenue share structures</li>
-        </ul>
-        <a href="#contact" class="pricing-cta">Contact Us</a>
+      <div class="hww-card fade-up" style="transition-delay:0.2s">
+        <div class="hww-num">03</div>
+        <h3>We build and you launch</h3>
+        <p>Once you're ready, we handle the entire deployment. Contracts, apps, hosting, training. You show up on launch day and start rewarding customers.</p>
       </div>
+    </div>
+    <div class="hww-footer fade-up">
+      <p>Every business is different. Some need the full stack. Some just need a token and a POS. We'll figure out the right fit together — and there's no cost for the conversation.</p>
+      <a href="#contact" class="btn-primary" style="margin-top:1.5rem;display:inline-block">Start the Conversation</a>
     </div>
   </div>
 </div>
@@ -1150,7 +1135,7 @@
     <ul class="footer-links">
       <li><a href="#how">How It Works</a></li>
       <li><a href="#what">Deliverables</a></li>
-      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#pricing">How We Work</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
     <div class="footer-meta">Built on Base · Nashville, TN · © 2026</div>
