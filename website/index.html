@@ -951,6 +951,32 @@
   @media(max-width:768px){
     .nav-hamburger { display: flex; }
   }
+
+  /* WHY CALLOUT */
+  .why-callout {
+    margin-top: 1.5rem;
+    background: var(--terra-pale);
+    border: 1px solid rgba(168,58,32,0.18);
+    border-left: 3px solid var(--terra);
+    border-radius: 0 6px 6px 0;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .why-callout-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--terra);
+    margin-bottom: 0.5rem;
+  }
+
+  .why-callout p {
+    font-size: 0.85rem;
+    color: var(--ink-mid);
+    line-height: 1.7;
+    margin-bottom: 0;
+  }
 </style>
 </head>
 <body>
@@ -1154,25 +1180,33 @@
     <div class="why-grid">
       <div class="why-text">
         <p>We're not putting blockchain on loyalty because it's trendy. We're doing it because <strong>a token on Base mainnet has properties that a database record never will.</strong></p>
-        <p>Your customer's reward balance is a real asset they hold in their own wallet. It doesn't disappear when you switch POS systems. It doesn't get zeroed out in a platform migration. <strong>It persists and belongs to them.</strong></p>
-        <p>For you as the business owner — the program runs without monthly fees to a vendor, without their servers, without their rules.</p>
+        <p><strong>Your customers' rewards have real value.</strong> Not points that expire. Not credits locked to your POS system. Actual tokens they hold in their own wallet — that can be traded, transferred, or redeemed anywhere that accepts them. That's a fundamentally different relationship between a customer and a reward.</p>
+        <p><strong>Your program runs without a middleman.</strong> Traditional loyalty platforms charge monthly fees, own your customer data, and sit between you and every transaction. Smart contracts on Base mainnet automate the entire reward cycle — issuance, tracking, redemption — with no intermediary taking a cut and no server you depend on.</p>
+        <p><strong>The data is yours and it's tamper-proof.</strong> Every transaction is recorded on a public, immutable ledger. You always know exactly how many tokens are in circulation, what's been redeemed, and what your customers hold. No vendor can manipulate or withhold that data.</p>
         <p>No crypto experience required on your customers' end. The QR experience feels as simple as Apple Pay.</p>
       </div>
-      <table class="compare-table">
-        <thead>
-          <tr><th>Feature</th><th>Legacy</th><th>PunchCard</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Customer owns their rewards</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Portable across wallets</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>No vendor lock-in</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Survives platform shutdown</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Secondary market potential</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Zero admin keys</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>On-chain transparency</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Works without a crypto wallet</td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
-        </tbody>
-      </table>
+      <div>
+        <table class="compare-table">
+          <thead>
+            <tr><th>Feature</th><th>Legacy</th><th>PunchCard</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Customer owns their rewards</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Rewards have tradeable value</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>No vendor lock-in</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Tamper-proof transaction record</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>No middleman fees</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Survives platform shutdown</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Zero admin keys</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>On-chain transparency</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Works without a crypto wallet</td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
+          </tbody>
+        </table>
+        <div class="why-callout fade-up">
+          <div class="why-callout-label">Coming Soon</div>
+          <p>As more businesses join PunchCard, your token becomes part of a growing loyalty network across Nashville and beyond — where customers earn at one business and spend at another.</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1201,7 +1235,7 @@
       </div>
     </div>
     <div class="hww-footer fade-up">
-      <p>Every business is different. Some need the full stack. Some just need a token and a POS. We'll figure out the right fit together — and there's no cost for the conversation.</p>
+      <p>Every business is different. Some need the full stack. Some just need a token and a POS. We'll figure out the right fit together — and there's no cost for the conversation. Every business that joins PunchCard becomes part of something larger.</p>
       <a href="#contact" class="btn-primary" style="margin-top:1.5rem;display:inline-block">Start the Conversation</a>
     </div>
   </div>
