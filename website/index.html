@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PunchCard — Own Your Loyalty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f2ed;
+    --cream: #f0ece4;
+    --punch: #ff4d1c;
+    --punch-dark: #cc3a12;
+    --gold: #e8c547;
+    --muted: #888580;
+    --border: rgba(245,242,237,0.1);
+    --card-bg: #111110;
+    --card-border: rgba(245,242,237,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 3rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--punch); }
+
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--white); }
+
+  .nav-cta {
+    background: var(--punch);
+    color: var(--white) !important;
+    padding: 0.5rem 1.25rem;
+    border-radius: 2px;
+    font-weight: 500 !important;
+    letter-spacing: 0.06em !important;
+    transition: background 0.2s !important;
+  }
+
+  .nav-cta:hover { background: var(--punch-dark) !important; color: var(--white) !important; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 3rem 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -52%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(10rem, 22vw, 22rem);
+    letter-spacing: -0.02em;
+    color: rgba(255,255,255,0.025);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--punch);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 2rem;
+    height: 1px;
+    background: var(--punch);
+    display: inline-block;
+  }
+
+  .hero-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 9vw, 9rem);
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    max-width: 16ch;
+    margin-bottom: 2rem;
+  }
+
+  .hero-headline em {
+    font-style: normal;
+    color: var(--punch);
+  }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--muted);
+    max-width: 44ch;
+    line-height: 1.65;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .btn-primary {
+    background: var(--punch);
+    color: var(--white);
+    padding: 0.9rem 2.25rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: background 0.2s, transform 0.15s;
+    display: inline-block;
+  }
+
+  .btn-primary:hover {
+    background: var(--punch-dark);
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    color: var(--muted);
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s;
+  }
+
+  .btn-ghost:hover { color: var(--white); }
+
+  .btn-ghost::after {
+    content: '→';
+    transition: transform 0.2s;
+  }
+
+  .btn-ghost:hover::after { transform: translateX(3px); }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 2.5rem;
+    right: 3rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .hero-scroll::after {
+    content: '';
+    width: 1px;
+    height: 3rem;
+    background: var(--muted);
+    display: block;
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* TICKER */
+  .ticker {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 0.85rem 0;
+    overflow: hidden;
+    background: var(--card-bg);
+  }
+
+  .ticker-inner {
+    display: flex;
+    gap: 0;
+    animation: ticker 28s linear infinite;
+    white-space: nowrap;
+  }
+
+  .ticker-item {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    padding: 0 3rem;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .ticker-item span { color: var(--punch); }
+
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* SECTIONS */
+  section {
+    padding: 6rem 3rem;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .section-full {
+    max-width: 100%;
+    padding: 6rem 3rem;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--punch);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 1.5rem;
+    height: 1px;
+    background: var(--punch);
+  }
+
+  .section-heading {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 5rem);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    margin-bottom: 1.5rem;
+  }
+
+  /* PROBLEM SECTION */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+    margin-top: 4rem;
+  }
+
+  .problem-left p {
+    font-size: 1.2rem;
+    line-height: 1.7;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  .problem-left p strong {
+    color: var(--white);
+    font-weight: 400;
+  }
+
+  .vs-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .vs-card {
+    padding: 1.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--card-border);
+  }
+
+  .vs-card.theirs {
+    background: rgba(255,255,255,0.02);
+  }
+
+  .vs-card.ours {
+    background: rgba(255,77,28,0.06);
+    border-color: rgba(255,77,28,0.25);
+  }
+
+  .vs-card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .vs-card.theirs .vs-card-label { color: var(--muted); }
+  .vs-card.ours .vs-card-label { color: var(--punch); }
+
+  .vs-card p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .vs-card.ours p { color: rgba(245,242,237,0.75); }
+
+  /* HOW IT WORKS */
+  .how-bg {
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 4rem;
+  }
+
+  .step {
+    padding: 2rem;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+
+  .step:last-child { border-right: none; }
+
+  .step-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    line-height: 1;
+    color: rgba(255,255,255,0.06);
+    margin-bottom: 1rem;
+  }
+
+  .step-title {
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin-bottom: 0.6rem;
+    color: var(--white);
+  }
+
+  .step p {
+    font-size: 0.85rem;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+
+  .step-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,77,28,0.12);
+    border: 1px solid rgba(255,77,28,0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    font-size: 0.85rem;
+  }
+
+  /* WHAT YOU GET */
+  .deliverables {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 4rem;
+  }
+
+  .deliverable-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    padding: 2rem;
+    transition: border-color 0.2s;
+  }
+
+  .deliverable-card:hover {
+    border-color: rgba(255,77,28,0.3);
+  }
+
+  .deliverable-icon {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--punch);
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .deliverable-icon::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--punch);
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .deliverable-card h3 {
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin-bottom: 0.6rem;
+  }
+
+  .deliverable-card p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* PROOF / LIVE */
+  .proof-section {
+    background: linear-gradient(135deg, rgba(255,77,28,0.08) 0%, transparent 60%);
+    border: 1px solid rgba(255,77,28,0.15);
+    border-radius: 8px;
+    padding: 4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    margin-top: 4rem;
+  }
+
+  .proof-left h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    line-height: 1;
+    margin-bottom: 1rem;
+  }
+
+  .proof-left p {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .proof-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .proof-stat {
+    border-left: 2px solid var(--punch);
+    padding-left: 1rem;
+  }
+
+  .proof-stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.25rem;
+    line-height: 1;
+    color: var(--white);
+  }
+
+  .proof-stat-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+    letter-spacing: 0.05em;
+  }
+
+  .proof-chain {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--punch);
+    letter-spacing: 0.1em;
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .chain-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--punch);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* PRICING */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 4rem;
+  }
+
+  .pricing-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    padding: 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s;
+  }
+
+  .pricing-card.featured {
+    border-color: rgba(255,77,28,0.4);
+    background: rgba(255,77,28,0.04);
+    position: relative;
+  }
+
+  .pricing-badge {
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--punch);
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.3rem 1rem;
+    border-radius: 0 0 4px 4px;
+  }
+
+  .pricing-tier {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .pricing-price {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .pricing-price sup {
+    font-size: 1.5rem;
+    vertical-align: super;
+  }
+
+  .pricing-billing {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+  }
+
+  .pricing-features {
+    list-style: none;
+    flex: 1;
+    margin-bottom: 2rem;
+  }
+
+  .pricing-features li {
+    font-size: 0.85rem;
+    color: var(--muted);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .pricing-features li::before {
+    content: '—';
+    color: var(--punch);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .pricing-cta {
+    display: block;
+    text-align: center;
+    padding: 0.85rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 2px;
+    color: var(--white);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .pricing-cta:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.3);
+  }
+
+  .pricing-card.featured .pricing-cta {
+    background: var(--punch);
+    border-color: var(--punch);
+  }
+
+  .pricing-card.featured .pricing-cta:hover {
+    background: var(--punch-dark);
+    border-color: var(--punch-dark);
+  }
+
+  /* WHY CRYPTO */
+  .why-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 5rem;
+    align-items: start;
+    margin-top: 4rem;
+  }
+
+  .why-left p {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .why-left p strong {
+    color: var(--white);
+    font-weight: 400;
+  }
+
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .compare-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .compare-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    vertical-align: top;
+  }
+
+  .compare-table td:first-child { color: var(--white); }
+
+  .check { color: var(--gold); }
+  .cross { color: rgba(255,255,255,0.2); }
+
+  /* CONTACT */
+  .contact-section {
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .contact-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 6rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: center;
+  }
+
+  .contact-left h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 4.5vw, 4.5rem);
+    line-height: 0.95;
+    margin-bottom: 1.25rem;
+  }
+
+  .contact-left h2 em {
+    font-style: normal;
+    color: var(--punch);
+  }
+
+  .contact-left p {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .contact-form input,
+  .contact-form textarea,
+  .contact-form select {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 2px;
+    padding: 0.85rem 1rem;
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .contact-form select option { background: #111110; }
+
+  .contact-form input::placeholder,
+  .contact-form textarea::placeholder { color: var(--muted); }
+
+  .contact-form input:focus,
+  .contact-form textarea:focus,
+  .contact-form select:focus {
+    border-color: rgba(255,77,28,0.5);
+  }
+
+  .contact-form textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .contact-form button {
+    background: var(--punch);
+    color: var(--white);
+    border: none;
+    padding: 1rem 2rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    align-self: flex-start;
+  }
+
+  .contact-form button:hover {
+    background: var(--punch-dark);
+    transform: translateY(-1px);
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 2.5rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .footer-logo span { color: var(--punch); }
+
+  .footer-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.1em;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .footer-links a {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover { color: var(--white); }
+
+  /* ANIMATIONS */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* CHAIN ADDRESS */
+  .address-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+    border-radius: 100px;
+    padding: 0.35rem 0.85rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-top: 1rem;
+  }
+
+  .address-pill .dot {
+    width: 5px;
+    height: 5px;
+    background: var(--gold);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* MOBILE */
+  @media (max-width: 900px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    section { padding: 4rem 1.5rem; }
+    .hero { padding: 0 1.5rem 4rem; }
+    .problem-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .step { border-right: none; border-bottom: 1px solid var(--border); }
+    .step:nth-child(2n) { border-right: none; }
+    .deliverables { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .proof-section { grid-template-columns: 1fr; gap: 2rem; padding: 2.5rem; }
+    .why-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+    .contact-inner { grid-template-columns: 1fr; gap: 2.5rem; padding: 4rem 1.5rem; }
+    .form-row { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+    .footer-links { flex-wrap: wrap; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">Punch<span>Card</span></a>
+  <ul class="nav-links">
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#what">What You Get</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#why">Why Crypto</a></li>
+    <li><a href="#contact" class="nav-cta">Get Started</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-text">LOYALTY</div>
+  <div class="hero-eyebrow">Web3 Loyalty Infrastructure</div>
+  <h1 class="hero-headline">Your Loyalty Program.<br><em>On Chain.</em><br>Forever.</h1>
+  <p class="hero-sub">Stop renting loyalty from Square. Own it. PunchCard deploys a fully branded crypto loyalty token, POS terminal, and customer app for your business — in a single day.</p>
+  <div class="hero-actions">
+    <a href="#contact" class="btn-primary">Deploy Your Token</a>
+    <a href="#how" class="btn-ghost">See How It Works</a>
+  </div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">Token Deployed on <span>Base Mainnet</span></span>
+    <span class="ticker-item">Live in <span>24 Hours</span></span>
+    <span class="ticker-item">No Middlemen</span>
+    <span class="ticker-item">Immutable Contracts</span>
+    <span class="ticker-item">Ownerless Architecture</span>
+    <span class="ticker-item">Real Customers, Real Rewards</span>
+    <span class="ticker-item">Token Deployed on <span>Base Mainnet</span></span>
+    <span class="ticker-item">Live in <span>24 Hours</span></span>
+    <span class="ticker-item">No Middlemen</span>
+    <span class="ticker-item">Immutable Contracts</span>
+    <span class="ticker-item">Ownerless Architecture</span>
+    <span class="ticker-item">Real Customers, Real Rewards</span>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="section-label">The Problem</div>
+  <h2 class="section-heading">You Don't Own<br>Your Loyalty Program</h2>
+  <div class="problem-grid">
+    <div class="problem-left">
+      <p>Square, Toast, Belly, Stamp Me — every legacy loyalty platform takes <strong>a cut of your customer relationships.</strong> You're building value on their infrastructure. When they raise prices, change terms, or shut down, <strong>your loyalty program disappears.</strong></p>
+      <p style="margin-top: 1.5rem;">Crypto changes that. When your loyalty program is a token on-chain, it belongs to you and your customers — permanently. No vendor can take it away. No platform can lock you in.</p>
+    </div>
+    <div class="vs-cards">
+      <div class="vs-card theirs">
+        <div class="vs-card-label">Legacy Platforms (Square, Toast, etc.)</div>
+        <p>You rent access to your own customer data. Rewards balances live on their servers. Fees increase. Terms change. One API deprecation and it's gone. Your customers' loyalty history — owned by someone else.</p>
+      </div>
+      <div class="vs-card ours">
+        <div class="vs-card-label">PunchCard</div>
+        <p>Your branded token lives on Base mainnet forever. Your customers hold real assets in their own wallets. No platform dependency. No middleman fee. The loyalty program outlives any vendor relationship.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<div class="how-bg" id="how">
+  <section>
+    <div class="section-label">Process</div>
+    <h2 class="section-heading">From Zero to Live<br>in One Day</h2>
+    <div class="steps">
+      <div class="step fade-up">
+        <div class="step-num">01</div>
+        <div class="step-icon">⚙</div>
+        <div class="step-title">Configure</div>
+        <p>Fill out one config file. Token name, symbol, supply, reward rates, wallet addresses, branding. We handle the rest.</p>
+      </div>
+      <div class="step fade-up" style="transition-delay: 0.1s">
+        <div class="step-num">02</div>
+        <div class="step-icon">⬡</div>
+        <div class="step-title">Deploy</div>
+        <p>We deploy your token, escrow, and vesting contracts to Base mainnet. Verified, immutable, ownerless. Your contracts, your addresses.</p>
+      </div>
+      <div class="step fade-up" style="transition-delay: 0.2s">
+        <div class="step-num">03</div>
+        <div class="step-icon">◈</div>
+        <div class="step-title">Launch</div>
+        <p>Your POS terminal goes live on your tablet. Customers scan a QR, earn tokens on every purchase, redeem them at the counter.</p>
+      </div>
+      <div class="step fade-up" style="transition-delay: 0.3s">
+        <div class="step-num">04</div>
+        <div class="step-icon">◎</div>
+        <div class="step-title">Own It</div>
+        <p>Your tokens are live on-chain forever. No ongoing dependency on us. The protocol runs itself. Your dashboard tracks everything.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- WHAT YOU GET -->
+<section id="what">
+  <div class="section-label">Deliverables</div>
+  <h2 class="section-heading">Everything Deployed,<br>Nothing Recurring</h2>
+  <div class="deliverables">
+    <div class="deliverable-card fade-up">
+      <div class="deliverable-icon">Token Contract</div>
+      <h3>Your Branded Token</h3>
+      <p>Custom ERC-20 on Base mainnet. Your name, symbol, supply. Renounced ownership — no admin keys, no rug risk. Fixed tokenomics from day one.</p>
+    </div>
+    <div class="deliverable-card fade-up" style="transition-delay: 0.08s">
+      <div class="deliverable-icon">Vesting Contract</div>
+      <h3>Team Vesting</h3>
+      <p>Linear vesting schedule for your team allocation. Cliff period, monthly unlock. All on-chain and verifiable. No trust required.</p>
+    </div>
+    <div class="deliverable-card fade-up" style="transition-delay: 0.16s">
+      <div class="deliverable-icon">Escrow Contract</div>
+      <h3>POS Escrow</h3>
+      <p>The engine behind every transaction. Holds tokens, processes rewards, manages redemptions. Configurable reward rates for cash vs. token payments.</p>
+    </div>
+    <div class="deliverable-card fade-up" style="transition-delay: 0.24s">
+      <div class="deliverable-icon">POS Terminal</div>
+      <h3>Point of Sale App</h3>
+      <p>Tablet-ready HTML app. Calculates totals, generates QR codes, signs reward transactions via MetaMask. No backend server required.</p>
+    </div>
+    <div class="deliverable-card fade-up" style="transition-delay: 0.32s">
+      <div class="deliverable-icon">Customer Dapp</div>
+      <h3>Customer Portal</h3>
+      <p>Your customers connect their wallet, check their balance, view transaction history, and redeem rewards. Your branding, your domain.</p>
+    </div>
+    <div class="deliverable-card fade-up" style="transition-delay: 0.40s">
+      <div class="deliverable-icon">Dashboard</div>
+      <h3>Owner Dashboard</h3>
+      <p>Live on-chain analytics. Transaction volume, redemption rates, LP performance, token supply metrics. Everything you need to run the program.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF -->
+<section>
+  <div class="section-label">Live Proof</div>
+  <h2 class="section-heading">Already Running<br>in the Real World</h2>
+  <div class="proof-section fade-up">
+    <div class="proof-left">
+      <h3>KOKOS Ice Cream<br>Nashville, TN</h3>
+      <p>Our own ice cream shop was the first deployment. SKOOP token launched on Base mainnet with a full POS system, customer dapp, and accounting dashboard. Real customers. Real transactions. Autonomous on-chain operation from day one.</p>
+      <p style="margin-top: 1rem;">This isn't a whitepaper. The system is live. We built it, we run it, and now we're templating it for you.</p>
+      <div class="proof-chain">
+        <span class="chain-dot"></span>
+        Live on Base Mainnet — Chain ID 8453
+      </div>
+      <div class="address-pill">
+        <span class="dot"></span>
+        SKOOP: 0xfd3c...eb92
+      </div>
+    </div>
+    <div class="proof-stats">
+      <div class="proof-stat">
+        <div class="proof-stat-num">Base</div>
+        <div class="proof-stat-label">Mainnet deployment</div>
+      </div>
+      <div class="proof-stat">
+        <div class="proof-stat-num">1 Day</div>
+        <div class="proof-stat-label">From config to live</div>
+      </div>
+      <div class="proof-stat">
+        <div class="proof-stat-num">0</div>
+        <div class="proof-stat-label">Admin keys held</div>
+      </div>
+      <div class="proof-stat">
+        <div class="proof-stat-num">∞</div>
+        <div class="proof-stat-label">Token lifespan on-chain</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY CRYPTO -->
+<section id="why">
+  <div class="section-label">Why Crypto</div>
+  <h2 class="section-heading">Not a Gimmick.<br>A Better Architecture.</h2>
+  <div class="why-grid">
+    <div class="why-left">
+      <p>We're not putting blockchain on loyalty because it's trendy. We're doing it because <strong>a token on Base mainnet has properties that a database record never will.</strong></p>
+      <p>Your customer's reward balance is a real asset they hold in their own wallet. It doesn't disappear when you switch POS systems. It doesn't get zeroed out in a platform migration. <strong>It compounds value as your business grows.</strong></p>
+      <p>And for you as the business owner — the program runs without monthly fees to a vendor, without their servers, without their rules.</p>
+    </div>
+    <div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Legacy Platforms</th>
+            <th>PunchCard</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Customer owns rewards</td>
+            <td class="cross">✗</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Portable across wallets</td>
+            <td class="cross">✗</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>No vendor lock-in</td>
+            <td class="cross">✗</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Survives platform shutdown</td>
+            <td class="cross">✗</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Token secondary market value</td>
+            <td class="cross">✗</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Zero admin keys</td>
+            <td class="cross">✗</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>On-chain transparency</td>
+            <td class="cross">✗</td>
+            <td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>Works without MetaMask</td>
+            <td class="check">✓</td>
+            <td class="cross">✗</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-heading">Simple Pricing.<br>No Surprises.</h2>
+  <div class="pricing-grid">
+
+    <div class="pricing-card fade-up">
+      <div class="pricing-tier">Starter</div>
+      <div class="pricing-price"><sup>$</sup>2,500</div>
+      <div class="pricing-billing">One-time setup fee</div>
+      <ul class="pricing-features">
+        <li>Token contract deployed</li>
+        <li>POS terminal</li>
+        <li>Customer dapp</li>
+        <li>Basic owner dashboard</li>
+        <li>30-day email support</li>
+        <li>GitHub Pages hosting setup</li>
+      </ul>
+      <a href="#contact" class="pricing-cta">Get Started</a>
+    </div>
+
+    <div class="pricing-card featured fade-up" style="transition-delay: 0.1s">
+      <div class="pricing-badge">Most Popular</div>
+      <div class="pricing-tier">Full Stack</div>
+      <div class="pricing-price"><sup>$</sup>4,500</div>
+      <div class="pricing-billing">One-time + $350/mo support</div>
+      <ul class="pricing-features">
+        <li>Everything in Starter</li>
+        <li>Team vesting contract</li>
+        <li>LP bootstrapping strategy</li>
+        <li>Tokenomics consultation</li>
+        <li>Custom domain setup</li>
+        <li>Ongoing support retainer</li>
+        <li>Monthly analytics review</li>
+      </ul>
+      <a href="#contact" class="pricing-cta">Get Started</a>
+    </div>
+
+    <div class="pricing-card fade-up" style="transition-delay: 0.2s">
+      <div class="pricing-tier">Enterprise</div>
+      <div class="pricing-price">Custom</div>
+      <div class="pricing-billing">Multi-location / franchise</div>
+      <ul class="pricing-features">
+        <li>Everything in Full Stack</li>
+        <li>Multi-location deployment</li>
+        <li>Custom contract architecture</li>
+        <li>White-label frontend</li>
+        <li>Dedicated deployment support</li>
+        <li>Revenue share structures</li>
+      </ul>
+      <a href="#contact" class="pricing-cta">Contact Us</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- CONTACT -->
+<div class="contact-section" id="contact">
+  <div class="contact-inner">
+    <div class="contact-left">
+      <h2>Ready to <em>Own</em><br>Your Loyalty?</h2>
+      <p>Tell us about your business. We'll send over a deployment timeline, tokenomics recommendations, and a custom quote within 24 hours.</p>
+      <p style="margin-top: 1rem;">No crypto experience required on your end. We handle the entire deployment.</p>
+    </div>
+    <form class="contact-form" onsubmit="handleSubmit(event)">
+      <div class="form-row">
+        <input type="text" placeholder="Business Name" required>
+        <input type="text" placeholder="Your Name" required>
+      </div>
+      <input type="email" placeholder="Email Address" required>
+      <select>
+        <option value="" disabled selected>Business Type</option>
+        <option>Restaurant / Food & Beverage</option>
+        <option>Retail</option>
+        <option>Coffee Shop / Café</option>
+        <option>Fitness / Wellness</option>
+        <option>Franchise / Multi-Location</option>
+        <option>Other</option>
+      </select>
+      <textarea placeholder="Tell us about your business and what you're looking for..."></textarea>
+      <button type="submit">Send Inquiry →</button>
+    </form>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Punch<span>Card</span></div>
+  <ul class="footer-links">
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#what">Deliverables</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="footer-meta">Built on Base · © 2026 PunchCard</div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        const offset = 80;
+        const top = target.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    });
+  });
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.textContent = 'Sent ✓';
+    btn.style.background = '#1a7a4a';
+    setTimeout(() => {
+      btn.textContent = 'Send Inquiry →';
+      btn.style.background = '';
+      e.target.reset();
+    }, 3000);
+  }
+</script>
+
+</body>
+</html>
