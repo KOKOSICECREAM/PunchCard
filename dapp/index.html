@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Punchcard Network</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e0f;
+  --surface: #161618;
+  --surface2: #1e1e21;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #f0ede8;
+  --muted: #7a7873;
+  --accent: #f5c842;
+  --accent2: #e8876a;
+  --green: #4ade80;
+  --red: #f87171;
+  --r: 16px;
+  --r-sm: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── LAYOUT ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── HEADER ── */
+.hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.hdr-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hdr-mark {
+  width: 28px;
+  height: 28px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.hdr-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.hdr-name span {
+  color: var(--accent);
+}
+
+.wallet-pill {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+}
+
+/* ── BALANCE BAR ── */
+.balance-bar {
+  padding: 16px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.bal-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.bal-tokens {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.bal-tokens::-webkit-scrollbar { display: none; }
+
+.bal-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 99px;
+  padding: 5px 10px 5px 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+}
+.bal-chip:hover { border-color: var(--accent); }
+.bal-chip.active { border-color: var(--accent); background: rgba(245,200,66,0.1); }
+
+.chip-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.chip-info { }
+.chip-sym { font-size: 11px; font-weight: 600; color: var(--text); }
+.chip-amt { font-size: 10px; color: var(--muted); }
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  padding: 0 20px;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.tab {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  letter-spacing: 0.3px;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── SEARCH ── */
+.search-wrap {
+  padding: 12px 20px;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  padding: 9px 14px;
+}
+
+.search-box input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+}
+.search-box input::placeholder { color: var(--muted); }
+.search-icon { font-size: 14px; color: var(--muted); }
+
+/* ── FILTER CHIPS ── */
+.filters {
+  display: flex;
+  gap: 6px;
+  padding: 0 20px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.filters::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  padding: 5px 12px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+.filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+.filter-chip.active { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+
+/* ── BUSINESS GRID ── */
+.business-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 20px 120px;
+}
+
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 0 10px;
+}
+
+.biz-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.biz-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  animation: cardIn 0.3s ease both;
+}
+.biz-card:hover { border-color: var(--border2); background: var(--surface2); }
+.biz-card.selected { border-color: var(--accent); background: rgba(245,200,66,0.06); }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.biz-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.biz-info { flex: 1; min-width: 0; }
+.biz-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.biz-meta { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.biz-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.biz-hood { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); }
+
+.biz-right { text-align: right; flex-shrink: 0; }
+.biz-token { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: var(--accent); margin-bottom: 3px; }
+.biz-rate { font-size: 10px; color: var(--muted); }
+.biz-rate strong { color: var(--green); }
+
+/* ── SWAP SHEET ── */
+.backdrop {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+.backdrop.open { display: block; }
+
+.swap-sheet {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  border-top: 1px solid var(--border2);
+  padding: 20px 20px 48px;
+  z-index: 200;
+  box-shadow: 0 -8px 48px rgba(0,0,0,0.5);
+}
+.swap-sheet.open {
+  display: block;
+  animation: sheetUp 0.28s cubic-bezier(0.34,1.2,0.64,1);
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.sheet-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.sheet-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+
+/* From → To */
+.swap-flow {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.swap-row {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.swap-row + .swap-row {
+  border-top: 1px solid var(--border);
+}
+
+.swap-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.swap-token {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swap-tok-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.swap-tok-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.swap-tok-full { font-size: 11px; color: var(--muted); }
+
+.swap-amount { text-align: right; }
+.swap-big { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--text); letter-spacing: -0.5px; }
+.swap-usd { font-size: 11px; color: var(--muted); }
+
+.swap-arrow {
+  text-align: center;
+  padding: 8px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+
+/* Route */
+.route-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(245,200,66,0.05);
+  border: 1px solid rgba(245,200,66,0.15);
+  border-radius: var(--r-sm);
+  margin-bottom: 14px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.route-row strong { color: var(--accent); }
+
+/* Confirm button */
+.btn-swap-confirm {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: var(--r);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.3px;
+}
+.btn-swap-confirm:hover { background: #f0c030; }
+.btn-swap-confirm:active { transform: scale(0.98); }
+
+.btn-cancel {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  color: var(--muted);
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* ── SUCCESS ── */
+.success-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  z-index: 300;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 28px;
+  text-align: center;
+}
+.success-overlay.show {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
+.success-check {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(74,222,128,0.12);
+  border: 2px solid var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin-bottom: 24px;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.success-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.1;
+}
+
+.success-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; line-height: 1.6; }
+
+.success-card {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.sc-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+.sc-row:last-child { border-bottom: none; }
+.sc-key { color: var(--muted); }
+.sc-val { font-weight: 600; color: var(--text); }
+.sc-val.green { color: var(--green); }
+
+.btn-done {
+  width: 100%;
+  padding: 15px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-done:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── NAV ── */
+#bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(68px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  padding-top: 10px;
+  z-index: 50;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.nav-icon { font-size: 20px; }
+.nav-label { font-size: 9px; font-weight: 600; letter-spacing: 0.5px; color: var(--muted); text-transform: uppercase; }
+.nav-item.active .nav-label { color: var(--accent); }
+.nav-item.active .nav-icon { filter: none; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+  font-size: 13px;
+  display: none;
+}
+.empty.show { display: block; }
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+/* ── STATS BAR ── */
+.stats-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.stat-item {
+  flex: 1;
+  padding: 10px 12px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+.stat-item:last-child { border-right: none; }
+.stat-num { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--text); line-height: 1; }
+.stat-lbl { font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- SUCCESS -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-check">✓</div>
+  <div class="success-title" id="s-title">Rewards Swapped!</div>
+  <div class="success-sub" id="s-sub">Your tokens have been swapped and delivered to your wallet.</div>
+  <div class="success-card">
+    <div class="sc-row"><span class="sc-key">You spent</span><span class="sc-val" id="s-spent">—</span></div>
+    <div class="sc-row"><span class="sc-key">You received</span><span class="sc-val green" id="s-received">—</span></div>
+    <div class="sc-row"><span class="sc-key">Route</span><span class="sc-val" id="s-route">—</span></div>
+    <div class="sc-row"><span class="sc-key">Network</span><span class="sc-val">Base</span></div>
+  </div>
+  <button class="btn-done" onclick="closeSuccess()">Back to Network</button>
+</div>
+
+<!-- SWAP SHEET -->
+<div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+<div class="swap-sheet" id="swap-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="sheet-title">Spend at —</div>
+  <div class="sheet-sub" id="sheet-sub">Swap your rewards in one transaction on Base</div>
+
+  <div class="swap-flow">
+    <div class="swap-row">
+      <div>
+        <div class="swap-label">You spend</div>
+        <div class="swap-token">
+          <div class="swap-tok-icon" id="from-icon">🍦</div>
+          <div>
+            <div class="swap-tok-name" id="from-sym">SKOOP</div>
+            <div class="swap-tok-full">KOKOS Ice Cream</div>
+          </div>
+        </div>
+      </div>
+      <div class="swap-amount">
+        <div class="swap-big" id="from-amt">1,250</div>
+        <div class="swap-usd" id="from-usd">≈ $8.75</div>
+      </div>
+    </div>
+    <div class="swap-arrow">↓ &nbsp; routed through USDC &nbsp; ↓</div>
+    <div class="swap-row">
+      <div>
+        <div class="swap-label">You receive</div>
+        <div class="swap-token">
+          <div class="swap-tok-icon" id="to-icon">☕</div>
+          <div>
+            <div class="swap-tok-name" id="to-sym">FROTHY</div>
+            <div class="swap-tok-full" id="to-full">Frothy Monkey</div>
+          </div>
+        </div>
+      </div>
+      <div class="swap-amount">
+        <div class="swap-big" id="to-amt">840</div>
+        <div class="swap-usd" id="to-usd">≈ $8.40</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="route-row">
+    ⚡ <strong>1 transaction</strong> &nbsp;·&nbsp; SKOOP → USDC → <span id="route-to">TOKEN</span> &nbsp;·&nbsp; ~$0.001 gas
+  </div>
+
+  <button class="btn-swap-confirm" onclick="confirmSwap()">Swap & Spend Anywhere →</button>
+  <button class="btn-cancel" onclick="closeSheet()">Cancel</button>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-mark">🎟</div>
+    <div class="hdr-name">Punch<span>card</span> Network</div>
+  </div>
+  <div class="wallet-pill">0x7f3a…4b12</div>
+</div>
+
+<!-- BALANCE BAR -->
+<div class="balance-bar">
+  <div class="bal-label">Your Rewards</div>
+  <div class="bal-tokens" id="bal-tokens">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-num">24</div>
+    <div class="stat-lbl">Businesses</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">Nashville</div>
+    <div class="stat-lbl">City</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">$0</div>
+    <div class="stat-lbl">Swap Fee</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="setTab('all',this)">All</div>
+  <div class="tab" onclick="setTab('coffee',this)">Coffee</div>
+  <div class="tab" onclick="setTab('food',this)">Food</div>
+  <div class="tab" onclick="setTab('fitness',this)">Fitness</div>
+  <div class="tab" onclick="setTab('other',this)">Other</div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Search Nashville businesses…" id="search-input" oninput="filterBiz()">
+  </div>
+</div>
+
+<!-- BUSINESS LIST -->
+<div class="business-scroll">
+  <div class="section-label" id="section-label">All Nashville Businesses</div>
+  <div class="biz-grid" id="biz-grid"></div>
+  <div class="empty" id="empty-state">
+    <div class="empty-icon">🔍</div>
+    No businesses found
+  </div>
+</div>
+
+<!-- NAV -->
+<div id="bottom-nav">
+  <button class="nav-item" onclick="">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">Home</div>
+  </button>
+  <button class="nav-item active">
+    <div class="nav-icon">🌐</div>
+    <div class="nav-label">Network</div>
+  </button>
+  <button class="nav-item">
+    <div class="nav-icon">💱</div>
+    <div class="nav-label">Buy</div>
+  </button>
+  <button class="nav-item">
+    <div class="nav-icon">⬛</div>
+    <div class="nav-label">My QR</div>
+  </button>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const MY_WALLET = {
+  SKOOP:  { amount: 1250, usdVal: 8.75,  name: 'KOKOS Ice Cream',  icon: '🍦', color: '#e8876a' },
+  FROTHY: { amount: 320,  usdVal: 2.88,  name: 'Frothy Monkey',    icon: '☕', color: '#6f4e37' },
+  CREMA:  { amount: 85,   usdVal: 0.72,  name: 'Crema Coffee',     icon: '⚗️', color: '#2c7873' },
+};
+
+let selectedFrom = 'SKOOP';
+
+const BUSINESSES = [
+  // ── COFFEE ──
+  { id: 'frothy',   name: 'Frothy Monkey',       sym: 'FROTHY', cat: 'coffee',  icon: '☕',  color: '#6f4e37', hood: '12 South',        rate: '8%',  desc: 'All-day café & roastery' },
+  { id: 'barista',  name: 'Barista Parlor',       sym: 'BPCO',   cat: 'coffee',  icon: '🏭',  color: '#3a3a3a', hood: 'East Nashville',   rate: '7%',  desc: 'Industrial specialty coffee' },
+  { id: 'crema',    name: 'Crema Coffee Roasters',sym: 'CREMA',  cat: 'coffee',  icon: '⚗️',  color: '#2c7873', hood: 'Rutledge Hill',    rate: '9%',  desc: 'Zero-waste roaster since 2008' },
+  { id: 'ugly',     name: 'Ugly Mugs Coffee',     sym: 'UGLY',   cat: 'coffee',  icon: '🫖',  color: '#8b4513', hood: 'East Nashville',   rate: '10%', desc: 'East Nashville original' },
+  { id: 'bongo',    name: 'Bongo Java',           sym: 'BONGO',  cat: 'coffee',  icon: '🎵',  color: '#5c4033', hood: 'Belmont',          rate: '8%',  desc: "Nashville's oldest roaster" },
+  { id: 'honest',   name: 'Honest Coffee',        sym: 'HCOF',   cat: 'coffee',  icon: '🌱',  color: '#4a7c59', hood: 'The Nations',      rate: '9%',  desc: 'Farm-direct sourcing' },
+  { id: 'stayg',    name: 'Stay Golden',          sym: 'STAYG',  cat: 'coffee',  icon: '✨',  color: '#c8a951', hood: 'Germantown',       rate: '8%',  desc: 'Roastery & restaurant' },
+  { id: 'elegy',    name: 'Elegy Coffee',         sym: 'ELEGY',  cat: 'coffee',  icon: '🖤',  color: '#2d2d2d', hood: 'Germantown',       rate: '9%',  desc: 'From the folks behind The Fox' },
+  { id: 'sump',     name: 'Sump Coffee',          sym: 'SUMP',   cat: 'coffee',  icon: '💧',  color: '#1a5276', hood: 'The Nations',      rate: '8%',  desc: 'Light roast single origin' },
+  { id: 'prickly',  name: 'Prickly Pear Coffee',  sym: 'PPCOF',  cat: 'coffee',  icon: '🌵',  color: '#27ae60', hood: 'East Nashville',   rate: '10%', desc: 'Best of 2026 award winner' },
+
+  // ── FOOD ──
+  { id: 'kokos',    name: 'KOKOS Ice Cream',      sym: 'SKOOP',  cat: 'food',    icon: '🍦',  color: '#e8876a', hood: 'Nashville',        rate: '10%', desc: "Nashville's first plant-based scoop" },
+  { id: 'pharmacy', name: 'The Pharmacy Burger',  sym: 'RXBGR',  cat: 'food',    icon: '🍔',  color: '#c0392b', hood: 'East Nashville',   rate: '7%',  desc: 'Craft burgers & beer garden' },
+  { id: 'lyra',     name: 'Lyra',                 sym: 'LYRA',   cat: 'food',    icon: '🌟',  color: '#8e44ad', hood: 'Germantown',       rate: '6%',  desc: 'Modern Middle Eastern' },
+  { id: 'dhamaka',  name: 'Dhamaka Nashville',    sym: 'DHAMA',  cat: 'food',    icon: '🌶️',  color: '#e74c3c', hood: 'Midtown',          rate: '7%',  desc: 'Bold regional Indian cuisine' },
+  { id: 'peg',      name: 'The Pegged Leg',       sym: 'PEGLEG', cat: 'food',    icon: '🏴‍☠️', color: '#2c3e50', hood: '5 Points',         rate: '8%',  desc: 'Pirate-themed craft cocktails' },
+  { id: 'josephin', name: "Josephine",            sym: 'JOSIE',  cat: 'food',    icon: '🌿',  color: '#196f3d', hood: '12 South',         rate: '7%',  desc: 'Southern seasonal comfort food' },
+
+  // ── FITNESS ──
+  { id: 'forza',    name: 'Forza Pilates',        sym: 'FORZA',  cat: 'fitness', icon: '🧘',  color: '#d4ac0d', hood: 'Wedgewood-Houston', rate: '12%', desc: 'Female-founded reformer studio' },
+  { id: 'iconix',   name: 'Iconix Fitness',       sym: 'ICONIX', cat: 'fitness', icon: '💪',  color: '#1a5276', hood: 'Nashville Yards',   rate: '10%', desc: '40,000 sq ft training & recovery' },
+  { id: 'hotbox',   name: 'HOTBOX Fitness',       sym: 'HBFIT',  cat: 'fitness', icon: '🥊',  color: '#c0392b', hood: 'Gulch',             rate: '11%', desc: 'Kickboxing & strength fusion' },
+  { id: 'carbon',   name: 'Carbon Performance',   sym: 'CARBN',  cat: 'fitness', icon: '⚡',  color: '#1e272e', hood: 'Berry Hill',        rate: '9%',  desc: 'High-performance training' },
+  { id: 'd1',       name: 'D1 Training',          sym: 'D1FIT',  cat: 'fitness', icon: '🏋️',  color: '#c0392b', hood: 'Nashville',         rate: '11%', desc: 'Pro-style athletic training' },
+
+  // ── OTHER ──
+  { id: 'grimeys',  name: "Grimey's Records",     sym: 'GRMY',   cat: 'other',   icon: '🎵',  color: '#1a237e', hood: '8th Ave',           rate: '10%', desc: 'Nashville legendary record shop' },
+  { id: 'draper',   name: 'Draper James',         sym: 'DRPRJ',  cat: 'other',   icon: '👗',  color: '#e91e8c', hood: '12 South',          rate: '8%',  desc: "Reese Witherspoon's boutique" },
+  { id: 'turnip',   name: 'Turnip Truck',         sym: 'TRNIP',  cat: 'other',   icon: '🌽',  color: '#2ecc71', hood: 'East Nashville',    rate: '9%',  desc: 'Local natural grocery' },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentTab = 'all';
+let currentBiz = null;
+let searchVal = '';
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function init() {
+  renderBalChips();
+  renderBiz();
+}
+
+function renderBalChips() {
+  const wrap = document.getElementById('bal-tokens');
+  wrap.innerHTML = Object.entries(MY_WALLET).map(([sym, d]) => `
+    <div class="bal-chip ${sym === selectedFrom ? 'active' : ''}" onclick="selectFrom('${sym}')">
+      <div class="chip-dot" style="background:${d.color}">${d.icon}</div>
+      <div class="chip-info">
+        <div class="chip-sym">${sym}</div>
+        <div class="chip-amt">${d.amount.toLocaleString()}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectFrom(sym) {
+  selectedFrom = sym;
+  renderBalChips();
+}
+
+function renderBiz() {
+  const grid = document.getElementById('biz-grid');
+  const empty = document.getElementById('empty-state');
+  const label = document.getElementById('section-label');
+
+  let filtered = BUSINESSES.filter(b => {
+    const matchTab = currentTab === 'all' || b.cat === currentTab;
+    const q = searchVal.toLowerCase();
+    const matchSearch = !q || b.name.toLowerCase().includes(q) || b.hood.toLowerCase().includes(q) || b.sym.toLowerCase().includes(q);
+    return matchTab && matchSearch;
+  });
+
+  // Sort: own wallet tokens first
+  const walletSyms = Object.keys(MY_WALLET);
+  filtered.sort((a,b) => {
+    const ai = walletSyms.indexOf(a.sym);
+    const bi = walletSyms.indexOf(b.sym);
+    if (ai !== -1 && bi === -1) return -1;
+    if (ai === -1 && bi !== -1) return 1;
+    return 0;
+  });
+
+  const labels = { all: 'All Nashville Businesses', coffee: 'Coffee Shops', food: 'Food & Drink', fitness: 'Fitness Studios', other: 'Shops & More' };
+  label.textContent = labels[currentTab] || 'Businesses';
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    empty.classList.add('show');
+    return;
+  }
+  empty.classList.remove('show');
+
+  grid.innerHTML = filtered.map((b, i) => {
+    const hasToken = MY_WALLET[b.sym];
+    const isOwn = b.sym === 'SKOOP';
+    return `
+      <div class="biz-card" style="animation-delay:${i*0.03}s" onclick="${isOwn ? '' : `openSwap('${b.id}')`}" id="card-${b.id}">
+        <div class="biz-icon" style="background:${b.color}22">${b.icon}</div>
+        <div class="biz-info">
+          <div class="biz-name">${b.name}</div>
+          <div class="biz-meta">
+            <span>${b.desc}</span>
+            <span class="dot"></span>
+            <span class="biz-hood">${b.hood}</span>
+          </div>
+        </div>
+        <div class="biz-right">
+          <div class="biz-token">${b.sym}</div>
+          <div class="biz-rate">Earn <strong>${b.rate}</strong></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function setTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderBiz();
+}
+
+function filterBiz() {
+  searchVal = document.getElementById('search-input').value;
+  renderBiz();
+}
+
+// ── SWAP SHEET ────────────────────────────────────────────────────────────────
+function openSwap(bizId) {
+  const biz = BUSINESSES.find(b => b.id === bizId);
+  if (!biz) return;
+  currentBiz = biz;
+
+  const from = MY_WALLET[selectedFrom];
+  const fromSym = selectedFrom;
+
+  // Simulated quote: from USD value minus small slippage
+  const fromUSD = from.usdVal;
+  const toUSD = (fromUSD * 0.997).toFixed(2); // 0.3% pool fee
+  // Simulate to-token amount based on a notional price of $0.01/token
+  const toAmt = Math.floor(toUSD / 0.01);
+
+  document.getElementById('sheet-title').textContent = `Spend at ${biz.name}`;
+  document.getElementById('sheet-sub').textContent = `Swap your ${fromSym} rewards — one tx on Base`;
+  document.getElementById('from-icon').textContent = from.icon;
+  document.getElementById('from-sym').textContent = fromSym;
+  document.getElementById('from-amt').textContent = from.amount.toLocaleString();
+  document.getElementById('from-usd').textContent = `≈ $${fromUSD.toFixed(2)}`;
+  document.getElementById('to-icon').textContent = biz.icon;
+  document.getElementById('to-sym').textContent = biz.sym;
+  document.getElementById('to-full').textContent = biz.name;
+  document.getElementById('to-amt').textContent = toAmt.toLocaleString();
+  document.getElementById('to-usd').textContent = `≈ $${toUSD}`;
+  document.getElementById('route-to').textContent = biz.sym;
+
+  document.getElementById('backdrop').classList.add('open');
+  document.getElementById('swap-sheet').classList.add('open');
+}
+
+function closeSheet() {
+  document.getElementById('backdrop').classList.remove('open');
+  document.getElementById('swap-sheet').classList.remove('open');
+}
+
+function confirmSwap() {
+  if (!currentBiz) return;
+  const from = MY_WALLET[selectedFrom];
+  const biz = currentBiz;
+  const fromUSD = from.usdVal;
+  const toUSD = (fromUSD * 0.997).toFixed(2);
+  const toAmt = Math.floor(toUSD / 0.01);
+
+  closeSheet();
+
+  document.getElementById('s-title').textContent = 'Rewards Swapped!';
+  document.getElementById('s-sub').textContent = `Your ${biz.sym} tokens are ready to use at ${biz.name}.`;
+  document.getElementById('s-spent').textContent = `${from.amount.toLocaleString()} ${selectedFrom}`;
+  document.getElementById('s-received').textContent = `${toAmt.toLocaleString()} ${biz.sym}`;
+  document.getElementById('s-route').textContent = `${selectedFrom} → USDC → ${biz.sym}`;
+
+  document.getElementById('success-overlay').classList.add('show');
+}
+
+function closeSuccess() {
+  document.getElementById('success-overlay').classList.remove('show');
+  currentBiz = null;
+}
+
+// ── GO ────────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
