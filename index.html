@@ -420,8 +420,8 @@
   .compare-table tr:last-child td { border-bottom: none; }
   .compare-table tr:nth-child(even) td { background: var(--paper-warm); }
   .compare-table td:first-child { color: var(--ink); font-weight: 500; }
-  .check { color: var(--terra); font-weight: 700; }
-  .cross { color: var(--ink-ghost); }
+  .check { color: #2d7a3a; font-weight: 700; }
+  .cross { color: var(--terra); font-weight: 700; }
 
   .how-we-work-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-top:3rem; }
   .hww-card { background:var(--paper-card); border:1px solid var(--border); border-radius:8px; padding:2rem 1.75rem; transition:box-shadow 0.2s; }
@@ -526,6 +526,117 @@
   .mobile-menu a:hover { color: var(--terra); }
 
   @media(max-width:768px){ .nav-hamburger { display: flex; } }
+
+  /* IMPLEMENTATION */
+  .impl-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    margin-top: 3rem;
+  }
+
+  .impl-text p { font-size: 0.95rem; color: var(--ink-mid); line-height: 1.8; margin-bottom: 1rem; }
+  .impl-text strong { color: var(--ink); font-weight: 600; }
+
+  .impl-device {
+    background: var(--ink);
+    border-radius: 12px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .impl-device::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top left, rgba(168,58,32,0.12), transparent 70%);
+    pointer-events: none;
+  }
+
+  .impl-device-label {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(248,244,236,0.3);
+    margin-bottom: 1.5rem;
+  }
+
+  .impl-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .impl-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid rgba(248,244,236,0.06);
+  }
+
+  .impl-step:last-child { border-bottom: none; }
+
+  .impl-step-num {
+    font-family: 'Special Elite', cursive;
+    font-size: 1.4rem;
+    color: rgba(168,58,32,0.4);
+    line-height: 1;
+    flex-shrink: 0;
+    width: 1.8rem;
+  }
+
+  .impl-step-content h4 {
+    font-family: 'Lora', serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--paper);
+    margin-bottom: 0.2rem;
+  }
+
+  .impl-step-content p {
+    font-size: 0.75rem;
+    color: rgba(248,244,236,0.4);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .impl-hardware {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(248,244,236,0.08);
+  }
+
+  .impl-hardware-label {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(248,244,236,0.25);
+    margin-bottom: 0.6rem;
+  }
+
+  .impl-hardware-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .impl-tag {
+    font-size: 0.7rem;
+    color: rgba(248,244,236,0.5);
+    background: rgba(248,244,236,0.06);
+    border: 1px solid rgba(248,244,236,0.1);
+    border-radius: 3px;
+    padding: 0.2rem 0.6rem;
+    font-family: 'Courier Prime', monospace;
+  }
+
+  @media(max-width:900px){ .impl-grid { grid-template-columns: 1fr; gap: 2rem; } }
+
 </style>
 </head>
 <body>
@@ -557,9 +668,9 @@
 <section class="hero">
   <div class="hero-image-wrap">
     <img src="punchbari.jpg" alt="Customer receiving a punchcard at a coffee bar">
-    <div class="hero-image-caption">Nashville, TN · 2026</div>
+    <div class="hero-image-caption">Est. 2026</div>
   </div>
-  <div class="edition-line">punchcard.club · Nashville · Est. 2026 · Base Mainnet</div>
+  <div class="edition-line">punchcard.club · Est. 2026 · Base Mainnet</div>
   <h2 class="hero-tagline-title">Crypto-Powered<br><em>Loyalty Rewards</em></h2>
   <p class="hero-tagline-sub">Built by businesses, earned by customers, owned by everyone, controlled by no one.</p>
   <h1 class="hero-headline">Real loyalty<br>can't be <em>rented.</em></h1>
@@ -646,6 +757,50 @@
   </div>
 </div>
 
+<div class="section-alt" id="network">
+  <div class="section-wrap">
+    <div class="section-label">The Network</div>
+    <h2 class="section-heading">Your token.<br><em>The whole network.</em></h2>
+    <div class="network-grid">
+      <div class="network-text">
+        <p>Every PunchCard merchant joins the same network. That means your customers' tokens don't just work at your business — <strong>they can swap freely across every business on the network.</strong></p>
+        <p>A customer earns COFFEE tokens at your café. Later they walk into any business on the network — down the street or across the country. One swap and their value moves with them — at market rate, instantly, on-chain.</p>
+        <p><strong>This is the part loyalty programs have never been able to do.</strong> Points trapped in one app, on one platform, for one business. PunchCard tokens are real assets on a shared network. The more businesses that join, the more valuable every token becomes.</p>
+        <p>The network router handles all swaps automatically. Customers never touch a DEX. The dapp makes it as simple as tapping a button.</p>
+      </div>
+      <div class="network-flow">
+        <div class="flow-step">
+          <div class="flow-icon">EARN</div>
+          <div class="flow-content">
+            <h4>Buy coffee, earn COFFEE</h4>
+            <p>10% reward on crypto sales, 5% on card sales. Automatic, every transaction.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-icon">SWAP</div>
+          <div class="flow-content">
+            <h4>Swap to any network token</h4>
+            <p>Market-rate exchange through the PunchCard router. 0.3% network fee, taken atomically.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-icon">SPEND</div>
+          <div class="flow-content">
+            <h4>Redeem anywhere on the network</h4>
+            <p>Token value works at every participating business on the network — anywhere in the world. Or cash out to USDC or ETH anytime.</p>
+          </div>
+        </div>
+        <div class="flow-path">
+          COFFEE <span>→</span> USDC <span>→</span> PIZZA<br>
+          COFFEE <span>→</span> USDC &nbsp;&nbsp;&nbsp;(exit to stable)<br>
+          COFFEE <span>→</span> ETH &nbsp;&nbsp;&nbsp;&nbsp;(exit to ETH)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <div id="what">
   <div class="section-wrap">
     <div class="section-label">Deliverables</div>
@@ -686,48 +841,6 @@
   </div>
 </div>
 
-<div class="section-alt" id="network">
-  <div class="section-wrap">
-    <div class="section-label">The Network</div>
-    <h2 class="section-heading">Your token.<br><em>The whole city.</em></h2>
-    <div class="network-grid">
-      <div class="network-text">
-        <p>Every PunchCard merchant joins the same network. That means your customers' tokens don't just work at your business — <strong>they can swap freely across every business on the network.</strong></p>
-        <p>A customer earns COFFEE tokens at your café. Later they walk into a pizza place on the same network. One swap and their value moves with them — at market rate, instantly, on-chain.</p>
-        <p><strong>This is the part loyalty programs have never been able to do.</strong> Points trapped in one app, on one platform, for one business. PunchCard tokens are real assets on a shared network. The more businesses that join, the more valuable every token becomes.</p>
-        <p>The network router handles all swaps automatically. Customers never touch a DEX. The dapp makes it as simple as tapping a button.</p>
-      </div>
-      <div class="network-flow">
-        <div class="flow-step">
-          <div class="flow-icon">EARN</div>
-          <div class="flow-content">
-            <h4>Buy coffee, earn COFFEE</h4>
-            <p>10% reward on crypto sales, 5% on card sales. Automatic, every transaction.</p>
-          </div>
-        </div>
-        <div class="flow-step">
-          <div class="flow-icon">SWAP</div>
-          <div class="flow-content">
-            <h4>Swap to any network token</h4>
-            <p>Market-rate exchange through the PunchCard router. 0.3% network fee, taken atomically.</p>
-          </div>
-        </div>
-        <div class="flow-step">
-          <div class="flow-icon">SPEND</div>
-          <div class="flow-content">
-            <h4>Redeem anywhere on the network</h4>
-            <p>Token value works at every participating Nashville business. Or cash out to USDC or ETH anytime.</p>
-          </div>
-        </div>
-        <div class="flow-path">
-          COFFEE <span>→</span> USDC <span>→</span> PIZZA<br>
-          COFFEE <span>→</span> USDC &nbsp;&nbsp;&nbsp;(exit to stable)<br>
-          COFFEE <span>→</span> ETH &nbsp;&nbsp;&nbsp;&nbsp;(exit to ETH)
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <div>
   <div class="section-wrap">
@@ -736,7 +849,7 @@
     <div class="proof-card fade-up">
       <div>
         <div class="proof-eyebrow"><span class="live-dot"></span>Live on Base Mainnet</div>
-        <h3>KOKOS Ice Cream<br>Nashville, TN</h3>
+        <h3>KOKOS Ice Cream<br>Nashville, TN — First Deployment</h3>
         <p>Our own ice cream shop was the first PunchCard deployment. SKOOP token launched on Base mainnet with a full POS system, customer portal, and accounting dashboard.</p>
         <p style="color:rgba(248,244,236,0.4)">Real customers. Real transactions. Running autonomously from day one. This isn't a whitepaper — the system is live. We built it, we run it, now we deploy it for you.</p>
         <div class="proof-address">SKOOP · 0xfd3ce21c5acd8bbbe576d0e2336c210c3cebeb92 · Base Mainnet</div>
@@ -794,8 +907,8 @@
           </tbody>
         </table>
         <div class="why-callout fade-up">
-          <div class="why-callout-label">Nashville First</div>
-          <p>PunchCard is launching in Nashville and building the network business by business. Every merchant that joins deepens the liquidity and expands where your customers can spend their rewards.</p>
+          <div class="why-callout-label">Network Effect</div>
+          <p>Every merchant that joins PunchCard deepens the liquidity pool and expands where customers can spend their rewards — whether that's across the street or across the country.</p>
         </div>
       </div>
     </div>
@@ -860,6 +973,73 @@
     <p style="font-size:0.78rem;color:var(--ink-faded);margin-top:1rem;font-style:italic;">PunchCard takes no token allocation. We are paid a setup fee for the deployment. Your token belongs entirely to your business and your customers.</p>
     <div class="promise-close fade-up">
       <p>You spent years building a business your customers trust. The least your loyalty program can do is be worthy of that.</p>
+    </div>
+  </div>
+</div>
+
+<!-- IMPLEMENTATION -->
+<div id="implementation">
+  <div class="section-wrap">
+    <div class="section-label">Setup</div>
+    <h2 class="section-heading">No hardware.<br><em>No complexity.</em></h2>
+    <div class="impl-grid">
+      <div class="impl-text">
+        <p>If your business has a tablet and a Wi-Fi connection, you're ready to run PunchCard. <strong>No proprietary hardware. No new POS system. No integration fees.</strong> Any device that runs a web browser and supports a Web3 wallet is everything you need.</p>
+        <p>A Samsung Galaxy Tab A9, an iPad, a Fire tablet — whatever you already have behind the counter. The PunchCard POS app runs entirely in the browser. Your staff learns it in minutes. Your customers experience it as a simple QR code scan at checkout.</p>
+        <p><strong>Crypto and card payments both work out of the box.</strong> Crypto sales trigger rewards automatically on-chain. Card sales through Square fire a webhook that distributes rewards just as fast. Your customers never know the difference — they just earn tokens either way.</p>
+        <p>We handle the full setup remotely. You don't need a developer, an IT team, or a new vendor relationship. One conversation, one deployment, one QR code on your counter.</p>
+      </div>
+      <div class="impl-device">
+        <div class="impl-device-label">From zero to live — what setup looks like</div>
+        <div class="impl-steps">
+          <div class="impl-step">
+            <div class="impl-step-num">1</div>
+            <div class="impl-step-content">
+              <h4>Tell us about your business</h4>
+              <p>Fill out the form. We handle token design, reward rates, and deployment config.</p>
+            </div>
+          </div>
+          <div class="impl-step">
+            <div class="impl-step-num">2</div>
+            <div class="impl-step-content">
+              <h4>We deploy your token suite</h4>
+              <p>One transaction on Base mainnet. Your contracts are live and immutable.</p>
+            </div>
+          </div>
+          <div class="impl-step">
+            <div class="impl-step-num">3</div>
+            <div class="impl-step-content">
+              <h4>Open the POS app on your tablet</h4>
+              <p>Browser-based. No app store. No install. Works on any device with a screen.</p>
+            </div>
+          </div>
+          <div class="impl-step">
+            <div class="impl-step-num">4</div>
+            <div class="impl-step-content">
+              <h4>Customer scans, reward fires</h4>
+              <p>QR at checkout. Tokens land in their wallet automatically. Done.</p>
+            </div>
+          </div>
+          <div class="impl-step">
+            <div class="impl-step-num">5</div>
+            <div class="impl-step-content">
+              <h4>You never touch it again</h4>
+              <p>The contracts run themselves. Your dashboard shows everything in real time.</p>
+            </div>
+          </div>
+        </div>
+        <div class="impl-hardware">
+          <div class="impl-hardware-label">Works on any of these — or whatever you already have</div>
+          <div class="impl-hardware-tags">
+            <span class="impl-tag">Samsung Galaxy Tab A9</span>
+            <span class="impl-tag">iPad</span>
+            <span class="impl-tag">Fire HD</span>
+            <span class="impl-tag">Any Android Tablet</span>
+            <span class="impl-tag">Laptop</span>
+            <span class="impl-tag">Any Web Browser</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -940,7 +1120,7 @@
       <li><a href="#promise">The Promise</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
-    <div class="footer-meta">punchcard.club · Built on Base · Nashville, TN · © 2026</div>
+    <div class="footer-meta">punchcard.club · Built on Base · © 2026</div>
   </div>
 </footer>
 
