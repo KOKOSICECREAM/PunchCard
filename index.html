@@ -166,29 +166,32 @@
 
   .hero-headline {
     font-family: 'Lora', serif;
-    font-size: clamp(2.4rem, 5vw, 4rem);
-    font-weight: 600;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    margin-bottom: 1.25rem;
-    color: var(--ink);
+    font-size: clamp(1rem, 1.8vw, 1.3rem);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.5;
+    letter-spacing: 0;
+    margin-bottom: 1.5rem;
+    color: var(--ink-faded);
   }
 
   .hero-tagline {
-    font-family: 'Courier Prime', monospace;
-    font-size: 0.82rem;
-    letter-spacing: 0.06em;
-    color: var(--terra);
-    line-height: 1.7;
-    max-width: 56ch;
-    margin: 0 auto 2rem;
-    padding: 0.75rem 1.25rem;
-    border: 1px solid rgba(168,58,32,0.2);
-    border-radius: 4px;
-    background: var(--terra-pale);
+    font-family: 'Lora', serif;
+    font-size: clamp(1.5rem, 3.2vw, 2.5rem);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    max-width: 22ch;
+    margin: 0 auto 1.5rem;
   }
 
-  .hero-headline em { font-style: italic; color: var(--terra); }
+  .hero-tagline em {
+    font-style: italic;
+    color: var(--terra);
+  }
+
+  .hero-headline em { font-style: italic; color: var(--ink-mid); }
 
   .hero-sub {
     font-size: 1.1rem;
@@ -547,7 +550,7 @@
     <div class="hero-image-caption">Nashville, TN · 2026</div>
   </div>
   <div class="edition-line">punchcard.club · Nashville · Est. 2026 · Base Mainnet</div>
-  <p class="hero-tagline">Crypto-powered loyalty rewards built by businesses, earned by customers, owned by everyone, controlled by no one.</p>
+  <p class="hero-tagline">Crypto-powered loyalty rewards — built by businesses, earned by customers, <em>owned by everyone,</em> controlled by no one.</p>
   <h1 class="hero-headline">Real loyalty<br>can't be <em>rented.</em></h1>
   <p class="hero-sub">Relationships are built over time. Trust can't be bought, it is earned — loyalty is the reward, and it belongs to you and your customer. Nobody else should be in the middle of it.</p>
   <div class="hero-actions">
