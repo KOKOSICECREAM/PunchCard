@@ -175,20 +175,30 @@
     color: var(--ink-faded);
   }
 
-  .hero-tagline {
-    font-family: 'Lora', serif;
-    font-size: clamp(1.5rem, 3.2vw, 2.5rem);
-    font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: -0.01em;
+  .hero-tagline-title {
+    font-family: 'Special Elite', cursive;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
     color: var(--ink);
-    max-width: 22ch;
-    margin: 0 auto 1.5rem;
+    margin: 0 auto 0.75rem;
   }
 
-  .hero-tagline em {
-    font-style: italic;
+  .hero-tagline-title em {
+    font-style: normal;
     color: var(--terra);
+  }
+
+  .hero-tagline-sub {
+    font-family: 'Lora', serif;
+    font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--ink-mid);
+    max-width: 48ch;
+    margin: 0 auto 1.75rem;
   }
 
   .hero-headline em { font-style: italic; color: var(--ink-mid); }
@@ -550,7 +560,8 @@
     <div class="hero-image-caption">Nashville, TN · 2026</div>
   </div>
   <div class="edition-line">punchcard.club · Nashville · Est. 2026 · Base Mainnet</div>
-  <p class="hero-tagline">Crypto-powered loyalty rewards — built by businesses, earned by customers, <em>owned by everyone,</em> controlled by no one.</p>
+  <h2 class="hero-tagline-title">Crypto-Powered<br><em>Loyalty Rewards</em></h2>
+  <p class="hero-tagline-sub">Built by businesses, earned by customers, owned by everyone, controlled by no one.</p>
   <h1 class="hero-headline">Real loyalty<br>can't be <em>rented.</em></h1>
   <p class="hero-sub">Relationships are built over time. Trust can't be bought, it is earned — loyalty is the reward, and it belongs to you and your customer. Nobody else should be in the middle of it.</p>
   <div class="hero-actions">
