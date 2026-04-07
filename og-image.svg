@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Special+Elite&amp;family=Lora:ital,wght@0,400;0,600;1,400&amp;family=Courier+Prime:wght@400;700&amp;display=swap');
+    </style>
+  </defs>
+
+  <!-- Background — warm paper -->
+  <rect width="1200" height="630" fill="#f2ece0"/>
+
+  <!-- Subtle grain texture via layered rects -->
+  <rect width="1200" height="630" fill="#e8e0d0" opacity="0.3"/>
+
+  <!-- Left terra accent bar -->
+  <rect x="0" y="0" width="8" height="630" fill="#a83a20"/>
+
+  <!-- Top border line -->
+  <rect x="0" y="0" width="1200" height="1" fill="#1c1812" opacity="0.08"/>
+  <!-- Bottom border line -->
+  <rect x="0" y="629" width="1200" height="1" fill="#1c1812" opacity="0.08"/>
+
+  <!-- Decorative grid lines — newspaper feel -->
+  <line x1="60" y1="40" x2="60" y2="590" stroke="#1c1812" stroke-width="0.5" opacity="0.06"/>
+  <line x1="1140" y1="40" x2="1140" y2="590" stroke="#1c1812" stroke-width="0.5" opacity="0.06"/>
+  <line x1="60" y1="40" x2="1140" y2="40" stroke="#1c1812" stroke-width="0.5" opacity="0.06"/>
+  <line x1="60" y1="590" x2="1140" y2="590" stroke="#1c1812" stroke-width="0.5" opacity="0.06"/>
+
+  <!-- Edition line -->
+  <text x="600" y="90" font-family="'Courier Prime', monospace" font-size="14" fill="#8c8070" text-anchor="middle" letter-spacing="4">PUNCHCARD.CLUB  ·  EST. 2026  ·  BASE MAINNET</text>
+
+  <!-- Thin rule under edition line -->
+  <line x1="200" y1="102" x2="1000" y2="102" stroke="#1c1812" stroke-width="0.5" opacity="0.12"/>
+
+  <!-- Main wordmark -->
+  <text x="600" y="235" font-family="'Special Elite', cursive" font-size="112" fill="#1c1812" text-anchor="middle" letter-spacing="2">Punch<tspan fill="#a83a20">Card</tspan><tspan font-family="'Courier Prime', monospace" font-size="28" fill="#8c8070" baseline-shift="-20">.club</tspan></text>
+
+  <!-- Thin rule above tagline -->
+  <line x1="100" y1="275" x2="1100" y2="275" stroke="#1c1812" stroke-width="0.5" opacity="0.12"/>
+
+  <!-- Tagline line 1 -->
+  <text x="600" y="340" font-family="'Lora', serif" font-size="28" fill="#1c1812" text-anchor="middle" font-style="italic">Crypto-powered loyalty rewards —</text>
+
+  <!-- Tagline line 2 -->
+  <text x="600" y="382" font-family="'Lora', serif" font-size="28" fill="#4a4438" text-anchor="middle">built by businesses, earned by customers,</text>
+
+  <!-- Tagline line 3 — owned by everyone in terra -->
+  <text x="600" y="424" font-family="'Lora', serif" font-size="28" text-anchor="middle">
+    <tspan fill="#a83a20" font-style="italic">owned by everyone,</tspan>
+    <tspan fill="#4a4438"> controlled by no one.</tspan>
+  </text>
+
+  <!-- Bottom rule -->
+  <line x1="100" y1="470" x2="1100" y2="470" stroke="#1c1812" stroke-width="0.5" opacity="0.12"/>
+
+  <!-- Trust badges row -->
+  <text x="280" y="518" font-family="'Courier Prime', monospace" font-size="13" fill="#a83a20" text-anchor="middle">✦</text>
+  <text x="300" y="518" font-family="'Courier Prime', monospace" font-size="13" fill="#8c8070" text-anchor="start" letter-spacing="1">LIVE ON BASE MAINNET</text>
+
+  <text x="580" y="518" font-family="'Courier Prime', monospace" font-size="13" fill="#a83a20" text-anchor="middle">✦</text>
+  <text x="600" y="518" font-family="'Courier Prime', monospace" font-size="13" fill="#8c8070" text-anchor="start" letter-spacing="1">IMMUTABLE CONTRACTS</text>
+
+  <text x="860" y="518" font-family="'Courier Prime', monospace" font-size="13" fill="#a83a20" text-anchor="middle">✦</text>
+  <text x="880" y="518" font-family="'Courier Prime', monospace" font-size="13" fill="#8c8070" text-anchor="start" letter-spacing="1">ZERO ADMIN KEYS</text>
+
+  <!-- Bottom caption -->
+  <text x="600" y="572" font-family="'Courier Prime', monospace" font-size="12" fill="#c4b9a8" text-anchor="middle" letter-spacing="2">DEPLOY YOUR TOKEN · PUNCHCARD.CLUB</text>
+
+</svg>
