@@ -90,7 +90,13 @@ way one price, and no arbitrage between a merchant's own two pools. ETH is value
 a Chainlink ETH/USD feed, which `deploy()` rejects if it is more than an hour stale.
 
 ### PunchCardRouter — the network effect
-Routes swaps between any two merchant tokens via their USDC or ETH pools. This is what
+Routes swaps between any two merchant tokens. A cross-merchant swap is two hops through
+a shared midpoint — USDC or WETH — and the caller passes `midToken` to choose. Best
+execution is quoted off-chain by the interface, the same division of labour Uniswap's own
+routers use; `getPoolFeeTiers()` exposes both tiers so an interface can quote each route.
+
+That choice matters economically: the midpoint was hardcoded to USDC, which meant every
+merchant's ETH seed was capital that structurally could not earn from network flow. This is what
 makes the network more than a collection of isolated loyalty programs. Enforces a maximum
 price-impact guard to protect users against thin pools. Swap logic is immutable; only
 parameters (fee rate, recipient, impact ceiling) can change, and only through a

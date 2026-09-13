@@ -68,6 +68,9 @@ contract PunchCardRouter is ReentrancyGuard {
                                       // stable→token: min tokenOut (fee is taken from amountIn)
                                       // token→token:  min USDC at the hop-1 midpoint, pre-fee
         uint256 amountOutMinimumHop2; // token→token only: min tokenOut of hop2
+        address midToken;             // token→token only: USDC or WETH — whichever the
+                                      // caller quoted as the better route. Ignored on
+                                      // single-hop swaps.
         address recipient;
         uint256 deadline;
     }
@@ -257,18 +260,30 @@ contract PunchCardRouter is ReentrancyGuard {
 
     /// @dev token → token cross-merchant. Routes through USDC pool twice.
     ///      Fee skimmed from USDC mid-point.
+    /// @dev Routes through whichever pool the caller quoted as better. Both hops use the
+    ///      same midpoint asset, so liquidity in either pool can serve network flow —
+    ///      previously this was hardcoded to USDC, which left every merchant's ETH pool
+    ///      unable to earn from cross-merchant swaps at all.
+    ///
+    ///      Best execution is the caller's job, not the contract's. Quoting both paths
+    ///      on-chain would mean simulating two swaps per swap; Uniswap's own routers take
+    ///      the same approach and let the interface quote off-chain. amountOutMinimumHop2
+    ///      is what protects the caller if they route badly.
     function _swapTokenToToken(SwapParams calldata p) internal {
-        uint24 feeIn  = _usdcFeeTier(p.tokenIn);
-        uint24 feeOut = _usdcFeeTier(p.tokenOut);
+        bool viaUsdc = p.midToken == USDC;
+        require(viaUsdc || p.midToken == WETH, "Invalid mid token");
+
+        uint24 feeIn  = viaUsdc ? _usdcFeeTier(p.tokenIn)  : _ethFeeTier(p.tokenIn);
+        uint24 feeOut = viaUsdc ? _usdcFeeTier(p.tokenOut) : _ethFeeTier(p.tokenOut);
 
         IERC20(p.tokenIn).transferFrom(msg.sender, address(this), p.amountIn);
         IERC20(p.tokenIn).approve(swapRouter, p.amountIn);
 
         // Hop 1: tokenA → USDC
-        uint256 usdcMid = ISwapRouter(swapRouter).exactInputSingle(
+        uint256 midOut = ISwapRouter(swapRouter).exactInputSingle(
             ISwapRouter.ExactInputSingleParams({
                 tokenIn:           p.tokenIn,
-                tokenOut:          USDC,
+                tokenOut:          p.midToken,
                 fee:               feeIn,
                 recipient:         address(this),
                 amountIn:          p.amountIn,
@@ -277,28 +292,28 @@ contract PunchCardRouter is ReentrancyGuard {
             })
         );
 
-        // Skim fee from USDC mid-point
-        uint256 feeTaken   = (usdcMid * feeRate) / FEE_DENOMINATOR;
-        uint256 usdcToSwap = usdcMid - feeTaken;
+        // Skim the fee from the midpoint, in whichever asset that is
+        uint256 feeTaken  = (midOut * feeRate) / FEE_DENOMINATOR;
+        uint256 midToSwap = midOut - feeTaken;
 
-        if (feeTaken > 0) IERC20(USDC).transfer(feeRecipient, feeTaken);
+        if (feeTaken > 0) IERC20(p.midToken).transfer(feeRecipient, feeTaken);
 
-        // Hop 2: USDC → tokenB
-        IERC20(USDC).approve(swapRouter, usdcToSwap);
+        // Hop 2: midToken → tokenB
+        IERC20(p.midToken).approve(swapRouter, midToSwap);
 
         uint256 tokenOut = ISwapRouter(swapRouter).exactInputSingle(
             ISwapRouter.ExactInputSingleParams({
-                tokenIn:           USDC,
+                tokenIn:           p.midToken,
                 tokenOut:          p.tokenOut,
                 fee:               feeOut,
                 recipient:         p.recipient,
-                amountIn:          usdcToSwap,
+                amountIn:          midToSwap,
                 amountOutMinimum:  p.amountOutMinimumHop2,
                 sqrtPriceLimitX96: 0
             })
         );
 
-        emit Swapped(p.tokenIn, p.tokenOut, p.recipient, p.amountIn, tokenOut, feeTaken, USDC, block.timestamp);
+        emit Swapped(p.tokenIn, p.tokenOut, p.recipient, p.amountIn, tokenOut, feeTaken, p.midToken, block.timestamp);
     }
 
     // ── ROUTING POLICY ────────────────────────────────────────────────────────
@@ -313,6 +328,14 @@ contract PunchCardRouter is ReentrancyGuard {
     }
 
     /// @dev Reads USDC pool fee tier from merchant's LPLocker
+    /// @notice Both pools' fee tiers for a merchant token, so an interface can quote the
+    ///         USDC and WETH routes off-chain and pass the better one as `midToken`.
+    function getPoolFeeTiers(address token) external view returns (uint24 usdcFee, uint24 ethFee) {
+        IWindDownController.WindDownSuite memory suite =
+            IWindDownController(windDownController).getSuite(token);
+        return (ILPLocker(suite.lpLocker).usdcFeeTier(), ILPLocker(suite.lpLocker).ethFeeTier());
+    }
+
     function _usdcFeeTier(address token) internal view returns (uint24) {
         IWindDownController.WindDownSuite memory suite =
             IWindDownController(windDownController).getSuite(token);

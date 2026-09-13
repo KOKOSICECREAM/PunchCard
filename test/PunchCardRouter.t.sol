@@ -75,7 +75,7 @@ contract PunchCardRouterTest is Test {
         // 1 SKOOP = $0.002, 1 FROTHY = $0.004
         uni.setRate(address(skoop), address(usdc), 2, 1000);
         uni.setRate(address(usdc), address(frothy), 1000, 4);
-        uni.setRate(address(skoop), address(weth), 1, 1_000_000_000);
+        uni.setRate(address(skoop), address(weth), 667_000, 1);   // $0.002/SKOOP at $3k ETH
 
         skoop.mint(USER, 1_000_000 * 1e6);
         vm.prank(USER);
@@ -85,10 +85,16 @@ contract PunchCardRouterTest is Test {
     function _p(address i, address o, uint256 amt, uint256 m1, uint256 m2)
         internal view returns (PunchCardRouter.SwapParams memory)
     {
+        return _p(i, o, amt, m1, m2, address(usdc));
+    }
+
+    function _p(address i, address o, uint256 amt, uint256 m1, uint256 m2, address mid)
+        internal view returns (PunchCardRouter.SwapParams memory)
+    {
         return PunchCardRouter.SwapParams({
             tokenIn: i, tokenOut: o, amountIn: amt,
             amountOutMinimumHop1: m1, amountOutMinimumHop2: m2,
-            recipient: USER, deadline: block.timestamp + 1
+            midToken: mid, recipient: USER, deadline: block.timestamp + 1
         });
     }
 
@@ -132,6 +138,46 @@ contract PunchCardRouterTest is Test {
         vm.expectRevert("Token not on network");
         router.swap(_p(address(rogue), address(frothy), 1e6, 0, 0));
         vm.stopPrank();
+    }
+
+    /// The point of best execution: the ETH pool must be able to carry network flow too.
+    /// Routing was previously hardcoded to USDC, so every merchant's ETH seed was capital
+    /// that structurally could not earn from cross-merchant swaps.
+    function test_crossMerchantSwapCanRouteViaWeth() public {
+        uni.setRate(address(weth), address(frothy), 1, 1_334_000);   // back out to $0.004 FROTHY
+
+        uint256 amountIn = 1_000 * 1e6;
+        vm.prank(USER);
+        router.swap(_p(address(skoop), address(frothy), amountIn, 0, 0, address(weth)));
+
+        assertGt(frothy.balanceOf(USER), 0, "swap routed through the ETH pool");
+        assertGt(weth.balanceOf(FEES), 0, "and PunchCard's fee is taken in WETH");
+        assertEq(usdc.balanceOf(FEES), 0, "the USDC pool was not touched");
+    }
+
+    /// Both routes must work, so an interface can quote and pick.
+    function test_bothRoutesAvailable() public {
+        uni.setRate(address(weth), address(frothy), 1, 1_334_000);
+
+        uint256 before_ = frothy.balanceOf(USER);
+        vm.prank(USER);
+        router.swap(_p(address(skoop), address(frothy), 1_000 * 1e6, 0, 0, address(usdc)));
+        uint256 viaUsdc = frothy.balanceOf(USER) - before_;
+
+        before_ = frothy.balanceOf(USER);
+        vm.prank(USER);
+        router.swap(_p(address(skoop), address(frothy), 1_000 * 1e6, 0, 0, address(weth)));
+        uint256 viaWeth = frothy.balanceOf(USER) - before_;
+
+        assertGt(viaUsdc, 0, "USDC route delivers");
+        assertGt(viaWeth, 0, "WETH route delivers");
+        // Both are live, so an interface can quote each and send the better one.
+    }
+
+    function test_rejectsBogusMidToken() public {
+        vm.prank(USER);
+        vm.expectRevert("Invalid mid token");
+        router.swap(_p(address(skoop), address(frothy), 1_000 * 1e6, 0, 0, address(skoop)));
     }
 
     function test_feeRateCeiling() public {
