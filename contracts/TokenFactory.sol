@@ -10,6 +10,8 @@ import "./LPLocker.sol";
 import "./interfaces/IWindDownController.sol";
 import "./interfaces/INonfungiblePositionManager.sol";
 import "./interfaces/IWETH.sol";
+import "./interfaces/IEthUsdOracle.sol";
+import "./libraries/LaunchPricing.sol";
 
 /// @title TokenFactory
 /// @notice Deploys full PunchCard merchant suite in a single transaction.
@@ -33,13 +35,23 @@ contract TokenFactory {
     uint256 public constant LAUNCH_LP_ALLOC    = 3_000_000 * 1e6;
 
     /// @notice 60% of launch LP goes to USDC pool
-    uint256 public constant LAUNCH_USDC_TOKENS = 1_800_000 * 1e6;
 
     /// @notice 40% of launch LP goes to ETH pool
-    uint256 public constant LAUNCH_ETH_TOKENS  = 1_200_000 * 1e6;
 
     /// @notice Remaining 27% held as reserve in LPLocker
     uint256 public constant LP_RESERVE         = LP_ALLOC - LAUNCH_LP_ALLOC; // 27_000_000 * 1e6
+
+    // ── SEED MINIMUMS ────────────────────────────────────────────────────────
+    // Floors, not fixed amounts — a merchant, an investor or PunchCard may seed more.
+    // Because the amounts vary, the token side of each pool is DERIVED from the USD
+    // value seeded (see LaunchPricing), so both pools always open at the same price.
+    // Denominated in USD at 8dp to match the Chainlink feed.
+    uint256 public constant MIN_USDC_SEED_USD = 2_000 * 1e8;   // $2,000
+    uint256 public constant MIN_ETH_SEED_USD  = 3_000 * 1e8;   // $3,000
+
+    /// @notice Reject an oracle answer older than this — a stale ETH price would
+    ///         mis-split the pools and hand the first trader an arbitrage.
+    uint256 public constant MAX_ORACLE_AGE = 1 hours;
 
     uint256 public constant DAILY_CAP         = 500_000 * 1e6;
     uint256 public constant CLIFF_DURATION    = 180 days;
@@ -56,6 +68,9 @@ contract TokenFactory {
     address public immutable positionManager;
     address public immutable USDC;
     address public immutable WETH;
+
+    /// @notice Chainlink ETH/USD feed — values the ETH seed so the pools can be split
+    address public immutable ethUsdOracle;
 
     // ── STATE ─────────────────────────────────────────────────────────────────
 
@@ -91,7 +106,8 @@ contract TokenFactory {
         address _windDownController,
         address _positionManager,
         address _usdc,
-        address _weth
+        address _weth,
+        address _ethUsdOracle
     ) {
         require(_multisig            != address(0), "Invalid multisig");
         require(_deployer            != address(0), "Invalid deployer");
@@ -99,6 +115,7 @@ contract TokenFactory {
         require(_positionManager     != address(0), "Invalid position manager");
         require(_usdc                != address(0), "Invalid USDC");
         require(_weth                != address(0), "Invalid WETH");
+        require(_ethUsdOracle        != address(0), "Invalid oracle");
 
         multisig            = _multisig;
         deployer            = _deployer;
@@ -106,6 +123,7 @@ contract TokenFactory {
         positionManager     = _positionManager;
         USDC                = _usdc;
         WETH                = _weth;
+        ethUsdOracle        = _ethUsdOracle;
     }
 
     // ── MODIFIERS ─────────────────────────────────────────────────────────────
@@ -192,6 +210,31 @@ contract TokenFactory {
 
         IWETH(WETH).deposit{value: p.ethPairAmount}();
 
+        // ── STEP 0b: Value the seed, enforce minimums, derive the token split ──
+        // Seed amounts are floors, not fixed sizes. Whoever funds the pools — merchant,
+        // investor or PunchCard — may put in more. The token side of each pool is
+        // therefore derived from the USD value actually seeded, which is what keeps the
+        // two pools opening at the same price. See LaunchPricing.
+
+        uint256 usdcValueUsd;
+        uint256 ethValueUsd;
+        uint256 launchTokensUsdc;
+        uint256 launchTokensEth;
+        {
+            uint256 ethUsdPrice = _ethUsdPrice();          // 8dp
+
+            // USDC is 6dp and dollar-denominated; restate at the oracle's 8dp.
+            usdcValueUsd = p.usdcPairAmount * 100;
+            ethValueUsd  = (p.ethPairAmount * ethUsdPrice) / 1e18;
+
+            require(usdcValueUsd >= MIN_USDC_SEED_USD, "USDC seed below minimum");
+            require(ethValueUsd  >= MIN_ETH_SEED_USD,  "ETH seed below minimum");
+
+            (launchTokensUsdc, launchTokensEth) = LaunchPricing.deriveTokenSplit(
+                LAUNCH_LP_ALLOC, usdcValueUsd, ethValueUsd
+            );
+        }
+
         // ── STEP 1: Deploy PunchCardToken ─────────────────────────────────────
 
         PunchCardToken token = new PunchCardToken(
@@ -266,11 +309,21 @@ contract TokenFactory {
                 uint256 amt0DesiredUsdc,
                 uint256 amt1DesiredUsdc
             ) = tokenIsToken0Usdc
-                ? (tokenAddr, USDC, LAUNCH_USDC_TOKENS, p.usdcPairAmount)
-                : (USDC, tokenAddr, p.usdcPairAmount, LAUNCH_USDC_TOKENS);
+                ? (tokenAddr, USDC, launchTokensUsdc, p.usdcPairAmount)
+                : (USDC, tokenAddr, p.usdcPairAmount, launchTokensUsdc);
 
-            token.approve(positionManager, LAUNCH_USDC_TOKENS);
+            token.approve(positionManager, launchTokensUsdc);
             IERC20(USDC).approve(positionManager, p.usdcPairAmount);
+
+            // The merchant token was created moments ago in this same transaction, so its
+            // pool cannot exist yet. mint() reverts against an uninitialised pool, and
+            // sqrtPriceX96 is what actually sets the launch price.
+            INonfungiblePositionManager(positionManager).createAndInitializePoolIfNecessary(
+                token0Usdc,
+                token1Usdc,
+                p.usdcFeeTier,
+                LaunchPricing.encodeSqrtPriceX96(amt0DesiredUsdc, amt1DesiredUsdc)
+            );
 
             int24 tickSpacingUsdc = _tickSpacing(p.usdcFeeTier);
             int24 tickLowerUsdc   = (MIN_TICK / tickSpacingUsdc) * tickSpacingUsdc;
@@ -313,11 +366,21 @@ contract TokenFactory {
                 uint256 amt0DesiredEth,
                 uint256 amt1DesiredEth
             ) = tokenIsToken0Eth
-                ? (tokenAddr, WETH, LAUNCH_ETH_TOKENS, p.ethPairAmount)
-                : (WETH, tokenAddr, p.ethPairAmount, LAUNCH_ETH_TOKENS);
+                ? (tokenAddr, WETH, launchTokensEth, p.ethPairAmount)
+                : (WETH, tokenAddr, p.ethPairAmount, launchTokensEth);
 
-            token.approve(positionManager, LAUNCH_ETH_TOKENS);
+            token.approve(positionManager, launchTokensEth);
             IERC20(WETH).approve(positionManager, p.ethPairAmount);
+
+            // The merchant token was created moments ago in this same transaction, so its
+            // pool cannot exist yet. mint() reverts against an uninitialised pool, and
+            // sqrtPriceX96 is what actually sets the launch price.
+            INonfungiblePositionManager(positionManager).createAndInitializePoolIfNecessary(
+                token0Eth,
+                token1Eth,
+                p.ethFeeTier,
+                LaunchPricing.encodeSqrtPriceX96(amt0DesiredEth, amt1DesiredEth)
+            );
 
             int24 tickSpacingEth = _tickSpacing(p.ethFeeTier);
             int24 tickLowerEth   = (MIN_TICK / tickSpacingEth) * tickSpacingEth;
@@ -394,6 +457,24 @@ contract TokenFactory {
     }
 
     // ── INTERNAL ──────────────────────────────────────────────────────────────
+
+    /// @notice ETH/USD normalised to 8dp, with staleness and sanity checks.
+    /// @dev A stale or negative answer would mis-split the pools, so this reverts rather
+    ///      than deploying a merchant at a wrong price.
+    function _ethUsdPrice() internal view returns (uint256) {
+        IEthUsdOracle oracle = IEthUsdOracle(ethUsdOracle);
+        (, int256 answer,, uint256 updatedAt,) = oracle.latestRoundData();
+
+        require(answer > 0,                                     "Bad oracle answer");
+        require(updatedAt != 0,                                 "Incomplete round");
+        require(block.timestamp - updatedAt <= MAX_ORACLE_AGE,  "Stale oracle price");
+
+        uint8 dec = oracle.decimals();
+        uint256 price = uint256(answer);
+        if (dec < 8)      price = price * (10 ** (8 - dec));
+        else if (dec > 8) price = price / (10 ** (dec - 8));
+        return price;
+    }
 
     function _tickSpacing(uint24 fee) internal pure returns (int24) {
         if (fee == 100)   return 1;

@@ -35,8 +35,8 @@ Identical for every merchant — set as `constant` in `TokenFactory`, not parame
 | `TEAM_ALLOC` | 15,000,000 — 15% |
 | `TREASURY_ALLOC` | 10,000,000 — 10% |
 | `LAUNCH_LP_ALLOC` | 3,000,000 seeded at launch |
-| `LAUNCH_USDC_TOKENS` | 1,800,000 → USDC pool |
-| `LAUNCH_ETH_TOKENS` | 1,200,000 → ETH pool |
+| `MIN_USDC_SEED_USD` | $2,000 floor |
+| `MIN_ETH_SEED_USD` | $3,000 floor |
 | `LP_RESERVE` | 27,000,000 held for merchant-controlled release |
 | `DAILY_CAP` | 500,000 tokens/day |
 | `CLIFF_DURATION` | 180 days |
@@ -72,6 +72,19 @@ pending release. The delay is autonomous — nobody approves it.
 Holds two Uniswap v3 NFT positions: a USDC pool (60% of launch tokens) and an ETH pool
 (40%). 3M tokens seed the pools at launch; the remaining **27M reserve** stays locked for
 merchant-controlled release via `increaseLiquidity()`.
+
+How those 3M split between the two pools is **derived at deploy time, not fixed**. Seed
+amounts are minimums — a merchant, an investor or PunchCard may fund deeper pools — so
+each pool receives launch tokens in proportion to the USD value seeded into it. That makes
+the implied price identical in both pools by construction:
+
+```
+price = (usdcSeedUsd + ethSeedUsd) / 3,000,000
+```
+
+Seed $2k USDC + $3k ETH and the split is 40/60. Seed $50k + $50k and it is 50/50. Either
+way one price, and no arbitrage between a merchant's own two pools. ETH is valued through
+a Chainlink ETH/USD feed, which `deploy()` rejects if it is more than an hour stale.
 
 ### PunchCardRouter — the network effect
 Routes swaps between any two merchant tokens via their USDC or ETH pools. This is what

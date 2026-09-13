@@ -2,48 +2,37 @@
   "merchant": "Business Name",
   "status": "draft",
   "_status_values": "draft | ready | deployed",
-
   "deployParams": {
     "_comment": "Maps 1:1 to TokenFactory.DeployParams. Amounts are human-readable; convert to base units at call time (token/USDC = 6 decimals, ETH = 18).",
-
     "name": "Business Name Rewards",
     "symbol": "SYMBOL",
     "ipfsHash": null,
-
     "ownerWallet": null,
     "teamWallet": null,
     "operator": null,
-
     "usdcFeeTier": 3000,
     "ethFeeTier": 3000,
     "usdcPairAmount": null,
     "ethPairAmount": null,
-
     "perTxFloor": null,
-    "perTxMax": null
+    "perTxMax": null,
+    "_seed_comment": "usdcPairAmount and ethPairAmount are MINIMUMS of $2,000 and $3,000 \u2014 seed more if the merchant, an investor or PunchCard wants deeper pools. The token side of each pool is derived from the USD value seeded, so both pools always open at the same price regardless of the amounts."
   },
-
   "rules": {
-    "_comment": "Enforced by require() in TokenFactory.deploy() — check before spending gas.",
+    "_comment": "Enforced by require() in TokenFactory.deploy() \u2014 check before spending gas.",
     "name": "non-empty",
     "symbol": "non-empty",
     "ipfsHash": "non-zero bytes32",
     "ownerWallet": "non-zero; IMMUTABLE after deploy",
-    "teamWallet": "non-zero; IMMUTABLE FOREVER — no update function exists",
+    "teamWallet": "non-zero; IMMUTABLE FOREVER \u2014 no update function exists",
     "operator": "non-zero; POS signer; IMMUTABLE after deploy",
-    "usdcPairAmount": "> 0 — both pools are mandatory",
-    "ethPairAmount": "> 0 and must equal msg.value",
+    "usdcPairAmount": ">= $2,000 worth (MIN_USDC_SEED_USD). No upper bound.",
+    "ethPairAmount": ">= $3,000 worth at the Chainlink ETH/USD price, and must equal msg.value. No upper bound.",
     "perTxFloor": "> 0 and <= dailyCap (500000)",
     "perTxMax": ">= perTxFloor and <= dailyCap (500000)",
-    "feeTiers": "one of 100 / 500 / 3000 / 10000"
+    "feeTiers": "one of 100 / 500 / 3000 / 10000",
+    "_oracle": "deploy() reverts if the ETH/USD feed is stale by more than 1 hour."
   },
-
-  "launchPrice": {
-    "_comment": "Sanity check — these two must imply the same price or launch is arbitrageable.",
-    "usdcPoolImpliedPrice": "usdcPairAmount / 1800000",
-    "ethPoolImpliedPrice": "ethPairAmount / 1200000 (convert to USD at deploy-time ETH price)"
-  },
-
   "deployed": {
     "_comment": "Fill in after deploy, then set status to 'deployed' and commit.",
     "txHash": null,
@@ -54,6 +43,12 @@
     "treasuryTimelock": null,
     "lpLocker": null,
     "usdcPositionId": null,
-    "ethPositionId": null
+    "ethPositionId": null,
+    "launchTokensUsdcPool": null,
+    "launchTokensEthPool": null
+  },
+  "launchPrice": {
+    "_comment": "No longer something to hand-check \u2014 the contract derives the split so both pools open at the same price by construction.",
+    "impliedTokenPriceUsd": "(usdcSeedUsd + ethSeedUsd) / 3,000,000"
   }
 }

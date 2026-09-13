@@ -36,6 +36,9 @@ _windDownController  — from step 1
 _positionManager     — see deploy/network/base-mainnet.json
 _usdc                — see deploy/network/base-mainnet.json
 _weth                — see deploy/network/base-mainnet.json
+_ethUsdOracle        — Chainlink ETH/USD feed. VERIFY against docs.chain.link before
+                       deploying; it is a constructor argument, not a constant, and a
+                       wrong feed mis-prices every merchant launched through it
 ```
 
 **3. PunchCardRouter**
@@ -80,20 +83,30 @@ Name, symbol, logo. The resulting hash goes in `ipfsHash` as `bytes32` and is st
 immutably on the token. This is how the dapp discovers and displays the merchant, so pin
 it somewhere that will stay pinned.
 
-## Step 3 — Choose pool parameters
+## Step 3 — Choose pool seed amounts
 
-The factory seeds **both** a USDC pool and an ETH pool. Both are required — neither amount
-may be zero.
+The factory seeds **both** a USDC pool and an ETH pool. Both are mandatory.
 
-| Field | Notes |
+| Field | Rule |
 |---|---|
 | `usdcFeeTier` / `ethFeeTier` | 100 / 500 / 3000 / 10000 |
-| `usdcPairAmount` | USDC seeding the USDC pool (6 decimals). Paired with 1,800,000 tokens |
-| `ethPairAmount` | ETH seeding the ETH pool (wei). Paired with 1,200,000 tokens. Sent as `msg.value` |
+| `usdcPairAmount` | **Minimum $2,000.** USDC, 6 decimals |
+| `ethPairAmount` | **Minimum $3,000** at the Chainlink price. Wei, sent as `msg.value` |
 
-The ratio of pair amount to fixed token count sets the launch price. Work out the implied
-price for both pools before deploying and make sure they agree — a mismatch is an instant
-arbitrage gift.
+These are floors, not fixed sizes — the merchant, an outside investor, or PunchCard may
+seed deeper pools, and deeper is better for price stability.
+
+**You no longer have to hand-match the two prices.** The launch token split used to be a
+fixed 1.8M/1.2M, which meant any seed ratio other than exactly 1.5:1 opened the two pools
+at different prices and handed the first trader free money. The factory now derives the
+split from the USD value seeded into each pool, so both open at:
+
+```
+price per token = (usdcSeedUsd + ethSeedUsd) / 3,000,000
+```
+
+ETH is valued through a Chainlink ETH/USD feed. `deploy()` reverts if that feed is more
+than **one hour** stale, so do not sit on a prepared transaction.
 
 ## Step 4 — Set reward bounds
 
@@ -121,6 +134,8 @@ WindDownController, and emit `MerchantDeployed`.
 
 - [ ] Verify token + all five suite contracts on Basescan
 - [ ] Confirm balances: escrow 45M, LP 30M (3M in positions, 27M reserve), vesting 15M, treasury 10M
+- [ ] Confirm both pools quote the **same** price — they are derived to match, so a
+      discrepancy means something is wrong
 - [ ] Confirm `WindDownController.isRegistered(token) == true`
 - [ ] Confirm both pools quote a sane price in each direction
 - [ ] Save every address into the merchant's JSON file and commit it
@@ -143,6 +158,8 @@ WindDownController, and emit `MerchantDeployed`.
 - [ ] IPFS metadata pinned and reachable
 - [ ] USDC approval granted for exactly `usdcPairAmount`
 - [ ] Deployer wallet funded with `ethPairAmount` + gas
-- [ ] Implied launch price matches between the USDC and ETH pools
+- [ ] Agreed who is funding the seed — merchant, investor, or PunchCard
+- [ ] Both seeds clear their minimums ($2,000 USDC / $3,000 ETH)
+- [ ] Chainlink feed is live and fresh — `deploy()` reverts on an answer over an hour old
 - [ ] `perTxFloor` / `perTxMax` inside `DAILY_CAP`
 - [ ] Merchant JSON committed to `deploy/merchants/`

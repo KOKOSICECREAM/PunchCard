@@ -5,7 +5,9 @@
     "uniswapV3PositionManager": "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f4",
     "uniswapV3SwapRouter02": "0x2626664c2603336E57B271c5C0b26F421741e481",
     "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    "weth": "0x4200000000000000000000000000000000000006"
+    "weth": "0x4200000000000000000000000000000000000006",
+    "_verify_before_use": "Confirm ethUsdChainlinkFeed against docs.chain.link for Base mainnet before deploying. It is a constructor argument, not a constant, so it must be right at deploy time.",
+    "ethUsdChainlinkFeed": null
   },
   "punchcard": {
     "_comment": "Fill in as the network is deployed. null = not yet deployed.",
@@ -25,13 +27,15 @@
     "teamAlloc": "15000000",
     "treasuryAlloc": "10000000",
     "launchLpAlloc": "3000000",
-    "launchUsdcTokens": "1800000",
-    "launchEthTokens": "1200000",
     "lpReserve": "27000000",
     "dailyCap": "500000",
     "cliffDays": 180,
     "vestDays": 1080,
     "timelockDays": 90,
-    "windDownDays": 365
+    "windDownDays": 365,
+    "_launchSplit": "Derived at deploy time from seeded USD value, not fixed. See LaunchPricing.",
+    "minUsdcSeedUsd": 2000,
+    "minEthSeedUsd": 3000,
+    "maxOracleAgeSeconds": 3600
   }
 }
