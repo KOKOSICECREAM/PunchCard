@@ -9,7 +9,8 @@ between any two merchant tokens.
 
 **The premise is uniformity.** Every merchant gets byte-identical contracts and identical
 terms — the same 45/30/15/10 split, the same 180-day cliff, the same 90-day treasury delay,
-the same daily cap. All of it is `constant` in the factory, not a parameter, so terms
+the same five-year emission schedule. All of it is `constant` in the contracts, not a
+parameter, so terms
 cannot be negotiated even if someone wanted to. That is what makes the customer promise
 credible, turns onboarding into a checklist, and lets the router treat every merchant token
 as interchangeable.
@@ -83,6 +84,10 @@ The merchant never calls it. In one transaction:
 7. Move the 27M LP reserve into the locker
 8. Register the suite with `WindDownController`; emit `MerchantDeployed`
 
+The escrow's five-year emission clock starts at deployment, and the `operator` from
+`DeployParams` is registered as the merchant's first kiosk drawer — so onboarding stays a
+single transaction and the merchant can issue rewards immediately.
+
 Merchant status on the network is exactly this: a `MerchantDeployed` event plus
 `WindDownController` registration. Nothing else confers it.
 
@@ -90,13 +95,40 @@ Merchant status on the network is exactly this: a `MerchantDeployed` event plus
 
 ## Economics
 
+### How the token circulates
+
+This is not a voucher with a fixed redemption rate. The token floats, and supply only ever
+shrinks — which is what makes it behave more like equity in the business than like points.
+
+| Event | Effect on supply | Effect on the pool |
+|---|---|---|
+| Customer earns a reward | — (already-minted supply leaves escrow) | — |
+| Customer **pays in the merchant's token** | **burned** | — |
+| Customer **pays in USDC** | USDC buys the token, which is then **burned** | buy pressure, pool gains USDC |
+| Customer swaps to another merchant's token | — | fees to both pools |
+
+So trade at the counter is itself deflationary, and a USDC sale is a swap — which means a
+merchant's pool earns trading fees from ordinary commerce, not only from speculators. That
+matters for revenue timing: it starts with merchant #1 rather than waiting for network
+density.
+
+Two consequences worth holding in view:
+
+- **Rewards are the sell side, burns are the buy side.** Net supply falls, but net price
+  depends on the balance between reward emission and burn volume. Both are now tunable.
+- **The merchant's own LP sells into its own rally.** Buy-and-burn pushes the price up, and
+  a liquidity position sells the appreciating asset as it rises. Textbook impermanent loss,
+  though here it reads more like gradual monetisation — the locked LP converts appreciating
+  token into stablecoin as the business succeeds. Whether that is a feature depends on
+  whether the merchant would rather end up holding the token or the dollars.
+
 ### Allocation — identical for every merchant
 
 | Slice | Amount | Where it goes |
 |---|---|---|
 | Rewards | 45,000,000 | `RewardEscrow`, emitted over 5 years, spent through per-kiosk drawers |
 | Liquidity | 30,000,000 | `LPLocker` — 3M seeds the pools, 27M reserve |
-| Team | 15,000,000 | `VestingWallet`, 180d cliff then linear to 1080d |
+| Team | 15,000,000 | `VestingWallet`, 180d cliff then linear — fully vested day 1,260 |
 | Treasury | 10,000,000 | `TreasuryTimelock`, 90d delay per release |
 
 100,000,000 fixed supply, 6 decimals, no mint function.
@@ -124,21 +156,49 @@ $2k + $3k → 40/60 split. $50k + $50k → 50/50. Any seed → one price.
 
 | Source | Mechanism | Reliability |
 |---|---|---|
-| **LP trading fees** | `LPLocker.collectFees()` — 20% PunchCard / 80% seeder | **Unavoidable.** Every trade in the pool pays, however routed |
-| Router swap fee | 30 bps on swaps through `PunchCardRouter` | **Avoidable** — these are ordinary Uniswap pools; anyone can trade direct |
+| **LP trading fees** | `LPLocker.collectFees()` — 20% PunchCard / 80% seeder | **Unavoidable.** Every trade in the pool pays, however routed — including USDC sales at the counter |
+| Router swap fee | 30 bps of the midpoint, on swaps through `PunchCardRouter` | **Avoidable** — these are ordinary Uniswap pools, so a determined user can hop manually. In practice the interface routes here |
+| Deployment fee | **not built** | The gap. Onboarding costs real gas and real labour and currently recovers neither |
+
+A cross-merchant swap pays PunchCard three times: 20% of the LP fee in the origin pool, the
+full router skim at the midpoint, and 20% of the LP fee in the destination pool — roughly
+42 bps of swap value at 0.3% tiers, with each merchant keeping ~24 bps on their own leg.
+
+**The merchant supplies 100% of the LP capital and carries all the impermanent loss**, on
+tokens from their own supply. PunchCard supplies none. So the 20% is a platform fee on
+someone else's capital return, and the principle worth holding to is that **fee share should
+follow capital** — if PunchCard ever funds a seed, the split should invert until repaid.
 
 Merchant-token fees are **burned**, never kept, so PunchCard never holds a position in a
 merchant's token. PunchCard receives no allocation of any merchant's supply.
 
 ---
 
+### Routing
+
+A cross-merchant swap is two hops through a shared midpoint. The caller passes `midToken` —
+USDC or WETH — and both hops plus the fee skim use it, so **either pool can carry network
+flow and earn from it**. The midpoint was previously hardcoded to USDC, which made every
+merchant's ETH seed capital that structurally could not earn.
+
+Best execution is quoted off-chain by the interface, the same division of labour Uniswap's
+own routers use; `getPoolFeeTiers()` exposes both tiers so each route can be priced.
+
 ## Trust model
 
 **What nobody can touch**
 - Tokens already in a customer's wallet. No owner, no pause, no clawback, no blacklist
 - The team's vesting schedule and `teamWallet`
-- Allocation percentages, cliff, vest duration, treasury delay, daily cap
+- Allocation percentages, cliff, vest duration, treasury delay
+- The five-year emission total and schedule
 - Router swap logic
+
+**What the merchant controls** — all of it rate-limiting or halting; none of it moves a token
+- Add and remove kiosk operators, and set each drawer's daily allowance (capped at 14 days
+  of emission, so even a compromised owner key cannot open an unlimited till)
+- `perTxFloor` and `perTxMax`
+- Pause their own escrow — auto-expiring after 7 days so a lost key cannot brick the programme
+- Submit treasury releases behind the 90-day delay, and deploy LP reserve at their own pace
 
 **What PunchCard's multisig can do**
 `WindDownController.initiate()` is `onlyMultisig`. It immediately freezes the reward
@@ -146,7 +206,11 @@ escrow, the treasury and LP additions. After 365 days anyone may settle, which *
 undistributed escrow and the unclaimed treasury** and returns 90% of LP to the merchant.
 
 So PunchCard can end a merchant's *future* rewards. PunchCard cannot claw back rewards a
-customer already holds. Any marketing copy must keep that distinction intact — "no admin
+customer already holds.
+
+Note the shape of this: PunchCard's only power is a **twelve-month termination**, which is a
+sledgehammer, not a fire alarm. There is currently no fast emergency response available to
+PunchCard — see consideration 11. Any marketing copy must keep that distinction intact — "no admin
 keys, no freeze functions" is false at the system level, though true of the token contract.
 
 ---
@@ -226,6 +290,14 @@ insist on a hardware wallet.
 Valuing the ETH seed requires Chainlink, and `deploy()` reverts on an answer older than an
 hour. If the feed stalls, no merchant can launch until it recovers. Acceptable — deployment
 is not time-critical — but it is a new external dependency that did not exist before.
+
+### 11. PunchCard has no fast emergency lever
+
+Wind-down is a 365-day termination. If a merchant loses their owner key *and* a kiosk key is
+compromised, PunchCard cannot stop the bleeding — only begin ending the business. A short,
+auto-expiring, halt-only pause on a single escrow would close the gap between "PunchCard is
+there for emergency oversight" and what the code actually permits. It does add a
+centralisation surface, so it is a deliberate decision rather than an obvious fix.
 
 ### 10. No deployment fee
 
