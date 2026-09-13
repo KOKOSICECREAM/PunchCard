@@ -1,0 +1,31 @@
+{
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "external": {
+    "_verified": "All checked on-chain 2026-09-13 against chainId 84532. Position manager derived from SwapRouter02.positionManager(), name() confirmed.",
+    "uniswapV3Factory": "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24",
+    "uniswapV3PositionManager": "0x27F971cb582BF9E50F397e4d29a5C7A34f11faA2",
+    "uniswapV3SwapRouter02": "0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4",
+    "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "weth": "0x4200000000000000000000000000000000000006",
+    "ethUsdChainlinkFeed": "0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1",
+    "_feed_note": "description() 'ETH / USD', decimals() 8, and observed 754s fresh — well inside MAX_ORACLE_AGE."
+  },
+  "seedMinimums": {
+    "_comment": "Faucet-sized for testnet. Mainnet uses $2,000 / $3,000. These are constructor arguments, so testnet and mainnet run identical bytecode.",
+    "minUsdcSeedUsd": 500000000,
+    "minEthSeedUsd": 500000000,
+    "_human": "$5 USDC and $5 of ETH"
+  },
+  "punchcard": {
+    "_comment": "Fill in after deployment.",
+    "multisig": null,
+    "deployer": null,
+    "feeRecipient": null,
+    "suiteDeployer": null,
+    "lockerDeployer": null,
+    "windDownController": null,
+    "tokenFactory": null,
+    "punchCardRouter": null
+  }
+}

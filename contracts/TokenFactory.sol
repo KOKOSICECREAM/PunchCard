@@ -44,8 +44,15 @@ contract TokenFactory {
     // Because the amounts vary, the token side of each pool is DERIVED from the USD
     // value seeded (see LaunchPricing), so both pools always open at the same price.
     // Denominated in USD at 8dp to match the Chainlink feed.
-    uint256 public constant MIN_USDC_SEED_USD = 2_000 * 1e8;   // $2,000
-    uint256 public constant MIN_ETH_SEED_USD  = 3_000 * 1e8;   // $3,000
+    //
+    // Constructor arguments rather than constants, so the SAME bytecode runs on a testnet
+    // with faucet-sized seeds and on mainnet with real ones. Compiling a special low-
+    // minimum build for testing would mean shipping bytecode nobody had exercised.
+    //
+    // This is PunchCard policy, not a merchant term — deploy() is onlyDeployer, so
+    // PunchCard already gates every deployment. Nothing new is trusted here.
+    uint256 public immutable MIN_USDC_SEED_USD;
+    uint256 public immutable MIN_ETH_SEED_USD;
 
     /// @notice Reject an oracle answer older than this — a stale ETH price would
     ///         mis-split the pools and hand the first trader an arbitrage.
@@ -127,7 +134,9 @@ contract TokenFactory {
         address _ethUsdOracle,
         address _punchcardFeeRecipient,
         address _suiteDeployer,
-        address _lockerDeployer
+        address _lockerDeployer,
+        uint256 _minUsdcSeedUsd,
+        uint256 _minEthSeedUsd
     ) {
         require(_multisig            != address(0), "Invalid multisig");
         require(_deployer            != address(0), "Invalid deployer");
@@ -139,6 +148,8 @@ contract TokenFactory {
         require(_punchcardFeeRecipient != address(0), "Invalid fee recipient");
         require(_suiteDeployer       != address(0), "Invalid suite deployer");
         require(_lockerDeployer      != address(0), "Invalid locker deployer");
+        require(_minUsdcSeedUsd       > 0,          "Invalid USDC minimum");
+        require(_minEthSeedUsd        > 0,          "Invalid ETH minimum");
 
         multisig            = _multisig;
         deployer            = _deployer;
@@ -150,6 +161,8 @@ contract TokenFactory {
         punchcardFeeRecipient = _punchcardFeeRecipient;
         suiteDeployer       = _suiteDeployer;
         lockerDeployer      = _lockerDeployer;
+        MIN_USDC_SEED_USD   = _minUsdcSeedUsd;
+        MIN_ETH_SEED_USD    = _minEthSeedUsd;
     }
 
     // ── MODIFIERS ─────────────────────────────────────────────────────────────

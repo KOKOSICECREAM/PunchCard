@@ -60,7 +60,9 @@ contract ForkDeployTest is Test {
             ETH_USD_FEED,
             FEE_RECIP,
             address(suiteDeployer),
-            address(lockerDeployer)
+            address(lockerDeployer),
+            2_000 * 1e8,      // $2,000 USDC floor — mainnet policy
+            3_000 * 1e8       // $3,000 ETH floor
         );
         assertEq(address(factory), predictedFactory, "factory landed where predicted");
     }
