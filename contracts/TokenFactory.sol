@@ -51,7 +51,14 @@ contract TokenFactory {
     ///         mis-split the pools and hand the first trader an arbitrage.
     uint256 public constant MAX_ORACLE_AGE = 1 hours;
 
-    uint256 public constant DAILY_CAP         = 500_000 * 1e6;
+    /// @notice Emission schedule length and the resulting per-day rate.
+    /// @dev The escrow derives its own buffer and drawer ceilings from the allocation,
+    ///      so there is no separate daily cap to keep in sync here. Mirrored for the
+    ///      deploy-time bounds check below.
+    uint256 public constant EMISSION_DAYS     = 1825;                       // 5 years
+    uint256 public constant EMISSION_PER_DAY  = REWARDS_ALLOC / EMISSION_DAYS;
+    uint256 public constant MAX_DRAWER_DAYS   = 14;
+    uint256 public constant MAX_PER_TX        = EMISSION_PER_DAY * MAX_DRAWER_DAYS;
     uint256 public constant CLIFF_DURATION    = 180 days;
     uint256 public constant VEST_DURATION     = 1080 days;
     uint256 public constant TIMELOCK_DURATION = 90 days;
@@ -206,9 +213,9 @@ contract TokenFactory {
         require(p.ethPairAmount        > 0,           "Invalid ETH amount");
         require(msg.value             == p.ethPairAmount, "ETH amount mismatch");
         require(p.perTxFloor           > 0,           "Invalid floor");
-        require(p.perTxFloor           <= DAILY_CAP,  "Floor above cap");
+        require(p.perTxFloor           <= MAX_PER_TX, "Floor above ceiling");
         require(p.perTxMax             >= p.perTxFloor,"Max below floor");
-        require(p.perTxMax             <= DAILY_CAP,  "Max above cap");
+        require(p.perTxMax             <= MAX_PER_TX, "Max above ceiling");
         require(
             p.usdcFeeTier == 100 || p.usdcFeeTier == 500 ||
             p.usdcFeeTier == 3000 || p.usdcFeeTier == 10000,
@@ -274,7 +281,7 @@ contract TokenFactory {
 
             vesting  = sd.deployVesting(tokenAddr, p.teamWallet, windDownController, CLIFF_DURATION, VEST_DURATION);
             treasury = sd.deployTreasury(tokenAddr, p.ownerWallet, windDownController, TIMELOCK_DURATION);
-            escrow   = sd.deployEscrow(tokenAddr, p.operator, p.ownerWallet, windDownController, DAILY_CAP, p.perTxFloor, p.perTxMax);
+            escrow   = sd.deployEscrow(tokenAddr, p.operator, p.ownerWallet, windDownController, REWARDS_ALLOC, p.perTxFloor, p.perTxMax);
 
             // `factory` is this contract, so initializeLP() below passes onlyFactory.
             locker = ILockerDeployer(lockerDeployer).deployLocker(

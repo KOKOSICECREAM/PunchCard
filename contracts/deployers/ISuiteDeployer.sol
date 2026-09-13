@@ -35,7 +35,7 @@ interface ISuiteDeployer {
         address operator,
         address ownerWallet,
         address windDownController,
-        uint256 dailyCap,
+        uint256 rewardsAllocation,
         uint256 perTxFloor,
         uint256 perTxMax
     ) external returns (address);

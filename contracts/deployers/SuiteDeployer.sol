@@ -60,10 +60,10 @@ contract SuiteDeployer {
         address operator,
         address ownerWallet,
         address windDownController,
-        uint256 dailyCap,
+        uint256 rewardsAllocation,
         uint256 perTxFloor,
         uint256 perTxMax
     ) external returns (address) {
-        return address(new RewardEscrow(token, operator, ownerWallet, windDownController, dailyCap, perTxFloor, perTxMax));
+        return address(new RewardEscrow(token, operator, ownerWallet, windDownController, rewardsAllocation, perTxFloor, perTxMax));
     }
 }

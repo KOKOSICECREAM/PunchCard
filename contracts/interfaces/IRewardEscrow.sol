@@ -1,107 +1,58 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+/// @title IRewardEscrow
 interface IRewardEscrow {
 
-    // ── STRUCTS ──────────────────────────────────────────────────────────────
+    // ── STRUCTS ───────────────────────────────────────────────────────────────
 
-    struct EscrowState {
-        uint256 dailyBalance;
-        uint256 lastRefillTime;
-        uint256 perTxMax;
-        bool frozen;
+    /// @notice One kiosk's till. Replenishes continuously up to `dailyAllowance`.
+    struct Drawer {
+        uint128 dailyAllowance;
+        uint128 spent;        // decayed against elapsed time on every read
+        uint64  lastDraw;
+        bool    active;
     }
 
-    // ── EVENTS ───────────────────────────────────────────────────────────────
+    // ── EVENTS ────────────────────────────────────────────────────────────────
 
-    event EscrowRefilled(
-        address indexed merchantToken,
-        uint256 amount,
-        uint256 newDailyBalance,
-        uint256 timestamp
-    );
-
-    event RewardDistributed(
-        address indexed merchantToken,
-        address indexed recipient,
-        uint256 amount,
-        uint256 timestamp
-    );
-
-    event EscrowFrozen(
-        address indexed merchantToken,
-        uint256 timestamp
-    );
-
-    event EscrowBurned(
-        address indexed merchantToken,
-        uint256 amount,
-        uint256 timestamp
-    );
-
-    event PerTxMaxUpdated(
-        address indexed merchantToken,
-        uint256 oldMax,
-        uint256 newMax,
-        uint256 timestamp
-    );
-
-    /// @notice Emitted when main reward pool drops below the low threshold
-    /// @dev Signals merchant to plan ahead — issue new token or wind down
-    ///      Emitted at most once per refill cycle to avoid spam
-    event RewardPoolLow(
-        address indexed merchantToken,
-        uint256 mainPoolBalance,
-        uint256 threshold,
-        uint256 timestamp
-    );
+    event RewardDistributed(address indexed token, address indexed operator, address indexed recipient, uint256 amount, uint256 timestamp);
+    event OperatorAdded(address indexed operator, uint256 dailyAllowance, uint256 timestamp);
+    event OperatorRemoved(address indexed operator, uint256 timestamp);
+    event DrawerAllowanceSet(address indexed operator, uint256 dailyAllowance, uint256 timestamp);
+    event EscrowPaused(uint256 until_, uint256 timestamp);
+    event EscrowUnpaused(uint256 timestamp);
+    event PerTxBoundsSet(uint256 floor_, uint256 max_, uint256 timestamp);
+    event RewardPoolLow(address indexed token, uint256 remaining, uint256 threshold, uint256 timestamp);
+    event EscrowFrozen(address indexed token, uint256 timestamp);
+    event EscrowBurned(address indexed token, uint256 amount, uint256 timestamp);
 
     // ── WIND-DOWN ─────────────────────────────────────────────────────────────
 
-    /// @notice Freezes reward distribution and refill permanently
-    /// @dev WindDownController only. Called at wind-down initiation.
     function freeze() external;
-
-    /// @notice Burns entire contract balance
-    /// @dev WindDownController only. Called at expiry step. No-op if balance == 0.
     function burnRemaining() external;
-
-    // ── REFILL ────────────────────────────────────────────────────────────────
-
-    /// @notice Tops up daily escrow from main reward pool
-    /// @dev Callable by anyone. 24hr cooldown enforced on-chain.
-    ///      Cooldown only advances on meaningful refill (refillAmount > 0).
-    ///      No-op if already at cap or main pool exhausted — does not revert.
-    function refill() external;
+    function isFrozen() external view returns (bool);
 
     // ── DISTRIBUTION ──────────────────────────────────────────────────────────
 
-    /// @notice Distributes reward to customer wallet
-    /// @dev Operator only. Reverts if frozen, below floor, above perTxMax, or above dailyBalance.
     function distributeReward(address recipient, uint256 amount) external;
 
-    // ── CONFIGURATION ─────────────────────────────────────────────────────────
+    // ── OWNER CONTROLS ────────────────────────────────────────────────────────
 
-    /// @notice Updates per-transaction maximum
-    /// @dev ownerWallet only. Must be within [PER_TX_FLOOR, DAILY_CAP].
-    function setPerTxMax(uint256 newMax) external;
+    function addOperator(address operator, uint256 dailyAllowance) external;
+    function removeOperator(address operator) external;
+    function setDrawerAllowance(address operator, uint256 dailyAllowance) external;
+    function setPerTxBounds(uint256 floor_, uint256 max_) external;
+    function pause() external;
+    function unpause() external;
 
     // ── VIEWS ─────────────────────────────────────────────────────────────────
 
-    /// @notice Updates the low pool warning threshold
-    /// @dev ownerWallet only. Set to 0 to disable warnings.
-    function setLowThreshold(uint256 newThreshold) external;
-
-    function getState() external view returns (EscrowState memory);
-    function isFrozen() external view returns (bool);
-    function dailyBalance() external view returns (uint256);
-    function lastRefillTime() external view returns (uint256);
-    function perTxMax() external view returns (uint256);
-    function timeUntilRefill() external view returns (uint256);
-    function mainPoolBalance() external view returns (uint256);
-    function lowThreshold() external view returns (uint256);
-    function DAILY_CAP() external view returns (uint256);
-    function PER_TX_FLOOR() external view returns (uint256);
-    function operator() external view returns (address);
+    function emitted() external view returns (uint256);
+    function spendable() external view returns (uint256);
+    function drawerAvailable(address operator) external view returns (uint256);
+    function getDrawer(address operator) external view returns (Drawer memory);
+    function totalDistributed() external view returns (uint256);
+    function pausedUntil() external view returns (uint256);
     function ownerWallet() external view returns (address);
 }

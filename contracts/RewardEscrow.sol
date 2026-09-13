@@ -7,97 +7,130 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IRewardEscrow.sol";
 
 /// @title RewardEscrow
-/// @notice Holds merchant reward pool. Manages daily distribution bucket.
-/// @dev Deployed per merchant by factory. All addresses immutable after deploy.
-///      Internal accounting only — no token transfer occurs on refill.
-///      Main pool = balanceOf(this) - dailyBalance (implicit, never stored separately).
-///      burnRemaining() burns total contract balance regardless of internal buckets.
+/// @notice Holds a merchant's reward pool and meters it out through two independent
+///         limits: a long-run emission schedule, and a per-kiosk till.
+///
+/// @dev Two limits, two different jobs.
+///
+///      **Emission — protects the supply.** The allocation unlocks continuously over
+///      EMISSION_PERIOD. Only unlocked tokens can be spent, and what is spendable at any
+///      instant is capped at BUFFER_DAYS of emission. A merchant who underspends does not
+///      forfeit anything: the unspent remainder stays claimable and simply extends the
+///      programme past the nominal period. A merchant who wants to spend faster cannot.
+///
+///      That is also the answer to token price moving. If the token appreciates, fewer
+///      tokens are needed per reward, the merchant underspends, and the programme runs
+///      longer — automatically, with no oracle. If it falls, they hit the ceiling and must
+///      reward less generously, which is the protocol protecting the supply. Pricing the
+///      reward in USD on-chain was the alternative and is unsafe here: launch pools are
+///      $5,000, thin enough that a TWAP of the merchant's own token can be pushed cheaply
+///      by anyone who wants more tokens per dollar of reward.
+///
+///      **Drawers — cap theft.** Each kiosk is a separate operator with its own till,
+///      replenishing continuously up to a daily allowance. A leaked point-of-sale key
+///      costs at most one drawer per day until the merchant removes it, exactly like a
+///      cash drawer. There is no shared pot for one compromised till to drain.
+///
+///      Everything the owner can do is rate-limiting or halting. No function here moves
+///      tokens to an address the caller chooses except distributeReward, which is bounded
+///      by both limits above.
 contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
+
+    // ── SCHEDULE CONSTANTS ────────────────────────────────────────────────────
+
+    /// @notice Reward allocation unlocks over five years
+    uint256 public constant EMISSION_PERIOD = 1825 days;
+
+    /// @notice Most that can be spendable at once, in days of emission.
+    /// @dev Lets a quiet month bank capacity for a busy one without letting the whole
+    ///      allocation become drainable.
+    uint256 public constant BUFFER_DAYS = 30;
+
+    /// @notice Default kiosk till at deploy, in days of emission
+    uint256 public constant DEFAULT_DRAWER_DAYS = 2;
+
+    /// @notice Ceiling on any single till, in days of emission.
+    /// @dev Defence in depth: a compromised owner key still cannot open an unlimited till.
+    uint256 public constant MAX_DRAWER_DAYS = 14;
+
+    /// @notice A pause lapses on its own after this long unless renewed.
+    /// @dev So a lost owner key cannot brick a programme permanently.
+    uint256 public constant MAX_PAUSE = 7 days;
 
     // ── IMMUTABLES ────────────────────────────────────────────────────────────
 
-    IERC20 public immutable token;
-
-    /// @notice Authorized reward distributor — merchant's POS signer
-    address public immutable override operator;
-
-    /// @notice Merchant wallet — controls perTxMax
+    IERC20  public immutable token;
     address public immutable override ownerWallet;
-
-    /// @notice WindDownController — sole caller of freeze() and burnRemaining()
     address public immutable windDownController;
 
-    /// @notice Hard ceiling on daily escrow bucket — 500,000 tokens network default
-    uint256 public immutable override DAILY_CAP;
+    /// @notice Total rewards allocation this schedule emits
+    uint256 public immutable REWARDS_ALLOCATION;
+    uint256 public immutable emissionStart;
 
-    /// @notice Minimum reward per transaction in tokens
-    /// @dev Set at deploy time from $0.01 / tokenPriceUSD. No oracle dependency.
-    ///      Generous by design — prevents dust/zero distributions, not precise USD enforcement.
-    uint256 public immutable override PER_TX_FLOOR;
+    /// @notice Emission per day, and the derived ceilings
+    uint256 public immutable emissionPerDay;
+    uint256 public immutable bufferCap;
+    uint256 public immutable maxDrawer;
 
     // ── STATE ─────────────────────────────────────────────────────────────────
 
-    /// @notice Current daily distribution bucket
-    /// @dev Main pool is implicit: balanceOf(this) - dailyBalance
-    uint256 public override dailyBalance;
-
-    /// @notice Timestamp of last meaningful refill (refillAmount > 0)
-    uint256 public override lastRefillTime;
-
-    /// @notice Per-transaction maximum in tokens — configurable by ownerWallet
-    uint256 public override perTxMax;
-
-    /// @notice True after WindDownController calls freeze()
-    bool private _frozen;
-
-    /// @notice Main pool balance below which RewardPoolLow is emitted
-    /// @dev Set by ownerWallet. Default 10% of REWARDS_ALLOC at deploy.
-    ///      Set to 0 to disable warnings entirely.
+    uint256 public override totalDistributed;
+    uint256 public perTxFloor;
+    uint256 public perTxMax;
+    uint256 public override pausedUntil;
     uint256 public lowThreshold;
 
-    /// @notice Guards against emitting RewardPoolLow multiple times per refill
-    bool private _lowWarningEmitted;
+    mapping(address => Drawer) private _drawers;
+
+    bool private _frozen;
 
     // ── CONSTRUCTOR ───────────────────────────────────────────────────────────
 
     constructor(
         address _token,
-        address _operator,
+        address _initialOperator,
         address _ownerWallet,
         address _windDownController,
-        uint256 _dailyCap,
+        uint256 _rewardsAllocation,
         uint256 _perTxFloor,
         uint256 _perTxMax
     ) {
         require(_token              != address(0), "Invalid token");
-        require(_operator           != address(0), "Invalid operator");
+        require(_initialOperator    != address(0), "Invalid operator");
         require(_ownerWallet        != address(0), "Invalid owner");
         require(_windDownController != address(0), "Invalid controller");
-        require(_dailyCap            > 0,           "Invalid cap");
-        require(_perTxFloor          > 0,           "Invalid floor");
-        require(_perTxFloor         <= _dailyCap,   "Floor above cap");
-        require(_perTxMax           >= _perTxFloor, "Max below floor");
-        require(_perTxMax           <= _dailyCap,   "Max above cap");
+        require(_rewardsAllocation   > 0,          "Invalid allocation");
 
         token              = IERC20(_token);
-        operator           = _operator;
         ownerWallet        = _ownerWallet;
         windDownController = _windDownController;
-        DAILY_CAP          = _dailyCap;
-        PER_TX_FLOOR       = _perTxFloor;
-        perTxMax           = _perTxMax;
+        REWARDS_ALLOCATION = _rewardsAllocation;
+        emissionStart      = block.timestamp;
 
-        // Default low threshold: 10% of total rewards allocation
-        // Factory passes this in or merchant can update via setLowThreshold()
-        lowThreshold = _dailyCap * 50; // ~5M tokens at default cap — roughly 10% of 45M
+        uint256 perDay = (_rewardsAllocation * 1 days) / EMISSION_PERIOD;
+        emissionPerDay = perDay;
+        bufferCap      = perDay * BUFFER_DAYS;
+        maxDrawer      = perDay * MAX_DRAWER_DAYS;
+
+        require(_perTxFloor > 0,                "Invalid floor");
+        require(_perTxMax  >= _perTxFloor,      "Max below floor");
+        require(_perTxMax  <= perDay * MAX_DRAWER_DAYS, "Max above drawer ceiling");
+        perTxFloor = _perTxFloor;
+        perTxMax   = _perTxMax;
+
+        lowThreshold = _rewardsAllocation / 10;
+
+        // The first kiosk, so onboarding stays a single transaction.
+        _drawers[_initialOperator] = Drawer({
+            dailyAllowance: uint128(perDay * DEFAULT_DRAWER_DAYS),
+            spent:          0,
+            lastDraw:       uint64(block.timestamp),
+            active:         true
+        });
+        emit OperatorAdded(_initialOperator, perDay * DEFAULT_DRAWER_DAYS, block.timestamp);
     }
 
     // ── MODIFIERS ─────────────────────────────────────────────────────────────
-
-    modifier onlyOperator() {
-        require(msg.sender == operator, "Not operator");
-        _;
-    }
 
     modifier onlyOwner() {
         require(msg.sender == ownerWallet, "Not owner");
@@ -114,135 +147,179 @@ contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
         _;
     }
 
-    // ── WIND-DOWN ─────────────────────────────────────────────────────────────
+    modifier active() {
+        require(!_frozen,                        "Frozen");
+        require(block.timestamp >= pausedUntil,  "Paused");
+        _;
+    }
+
+    // ── EMISSION ──────────────────────────────────────────────────────────────
 
     /// @inheritdoc IRewardEscrow
-    /// @dev Also disables refill — no point topping up a frozen escrow.
-    function freeze() external onlyWindDown {
-        _frozen = true;
-        emit EscrowFrozen(address(token), block.timestamp);
+    function emitted() public view override returns (uint256) {
+        uint256 elapsed = block.timestamp - emissionStart;
+        if (elapsed >= EMISSION_PERIOD) return REWARDS_ALLOCATION;
+        return (REWARDS_ALLOCATION * elapsed) / EMISSION_PERIOD;
     }
 
     /// @inheritdoc IRewardEscrow
-    /// @dev Burns entire contract balance — internal bucket accounting ignored.
-    ///      No-op if balance == 0. Uses ERC20Burnable.burn() — consistent throughout suite.
-    function burnRemaining() external onlyWindDown {
-        uint256 balance = token.balanceOf(address(this));
-        if (balance == 0) return;
-
-        dailyBalance = 0;
-        ERC20Burnable(address(token)).burn(balance);
-        emit EscrowBurned(address(token), balance, block.timestamp);
+    /// @dev Unspent emission is never forfeited — it stays in this figure and keeps the
+    ///      programme running past EMISSION_PERIOD. The buffer only rate-limits it.
+    function spendable() public view override returns (uint256) {
+        uint256 unspent = emitted() - totalDistributed;
+        uint256 capped  = unspent < bufferCap ? unspent : bufferCap;
+        uint256 held    = token.balanceOf(address(this));
+        return capped < held ? capped : held;
     }
 
-    // ── REFILL ────────────────────────────────────────────────────────────────
+    // ── DRAWERS ───────────────────────────────────────────────────────────────
 
     /// @inheritdoc IRewardEscrow
-    /// @dev Pure internal accounting — no token transfer occurs.
-    ///      Cooldown only advances on meaningful refill (refillAmount > 0).
-    ///      Grief attack closed: calling on full bucket costs gas, cooldown unchanged.
-    function refill() external notFrozen {
-        require(
-            block.timestamp >= lastRefillTime + 24 hours,
-            "Cooldown active"
-        );
+    function drawerAvailable(address operator) public view override returns (uint256) {
+        Drawer memory d = _drawers[operator];
+        if (!d.active) return 0;
+        uint256 outstanding = _outstanding(d);
+        return d.dailyAllowance > outstanding ? d.dailyAllowance - outstanding : 0;
+    }
 
-        uint256 totalBalance = token.balanceOf(address(this));
-        uint256 mainPool     = totalBalance - dailyBalance;
-        uint256 deficit      = DAILY_CAP - dailyBalance;
-        uint256 refillAmount = deficit < mainPool ? deficit : mainPool;
-
-        // No-op — cooldown does not advance
-        if (refillAmount == 0) return;
-
-        // Meaningful refill — advance cooldown and update bucket
-        dailyBalance   += refillAmount;
-        lastRefillTime  = block.timestamp;
-        _lowWarningEmitted = false; // reset warning flag on successful refill
-
-        emit EscrowRefilled(address(token), refillAmount, dailyBalance, block.timestamp);
-
-        // Check if main pool has dropped below threshold after refill
-        // Emit warning once per refill cycle — not on every distribution
-        uint256 mainPoolAfter = token.balanceOf(address(this)) - dailyBalance;
-        if (
-            lowThreshold > 0 &&
-            mainPoolAfter <= lowThreshold &&
-            !_lowWarningEmitted
-        ) {
-            _lowWarningEmitted = true;
-            emit RewardPoolLow(address(token), mainPoolAfter, lowThreshold, block.timestamp);
-        }
+    /// @dev Spend decays linearly back to zero over a day — a continuously refilling till
+    ///      rather than a midnight reset, so there is no boundary to game.
+    function _outstanding(Drawer memory d) private view returns (uint256) {
+        uint256 elapsed     = block.timestamp - d.lastDraw;
+        uint256 replenished = (elapsed * d.dailyAllowance) / 1 days;
+        return d.spent > replenished ? d.spent - replenished : 0;
     }
 
     // ── DISTRIBUTION ──────────────────────────────────────────────────────────
 
     /// @inheritdoc IRewardEscrow
-    /// @dev CEI pattern — dailyBalance decremented before transfer.
     function distributeReward(address recipient, uint256 amount)
         external
-        onlyOperator
-        notFrozen
+        override
+        active
         nonReentrant
     {
+        Drawer storage d = _drawers[msg.sender];
+        require(d.active,                "Not an operator");
         require(recipient != address(0), "Invalid recipient");
-        require(amount >= PER_TX_FLOOR,  "Below floor");
+        require(amount >= perTxFloor,    "Below floor");
         require(amount <= perTxMax,      "Exceeds per-tx max");
-        require(amount <= dailyBalance,  "Exceeds daily balance");
 
-        // CEI — decrement before transfer
-        dailyBalance -= amount;
+        uint256 outstanding = _outstanding(d);
+        require(outstanding + amount <= d.dailyAllowance, "Drawer empty");
+        require(amount <= spendable(),                    "Emission limit");
+
+        d.spent    = uint128(outstanding + amount);
+        d.lastDraw = uint64(block.timestamp);
+        totalDistributed += amount;
 
         token.transfer(recipient, amount);
-        emit RewardDistributed(address(token), recipient, amount, block.timestamp);
+        emit RewardDistributed(address(token), msg.sender, recipient, amount, block.timestamp);
+
+        uint256 remaining = REWARDS_ALLOCATION - totalDistributed;
+        if (lowThreshold > 0 && remaining <= lowThreshold) {
+            emit RewardPoolLow(address(token), remaining, lowThreshold, block.timestamp);
+        }
     }
 
-    // ── CONFIGURATION ─────────────────────────────────────────────────────────
+    // ── OWNER CONTROLS ────────────────────────────────────────────────────────
+    // Every one of these rate-limits or halts. None of them moves a token.
 
     /// @inheritdoc IRewardEscrow
-    function setPerTxMax(uint256 newMax) external onlyOwner {
-        require(newMax >= PER_TX_FLOOR, "Below floor");
-        require(newMax <= DAILY_CAP,    "Above cap");
+    function addOperator(address operator, uint256 dailyAllowance) external override onlyOwner notFrozen {
+        require(operator != address(0),          "Invalid operator");
+        require(!_drawers[operator].active,      "Already an operator");
+        require(dailyAllowance > 0,              "Invalid allowance");
+        require(dailyAllowance <= maxDrawer,     "Above drawer ceiling");
 
-        uint256 oldMax = perTxMax;
-        perTxMax = newMax;
-
-        emit PerTxMaxUpdated(address(token), oldMax, newMax, block.timestamp);
+        _drawers[operator] = Drawer({
+            dailyAllowance: uint128(dailyAllowance),
+            spent:          0,
+            lastDraw:       uint64(block.timestamp),
+            active:         true
+        });
+        emit OperatorAdded(operator, dailyAllowance, block.timestamp);
     }
 
-    // ── CONFIGURATION (continued) ────────────────────────────────────────────
+    /// @inheritdoc IRewardEscrow
+    /// @dev The response to a leaked kiosk key. Takes effect immediately.
+    function removeOperator(address operator) external override onlyOwner {
+        require(_drawers[operator].active, "Not an operator");
+        delete _drawers[operator];
+        emit OperatorRemoved(operator, block.timestamp);
+    }
 
     /// @inheritdoc IRewardEscrow
-    /// @dev Set to 0 to disable RewardPoolLow warnings entirely.
+    /// @dev Raising an allowance does not refill a till that is already drawn down —
+    ///      `spent` is untouched, so this cannot be used to bypass the current day.
+    function setDrawerAllowance(address operator, uint256 dailyAllowance) external override onlyOwner notFrozen {
+        require(_drawers[operator].active,   "Not an operator");
+        require(dailyAllowance > 0,          "Invalid allowance");
+        require(dailyAllowance <= maxDrawer, "Above drawer ceiling");
+
+        Drawer storage d = _drawers[operator];
+        d.spent    = uint128(_outstanding(d));
+        d.lastDraw = uint64(block.timestamp);
+        d.dailyAllowance = uint128(dailyAllowance);
+        emit DrawerAllowanceSet(operator, dailyAllowance, block.timestamp);
+    }
+
+    /// @inheritdoc IRewardEscrow
+    /// @dev Both bounds are adjustable because both are denominated in tokens, and what a
+    ///      token is worth moves. A fixed floor set at launch becomes a $1 minimum reward
+    ///      if the token appreciates a hundredfold.
+    function setPerTxBounds(uint256 floor_, uint256 max_) external override onlyOwner notFrozen {
+        require(floor_ > 0,          "Invalid floor");
+        require(max_  >= floor_,     "Max below floor");
+        require(max_  <= maxDrawer,  "Max above drawer ceiling");
+        perTxFloor = floor_;
+        perTxMax   = max_;
+        emit PerTxBoundsSet(floor_, max_, block.timestamp);
+    }
+
+    /// @inheritdoc IRewardEscrow
+    /// @dev Halt-only, and it lapses by itself. Nothing here can redirect a token.
+    function pause() external override onlyOwner {
+        pausedUntil = block.timestamp + MAX_PAUSE;
+        emit EscrowPaused(pausedUntil, block.timestamp);
+    }
+
+    /// @inheritdoc IRewardEscrow
+    function unpause() external override onlyOwner {
+        pausedUntil = 0;
+        emit EscrowUnpaused(block.timestamp);
+    }
+
     function setLowThreshold(uint256 newThreshold) external onlyOwner {
         lowThreshold = newThreshold;
     }
 
-    // ── VIEWS ─────────────────────────────────────────────────────────────────
+    // ── WIND-DOWN ─────────────────────────────────────────────────────────────
 
+    /// @inheritdoc IRewardEscrow
+    function freeze() external override onlyWindDown {
+        _frozen = true;
+        emit EscrowFrozen(address(token), block.timestamp);
+    }
+
+    /// @inheritdoc IRewardEscrow
+    function burnRemaining() external override onlyWindDown {
+        uint256 bal = token.balanceOf(address(this));
+        if (bal > 0) {
+            ERC20Burnable(address(token)).burn(bal);
+            emit EscrowBurned(address(token), bal, block.timestamp);
+        }
+    }
+
+    /// @inheritdoc IRewardEscrow
     function isFrozen() external view override returns (bool) {
         return _frozen;
     }
 
-    function getState() external view returns (EscrowState memory) {
-        return EscrowState({
-            dailyBalance:   dailyBalance,
-            lastRefillTime: lastRefillTime,
-            perTxMax:       perTxMax,
-            frozen:         _frozen
-        });
-    }
+    // ── VIEWS ─────────────────────────────────────────────────────────────────
 
-    function timeUntilRefill() external view returns (uint256) {
-        if (_frozen) return 0;
-        uint256 nextRefill = lastRefillTime + 24 hours;
-        if (block.timestamp >= nextRefill) return 0;
-        return nextRefill - block.timestamp;
-    }
-
-    /// @notice Returns the current main pool balance (total balance minus daily bucket)
-    function mainPoolBalance() external view returns (uint256) {
-        uint256 total = token.balanceOf(address(this));
-        return total > dailyBalance ? total - dailyBalance : 0;
+    /// @inheritdoc IRewardEscrow
+    function getDrawer(address operator) external view override returns (Drawer memory) {
+        return _drawers[operator];
     }
 }
