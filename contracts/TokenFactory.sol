@@ -2,12 +2,10 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./PunchCardToken.sol";
-import "./VestingWallet.sol";
-import "./TreasuryTimelock.sol";
-import "./RewardEscrow.sol";
-import "./LPLocker.sol";
 import "./interfaces/IWindDownController.sol";
+import "./interfaces/ILPLocker.sol";
+import "./deployers/ISuiteDeployer.sol";
+import "./deployers/ILockerDeployer.sol";
 import "./interfaces/INonfungiblePositionManager.sol";
 import "./interfaces/IWETH.sol";
 import "./interfaces/IEthUsdOracle.sol";
@@ -77,6 +75,13 @@ contract TokenFactory {
     ///      fee destination can never be changed after they launch.
     address public immutable punchcardFeeRecipient;
 
+    /// @notice Construction helpers holding the suite contracts' creation bytecode.
+    /// @dev The factory calls these instead of using `new` directly. All five suite
+    ///      contracts together are 27,772 bytes of initcode, which no single contract can
+    ///      carry under EIP-170 — hence two helpers rather than one.
+    address public immutable suiteDeployer;
+    address public immutable lockerDeployer;
+
     // ── STATE ─────────────────────────────────────────────────────────────────
 
     address public deployer;
@@ -113,7 +118,9 @@ contract TokenFactory {
         address _usdc,
         address _weth,
         address _ethUsdOracle,
-        address _punchcardFeeRecipient
+        address _punchcardFeeRecipient,
+        address _suiteDeployer,
+        address _lockerDeployer
     ) {
         require(_multisig            != address(0), "Invalid multisig");
         require(_deployer            != address(0), "Invalid deployer");
@@ -123,6 +130,8 @@ contract TokenFactory {
         require(_weth                != address(0), "Invalid WETH");
         require(_ethUsdOracle        != address(0), "Invalid oracle");
         require(_punchcardFeeRecipient != address(0), "Invalid fee recipient");
+        require(_suiteDeployer       != address(0), "Invalid suite deployer");
+        require(_lockerDeployer      != address(0), "Invalid locker deployer");
 
         multisig            = _multisig;
         deployer            = _deployer;
@@ -132,6 +141,8 @@ contract TokenFactory {
         WETH                = _weth;
         ethUsdOracle        = _ethUsdOracle;
         punchcardFeeRecipient = _punchcardFeeRecipient;
+        suiteDeployer       = _suiteDeployer;
+        lockerDeployer      = _lockerDeployer;
     }
 
     // ── MODIFIERS ─────────────────────────────────────────────────────────────
@@ -243,66 +254,40 @@ contract TokenFactory {
             );
         }
 
-        // ── STEP 1: Deploy PunchCardToken ─────────────────────────────────────
+        // ── STEPS 1-5: Deploy the suite via the construction helpers ─────────
+        // Delegated rather than `new`-ed inline so this contract does not carry the
+        // suite's creation bytecode. `token` is deliberately typed as IERC20: taking a
+        // concrete PunchCardToken type here would pull its bytecode straight back in.
 
-        PunchCardToken token = new PunchCardToken(
-            p.name,
-            p.symbol,
-            TOTAL_SUPPLY,
-            address(this),
-            p.ipfsHash
-        );
-        address tokenAddr = address(token);
+        IERC20 token;
+        address vesting;
+        address treasury;
+        address escrow;
+        address locker;
+        address tokenAddr;
+        {
+            ISuiteDeployer sd = ISuiteDeployer(suiteDeployer);
 
-        // ── STEP 2: Deploy VestingWallet ──────────────────────────────────────
+            // Entire supply is minted to this factory, which distributes it below.
+            tokenAddr = sd.deployToken(p.name, p.symbol, TOTAL_SUPPLY, address(this), p.ipfsHash);
+            token     = IERC20(tokenAddr);
 
-        VestingWallet vesting = new VestingWallet(
-            tokenAddr,
-            p.teamWallet,
-            windDownController,
-            CLIFF_DURATION,
-            VEST_DURATION
-        );
+            vesting  = sd.deployVesting(tokenAddr, p.teamWallet, windDownController, CLIFF_DURATION, VEST_DURATION);
+            treasury = sd.deployTreasury(tokenAddr, p.ownerWallet, windDownController, TIMELOCK_DURATION);
+            escrow   = sd.deployEscrow(tokenAddr, p.operator, p.ownerWallet, windDownController, DAILY_CAP, p.perTxFloor, p.perTxMax);
 
-        // ── STEP 3: Deploy TreasuryTimelock ───────────────────────────────────
-
-        TreasuryTimelock treasury = new TreasuryTimelock(
-            tokenAddr,
-            p.ownerWallet,
-            windDownController,
-            TIMELOCK_DURATION
-        );
-
-        // ── STEP 4: Deploy RewardEscrow ───────────────────────────────────────
-
-        RewardEscrow escrow = new RewardEscrow(
-            tokenAddr,
-            p.operator,
-            p.ownerWallet,
-            windDownController,
-            DAILY_CAP,
-            p.perTxFloor,
-            p.perTxMax
-        );
-
-        // ── STEP 5: Deploy LPLocker ───────────────────────────────────────────
-
-        LPLocker locker = new LPLocker(
-            tokenAddr,
-            p.ownerWallet,
-            windDownController,
-            positionManager,
-            address(this),
-            USDC,
-            WETH,
-            punchcardFeeRecipient
-        );
+            // `factory` is this contract, so initializeLP() below passes onlyFactory.
+            locker = ILockerDeployer(lockerDeployer).deployLocker(
+                tokenAddr, p.ownerWallet, windDownController, positionManager,
+                address(this), USDC, WETH, punchcardFeeRecipient
+            );
+        }
 
         // ── STEP 6: Distribute non-LP allocations ────────────────────────────
 
-        token.transfer(address(vesting),  TEAM_ALLOC);
-        token.transfer(address(treasury), TREASURY_ALLOC);
-        token.transfer(address(escrow),   REWARDS_ALLOC);
+        token.transfer(vesting,  TEAM_ALLOC);
+        token.transfer(treasury, TREASURY_ALLOC);
+        token.transfer(escrow,   REWARDS_ALLOC);
         // Factory retains full LP_ALLOC (30M) for pool seeding + reserve transfer
 
         assert(token.balanceOf(address(this)) == LP_ALLOC);
@@ -350,7 +335,7 @@ contract TokenFactory {
                         amount1Desired: amt1DesiredUsdc,
                         amount0Min:     0,
                         amount1Min:     0,
-                        recipient:      address(locker),
+                        recipient:      locker,
                         deadline:       block.timestamp
                     })
                 );
@@ -407,7 +392,7 @@ contract TokenFactory {
                         amount1Desired: amt1DesiredEth,
                         amount0Min:     0,
                         amount1Min:     0,
-                        recipient:      address(locker),
+                        recipient:      locker,
                         deadline:       block.timestamp
                     })
                 );
@@ -427,7 +412,7 @@ contract TokenFactory {
 
         uint256 reserveBal = token.balanceOf(address(this));
         if (reserveBal > 0) {
-            token.transfer(address(locker), reserveBal);
+            token.transfer(locker, reserveBal);
         }
 
         assert(token.balanceOf(address(this)) == 0);
@@ -435,16 +420,16 @@ contract TokenFactory {
 
         // ── STEP 10: Initialize LPLocker with both positions ──────────────────
 
-        locker.initializeLP(usdcTokenId, ethTokenId, p.usdcFeeTier, p.ethFeeTier);
+        ILPLocker(locker).initializeLP(usdcTokenId, ethTokenId, p.usdcFeeTier, p.ethFeeTier);
 
         // ── STEP 11: Register suite ───────────────────────────────────────────
 
         IWindDownController(windDownController).register(
             tokenAddr,
-            address(escrow),
-            address(vesting),
-            address(treasury),
-            address(locker)
+            escrow,
+            vesting,
+            treasury,
+            locker
         );
 
         // ── STEP 12: Store metadata and emit ─────────────────────────────────
@@ -456,10 +441,10 @@ contract TokenFactory {
             p.ownerWallet,
             p.teamWallet,
             p.operator,
-            address(escrow),
-            address(vesting),
-            address(treasury),
-            address(locker),
+            escrow,
+            vesting,
+            treasury,
+            locker,
             p.ipfsHash,
             block.timestamp
         );

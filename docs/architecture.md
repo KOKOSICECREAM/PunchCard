@@ -5,7 +5,11 @@ merchant shares state with another. The only shared infrastructure is the factor
 deploys them, the router that swaps between them, and the wind-down controller.
 
 ```
-                    ┌──────────────────┐
+        ┌─────────────────┐  ┌──────────────────┐
+        │  SuiteDeployer  │  │  LockerDeployer  │  hold the creation bytecode
+        └────────┬────────┘  └────────┬─────────┘
+                 └──────────┬─────────┘
+                    ┌───────▼──────────┐
                     │   TokenFactory   │  one call deploys everything below
                     └────────┬─────────┘
                              │

@@ -28,7 +28,17 @@ _multisig  — PunchCard multisig
 _factory   — TokenFactory address (pre-computed, or fixed up per above)
 ```
 
-**2. TokenFactory**
+**2a. SuiteDeployer and 2b. LockerDeployer** — no constructor arguments
+```
+Construction helpers holding the suite contracts' creation bytecode. Deploy both, then
+pass their addresses to TokenFactory. Order between them does not matter.
+```
+> They are permissionless by design. A contract deployed through them in isolation is
+> inert — no distributed supply, no pools, not registered with the WindDownController.
+> Merchant status comes from a MerchantDeployed event and WindDownController registration,
+> nothing else.
+
+**3. TokenFactory**
 ```
 _multisig            — PunchCard multisig
 _deployer            — PunchCard deployer hot wallet (the only caller of deploy())
@@ -39,9 +49,12 @@ _weth                — see deploy/network/base-mainnet.json
 _ethUsdOracle        — Chainlink ETH/USD feed. VERIFY against docs.chain.link before
                        deploying; it is a constructor argument, not a constant, and a
                        wrong feed mis-prices every merchant launched through it
+_punchcardFeeRecipient — receives PunchCard's 20% share of every merchant's LP fees
+_suiteDeployer       — from step 2a
+_lockerDeployer      — from step 2b
 ```
 
-**3. PunchCardRouter**
+**4. PunchCardRouter**
 ```
 _multisig            — PunchCard multisig
 _windDownController  — from step 1
@@ -53,7 +66,7 @@ _initialFeeRecipient — PunchCard operational wallet
 
 Compiler: **0.8.24 or higher**, OpenZeppelin v4.x or v5.x.
 
-After deploying, record every address in `deploy/network/base-mainnet.json` and verify all
+After deploying, record all five addresses in `deploy/network/base-mainnet.json` and verify all
 three on Basescan.
 
 ---
