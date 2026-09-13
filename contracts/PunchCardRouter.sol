@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IWindDownController.sol";
 import "./interfaces/ILPLocker.sol";
+import "./interfaces/ISwapRouter.sol";
 
 /// @title PunchCardRouter
 /// @notice Routes swaps between merchant tokens via USDC or ETH pools.
@@ -19,22 +20,6 @@ import "./interfaces/ILPLocker.sol";
 ///      Swaps can NEVER be paused — guaranteed in immutable code.
 ///      Hard fee ceiling 1% enforced in immutable code.
 contract PunchCardRouter is ReentrancyGuard {
-
-    // ── INTERFACES ────────────────────────────────────────────────────────────
-
-    interface ISwapRouter {
-        struct ExactInputSingleParams {
-            address tokenIn;
-            address tokenOut;
-            uint24  fee;
-            address recipient;
-            uint256 amountIn;
-            uint256 amountOutMinimum;
-            uint160 sqrtPriceLimitX96;
-        }
-        function exactInputSingle(ExactInputSingleParams calldata params)
-            external returns (uint256 amountOut);
-    }
 
     // ── CONSTANTS ─────────────────────────────────────────────────────────────
 

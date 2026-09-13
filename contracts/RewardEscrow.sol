@@ -164,14 +164,14 @@ contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
 
         // Check if main pool has dropped below threshold after refill
         // Emit warning once per refill cycle — not on every distribution
-        uint256 mainPool = token.balanceOf(address(this)) - dailyBalance;
+        uint256 mainPoolAfter = token.balanceOf(address(this)) - dailyBalance;
         if (
             lowThreshold > 0 &&
-            mainPool <= lowThreshold &&
+            mainPoolAfter <= lowThreshold &&
             !_lowWarningEmitted
         ) {
             _lowWarningEmitted = true;
-            emit RewardPoolLow(address(token), mainPool, lowThreshold, block.timestamp);
+            emit RewardPoolLow(address(token), mainPoolAfter, lowThreshold, block.timestamp);
         }
     }
 

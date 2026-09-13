@@ -9,5 +9,7 @@ node_modules/
 .DS_Store
 
 # Foundry
+# 'lib' with no slash also catches a symlink, which a bare 'lib/' does not.
+lib
 lib/
 broadcast/
