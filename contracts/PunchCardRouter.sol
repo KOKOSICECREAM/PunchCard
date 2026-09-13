@@ -27,10 +27,6 @@ contract PunchCardRouter is ReentrancyGuard {
     uint256 public constant FEE_DENOMINATOR    = 10_000;
     uint256 public constant PARAM_TIMELOCK     = 48 hours;
 
-    /// @notice Maximum price impact allowed per swap — protects users on thin pools
-    /// @dev 500 = 5%. Reverts if swap would move price more than this.
-    uint256 public constant MAX_PRICE_IMPACT = 500;
-
     // ── IMMUTABLES ────────────────────────────────────────────────────────────
 
     address public immutable multisig;
@@ -68,8 +64,9 @@ contract PunchCardRouter is ReentrancyGuard {
         address tokenIn;
         address tokenOut;
         uint256 amountIn;
-        uint256 amountOutMinimumHop1; // single-hop: min output after fee
-                                      // token→token: min USDC out of hop1
+        uint256 amountOutMinimumHop1; // token→stable: min received, AFTER the router fee
+                                      // stable→token: min tokenOut (fee is taken from amountIn)
+                                      // token→token:  min USDC at the hop-1 midpoint, pre-fee
         uint256 amountOutMinimumHop2; // token→token only: min tokenOut of hop2
         address recipient;
         uint256 deadline;
@@ -135,10 +132,16 @@ contract PunchCardRouter is ReentrancyGuard {
         require(p.recipient  != address(0), "Invalid recipient");
         require(p.amountIn   > 0,           "Zero amount");
         require(block.timestamp <= p.deadline, "Deadline passed");
-        require(
-            p.amountOutMinimumHop1 >= (p.amountIn * (FEE_DENOMINATOR - MAX_PRICE_IMPACT)) / FEE_DENOMINATOR,
-            "Price impact too high"
-        );
+        // Slippage protection is amountOutMinimum*, enforced by Uniswap on the actual
+        // output and by the post-fee check in _swapTokenToStable. Callers compute it from
+        // a quote, which is the only way to know a fair price.
+        //
+        // A previous guard here compared amountOutMinimumHop1 against amountIn directly.
+        // Those are denominated in different assets — merchant tokens are 6dp at ~$0.002,
+        // USDC is 6dp at $1, WETH is 18dp — so as a raw integer comparison it blocked
+        // token->token, token->USDC and WETH->token outright while being a no-op on the
+        // other two paths. A real impact check needs a price reference, and a TWAP of a
+        // $5k launch pool is too cheap to push to be worth trusting.
 
         bool inIsUSDC  = p.tokenIn  == USDC;
         bool inIsWETH  = p.tokenIn  == WETH;
@@ -206,6 +209,11 @@ contract PunchCardRouter is ReentrancyGuard {
 
         uint256 feeTaken        = (stableOut * feeRate) / FEE_DENOMINATOR;
         uint256 stableToRecipient = stableOut - feeTaken;
+
+        // Uniswap checked amountOutMinimum against the pre-fee amount, but the recipient
+        // is paid post-fee. Without this they could receive up to feeRate less than the
+        // minimum they asked for.
+        require(stableToRecipient >= p.amountOutMinimumHop1, "Below minimum after fee");
 
         if (feeTaken > 0) IERC20(stableToken).transfer(feeRecipient, feeTaken);
         IERC20(stableToken).transfer(p.recipient, stableToRecipient);

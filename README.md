@@ -24,7 +24,7 @@ hash, the pool seed sizes, and the per-transaction reward bounds.
 | Piece | State |
 |---|---|
 | Contracts | **Compile and fit EIP-170. Never deployed, never run against live Uniswap.** |
-| Tests | 22 passing — pricing maths, fee-split invariants, drawer/emission/pause, against mocks |
+| Tests | 27 passing — pricing maths, fee-split invariants, drawer/emission/pause, against mocks |
 | Marketing site | Live at punchcard.club, GitHub Pages from the repo root |
 | Customer dapp (`dapp/`) | **Prototype** — hardcoded mock balances, no web3 |
 | `website/` | **Stale duplicate** of the root site, candidate for deletion |
