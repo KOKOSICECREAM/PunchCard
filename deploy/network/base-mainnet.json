@@ -2,12 +2,15 @@
   "network": "base-mainnet",
   "chainId": 8453,
   "external": {
-    "uniswapV3PositionManager": "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f4",
+    "_verified": "All addresses below checked on-chain 2026-09-13 against chainId 8453: bytecode present, and identity confirmed via name()/description()/factory(). Re-verify before any deployment.",
+    "uniswapV3Factory": "0x33128a8fC17869897dcE68Ed026d694621f6FDfD",
+    "uniswapV3PositionManager": "0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1",
+    "_positionManager_note": "Was 0x...34f4 in the original README \u2014 one character off, and that address has NO CODE on Base. Confirmed correct value via SwapRouter02.positionManager(); name() returns 'Uniswap V3 Positions NFT-V1' and factory() matches the v3 factory above.",
     "uniswapV3SwapRouter02": "0x2626664c2603336E57B271c5C0b26F421741e481",
     "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "weth": "0x4200000000000000000000000000000000000006",
-    "_verify_before_use": "Confirm ethUsdChainlinkFeed against docs.chain.link for Base mainnet before deploying. It is a constructor argument, not a constant, so it must be right at deploy time.",
-    "ethUsdChainlinkFeed": null
+    "ethUsdChainlinkFeed": "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
+    "_ethUsdFeed_note": "description() = 'ETH / USD', decimals() = 8, latestRoundData() returns a live price."
   },
   "punchcard": {
     "_comment": "Fill in as the network is deployed. null = not yet deployed.",

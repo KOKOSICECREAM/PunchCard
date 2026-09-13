@@ -46,9 +46,8 @@ _windDownController  — from step 1
 _positionManager     — see deploy/network/base-mainnet.json
 _usdc                — see deploy/network/base-mainnet.json
 _weth                — see deploy/network/base-mainnet.json
-_ethUsdOracle        — Chainlink ETH/USD feed. VERIFY against docs.chain.link before
-                       deploying; it is a constructor argument, not a constant, and a
-                       wrong feed mis-prices every merchant launched through it
+_ethUsdOracle        — Chainlink ETH/USD feed, see the network file. Verified on-chain:
+                       description() is "ETH / USD" and decimals() is 8
 _punchcardFeeRecipient — receives PunchCard's 20% share of every merchant's LP fees
 _suiteDeployer       — from step 2a
 _lockerDeployer      — from step 2b
@@ -65,6 +64,12 @@ _initialFeeRecipient — PunchCard operational wallet
 ```
 
 Compiler: **0.8.24 or higher**, OpenZeppelin v4.x or v5.x.
+
+> **Check every external address against the chain before deploying, not against a doc.**
+> The position manager in the original README was one character off — `...34f4` instead of
+> `...34f1` — and nothing is deployed at the wrong address, so `deploy()` would have
+> reverted for every merchant. `cast code <addr>` takes seconds; a wrong address costs a
+> redeploy of the whole network.
 
 After deploying, record all five addresses in `deploy/network/base-mainnet.json` and verify all
 three on Basescan.
