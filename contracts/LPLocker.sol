@@ -393,10 +393,8 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
                     })
                 );
 
-                uint256 merchantAmt = _usdcPosition.merchantIsToken0 ? amt0 : amt1;
                 uint256 usdcAmt     = _usdcPosition.merchantIsToken0 ? amt1 : amt0;
 
-                totalMerchantBurned += merchantAmt;
                 totalUsdcToMerchant += usdcAmt;
             }
         }
@@ -429,22 +427,21 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
                     })
                 );
 
-                uint256 merchantAmt = _ethPosition.merchantIsToken0 ? amt0 : amt1;
                 uint256 wethAmt     = _ethPosition.merchantIsToken0 ? amt1 : amt0;
 
-                totalMerchantBurned += merchantAmt;
                 totalWethToMerchant += wethAmt;
             }
         }
 
-        // ── Burn reserve tokens ───────────────────────────────────────────────
+        // ── Burn every merchant token this contract holds ─────────────────────
+        // Balance, not a running total. collect() above pays the withdrawn liquidity and
+        // accrued fees into this contract, so the amounts returned by collect() are ALREADY
+        // part of balanceOf. Adding them to the reserve double-counted them and made burn()
+        // exceed the balance — which reverted release(), and since onExpiryReleaseLP is the
+        // terminal step, it bricked the wind-down and stranded the merchant's LP for good.
+        // It only triggered once a position had earned merchant-token fees, i.e. always.
 
-        uint256 reserveBal = IERC20(merchantToken).balanceOf(address(this));
-        if (reserveBal > 0) {
-            totalMerchantBurned += reserveBal;
-        }
-
-        // Burn all merchant tokens in one call
+        totalMerchantBurned = IERC20(merchantToken).balanceOf(address(this));
         if (totalMerchantBurned > 0) {
             ERC20Burnable(merchantToken).burn(totalMerchantBurned);
         }
