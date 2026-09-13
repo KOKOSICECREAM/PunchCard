@@ -4,8 +4,11 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
-/// @title PunchCardToken
-/// @notice Standard ERC-20 loyalty token for the PunchCard network.
+/// @title MerchantToken
+/// @notice A single merchant's loyalty token. One of these is deployed per merchant.
+/// @dev This is the template, not a network token — there is no PunchCard-issued token and
+///      PunchCard holds no allocation of any merchant's supply. Each deployment carries the
+///      merchant's own name, symbol and metadata hash.
 /// @dev Fixed supply — entire supply minted to factory at deployment.
 ///      No mint function. Supply can only decrease via ERC20Burnable.burn().
 ///      6 decimals network standard.
@@ -13,7 +16,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 ///      Fully permissionless after deployment — no owner, no pause, no access control.
 ///      ERC20Burnable enables burn() calls from suite contracts holding tokens
 ///      (RewardEscrow, TreasuryTimelock, VestingWallet, LPLocker) — no allowance needed.
-contract PunchCardToken is ERC20, ERC20Burnable {
+contract MerchantToken is ERC20, ERC20Burnable {
 
     // ── IMMUTABLES ────────────────────────────────────────────────────────────
 

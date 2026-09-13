@@ -51,7 +51,10 @@ Identical for every merchant — set as `constant` in `TokenFactory`, not parame
 
 ## The six contracts
 
-### PunchCardToken — the merchant's brand asset
+### MerchantToken — the merchant's brand asset
+
+One per merchant. This is the template every merchant token is deployed from; there is no
+PunchCard-issued network token and PunchCard holds no allocation of any merchant supply.
 Standard ERC-20 + `ERC20Burnable`. 6 decimals. Entire fixed supply minted to the factory
 at construction and distributed immediately. **No owner, no mint, no pause, no access
 control of any kind.** An `immutable ipfsHash` points at merchant metadata, which is how

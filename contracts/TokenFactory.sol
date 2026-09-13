@@ -264,7 +264,7 @@ contract TokenFactory {
         // ── STEPS 1-5: Deploy the suite via the construction helpers ─────────
         // Delegated rather than `new`-ed inline so this contract does not carry the
         // suite's creation bytecode. `token` is deliberately typed as IERC20: taking a
-        // concrete PunchCardToken type here would pull its bytecode straight back in.
+        // concrete MerchantToken type here would pull its bytecode straight back in.
 
         IERC20 token;
         address vesting;

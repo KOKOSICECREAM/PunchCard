@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "../PunchCardToken.sol";
+import "../MerchantToken.sol";
 import "../VestingWallet.sol";
 import "../TreasuryTimelock.sol";
 import "../RewardEscrow.sol";
@@ -33,7 +33,7 @@ contract SuiteDeployer {
         address mintTo,
         bytes32 ipfsHash
     ) external returns (address) {
-        return address(new PunchCardToken(name, symbol, totalSupply_, mintTo, ipfsHash));
+        return address(new MerchantToken(name, symbol, totalSupply_, mintTo, ipfsHash));
     }
 
     function deployVesting(

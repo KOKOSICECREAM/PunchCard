@@ -47,7 +47,7 @@ factory — it runs on its own earlier contracts. **No merchant has been deploye
 ├── index.html  CNAME  og-image.*      ← the live site. Pages serves the repo ROOT,
 │                                        so these must never move
 ├── contracts/
-│   ├── PunchCardToken.sol             the merchant's ERC-20
+│   ├── MerchantToken.sol             the merchant's ERC-20 (one per merchant)
 │   ├── RewardEscrow.sol               45% — 5yr emission + per-kiosk drawers
 │   ├── VestingWallet.sol              15% — team, 180d cliff / 1080d linear
 │   ├── TreasuryTimelock.sol           10% — merchant capital, 90d delay
@@ -94,6 +94,20 @@ Merchant status on the network is exactly this: a `MerchantDeployed` event plus
 ---
 
 ## Economics
+
+### There is no PunchCard token
+
+`MerchantToken` is a **template, deployed once per merchant** with their own name, symbol
+and metadata — not a network asset. PunchCard issues no token and holds no allocation of
+any merchant's supply. Revenue is LP fee share, the router skim, and (once built) a
+deployment fee, all denominated in dollars.
+
+That is a deliberate position, not an oversight. The claim that PunchCard has no conflict
+of interest is currently verifiable in the contracts, and a network token would reintroduce
+exactly the conflict the model is built against — as well as raising a securities question
+the business does not otherwise have, and muddying a cap structure that is raising on
+equity. If merchant alignment is wanted, fee discounts, referral revenue share, or equity
+in the parent are cleaner instruments.
 
 ### How the token circulates
 
