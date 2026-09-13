@@ -25,10 +25,21 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     address public immutable windDownController;
     address public immutable override positionManager;
     address public immutable factory;
+
+    /// @notice Receives PunchCard's share of collected trading fees
+    address public immutable punchcardFeeRecipient;
     address public immutable override usdcAddress;
     address public immutable override wethAddress;
 
     // ── STATE ─────────────────────────────────────────────────────────────────
+
+    /// @notice PunchCard's share of Uniswap trading fees, in basis points.
+    /// @dev A network constant, not a per-merchant term — every merchant is on identical
+    ///      terms, the same way the allocations are. The merchant (or whoever seeded the
+    ///      pools) keeps the remainder. Merchant-token fees are never shared: they are
+    ///      burned, so PunchCard never accumulates a position in a merchant's token.
+    uint256 public constant PUNCHCARD_FEE_SHARE_BPS = 2_000;   // 20%
+    uint256 private constant BPS_DENOMINATOR        = 10_000;
 
     LPPosition private _usdcPosition;
     LPPosition private _ethPosition;
@@ -44,7 +55,8 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
         address _positionManager,
         address _factory,
         address _usdc,
-        address _weth
+        address _weth,
+        address _punchcardFeeRecipient
     ) {
         require(_merchantToken      != address(0), "Invalid token");
         require(_ownerWallet        != address(0), "Invalid owner");
@@ -53,6 +65,7 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
         require(_factory            != address(0), "Invalid factory");
         require(_usdc               != address(0), "Invalid USDC");
         require(_weth               != address(0), "Invalid WETH");
+        require(_punchcardFeeRecipient != address(0), "Invalid fee recipient");
 
         merchantToken      = _merchantToken;
         ownerWallet        = _ownerWallet;
@@ -61,6 +74,7 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
         factory            = _factory;
         usdcAddress        = _usdc;
         wethAddress        = _weth;
+        punchcardFeeRecipient = _punchcardFeeRecipient;
     }
 
     // ── MODIFIERS ─────────────────────────────────────────────────────────────
@@ -242,7 +256,89 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
         );
     }
 
-    // ── WIND-DOWN ─────────────────────────────────────────────────────────────
+    // ── FEES ──────────────────────────────────────────────────────────────────
+
+    /// @notice Sweeps accrued Uniswap trading fees from both positions.
+    /// @dev Permissionless by design — every destination is fixed and immutable, so there
+    ///      is nothing to gain by calling it and no key needed to keep fees moving.
+    ///
+    ///      Amounts come from collect()'s return values, never from this contract's
+    ///      balance. The 27M LP reserve sits in this same contract, and a balance-based
+    ///      implementation would burn it.
+    ///
+    ///      Disabled once frozen: during wind-down, release() returns accrued fees to the
+    ///      merchant rather than splitting them.
+    /// @return usdcToMerchant  USDC paid to the merchant
+    /// @return wethToMerchant  WETH paid to the merchant
+    /// @return merchantBurned  Merchant-token fees burned
+    function collectFees()
+        external
+        notFrozen
+        nonReentrant
+        returns (uint256 usdcToMerchant, uint256 wethToMerchant, uint256 merchantBurned)
+    {
+        require(_usdcPosition.initialized, "Not initialized");
+        require(!_usdcPosition.released,   "Already released");
+
+        INonfungiblePositionManager pm = INonfungiblePositionManager(positionManager);
+
+        uint256 merchantFees;
+        uint256 usdcFees;
+        uint256 wethFees;
+
+        {
+            (uint256 a0, uint256 a1) = pm.collect(
+                INonfungiblePositionManager.CollectParams({
+                    tokenId:    _usdcPosition.tokenId,
+                    recipient:  address(this),
+                    amount0Max: type(uint128).max,
+                    amount1Max: type(uint128).max
+                })
+            );
+            if (_usdcPosition.merchantIsToken0) { merchantFees += a0; usdcFees = a1; }
+            else                                { usdcFees = a0; merchantFees += a1; }
+        }
+
+        {
+            (uint256 a0, uint256 a1) = pm.collect(
+                INonfungiblePositionManager.CollectParams({
+                    tokenId:    _ethPosition.tokenId,
+                    recipient:  address(this),
+                    amount0Max: type(uint128).max,
+                    amount1Max: type(uint128).max
+                })
+            );
+            if (_ethPosition.merchantIsToken0) { merchantFees += a0; wethFees = a1; }
+            else                               { wethFees = a0; merchantFees += a1; }
+        }
+
+        // Merchant-token fees are burned — deflationary, and it keeps PunchCard out of
+        // every merchant's cap table.
+        if (merchantFees > 0) {
+            ERC20Burnable(merchantToken).burn(merchantFees);
+            merchantBurned = merchantFees;
+        }
+
+        uint256 usdcToPunchcard = (usdcFees * PUNCHCARD_FEE_SHARE_BPS) / BPS_DENOMINATOR;
+        uint256 wethToPunchcard = (wethFees * PUNCHCARD_FEE_SHARE_BPS) / BPS_DENOMINATOR;
+        usdcToMerchant = usdcFees - usdcToPunchcard;
+        wethToMerchant = wethFees - wethToPunchcard;
+
+        if (usdcToPunchcard > 0) IERC20(usdcAddress).transfer(punchcardFeeRecipient, usdcToPunchcard);
+        if (wethToPunchcard > 0) IERC20(wethAddress).transfer(punchcardFeeRecipient, wethToPunchcard);
+        if (usdcToMerchant  > 0) IERC20(usdcAddress).transfer(ownerWallet, usdcToMerchant);
+        if (wethToMerchant  > 0) IERC20(wethAddress).transfer(ownerWallet, wethToMerchant);
+
+        emit FeesCollected(
+            merchantToken,
+            usdcToMerchant, usdcToPunchcard,
+            wethToMerchant, wethToPunchcard,
+            merchantBurned,
+            block.timestamp
+        );
+    }
+
+        // ── WIND-DOWN ─────────────────────────────────────────────────────────────
 
     /// @inheritdoc ILPLocker
     function freeze() external onlyWindDown {

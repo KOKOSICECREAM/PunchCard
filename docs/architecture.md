@@ -69,8 +69,7 @@ The merchant submits a release, waits 90 days, then executes. They can cancel th
 pending release. The delay is autonomous — nobody approves it.
 
 ### LPLocker — 30%, liquidity
-Holds two Uniswap v3 NFT positions: a USDC pool (60% of launch tokens) and an ETH pool
-(40%). 3M tokens seed the pools at launch; the remaining **27M reserve** stays locked for
+Holds two Uniswap v3 NFT positions, one against USDC and one against ETH. 3M tokens seed the pools at launch; the remaining **27M reserve** stays locked for
 merchant-controlled release via `increaseLiquidity()`.
 
 How those 3M split between the two pools is **derived at deploy time, not fixed**. Seed
@@ -93,6 +92,22 @@ price-impact guard to protect users against thin pools. Swap logic is immutable;
 parameters (fee rate, recipient, impact ceiling) can change, and only through a
 propose/execute timelock.
 
+### How PunchCard gets paid
+
+`LPLocker.collectFees()` sweeps accrued Uniswap trading fees from both positions and splits
+them: **20% to PunchCard, 80% to whoever seeded the pools.** Merchant-token fees are not
+split — they are **burned**, so PunchCard never accumulates a position in a merchant's
+token.
+
+It is permissionless: every destination is fixed and immutable, so there is nothing to gain
+by calling it and no operational key needed to keep fees flowing. It is disabled once
+frozen — during wind-down `release()` returns accrued fees to the merchant instead.
+
+This is the durable revenue line, and deliberately so. The router's swap fee is
+**avoidable**: these are ordinary Uniswap v3 pools, so anyone can trade directly or through
+an aggregator and pay PunchCard nothing. LP fees are unavoidable — every trade in the pool
+pays them no matter how it is routed.
+
 ## Trust model — read this before writing marketing copy
 
 Most of the system is genuinely trustless. Two things are not, and the distinction matters:
@@ -103,6 +118,11 @@ Most of the system is genuinely trustless. Two things are not, and the distincti
 - The team's vested share, the vesting schedule, and `teamWallet`.
 - The allocation percentages and every constant above.
 - Swap logic in the router.
+
+**What PunchCard earns**
+20% of LP trading fees per merchant, plus the router swap fee when a trade is routed
+through it. PunchCard holds no merchant tokens and no claim on any merchant's treasury,
+rewards or team allocation.
 
 **What PunchCard's multisig can do**
 `WindDownController.initiate(merchantToken)` is `onlyMultisig` and immediately calls

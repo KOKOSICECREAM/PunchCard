@@ -72,6 +72,11 @@ contract TokenFactory {
     /// @notice Chainlink ETH/USD feed — values the ETH seed so the pools can be split
     address public immutable ethUsdOracle;
 
+    /// @notice Receives PunchCard's share of every merchant's LP trading fees.
+    /// @dev Passed to each LPLocker at deploy. Immutable per merchant, so a merchant's
+    ///      fee destination can never be changed after they launch.
+    address public immutable punchcardFeeRecipient;
+
     // ── STATE ─────────────────────────────────────────────────────────────────
 
     address public deployer;
@@ -107,7 +112,8 @@ contract TokenFactory {
         address _positionManager,
         address _usdc,
         address _weth,
-        address _ethUsdOracle
+        address _ethUsdOracle,
+        address _punchcardFeeRecipient
     ) {
         require(_multisig            != address(0), "Invalid multisig");
         require(_deployer            != address(0), "Invalid deployer");
@@ -116,6 +122,7 @@ contract TokenFactory {
         require(_usdc                != address(0), "Invalid USDC");
         require(_weth                != address(0), "Invalid WETH");
         require(_ethUsdOracle        != address(0), "Invalid oracle");
+        require(_punchcardFeeRecipient != address(0), "Invalid fee recipient");
 
         multisig            = _multisig;
         deployer            = _deployer;
@@ -124,6 +131,7 @@ contract TokenFactory {
         USDC                = _usdc;
         WETH                = _weth;
         ethUsdOracle        = _ethUsdOracle;
+        punchcardFeeRecipient = _punchcardFeeRecipient;
     }
 
     // ── MODIFIERS ─────────────────────────────────────────────────────────────
@@ -286,7 +294,8 @@ contract TokenFactory {
             positionManager,
             address(this),
             USDC,
-            WETH
+            WETH,
+            punchcardFeeRecipient
         );
 
         // ── STEP 6: Distribute non-LP allocations ────────────────────────────

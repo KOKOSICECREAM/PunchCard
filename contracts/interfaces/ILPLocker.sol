@@ -20,7 +20,17 @@ interface ILPLocker {
         uint256    reserveTokens; // merchant tokens held in reserve, not yet in pools
     }
 
-    // ── EVENTS ───────────────────────────────────────────────────────────────
+    // ── EVENTS ────────────────────────────────────────────────────────────────
+
+    event FeesCollected(
+        address indexed merchantToken,
+        uint256 usdcToMerchant,
+        uint256 usdcToPunchcard,
+        uint256 wethToMerchant,
+        uint256 wethToPunchcard,
+        uint256 merchantBurned,
+        uint256 timestamp
+    );
 
     event LPInitialized(
         address indexed merchantToken,
