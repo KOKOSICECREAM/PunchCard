@@ -1,0 +1,9 @@
+# Remix / build output
+artifacts/
+.deps/
+cache/
+out/
+node_modules/
+
+# macOS
+.DS_Store

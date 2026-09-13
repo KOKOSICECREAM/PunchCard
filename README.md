@@ -1,122 +1,85 @@
-# PunchCard Network — Contract Suite
+# PunchCard Network
 
-## Deployment Order
+A launchpad for merchant loyalty tokens on Base. One factory call deploys a complete,
+self-contained suite for a business: its own ERC-20, a metered reward escrow, team vesting,
+a timelocked treasury, and locked dual-pool liquidity. Every merchant follows the identical
+path, and a shared router lets customers swap between any two merchant tokens.
 
-Deploy in this exact order. Each contract depends on the previous.
-
-### 1. WindDownController
-```
-Constructor args:
-  _multisig   — PunchCard multisig address
-  _factory    — TokenFactory address (deploy factory first, or use CREATE2)
-```
-> Note: WindDownController and TokenFactory have a circular dependency.
-> Resolve with CREATE2 (pre-compute factory address) or deploy WindDownController
-> with a placeholder factory, then update after factory is deployed.
-> Simplest path: deploy WindDownController with your EOA as factory temporarily,
-> deploy TokenFactory, then redeploy WindDownController with real factory address.
-
-### 2. TokenFactory
-```
-Constructor args:
-  _multisig            — PunchCard multisig
-  _deployer            — PunchCard deployer hot wallet
-  _windDownController  — WindDownController address (from step 1)
-  _positionManager     — 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f4  (Base mainnet)
-  _usdc                — 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913  (Base mainnet)
-  _weth                — 0x4200000000000000000000000000000000000006  (Base mainnet)
-```
-
-### 3. PunchCardRouter
-```
-Constructor args:
-  _multisig            — PunchCard multisig
-  _windDownController  — WindDownController address
-  _swapRouter          — 0x2626664c2603336E57B271c5C0b26F421741e481  (Base mainnet SwapRouter02)
-  _usdc                — 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
-  _weth                — 0x4200000000000000000000000000000000000006
-  _initialFeeRate      — 30  (0.3% = 30 basis points)
-  _initialFeeRecipient — PunchCard operational wallet
-```
+**Site:** [punchcard.club](https://punchcard.club)
 
 ---
 
-## Merchant Deployment (via TokenFactory.deploy())
+## Status
 
-The factory deploys the full suite in one transaction:
-- PunchCardToken
-- VestingWallet
-- TreasuryTimelock
-- RewardEscrow
-- LPLocker
+Be precise about this — the marketing site and the chain are not in the same place yet.
 
-### DeployParams
-
-| Field | Type | Notes |
-|---|---|---|
-| name | string | Token name e.g. "Frothy Monkey Rewards" |
-| symbol | string | Token symbol e.g. "FROTHY" |
-| ipfsHash | bytes32 | IPFS hash of merchant metadata |
-| ownerWallet | address | Merchant wallet — controls treasury, receives LP at wind-down |
-| teamWallet | address | Team vesting recipient — immutable |
-| operator | address | POS signer — authorized to distribute rewards |
-| pairType | uint8 | 0 = ETH, 1 = USDC |
-| feeTier | uint24 | 100 / 500 / 3000 / 10000 |
-| pairAmount | uint256 | ETH or USDC amount for LP |
-| perTxFloor | uint256 | Min reward per tx in tokens ($0.01 equivalent at deploy price) |
-| perTxMax | uint256 | Max reward per tx in tokens |
-
-**For ETH pairs:** send `msg.value == pairAmount`
-**For USDC pairs:** ownerWallet must approve factory for `pairAmount` before calling
-
----
-
-## Base Mainnet Addresses
-
-| Contract | Address |
+| Piece | State |
 |---|---|
-| Uniswap v3 NonfungiblePositionManager | 0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f4 |
-| Uniswap v3 SwapRouter02 | 0x2626664c2603336E57B271c5C0b26F421741e481 |
-| USDC | 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 |
-| WETH | 0x4200000000000000000000000000000000000006 |
+| Contracts (`contracts/`) | **Written, not deployed.** No PunchCard network contracts are live on Base |
+| Marketing site (`index.html`) | **Live** at punchcard.club, served by GitHub Pages from the repo root |
+| Customer dapp (`dapp/`) | **Prototype only** — hardcoded mock balances, no web3, not wired to anything |
+| `website/` | **Stale duplicate** of the root site from an earlier revision — candidate for deletion |
+
+**On KOKOS.** KOKOS Ice Cream in Nashville runs a live loyalty token (SKOOP) taking real
+payments, and it is the model this protocol generalises. It is *not* a deployment of this
+factory — it runs on its own earlier contracts. No merchant has been deployed through
+`TokenFactory` yet. Worth stating carefully anywhere it is described as "the first
+PunchCard deployment."
 
 ---
 
-## OpenZeppelin Dependencies
+## Layout
 
-All contracts import from `@openzeppelin/contracts`. In Remix:
-
-1. The imports will resolve automatically if you use the Remix OpenZeppelin plugin
-2. Or manually set compiler to fetch from npm: `@openzeppelin/contracts` v4.x or v5.x
-
-Pragma: `^0.8.24` — use Solidity compiler 0.8.24 or higher.
-
----
-
-## Network Constants (hardcoded in factory)
-
-| Constant | Value |
-|---|---|
-| TOTAL_SUPPLY | 100,000,000 tokens (6 decimals) |
-| REWARDS_ALLOC | 45,000,000 (45%) |
-| LP_ALLOC | 30,000,000 (30%) |
-| TEAM_ALLOC | 15,000,000 (15%) |
-| TREASURY_ALLOC | 10,000,000 (10%) |
-| DAILY_CAP | 500,000 tokens |
-| CLIFF_DURATION | 180 days |
-| VEST_DURATION | 1,080 days |
-| TIMELOCK_DURATION | 90 days |
+```
+├── index.html            ← the live site. GitHub Pages serves the repo ROOT,
+├── CNAME                   so these must not move or punchcard.club breaks
+├── og-image.*  punchbari.jpg
+│
+├── contracts/            ← the protocol (8 contracts + 5 interfaces)
+│   └── interfaces/
+│
+├── docs/
+│   ├── architecture.md   ← what each contract does, allocations, trust model
+│   └── deployment-runbook.md  ← network setup + the repeatable merchant path
+│
+├── deploy/
+│   ├── network/base-mainnet.json   ← canonical addresses + fixed constants
+│   └── merchants/_template.json    ← copy per merchant, commit when deployed
+│
+├── dapp/                 ← prototype UI (mock data)
+└── website/              ← stale duplicate
+```
 
 ---
 
-## Wind-Down Process
+## Adding a merchant
 
-1. Multisig calls `WindDownController.initiate(merchantToken)`
-   - Freezes RewardEscrow and TreasuryTimelock immediately
-   - Starts 12-month timer
-2. After 12 months, anyone can call (in any order):
-   - `onExpiryBurnEscrow(merchantToken)`
-   - `onExpiryBurnTreasury(merchantToken)`
-   - `onExpirySettleVesting(merchantToken)`
-3. After all three complete, anyone can call:
-   - `onExpiryReleaseLP(merchantToken)` — 90% to merchant, 10% permanent
+The whole point of the project is that this never varies:
+
+1. `cp deploy/merchants/_template.json deploy/merchants/<business>.json`
+2. Fill in three wallets, IPFS metadata hash, pool seed amounts, reward bounds
+3. Work down the pre-flight checklist in [`docs/deployment-runbook.md`](docs/deployment-runbook.md)
+4. `ownerWallet` approves USDC → deployer calls `TokenFactory.deploy()`
+5. Record the deployed addresses back into the JSON and commit
+
+Allocations are not configurable. Every merchant gets the same split, enforced as
+constants in the factory:
+
+**45% rewards · 30% liquidity · 15% team · 10% treasury** — 100M fixed supply, 6 decimals.
+
+---
+
+## Working on the contracts
+
+They were authored in Remix. `.gitignore` excludes `artifacts/` and `.deps/` so a Remix
+workspace can point at this directory without committing build output.
+
+- Solidity **0.8.24+**, OpenZeppelin v4.x or v5.x
+- Every merchant-facing address is `immutable` after deploy — there are no setters for
+  `teamWallet`, `ownerWallet`, or `operator`
+- Read [`docs/architecture.md`](docs/architecture.md) before changing allocation or
+  wind-down behaviour; the trust model section explains which guarantees the marketing
+  copy depends on
+
+> **Source of truth is this repo.** The contracts previously lived only in an iCloud Remix
+> workspace with no version history. If you edit them in Remix, commit the result here.

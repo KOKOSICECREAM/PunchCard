@@ -1,0 +1,59 @@
+{
+  "merchant": "Business Name",
+  "status": "draft",
+  "_status_values": "draft | ready | deployed",
+
+  "deployParams": {
+    "_comment": "Maps 1:1 to TokenFactory.DeployParams. Amounts are human-readable; convert to base units at call time (token/USDC = 6 decimals, ETH = 18).",
+
+    "name": "Business Name Rewards",
+    "symbol": "SYMBOL",
+    "ipfsHash": null,
+
+    "ownerWallet": null,
+    "teamWallet": null,
+    "operator": null,
+
+    "usdcFeeTier": 3000,
+    "ethFeeTier": 3000,
+    "usdcPairAmount": null,
+    "ethPairAmount": null,
+
+    "perTxFloor": null,
+    "perTxMax": null
+  },
+
+  "rules": {
+    "_comment": "Enforced by require() in TokenFactory.deploy() — check before spending gas.",
+    "name": "non-empty",
+    "symbol": "non-empty",
+    "ipfsHash": "non-zero bytes32",
+    "ownerWallet": "non-zero; IMMUTABLE after deploy",
+    "teamWallet": "non-zero; IMMUTABLE FOREVER — no update function exists",
+    "operator": "non-zero; POS signer; IMMUTABLE after deploy",
+    "usdcPairAmount": "> 0 — both pools are mandatory",
+    "ethPairAmount": "> 0 and must equal msg.value",
+    "perTxFloor": "> 0 and <= dailyCap (500000)",
+    "perTxMax": ">= perTxFloor and <= dailyCap (500000)",
+    "feeTiers": "one of 100 / 500 / 3000 / 10000"
+  },
+
+  "launchPrice": {
+    "_comment": "Sanity check — these two must imply the same price or launch is arbitrageable.",
+    "usdcPoolImpliedPrice": "usdcPairAmount / 1800000",
+    "ethPoolImpliedPrice": "ethPairAmount / 1200000 (convert to USD at deploy-time ETH price)"
+  },
+
+  "deployed": {
+    "_comment": "Fill in after deploy, then set status to 'deployed' and commit.",
+    "txHash": null,
+    "blockNumber": null,
+    "token": null,
+    "rewardEscrow": null,
+    "vestingWallet": null,
+    "treasuryTimelock": null,
+    "lpLocker": null,
+    "usdcPositionId": null,
+    "ethPositionId": null
+  }
+}
