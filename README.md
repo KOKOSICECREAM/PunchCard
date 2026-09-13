@@ -24,7 +24,7 @@ hash, the pool seed sizes, and the per-transaction reward bounds.
 | Piece | State |
 |---|---|
 | Contracts | **Compile and fit EIP-170. Never deployed, never run against live Uniswap.** |
-| Tests | 10 passing — pricing maths and fee-split invariants, against mocks |
+| Tests | 22 passing — pricing maths, fee-split invariants, drawer/emission/pause, against mocks |
 | Marketing site | Live at punchcard.club, GitHub Pages from the repo root |
 | Customer dapp (`dapp/`) | **Prototype** — hardcoded mock balances, no web3 |
 | `website/` | **Stale duplicate** of the root site, candidate for deletion |
@@ -47,7 +47,7 @@ factory — it runs on its own earlier contracts. **No merchant has been deploye
 │                                        so these must never move
 ├── contracts/
 │   ├── PunchCardToken.sol             the merchant's ERC-20
-│   ├── RewardEscrow.sol               45% — metered reward pool
+│   ├── RewardEscrow.sol               45% — 5yr emission + per-kiosk drawers
 │   ├── VestingWallet.sol              15% — team, 180d cliff / 1080d linear
 │   ├── TreasuryTimelock.sol           10% — merchant capital, 90d delay
 │   ├── LPLocker.sol                   30% — dual Uniswap positions + fee collection
@@ -94,7 +94,7 @@ Merchant status on the network is exactly this: a `MerchantDeployed` event plus
 
 | Slice | Amount | Where it goes |
 |---|---|---|
-| Rewards | 45,000,000 | `RewardEscrow`, metered by a daily bucket |
+| Rewards | 45,000,000 | `RewardEscrow`, emitted over 5 years, spent through per-kiosk drawers |
 | Liquidity | 30,000,000 | `LPLocker` — 3M seeds the pools, 27M reserve |
 | Team | 15,000,000 | `VestingWallet`, 180d cliff then linear to 1080d |
 | Treasury | 10,000,000 | `TreasuryTimelock`, 90d delay per release |
@@ -153,10 +153,10 @@ keys, no freeze functions" is false at the system level, though true of the toke
 
 # Open logic considerations
 
-Nothing below is a bug. These are design decisions worth making deliberately before
-mainnet, roughly in order of how much they would hurt.
+Design decisions worth making deliberately before mainnet, roughly in order of how much
+they would hurt. Items 1–3 were closed by the drawer/emission rework; the rest stand.
 
-### 1. The POS operator key cannot be rotated — and this one worries me
+### ~~1. The POS operator key cannot be rotated~~ — ✅ FIXED
 
 `RewardEscrow.operator` is `immutable`. There is no `setOperator`. If a merchant's POS
 signing key is leaked, an attacker can call `distributeReward` to their own address up to
@@ -164,37 +164,36 @@ the daily cap — **500,000 tokens a day, indefinitely** — and the merchant ha
 stop it. The only remedy is PunchCard initiating a wind-down, which freezes rewards but
 also ends the program and burns the remaining escrow.
 
-Key rotation is standard practice precisely because keys on point-of-sale hardware leak.
-Options: let `ownerWallet` rotate the operator (possibly behind a short timelock, so a
-compromised owner key cannot instantly redirect rewards), or give the owner an emergency
-pause on the escrow alone. Either weakens "every address is immutable" slightly — worth it,
-in my view, against the alternative.
+**Fixed by the drawer model.** Each kiosk is its own operator with its own till,
+replenishing continuously up to a daily allowance (default two days of emission, ~49,300
+tokens, roughly $82 at launch price). A leaked key costs at most one drawer per day until
+the merchant removes that operator with their cold wallet. `MAX_DRAWER_DAYS` caps any till
+at 14 days of emission, so even a compromised owner key cannot open an unlimited drawer,
+and raising an allowance does not refill a till already drawn down.
 
-### 2. The reward pool lasts 90 days at full draw
+### ~~2. The reward pool lasts 90 days at full draw~~ — ✅ FIXED
 
 45,000,000 rewards ÷ 500,000 daily cap = **90 days**. A busy merchant hitting the cap
 exhausts their entire reward allocation in three months, and the escrow cannot be refilled
 from anywhere — `refill()` only moves tokens within the escrow's own balance.
 
-Is the cap meant to be a ceiling nobody approaches, or a real operating rate? If a merchant
-is expected to run for years, the cap and the allocation are inconsistent by roughly an
-order of magnitude. Worth modelling against KOKOS's actual reward volume, which is the one
-real data point you have.
+**Fixed by the emission schedule.** The allocation now unlocks continuously over five
+years — 24,657/day — and only unlocked tokens are spendable, with at most 30 days of
+emission reachable at once so a quiet month banks capacity for a busy one. Unspent emission
+is not forfeited: it stays claimable and extends the programme past five years, which is
+also how price appreciation is absorbed without an oracle.
 
-### 3. `perTxFloor` is immutable but denominated in tokens
+### ~~3. `perTxFloor` is immutable~~ — ✅ FIXED
 
-It is set at roughly "$0.01 at launch price" and then frozen. If the token appreciates 100×,
-the *minimum* reward the POS can issue is worth $1. If it collapses, the floor becomes
-meaningless. `perTxMax` is adjustable by the merchant; the floor is not. Consider making it
-adjustable within bounds, or dropping it — its purpose is dust prevention, which a
-merchant-set floor would also achieve.
+**Fixed.** `setPerTxBounds()` lets the owner move both floor and ceiling, bounded by the
+drawer ceiling. Both are token-denominated and what a token is worth moves.
 
-### 4. Nothing triggers `refill()` or `collectFees()`
+### 4. Nothing triggers `collectFees()`
 
-Both are permissionless, which is right, but permissionless means *somebody still has to
-call them*. If nobody calls `refill()`, the daily bucket empties and rewards silently stop.
-If nobody calls `collectFees()`, PunchCard earns nothing. Both need an operational answer —
-the POS calling `refill()` opportunistically, and a keeper for fee collection.
+Permissionless is right, but somebody still has to call it or PunchCard earns nothing.
+Needs a keeper. (`refill()` is gone — continuous emission needs no trigger, which also
+removed a griefing vector where anyone could pin a merchant's daily refill to an hour of
+their choosing by topping up a nearly-full bucket the instant the cooldown lapsed.)
 
 ### 5. Merchants cannot wind down their own program
 
