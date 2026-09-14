@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../contracts/LPLocker.sol";
-import "../contracts/rehearsal/LPLockerRehearsal.sol";
+import "../contracts/beta/LPLockerBeta.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
@@ -46,10 +46,10 @@ contract DrainPM {
     }
 }
 
-contract RehearsalEvacuationTest is Test {
+contract BetaRecoveryTest is Test {
     MTok merchant; MTok usdc; MTok weth;
     DrainPM pm;
-    LPLockerRehearsal locker;
+    LPLockerBeta locker;
 
     address constant OWNER     = address(0xA11CE);
     address constant PUNCHCARD = address(0xB0B);
@@ -66,7 +66,7 @@ contract RehearsalEvacuationTest is Test {
         pm.seed(1, 1e18); pm.seed(2, 1e18);
         pm.setPayout(100 * 1e6);
 
-        locker = new LPLockerRehearsal(
+        locker = new LPLockerBeta(
             address(merchant), OWNER, WINDDOWN, address(pm), FACTORY,
             address(usdc), address(weth), PUNCHCARD
         );

@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "../LPLocker.sol";
 
-/// @title LPLockerRehearsal — REHEARSAL ONLY. NEVER DEPLOY FOR A REAL MERCHANT.
+/// @title LPLockerBeta — an LPLocker with a temporary, self-expiring LP recovery window.
 /// @notice An LPLocker with a temporary, self-expiring LP evacuation hatch.
 ///
 /// @dev **This contract breaks the core PunchCard promise on purpose.** Production
@@ -11,9 +11,10 @@ import "../LPLocker.sol";
 ///      365 days later, takes any of it out. That is the guarantee a merchant's customers
 ///      rely on, and it is why the production contract must never inherit from this one.
 ///
-///      The hatch exists for exactly one situation: the first live deployment of unaudited
-///      code, operated by PunchCard, where an unseen bug could otherwise strand real value
-///      for a year. Wind-down is the only existing exit and it is a sledgehammer — 365
+///      The window exists for the beta stage: the first live deployments of unaudited
+///      code, where an unseen bug could otherwise strand real value for a year. Beta
+///      merchants are REAL merchants on the real network — the window is a disclosed,
+///      time-boxed difference in one guarantee, not a toy deployment. Wind-down is the only existing exit and it is a sledgehammer — 365
 ///      days, burns undistributed escrow, and cannot be reversed. This is the fire alarm.
 ///
 ///      Four guardrails, all deliberate:
@@ -29,7 +30,7 @@ import "../LPLocker.sol";
 ///         An escape hatch is one unambiguous action, not a knob.
 ///      4. **It is loud.** `LPEvacuated` carries everything moved, and the contract is
 ///         permanently dead afterwards.
-contract LPLockerRehearsal is LPLocker {
+contract LPLockerBeta is LPLocker {
 
     using SafeERC20 for IERC20;
 

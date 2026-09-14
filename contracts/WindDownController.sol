@@ -11,7 +11,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @title WindDownController
 /// @notice Coordinates merchant token wind-down across all suite contracts.
 /// @dev Deployed once by PunchCard at network launch. Immutable after deploy.
-///      Factory is the sole registrar. PunchCard multisig is the sole initiator.
+///      Registration is restricted to AUTHORIZED FACTORIES. PunchCard multisig is the sole
+///      initiator of wind-down.
 ///      Wind-down state machine — four independent expiry steps,
 ///      LP release is the terminal gate requiring all three prior steps complete.
 ///      At initiation: escrow, treasury, and LP all frozen immediately.
@@ -20,17 +21,76 @@ contract WindDownController is IWindDownController {
 
     uint256 public constant WIND_DOWN_DURATION = 365 days;
 
+    /// @notice How long a proposed factory change must wait before it can be executed.
+    uint256 public constant FACTORY_TIMELOCK = 48 hours;
+
     address public immutable multisig;
+
+    /// @notice The factory set at construction. Kept for provenance; authorisation is read
+    ///         from `authorizedFactories`, which this address starts out in.
     address public immutable factory;
+
+    /// @notice Deployment paths allowed to register merchants into this network.
+    /// @dev More than one on purpose. A staged rollout deploys early merchants through a
+    ///      factory with an LP recovery window and later merchants through a strict one;
+    ///      if each needed its own controller, each would get its own router and registry,
+    ///      and merchants from different stages could not swap against one another. That
+    ///      would split the network exactly where the network effect is being proven.
+    ///
+    ///      This is a GOVERNANCE power, not a custody power. Authorising a factory adds a
+    ///      future deployment path. It cannot touch an existing merchant's suite, terms,
+    ///      liquidity or tokens — there is no function here that mutates a registered
+    ///      suite, and `register()` refuses a token that is already registered.
+    mapping(address => bool) public authorizedFactories;
+
+    /// @notice Timestamp a proposed authorisation change becomes executable. 0 = none.
+    mapping(address => uint256) public factoryProposedAt;
+    mapping(address => bool)    public factoryProposalIsAuthorize;
 
     mapping(address => WindDownSuite) private _suites;
     mapping(address => bool) private _registered;
+
+    event FactoryProposed(address indexed factory, bool authorize, uint256 executableAt);
+    event FactoryAuthorized(address indexed factory, uint256 timestamp);
+    event FactoryDisabled(address indexed factory, uint256 timestamp);
 
     constructor(address _multisig, address _factory) {
         require(_multisig != address(0), "Invalid multisig");
         require(_factory  != address(0), "Invalid factory");
         multisig = _multisig;
         factory  = _factory;
+        authorizedFactories[_factory] = true;
+        emit FactoryAuthorized(_factory, block.timestamp);
+    }
+
+    // ── FACTORY AUTHORISATION ─────────────────────────────────────────────────
+
+    /// @notice Propose authorising or disabling a deployment path. Multisig only.
+    /// @dev Timelocked for the same reason the router's parameter changes are: the power
+    ///      to add a deployment path should be visible before it takes effect.
+    function proposeFactory(address newFactory, bool authorize) external onlyMultisig {
+        require(newFactory != address(0), "Invalid factory");
+        require(authorizedFactories[newFactory] != authorize, "Already in that state");
+        factoryProposedAt[newFactory]          = block.timestamp + FACTORY_TIMELOCK;
+        factoryProposalIsAuthorize[newFactory] = authorize;
+        emit FactoryProposed(newFactory, authorize, block.timestamp + FACTORY_TIMELOCK);
+    }
+
+    /// @notice Execute a proposal once its timelock has elapsed. Multisig only.
+    /// @dev Disabling a factory stops it registering NEW merchants. Merchants it already
+    ///      registered are untouched and keep working — retiring a deployment path must
+    ///      never orphan the merchants that came through it.
+    function executeFactory(address newFactory) external onlyMultisig {
+        uint256 at = factoryProposedAt[newFactory];
+        require(at != 0,                "No proposal");
+        require(block.timestamp >= at,  "Timelock not elapsed");
+
+        bool authorize = factoryProposalIsAuthorize[newFactory];
+        authorizedFactories[newFactory] = authorize;
+        factoryProposedAt[newFactory]   = 0;
+
+        if (authorize) emit FactoryAuthorized(newFactory, block.timestamp);
+        else           emit FactoryDisabled(newFactory, block.timestamp);
     }
 
     modifier onlyMultisig() {
@@ -39,7 +99,7 @@ contract WindDownController is IWindDownController {
     }
 
     modifier onlyFactory() {
-        require(msg.sender == factory, "Not factory");
+        require(authorizedFactories[msg.sender], "Not factory");
         _;
     }
 

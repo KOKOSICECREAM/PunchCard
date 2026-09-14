@@ -429,6 +429,13 @@ reverted every deployment forever. `cast code` takes seconds.
 - **Figures quoted to customers are read from the contract, not retyped in the app.** The
   wind-down disclosure reads `LPLocker.WIND_DOWN_RELEASE_PCT()`. A hardcoded copy would
   keep asserting a number the contract had stopped meaning.
+- **Staged rollout: one network, three stages.** — **decided 2026-09-14.** Rehearsal →
+  Beta (real merchants, 30-day LP recovery window) → Production (strict factory, no
+  recovery). All stages share ONE `WindDownController` and ONE router, which is why the
+  controller holds a *set* of authorised factories behind a 48-hour timelock. A controller
+  per stage would have split the network exactly where the network effect is being proven,
+  and it could not be retrofitted — the field was immutable. Full detail and the exact
+  beta-vs-production guarantee language in `docs/staged-rollout.md`.
 - **Testing-only trust assumptions live in a separate contract lineage, never in the
   protocol** — **decided 2026-09-14.** The first live deployment runs unaudited code, so a
   temporary LP evacuation hatch is reasonable *for that deployment*. It is NOT reasonable
