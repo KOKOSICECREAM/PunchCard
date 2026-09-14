@@ -155,6 +155,66 @@ contract ForkDeployTest is Test {
         emit log_named_address("token",    token);
         emit log("merchant deployed against live Uniswap");
     }
+
+    /// A $10 launch — the smallest intended scale — against live Base Uniswap.
+    ///
+    /// Supply, allocations and every schedule constant are UNCHANGED; only the seed and the
+    /// factory's policy floors move. That is the point: a micro launch must exercise the
+    /// exact production bytecode, or it proves nothing about what ships.
+    function test_microLaunchAtTenDollars() public {
+        if (!forked) { vm.skip(true); }
+
+        // Same contracts, $5/$5 floors. Predict the factory address so the controller can
+        // be built against it — the same pattern DeployNetwork.s.sol uses.
+        address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
+        WindDownController w = new WindDownController(MULTISIG, predicted);
+        TokenFactory f = new TokenFactory(
+            MULTISIG, address(this), address(w), POSITION_MANAGER, USDC, WETH,
+            ETH_USD_FEED, FEE_RECIP, address(suiteDeployer), address(lockerDeployer),
+            5 * 1e8, 5 * 1e8
+        );
+        assertEq(address(f), predicted, "factory landed where predicted");
+
+        uint256 usdcSeed = 5 * 1e6;           // $5
+        uint256 ethSeed  = 0.002 ether;       // ~$5 at ~$2,475/ETH
+
+        deal(USDC, OWNER, usdcSeed);
+        vm.deal(address(this), ethSeed);
+        vm.prank(OWNER);
+        IERC20(USDC).approve(address(f), usdcSeed);
+
+        vm.recordLogs();
+        f.deploy{value: ethSeed}(TokenFactory.DeployParams({
+            name: "PunchCard Micro Test", symbol: "PCMICRO",
+            ipfsHash: keccak256("micro"),
+            ownerWallet: OWNER, teamWallet: TEAM, operator: OPERATOR,
+            usdcFeeTier: 3000, ethFeeTier: 3000,
+            usdcPairAmount: usdcSeed, ethPairAmount: ethSeed,
+            perTxFloor: 1e6, perTxMax: 20_000 * 1e6
+        }));
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        address token; address locker;
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == keccak256(
+                "MerchantDeployed(address,address,address,address,address,address,address,address,bytes32,uint256)"
+            )) {
+                token = address(uint160(uint256(logs[i].topics[1])));
+                (,,,,, locker,,) = abi.decode(
+                    logs[i].data, (address,address,address,address,address,address,bytes32,uint256)
+                );
+            }
+        }
+
+        // Full-size supply and allocations survive a tiny seed intact.
+        assertTrue(token != address(0), "merchant deployed");
+        assertEq(IERC20(token).totalSupply(), 100_000_000 * 1e6, "supply unchanged at micro scale");
+        assertGe(IERC20(token).balanceOf(locker), 27_000_000 * 1e6, "reserve intact");
+        assertEq(IERC721(POSITION_MANAGER).balanceOf(locker), 2, "both pools seeded with $5 each");
+        assertEq(IERC20(token).balanceOf(OWNER), 0, "no merchant tokens escaped to the merchant");
+
+        emit log("micro launch succeeded against live Base Uniswap at a $10 total seed");
+    }
 }
 
 interface IERC721 { function balanceOf(address) external view returns (uint256); }
