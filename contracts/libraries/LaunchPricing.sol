@@ -14,8 +14,9 @@ pragma solidity ^0.8.24;
 ///
 ///          price = totalSeedUsd / LAUNCH_LP_ALLOC        (same for both pools)
 ///
-///      Seed $2k USDC + $3k ETH and the USDC pool gets 40% of the launch tokens and the
-///      ETH pool 60%. Seed $50k + $50k and it is 50/50. Either way, one price.
+///      Seed $2k USDC + $1k ETH (the floors) and the USDC pool gets 2/3 of the launch
+///      tokens and the ETH pool 1/3. Seed $50k + $50k and it is 50/50. Either way, one
+///      price.
 library LaunchPricing {
 
     /// @notice Splits a fixed launch token allocation in proportion to seeded USD value.

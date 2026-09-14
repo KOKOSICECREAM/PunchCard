@@ -7,6 +7,7 @@ import "../contracts/WindDownController.sol";
 import "../contracts/RewardEscrow.sol";
 import "../contracts/deployers/SuiteDeployer.sol";
 import "../contracts/deployers/LockerDeployer.sol";
+import "../contracts/interfaces/IEthUsdOracle.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Fork test — a real merchant deployment against live Base contracts
@@ -62,7 +63,7 @@ contract ForkDeployTest is Test {
             address(suiteDeployer),
             address(lockerDeployer),
             2_000 * 1e8,      // $2,000 USDC floor — mainnet policy
-            3_000 * 1e8       // $3,000 ETH floor
+            1_000 * 1e8       // $1,000 ETH floor — mainnet policy
         );
         assertEq(address(factory), predictedFactory, "factory landed where predicted");
     }
@@ -79,7 +80,7 @@ contract ForkDeployTest is Test {
         }
 
         uint256 usdcSeed = 2_500 * 1e6;   // above the $2,000 floor
-        uint256 ethSeed  = 2 ether;       // comfortably above the $3,000 floor
+        uint256 ethSeed  = 2 ether;       // comfortably above the $1,000 floor
 
         deal(USDC, OWNER, usdcSeed);
         vm.deal(address(this), ethSeed);
@@ -214,6 +215,69 @@ contract ForkDeployTest is Test {
         assertEq(IERC20(token).balanceOf(OWNER), 0, "no merchant tokens escaped to the merchant");
 
         emit log("micro launch succeeded against live Base Uniswap at a $10 total seed");
+    }
+
+    /// The seed floors are the economics of the whole protocol, and until now nothing
+    /// proved `deploy()` actually rejects an under-seed — the floors were only ever
+    /// exercised from above. A silently non-binding floor would let a merchant open a
+    /// market on $50 of liquidity, which is the failure the minimums exist to prevent.
+    /// Pinned against the live Chainlink feed, so the ETH case also covers the valuation
+    /// path rather than a hardcoded price.
+    function test_seedFloorsAreEnforced() public {
+        if (!forked) {
+            emit log("SKIPPED - needs --fork-url https://mainnet.base.org");
+            vm.skip(true);
+        }
+
+        // Comfortably above the ETH floor, so only the USDC side can fail.
+        uint256 goodEth = 2 ether;
+
+        TokenFactory.DeployParams memory p = TokenFactory.DeployParams({
+            name:           "Underfunded",
+            symbol:         "UNDER",
+            ipfsHash:       keccak256("metadata"),
+            ownerWallet:    OWNER,
+            teamWallet:     TEAM,
+            operator:       OPERATOR,
+            usdcFeeTier:    3000,
+            ethFeeTier:     3000,
+            usdcPairAmount: 1_999 * 1e6,      // one dollar under the $2,000 floor
+            ethPairAmount:  goodEth,
+            perTxFloor:     1e6,
+            perTxMax:       20_000 * 1e6
+        });
+
+        deal(USDC, OWNER, 5_000 * 1e6);
+        vm.prank(OWNER);
+        IERC20(USDC).approve(address(factory), type(uint256).max);
+        vm.deal(address(this), 10 ether);
+
+        vm.expectRevert("USDC seed below minimum");
+        factory.deploy{value: goodEth}(p);
+
+        // One dollar over clears it — proving the revert above was the floor and not some
+        // unrelated failure that happened to carry the same shape.
+        p.usdcPairAmount = 2_000 * 1e6;
+        factory.deploy{value: goodEth}(p);
+
+        // Now the ETH side, valued through the live feed. $1,000 at the current price,
+        // minus a 1% margin, must fail; the same amount plus 1% must not.
+        (, int256 answer,,,) = IEthUsdOracle(ETH_USD_FEED).latestRoundData();
+        uint256 ethUsd = uint256(answer);                  // 8dp
+        uint256 oneThousandUsdInWei = (1_000 * 1e8 * 1e18) / ethUsd;
+
+        p.symbol         = "UNDER2";
+        p.usdcPairAmount = 2_500 * 1e6;
+        p.ethPairAmount  = (oneThousandUsdInWei * 99) / 100;
+
+        vm.expectRevert("ETH seed below minimum");
+        factory.deploy{value: p.ethPairAmount}(p);
+
+        p.symbol        = "OVER2";
+        p.ethPairAmount = (oneThousandUsdInWei * 101) / 100;
+        factory.deploy{value: p.ethPairAmount}(p);
+
+        emit log("seed floors enforced at $2,000 USDC / $1,000 ETH");
     }
 }
 

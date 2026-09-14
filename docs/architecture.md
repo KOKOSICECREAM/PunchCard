@@ -39,8 +39,8 @@ Identical for every merchant — set as `constant` in `TokenFactory`, not parame
 | `TEAM_ALLOC` | 15,000,000 — 15% |
 | `TREASURY_ALLOC` | 10,000,000 — 10% |
 | `LAUNCH_LP_ALLOC` | 3,000,000 seeded at launch |
-| `MIN_USDC_SEED_USD` | $2,000 floor |
-| `MIN_ETH_SEED_USD` | $3,000 floor |
+| `MIN_USDC_SEED_USD` | $2,000 floor — constructor arg, 8dp |
+| `MIN_ETH_SEED_USD` | $1,000 floor — constructor arg, 8dp |
 | `LP_RESERVE` | 27,000,000 held for merchant-controlled release |
 | `DAILY_CAP` | 500,000 tokens/day |
 | `CLIFF_DURATION` | 180 days |
@@ -92,8 +92,8 @@ the implied price identical in both pools by construction:
 price = (usdcSeedUsd + ethSeedUsd) / 3,000,000
 ```
 
-Seed $2k USDC + $3k ETH and the split is 40/60. Seed $50k + $50k and it is 50/50. Either
-way one price, and no arbitrage between a merchant's own two pools. ETH is valued through
+Seed $2k USDC + $1k ETH (the floors) and the split is 67/33. Seed $50k + $50k and it is
+50/50. Either way one price, and no arbitrage between a merchant's own two pools. ETH is valued through
 a Chainlink ETH/USD feed, which `deploy()` rejects if it is more than an hour stale.
 
 ### PunchCardRouter — the network effect

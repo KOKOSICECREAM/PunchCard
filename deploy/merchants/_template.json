@@ -16,7 +16,7 @@
     "ethPairAmount": null,
     "perTxFloor": null,
     "perTxMax": null,
-    "_seed_comment": "usdcPairAmount and ethPairAmount are MINIMUMS of $2,000 and $3,000 \u2014 seed more if the merchant, an investor or PunchCard wants deeper pools. The token side of each pool is derived from the USD value seeded, so both pools always open at the same price regardless of the amounts."
+    "_seed_comment": "usdcPairAmount and ethPairAmount are MINIMUMS of $2,000 USDC and $1,000 ETH \u2014 seed more if the merchant, an investor or PunchCard wants deeper pools. The token side of each pool is derived from the USD value seeded, so both pools always open at the same price regardless of the amounts."
   },
   "rules": {
     "_comment": "Enforced by require() in TokenFactory.deploy() \u2014 check before spending gas.",
@@ -27,7 +27,7 @@
     "teamWallet": "non-zero; IMMUTABLE FOREVER \u2014 no update function exists",
     "operator": "non-zero; POS signer; IMMUTABLE after deploy",
     "usdcPairAmount": ">= $2,000 worth (MIN_USDC_SEED_USD). No upper bound.",
-    "ethPairAmount": ">= $3,000 worth at the Chainlink ETH/USD price, and must equal msg.value. No upper bound.",
+    "ethPairAmount": ">= $1,000 worth at the Chainlink ETH/USD price, and must equal msg.value. No upper bound.",
     "perTxFloor": "> 0 and <= dailyCap (500000)",
     "perTxMax": ">= perTxFloor and <= dailyCap (500000)",
     "feeTiers": "one of 100 / 500 / 3000 / 10000",

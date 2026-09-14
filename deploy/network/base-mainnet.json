@@ -39,8 +39,10 @@
     "timelockDays": 90,
     "windDownDays": 365,
     "_launchSplit": "Derived at deploy time from seeded USD value, not fixed. See LaunchPricing.",
-    "minUsdcSeedUsd": 2000,
-    "minEthSeedUsd": 3000,
+    "_seed_units": "8 decimals, matching the Chainlink ETH/USD feed \u2014 these are passed verbatim as PC_MIN_USDC_SEED_USD / PC_MIN_ETH_SEED_USD. They were previously written as plain dollars (2000 / 3000), which would have set the floors to $0.00002.",
+    "minUsdcSeedUsd": 200000000000,
+    "minEthSeedUsd": 100000000000,
+    "_seed_human": "$2,000 USDC and $1,000 ETH. USDC is weighted heavier because it carries commerce, cross-merchant routing and cash-out.",
     "maxOracleAgeSeconds": 3600
   }
 }

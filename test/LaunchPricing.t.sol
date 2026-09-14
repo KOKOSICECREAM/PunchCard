@@ -9,13 +9,13 @@ contract LaunchPricingTest is Test {
 
     /// The whole point: whatever is seeded, both pools must imply the same price.
     function test_bothPoolsPriceIdentically() public pure {
-        uint256 usdcUsd = 2_000 * 1e8;   // $2,000
-        uint256 ethUsd  = 3_000 * 1e8;   // $3,000
+        uint256 usdcUsd = 2_000 * 1e8;   // $2,000 — the USDC floor
+        uint256 ethUsd  = 1_000 * 1e8;   // $1,000 — the ETH floor
         (uint256 tU, uint256 tE) =
             LaunchPricing.deriveTokenSplit(LAUNCH_ALLOC, usdcUsd, ethUsd);
 
-        assertEq(tU, 1_200_000 * 1e6, "USDC pool should get 40%");
-        assertEq(tE, 1_800_000 * 1e6, "ETH pool should get 60%");
+        assertEq(tU, 2_000_000 * 1e6, "USDC pool should get 2/3");
+        assertEq(tE, 1_000_000 * 1e6, "ETH pool should get 1/3");
 
         // price = value / tokens, scaled up to compare without integer truncation
         uint256 pU = (usdcUsd * 1e18) / tU;

@@ -75,7 +75,7 @@ factory — it runs on its own earlier contracts. **No merchant has been deploye
 The merchant never calls it. In one transaction:
 
 1. Pull `usdcPairAmount` from `ownerWallet`; wrap `msg.value` to WETH
-2. Read Chainlink ETH/USD; value both seeds; **enforce the $2,000 / $3,000 minimums**
+2. Read Chainlink ETH/USD; value both seeds; **enforce the $2,000 / $1,000 minimums**
 3. Derive the launch token split from the seeded USD value *(see Economics below)*
 4. Deploy token, vesting, treasury, escrow via `SuiteDeployer`; LP locker via `LockerDeployer`
 5. Distribute 15M / 10M / 45M to vesting, treasury, escrow — factory retains exactly 30M
@@ -150,8 +150,14 @@ Two consequences worth holding in view:
 
 ### Seeding is a floor, not a fixed size
 
-Minimums are **$2,000 USDC and $3,000 ETH**, enforced on-chain. There is no upper bound —
-a merchant, an outside investor, or PunchCard may fund deeper pools, and deeper is better.
+Minimums are **$2,000 USDC and $1,000 ETH** — $3,000 total, enforced on-chain. There is
+no upper bound: a merchant, an outside investor, or PunchCard may fund deeper pools, and
+deeper is better.
+
+The weighting is deliberate. USDC is where commerce happens — customers buy tokens with
+it, cross-merchant swaps route through it, and merchants cash out into it. ETH is the
+speculative venue, and speculators are the participants most able to size their own trades
+around thin liquidity. Depth belongs on the side that carries real flow.
 
 Because the amounts vary, the **token side of each pool is derived, not fixed**. Each pool
 receives launch tokens in proportion to the USD value seeded into it, which makes the
@@ -161,11 +167,11 @@ implied price identical in both by construction:
 price per token = (usdcSeedUsd + ethSeedUsd) / 3,000,000
 ```
 
-$2k + $3k → 40/60 split. $50k + $50k → 50/50. Any seed → one price.
+$2k + $1k → 67/33 split. $50k + $50k → 50/50. Any seed → one price.
 
 > This replaced a fixed 1.8M/1.2M split, which only priced both pools equally at a seed
-> ratio of exactly 1.5:1. At $2k + $3k it opened them **2.25× apart** and handed the first
-> trader a large slice of the seed.
+> ratio of exactly 1.5:1. At the floors of the time ($2k + $3k) it opened the two pools
+> **2.25× apart** and handed the first trader a large slice of the seed.
 
 ### How PunchCard earns
 

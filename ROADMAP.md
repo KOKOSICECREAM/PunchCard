@@ -171,15 +171,14 @@ intent, so announce first and keep the gap between pulling and deploying short.
 
 - **Holder count is assumed, not measured.** The working guess is ~5 real holders with the
   rest bots. The whole plan's difficulty scales off this number and it has not been checked.
-- **The recovered capital does not meet the minimums, and is the wrong shape.** The old
-  pools hold **$720 USDC + 0.76 WETH ≈ $2,598** against a $2,000 / $3,000 per-asset floor.
-  It clears ETH comfortably and fails USDC badly. Rebalance, top up, or change the floor.
-- **Which raises a harder question: our own shop cannot meet our own minimum.** That is
-  either a one-off top-up or evidence the floor is wrong for the merchant being targeted.
-  An independent coffee shop asked for $5,000 of working capital before seeing a single
-  reward issued is a real barrier, and KOKOS is currently the evidence. Note the minimums
-  are **factory-level policy**, not per-merchant — lowering them for KOKOS lowers them for
-  every merchant that factory deploys.
+- **The recovered capital is close, but the wrong shape.** The old pools hold **$720 USDC
+  + 0.76 WETH ≈ $2,598** against the $2,000 USDC / $1,000 ETH floors. The ETH side clears
+  with ~$878 to spare; the USDC side is short by $1,280. Rebalancing the ETH surplus into
+  USDC leaves roughly **$402 to top up** — a real number, not a blocker.
+- **This is what set the floors.** KOKOS being unable to meet its own minimum was the
+  evidence that $5,000 was wrong, and it drove the move to $3,000 total weighted toward
+  USDC (settled 2026-09-14, below). The minimums are **factory-level policy**, not
+  per-merchant — they cannot be bent for one shop without bending for all.
 - **Distribution source.** Rewards escrow (fast, consumes reward budget) or treasury
   (90-day timelock, uses the merchant's own allocation). See below.
 
@@ -274,6 +273,29 @@ reverted every deployment forever. `cast code` takes seconds.
   the guarantee the trust model rests on.
 - **Seed minimums are constructor arguments.** So testnet and mainnet run identical
   bytecode. Never compile a special build for testing.
+- **Seed floors are $2,000 USDC / $1,000 ETH** — **decided 2026-09-14**, down from
+  $2,000 / $3,000 and weighted the opposite way to the first proposal ($1,000 USDC /
+  $2,000 ETH). Two reasons:
+  - **$3,000 total, not $5,000.** $5,000 of working capital before a single reward is
+    issued is a genuine barrier for an independent shop, and KOKOS itself could not clear
+    it. $3,000 is still enough depth that ordinary reward-swap flow does not whipsaw the
+    price.
+  - **Depth belongs on the USDC side.** USDC carries customer purchases, cross-merchant
+    routing and merchant cash-out. The ETH pool is the speculative venue, and speculators
+    are the participants most able to size their own trades around thin liquidity. An
+    earlier version of this argument leaned on customer slippage; that was wrong —
+    customers receive rewards, they are not price-sensitive traders. The real cost of a
+    thin pool is **instability in what holders already own**, plus arbitrage leakage
+    between the two pools.
+- **The merchant's incentive to seed deeply is their own holding, not fee income.** A
+  merchant holds 25,000,000 tokens (10M treasury + 15M vesting) — **$25,000** at a $3,000
+  seed. A 10% price move is worth **$2,500** to them; the LP fee share they gave up under
+  the network fee model was worth **$12–$240/year** at realistic volume. The fee share was
+  never the meaningful incentive. Treasury's 90-day timelock and the 180-day vesting cliff
+  mean they cannot exit into a pump, so the only way to act on that incentive is the slow
+  one: deeper pools, more customers, more burn from real sales. **This is the pitch** —
+  "$3,000 establishes the market for an asset you own 25% of", not "$3,000 to fund a
+  loyalty programme".
 - **Never import a concrete suite contract into `TokenFactory`.** `new X(...)`, or even the
   type, pulls X's creation bytecode in and blows the size limit. Interfaces only.
 - **Never add a page under `/Customer_dapp/`** in the KOKOS repo — its service worker

@@ -12,7 +12,7 @@
     "_feed_note": "description() 'ETH / USD', decimals() 8, and observed 754s fresh — well inside MAX_ORACLE_AGE."
   },
   "seedMinimums": {
-    "_comment": "Faucet-sized for testnet. Mainnet uses $2,000 / $3,000. These are constructor arguments, so testnet and mainnet run identical bytecode.",
+    "_comment": "Faucet-sized for testnet. Mainnet uses $2,000 USDC / $1,000 ETH. These are constructor arguments, so testnet and mainnet run identical bytecode.",
     "minUsdcSeedUsd": 500000000,
     "minEthSeedUsd": 500000000,
     "_human": "$5 USDC and $5 of ETH"

@@ -109,10 +109,13 @@ The factory seeds **both** a USDC pool and an ETH pool. Both are mandatory.
 |---|---|
 | `usdcFeeTier` / `ethFeeTier` | 100 / 500 / 3000 / 10000 |
 | `usdcPairAmount` | **Minimum $2,000.** USDC, 6 decimals |
-| `ethPairAmount` | **Minimum $3,000** at the Chainlink price. Wei, sent as `msg.value` |
+| `ethPairAmount` | **Minimum $1,000** at the Chainlink price. Wei, sent as `msg.value` |
 
 These are floors, not fixed sizes — the merchant, an outside investor, or PunchCard may
 seed deeper pools, and deeper is better for price stability.
+
+The USDC floor is the higher of the two on purpose: USDC carries customer purchases,
+cross-merchant routing and merchant cash-out, while the ETH pool is the speculative venue.
 
 **You no longer have to hand-match the two prices.** The launch token split used to be a
 fixed 1.8M/1.2M, which meant any seed ratio other than exactly 1.5:1 opened the two pools
@@ -208,7 +211,7 @@ WindDownController, and emit `MerchantDeployed`.
 - [ ] USDC approval granted for exactly `usdcPairAmount`
 - [ ] Deployer wallet funded with `ethPairAmount` + gas
 - [ ] Agreed who is funding the seed — merchant, investor, or PunchCard
-- [ ] Both seeds clear their minimums ($2,000 USDC / $3,000 ETH)
+- [ ] Both seeds clear their minimums ($2,000 USDC / $1,000 ETH)
 - [ ] Chainlink feed is live and fresh — `deploy()` reverts on an answer over an hour old
 - [ ] `perTxFloor` / `perTxMax` inside `DAILY_CAP`
 - [ ] Merchant JSON committed to `deploy/merchants/`
