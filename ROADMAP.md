@@ -13,7 +13,7 @@ Last updated 2026-09-14.
 |---|---|
 | Contracts | Compile, fit EIP-170, 63 tests + a Base mainnet fork test |
 | Deployment | Network + merchant deployed end to end on a Base Sepolia fork, with a reward issued and a swap executed |
-| Coverage | 62% lines. Branch coverage 11% — thin |
+| Coverage | **Not currently reproducible.** `forge coverage` fails — see the auditor note |
 | Audit | None |
 | Customer dapp | Template builds and routes through PunchCardRouter. **KOKOS still runs its own untemplated copy — cutover frozen pending the SKOOP relaunch decision.** The prototype at punchcard.club/dapp is mock data |
 | POS | KOKOS only, bespoke |
@@ -256,9 +256,49 @@ again. A 1M-token migration takes about three days at the raised rate.
 > the migration runs through the same machinery a normal reward does, so it inherits every
 > protection already tested rather than needing a trusted one-off path.
 
+## Note to auditors — read this before the contracts
+
+Say this plainly rather than let it be discovered:
+
+- **Coverage cannot currently be measured.** `forge coverage` disables `viaIR`, which this
+  project requires, so it fails with *stack too deep* in `LPLocker`. The documented
+  workaround, `--ir-minimum`, also fails — a Yul *"1 too deep in the stack"* in
+  `TokenFactory`. The previously recorded figures (62% line / 11% branch) predate the
+  current contracts and **cannot be regenerated**, so do not quote them. Branch coverage
+  was thin when last measured and nothing since has targeted branches. Restoring a working
+  coverage run is a prerequisite for the audit, not a nice-to-have: right now no one can
+  tell an auditor what is untested, which is exactly how the wind-down policy went
+  untested through 20 passing tests.
+- **Several of the important findings were in the verification mechanisms, not in protocol
+  intent.** The pattern that keeps recurring is a check that passes because it is not
+  testing anything. Concretely:
+  - `MockWDC` returned constant `false` for both wind-down states, so the router's entire
+    wind-down policy passed 20 tests without one reaching it.
+  - The fork test passed only because the merchant owner happened to be the broadcaster,
+    masking an approval bug.
+  - A `try/catch` in an invariant handler defeated `fail_on_revert = true`.
+  - The seed floors were only ever exercised from *above*, so a non-binding floor would
+    have passed the whole suite.
+  - Two `@notice` comments documented a fixed 60/40 launch split whose constants had been
+    deleted — NatSpec asserting an algorithm the contract no longer implements, on the
+    first function an auditor reads.
+- **Where bugs clustered:** deployment choreography (`TokenFactory.deploy()`), merchant-facing
+  liquidity (`LPLocker`), router policy, and docs/config drift.
+- **Useful context to hand over:** this roadmap's *Settled* section for design intent,
+  `docs/audit-2026-09.md` for the prior audit, and the invariant suite.
+
+Treat a green run here as a claim to check, not evidence.
+
 ## Open design decisions
 
 Each of these is a deliberate choice nobody has made yet.
+
+0. **NFT layer — direction, NOT settled.** ERC-20 stays the fungible reward asset; NFTs
+   would layer on top for status, access passes, VIP perks, yearly membership and limited
+   drops, mintable with the merchant's token. Recorded here rather than under *Settled*
+   because nothing has been designed, costed or built, and it briefly appeared on a
+   summary as a settled answer with no record anywhere in the repo behind it. Directionally
+   agreed; do not cite it as decided.
 
 1. **PunchCard emergency lever.** Wind-down is a 365-day termination — a sledgehammer, not
    a fire alarm. A short, auto-expiring, halt-only pause would match "emergency oversight",
