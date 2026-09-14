@@ -266,7 +266,9 @@ Each of these is a deliberate choice nobody has made yet.
 2. **Merchant-initiated wind-down.** Only the multisig can start one. A merchant closing
    their business cannot recover their own LP. No customer guarantee depends on this.
 3. **The 10% permanent LP.** At wind-down it is abandoned in the position — not to
-   PunchCard, not burned. Probably not intentional.
+   PunchCard, not burned. Probably not intentional, but it is now load-bearing for the
+   wind-down policy below: it is what keeps a wound-down token tradable at all, so
+   removing it would quietly turn "you can still sell" into a false statement.
 4. **ETH pool economics.** Cross-merchant routing can now use either pool, but liquidity is
    still split across two thin pools. Worth revisiting whether both are earning.
 5. **`teamWallet` recovery.** Immutable forever, controls 15% of supply. A lost key means
@@ -345,3 +347,13 @@ reverted every deployment forever. `cast code` takes seconds.
   customers.
 - **Build-time config, one origin per merchant.** Not runtime multi-tenant: these apps take
   money at a counter, and a bad deploy should have a blast radius of one merchant.
+- **The router gates membership, not health** — **decided 2026-09-14, pre-deploy.**
+  `isRegistered` and `isComplete` are membership questions and stay enforced in the
+  contract. `isInitiated` is a health question and was removed: `initiate()` is
+  `onlyMultisig`, so blocking on it let PunchCard make a merchant's token unbuyable on the
+  official route by fiat — a kill switch over someone else's market, in a protocol whose
+  promise is that PunchCard does not control the merchant's token. It never prevented the
+  trade either, since these are ordinary Uniswap pools and 10% of liquidity stays in the
+  pool permanently; it only prevented the informed one. The interface discloses the expiry
+  date and what happens on it. **Swap logic is immutable once deployed — reinstating this
+  would mean redeploying the router and migrating every merchant.**
