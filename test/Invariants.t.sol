@@ -50,9 +50,15 @@ contract PM {
     }
 }
 
-/// Drives the suite with bounded random actions. Every call is wrapped so a revert on an
-/// unmet precondition does not end the run — the invariants must hold across whatever
-/// sequence actually lands.
+/// Drives the suite with bounded random actions.
+///
+/// Each action computes its achievable range and skips when empty, so a prepared call is
+/// valid by construction and is NOT wrapped — with fail_on_revert = true a revert there is
+/// signal, not noise, and swallowing it would quietly re-disable the flag.
+///
+/// try/catch survives only where a revert is part of the modelled flow: submitting a
+/// treasury release while one is already pending, and executing one before its timelock
+/// matures. Those are states the fuzzer should be free to wander into.
 contract Handler is Test {
     Tok public token; Tok public usdc; Tok public weth;
     RewardEscrow public escrow; VestingWallet public vesting;
@@ -118,7 +124,7 @@ contract Handler is Test {
         vm.startPrank(OWNER);
         usdc.approve(address(locker), type(uint256).max);
         weth.approve(address(locker), type(uint256).max);
-        try locker.addLiquidity(usdcTok, ethTok, usdcPair, ethPair, 0, 0, 0, 0) {} catch {}
+        locker.addLiquidity(usdcTok, ethTok, usdcPair, ethPair, 0, 0, 0, 0);
         vm.stopPrank();
     }
 
@@ -127,11 +133,13 @@ contract Handler is Test {
     function collectFees(uint256 mFee, uint256 pFee) public {
         pm.setFees(bound(mFee, 0, 1e9), bound(pFee, 0, 1e9));
         uint256 before_ = token.totalSupply();
-        try locker.collectFees() {} catch {}
+        locker.collectFees();
         if (token.totalSupply() < before_) burned += before_ - token.totalSupply();
     }
 
-    function releaseVesting() public { try vesting.release() {} catch {} }
+    /// release() is a deliberate no-op before the cliff and when nothing is due, so it
+    /// should never revert — if it does, that is a finding.
+    function releaseVesting() public { vesting.release(); }
 
     function treasuryFlow(uint256 amt) public {
         // Guard BEFORE bounding. bound(amt, 1, 0) reverts inside forge-std when the
