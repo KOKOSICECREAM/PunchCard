@@ -32,7 +32,16 @@ broadcast: forge forks chain state locally and fabricates balances with `deal`.
 forge test --match-path test/ForkDeploy.t.sol --fork-url https://mainnet.base.org -vv
 ```
 
-It skips itself when not pointed at a fork, so the offline suite stays fast.
+Without `--fork-url` it reports an explicit **SKIP**, not a pass:
+
+```
+[SKIP] test_deployRealMerchantOnBase()      # no fork
+[PASS] test_deployRealMerchantOnBase() (gas: 16,796,839)   # real deployment
+```
+
+That distinction matters. It previously returned early and reported PASS at a few thousand
+gas — a green tick claiming the deployment was verified when nothing had run. **If you see
+79 passed / 1 skipped, deploy() has not been exercised in that run.**
 
 This is the only test that exercises `TokenFactory.deploy()` — every other test mocks
 around it. **Run it before any deployment, and after any change to the factory, the

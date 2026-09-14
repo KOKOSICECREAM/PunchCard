@@ -38,7 +38,7 @@ contract ForkDeployTest is Test {
     bool forked;
 
     function setUp() public {
-        // Only run when pointed at a fork.
+        // Only meaningful against a fork of Base mainnet.
         if (block.chainid != 8453) return;
         forked = true;
 
@@ -68,7 +68,15 @@ contract ForkDeployTest is Test {
     }
 
     function test_deployRealMerchantOnBase() public {
-        if (!forked) { emit log("skipped: run with --fork-url for Base mainnet"); return; }
+        // Report an explicit SKIP rather than a pass. Returning early made this the
+        // cheapest "passing" test in the suite — a few thousand gas and a green tick — so
+        // a run without --fork-url looked like the deployment had been verified when
+        // nothing had executed at all. The only test that proves deploy() works must never
+        // claim success for having done nothing.
+        if (!forked) {
+            emit log("SKIPPED - needs --fork-url https://mainnet.base.org");
+            vm.skip(true);
+        }
 
         uint256 usdcSeed = 2_500 * 1e6;   // above the $2,000 floor
         uint256 ethSeed  = 2 ether;       // comfortably above the $3,000 floor
