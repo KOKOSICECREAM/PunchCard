@@ -22,12 +22,20 @@ interface ILPLocker {
 
     // ── EVENTS ────────────────────────────────────────────────────────────────
 
+    /// @notice Emitted by collectFees(). The two pair-asset figures are the network fee
+    ///         and are what a beta measures the ETH pool against: if wethNetworkFee stays
+    ///         negligible against usdcNetworkFee across real merchants, the second pool is
+    ///         fragmenting liquidity for nothing.
+    /// @dev Previously carried usdcToMerchant / wethToMerchant alongside these, from the
+    ///      superseded 80/20 LP fee share. Under the network fee model PunchCard takes the
+    ///      entire pair-asset side, so both were hardcoded to zero at the only call site —
+    ///      two dead fields and, worse, names implying a merchant split that no longer
+    ///      exists. Events are part of the immutable ABI, so this had to be fixed before
+    ///      deploy or carried forever.
     event FeesCollected(
         address indexed merchantToken,
-        uint256 usdcToMerchant,
-        uint256 usdcToPunchcard,
-        uint256 wethToMerchant,
-        uint256 wethToPunchcard,
+        uint256 usdcNetworkFee,
+        uint256 wethNetworkFee,
         uint256 merchantBurned,
         uint256 timestamp
     );

@@ -112,6 +112,13 @@ native happy path, the already-wrapped WETH path, and both rejection cases.
 
 ## Phase 2 — POS, dashboard, provisioning
 
+> **The POS contract must emit a redemption event.** `docs/beta-measurement.md` — earning
+> and swapping are already observable on-chain, but redemption is not, because PunchCard
+> has no payment contract of its own yet. That is the link that closes "a reward earned at
+> Merchant A caused a purchase at Merchant B", which is the metric the whole network thesis
+> rests on. Easy to ship a POS that works perfectly and measures nothing, and events cannot
+> be added to an immutable contract afterwards.
+
 - [ ] POS templated the same way
 - [ ] **Kiosk key provisioning**: POS generates its own keypair on first run, stores it in
       device secure storage, displays only the address. Owner calls `addOperator` from

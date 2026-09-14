@@ -423,13 +423,7 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
         usdcNetworkFee = usdcFees;
         wethNetworkFee = wethFees;
 
-        emit FeesCollected(
-            merchantToken,
-            0, usdcFees,          // nothing to the merchant; the whole pair side is the fee
-            0, wethFees,
-            merchantBurned,
-            block.timestamp
-        );
+        emit FeesCollected(merchantToken, usdcFees, wethFees, merchantBurned, block.timestamp);
     }
 
         // ── WIND-DOWN ─────────────────────────────────────────────────────────────
