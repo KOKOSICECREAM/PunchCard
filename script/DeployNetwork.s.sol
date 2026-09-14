@@ -31,6 +31,18 @@ contract DeployNetwork is Script {
         uint256 minEth     = vm.envUint("PC_MIN_ETH_SEED_USD");
         uint256 feeRate    = vm.envUint("PC_ROUTER_FEE_BPS");
 
+        // A WindDownController IS the network. Deploying a second one forks it: the router
+        // binds to one controller and only recognises merchants in that controller's
+        // registry, so merchants under a second controller can never swap against the
+        // first one's. Unfixable afterwards, and invisible until a cross-stage swap fails.
+        //
+        // To ADD a deployment path to an existing network, use DeployProductionFactory.s.sol
+        // and authorise it via the multisig. That is almost always what is wanted.
+        require(
+            vm.envOr("PC_CREATE_NEW_NETWORK", false),
+            "This deploys a NEW WindDownController and therefore a NEW network. If you meant to add a factory to the existing network, use DeployProductionFactory.s.sol. Set PC_CREATE_NEW_NETWORK=true only when genuinely starting a network from nothing."
+        );
+
         // Fail loudly here rather than after spending gas on a network nobody can use.
         require(posMgr.code.length     > 0, "position manager has no code");
         require(swapRouter.code.length > 0, "swap router has no code");

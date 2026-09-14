@@ -93,6 +93,28 @@ be false in one specific, checkable way, which is the worst kind.
 Never deploy a second `WindDownController`. That is the one irreversible mistake available
 here, and it splits the network permanently.
 
+**This is enforced, not just written down.** `test/DeploymentInvariants.t.sol` reads the
+deploy scripts and asserts:
+
+- every script that constructs a `WindDownController` demands `PC_CREATE_NEW_NETWORK=true`
+- `DeployProductionFactory.s.sol` never constructs one, and takes the existing controller
+  as input
+- production scripts never import the beta lineage
+
+Each was confirmed to fail when deliberately violated, rather than assumed to work — a
+green test that cannot fail is this codebase's most repeated bug.
+
+### Which script for which job
+
+| Job | Script | Creates a controller? |
+|---|---|---|
+| Start a network from nothing | `DeployNetwork.s.sol` / `DeployNetworkBeta.s.sol` | **yes** — gated behind `PC_CREATE_NEW_NETWORK` |
+| Stage 2: add the strict factory | `DeployProductionFactory.s.sol` | no — reuses `PC_WIND_DOWN_CONTROLLER` |
+| Deploy a merchant | `DeployMerchant.s.sol` | no |
+
+Stage 2 is the dangerous one, because `DeployNetwork.s.sol` looks like the right script and
+is not: running it would fork the network rather than extend it.
+
 ## Telling the lineages apart on-chain
 
 ```bash
