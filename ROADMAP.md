@@ -429,6 +429,16 @@ reverted every deployment forever. `cast code` takes seconds.
 - **Figures quoted to customers are read from the contract, not retyped in the app.** The
   wind-down disclosure reads `LPLocker.WIND_DOWN_RELEASE_PCT()`. A hardcoded copy would
   keep asserting a number the contract had stopped meaning.
+- **Testing-only trust assumptions live in a separate contract lineage, never in the
+  protocol** — **decided 2026-09-14.** The first live deployment runs unaudited code, so a
+  temporary LP evacuation hatch is reasonable *for that deployment*. It is NOT reasonable
+  for every merchant to inherit forever. So `contracts/rehearsal/` holds
+  `TokenFactoryRehearsal` / `LPLockerRehearsal` with a 30-day self-expiring, one-way,
+  evacuate-everything hatch, and production keeps no withdrawal path at all.
+  `REHEARSAL_ONLY()` makes the lineage queryable on-chain, because otherwise the
+  distinction is a constructor argument nobody can see. The worst outcome this avoids is
+  shipping a temporary safety valve into permanent architecture and having to explain it
+  later.
 - **Build-time config, one origin per merchant.** Not runtime multi-tenant: these apps take
   money at a counter, and a bad deploy should have a blast radius of one merchant.
 - **The router gates membership, not health** — **decided 2026-09-14, pre-deploy.**

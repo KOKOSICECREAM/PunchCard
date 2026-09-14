@@ -27,6 +27,50 @@ constant.
 > decisions with different risk, and the first quietly becoming the second is the failure
 > mode to guard against.
 
+### The rehearsal contracts are a separate lineage
+
+The rehearsal deploys `TokenFactoryRehearsal` and `LockerDeployerRehearsal`, which produce
+lockers with a **temporary, self-expiring LP evacuation hatch**. Production contracts do
+not have one and must never gain one — the escape hatch exists because the first live
+deployment runs unaudited code, not because merchants should be able to pull liquidity.
+
+| | Production | Rehearsal |
+|---|---|---|
+| Contract | `TokenFactory` / `LPLocker` | `TokenFactoryRehearsal` / `LPLockerRehearsal` |
+| LP evacuation | **none, ever** | owner-only, ≤30 days, one-way |
+| Marker | `REHEARSAL_ONLY()` reverts | `REHEARSAL_ONLY()` returns `true` |
+| Config file | `base-mainnet.json` | `base-mainnet-rehearsal.json` |
+| Deploy script | `DeployNetwork.s.sol` | `DeployNetworkRehearsal.s.sol` |
+
+**Why a separate factory at all,** when it is byte-identical logic: a rehearsal factory is
+just a `TokenFactory` constructed with the rehearsal locker deployer. That is a constructor
+argument — invisible on a block explorer. Someone reading the chain later would see
+"TokenFactory" with no way to know every merchant under it has evacuable LP. Configuration
+that silently changes a trust guarantee is the failure this codebase keeps producing, so
+the distinction is structural instead:
+
+```bash
+cast call $FACTORY 'REHEARSAL_ONLY()(bool)' --rpc-url https://mainnet.base.org
+# reverts  -> production
+# true     -> rehearsal, evacuable LP, never onboard an outside merchant
+```
+
+The rehearsal script also **refuses to run** with seed floors above $100, so it cannot be
+pointed at production-sized amounts.
+
+#### The hatch, precisely
+
+- **Evacuation is all-or-nothing** — both positions drained, everything swept to
+  `ownerWallet`, locker permanently bricked. No partial withdrawal, because recomputing
+  `_reserveTokens` against liquidity that moved is what produced a drain bug here before.
+- **It expires by itself** after 30 days, whether or not anyone acts. A hatch that only
+  closes manually can be left open forever, which is the trapdoor this was meant to avoid.
+- **`lockLP()` closes it early and permanently.** One-way. Callable by the merchant or by
+  PunchCard's controller; reversible by nobody.
+- **Only `ownerWallet` may evacuate.** PunchCard can close the hatch but cannot pull the LP.
+- **Never claim LP is permanently locked** for a rehearsal merchant until `lockLP()` has
+  been called or the deadline has passed.
+
 ### Everything deployed here is disposable
 
 Seed floors are **immutable constructor arguments**. A factory built with $5 floors can
@@ -134,7 +178,7 @@ export PC_MULTISIG=<eoa>
 export PC_DEPLOYER=<hot wallet>
 export PC_FEE_RECIPIENT=<distinct address>
 
-forge script script/DeployNetwork.s.sol \
+forge script script/DeployNetworkRehearsal.s.sol \
   --rpc-url https://mainnet.base.org \
   --account pc-testnet \
   --broadcast
@@ -163,6 +207,8 @@ cast call $ROUTER  'feeRate()(uint256)'           --rpc-url https://mainnet.base
 cast call $ROUTER  'windDownController()(address)' --rpc-url https://mainnet.base.org  # == $WIND_DOWN
 ```
 
+- [ ] `cast call $FACTORY 'REHEARSAL_ONLY()(bool)'` returns **true** — you are on the
+      rehearsal lineage, not production
 - [ ] Factory floors read back as `500000000`, proving the units went in correctly
 - [ ] Router's controller matches the deployed controller
 - [ ] Addresses recorded in `base-mainnet-rehearsal.json` with the warning key
@@ -218,7 +264,11 @@ Record gas, price and outcome for each. Small amounts throughout.
 - [ ] **6. Quote vs fill** — for each, compare the dapp's displayed output to the actual
       received amount. This is the single most valuable number the rehearsal produces
 - [ ] **7. Drawer limit** — attempt a draw above the daily allowance; confirm it reverts
-- [ ] **8. Wind-down disclosure** — cannot be triggered without initiating wind-down on a
+- [ ] **8. Evacuation hatch** — confirm `evacuationOpen()` is true, then either leave it
+      for the deadline or call `lockLP()` once satisfied. **Do not test `evacuateLP()` on a
+      merchant you still want** — it is terminal and bricks the locker. Test it on the
+      second merchant last, deliberately, to prove the path works
+- [ ] **9. Wind-down disclosure** — cannot be triggered without initiating wind-down on a
       throwaway merchant. If you do, note it is irreversible for that suite
 
 ## Step 6 — Collect fees and verify destination

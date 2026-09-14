@@ -70,10 +70,15 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     ///         changing that disclosure.
     uint256 public constant PERMANENT_LP_PCT = 100 - WIND_DOWN_RELEASE_PCT;
 
-    LPPosition private _usdcPosition;
-    LPPosition private _ethPosition;
-    uint256 private _reserveTokens;
-    bool private _frozen;
+    // `internal` rather than `private` so the rehearsal subclass can evacuate. This
+    // changes nothing about the production contract — visibility only matters to
+    // inheritance, and LPLocker is deployed directly by LockerDeployer, never inherited
+    // in production. The rehearsal variant lives in contracts/rehearsal/ and must never
+    // reach a production deployment; see docs/micro-launch-runbook.md.
+    LPPosition internal _usdcPosition;
+    LPPosition internal _ethPosition;
+    uint256 internal _reserveTokens;
+    bool internal _frozen;
 
     // ── CONSTRUCTOR ───────────────────────────────────────────────────────────
 
