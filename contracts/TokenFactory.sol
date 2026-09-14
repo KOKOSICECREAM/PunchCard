@@ -363,11 +363,15 @@ contract TokenFactory {
 
             usdcTokenId = id;
 
-            // Return USDC pool dust to ownerWallet
+            // Only pair-token dust goes back to the merchant — that is their own capital.
+            // Merchant-token dust is deliberately left with the factory, whose entire
+            // remaining balance is swept into the LPLocker as reserve in step 9. Returning
+            // it here would let allocation escape the locked 30% at launch, the same
+            // invariant violation that made addLiquidity drainable.
             uint256 dust0 = amt0DesiredUsdc - used0;
             uint256 dust1 = amt1DesiredUsdc - used1;
-            if (dust0 > 0) IERC20(token0Usdc).safeTransfer(p.ownerWallet, dust0);
-            if (dust1 > 0) IERC20(token1Usdc).safeTransfer(p.ownerWallet, dust1);
+            if (token0Usdc != tokenAddr && dust0 > 0) IERC20(token0Usdc).safeTransfer(p.ownerWallet, dust0);
+            if (token1Usdc != tokenAddr && dust1 > 0) IERC20(token1Usdc).safeTransfer(p.ownerWallet, dust1);
         }
 
         // ── STEP 8: Mint ETH pool position (40% of launch LP) ────────────────
@@ -420,7 +424,7 @@ contract TokenFactory {
 
             ethTokenId = id;
 
-            // Pair-token dust only — see the note on the USDC pool above.
+            // Pair-token dust only — same reasoning as the USDC pool above.
             uint256 dust0 = amt0DesiredEth - used0;
             uint256 dust1 = amt1DesiredEth - used1;
             if (token0Eth != tokenAddr && dust0 > 0) IERC20(token0Eth).safeTransfer(p.ownerWallet, dust0);

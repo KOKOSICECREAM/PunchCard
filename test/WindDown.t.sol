@@ -56,6 +56,12 @@ contract MockPM {
     {
         used0 = p.amount0Desired * useNum / useDen;
         used1 = p.amount1Desired * useNum / useDen;
+        // Real Uniswap PULLS the consumed amounts out of the caller. Without this the mock
+        // left them sitting in the locker, which let a weaker balance invariant pass than
+        // production allows.
+        P memory q = pos[p.tokenId];
+        if (used0 > 0) Tok(q.t0).transferFrom(msg.sender, address(this), used0);
+        if (used1 > 0) Tok(q.t1).transferFrom(msg.sender, address(this), used1);
         return (1, used0, used1);
     }
 }
@@ -340,6 +346,7 @@ contract WindDownTest is Test {
 
         uint256 ownerTokensBefore = token.balanceOf(OWNER);
         uint256 lockerBefore      = token.balanceOf(address(locker));
+        assertEq(lockerBefore, locker.reserveTokens(), "invariant holds before the add");
         uint256 reserveBefore     = locker.reserveTokens();
 
         uint256 offered = 10_000_000 * 1e6;
@@ -348,15 +355,21 @@ contract WindDownTest is Test {
 
         assertEq(token.balanceOf(OWNER), ownerTokensBefore,
             "merchant must receive NO merchant tokens back as dust");
-        assertEq(token.balanceOf(address(locker)), lockerBefore,
-            "unused merchant tokens stay in the locker");
+        assertEq(token.balanceOf(address(locker)), lockerBefore - consumedTokens(offered),
+            "only the consumed tokens left; the unused remainder stayed");
 
         // reserve falls only by what Uniswap actually consumed, not by what was offered
         uint256 consumed = offered / 1000;
         assertEq(reserveBefore - locker.reserveTokens(), consumed,
             "reserve decrements by actual usage, not the desired amount");
-        assertEq(token.balanceOf(address(locker)), locker.reserveTokens() + consumed,
-            "balance and reserve accounting stay consistent");
+        // The consumed tokens genuinely leave for the position manager, so the strong
+        // production invariant holds: every merchant token still held IS reserve.
+        assertEq(token.balanceOf(address(locker)), locker.reserveTokens(),
+            "held balance equals accounted reserve");
+    }
+
+    function consumedTokens(uint256 offered) internal view returns (uint256) {
+        return offered * pm.useNum() / pm.useDen();
     }
 
     /// The merchant's own pair capital is still returned.
