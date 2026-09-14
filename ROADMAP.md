@@ -41,6 +41,38 @@ a mock.
 **Exit criteria:** KOKOS runs on the template with zero behaviour change, and a second
 merchant's dapp can be produced from a config file alone.
 
+## Phase 1b — route the dapp through PunchCardRouter *(blocks revenue)*
+
+The templated customer dapp calls Uniswap's `SwapRouter02` **directly**:
+
+```
+exactInputSingle((tokenIn, tokenOut, fee, recipient, amountIn, amountOutMinimum, sqrtPriceLimitX96))
+```
+
+`PunchCardRouter` exposes a different function and a different struct:
+
+```
+swap(SwapParams)   // tokenIn, tokenOut, amountIn, minHop1, minHop2, midToken, recipient, deadline
+```
+
+**This is not a config change.** Pointing `network.router` at `PunchCardRouter` will not
+work — the dapp's calling code has to change.
+
+Correct for KOKOS, which is not a network merchant and has no PunchCardRouter to use. Wrong
+the moment a real merchant launches, and it fails *silently*:
+
+- [ ] **No network fee is collected** on any swap made in the app — the primary revenue
+      line, uncollected at exactly the moment a customer uses the product
+- [ ] **No cross-merchant swaps.** The dapp knows one token, so the network thesis is not
+      reachable from the thing customers actually hold
+- [ ] `getPoolFeeTiers()` and best-execution routing go unused
+
+The template needs two modes: direct Uniswap for KOKOS, and PunchCardRouter for network
+merchants — with the interface quoting both midpoints off-chain to choose `midToken`.
+
+> Easy to ship the Phase 1 cutover and not notice that swaps quietly stopped paying you.
+> Nothing errors. The money simply never arrives.
+
 ## Phase 2 — POS, dashboard, provisioning
 
 - [ ] POS templated the same way
