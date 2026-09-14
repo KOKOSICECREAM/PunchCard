@@ -130,6 +130,25 @@ building a UI before the schema settles hardens the wrong thing. Around merchant
 - [ ] Deploy runner wrapping the forge scripts; addresses written back from the receipt
 - [ ] Pre-flight checklist from the runbook, enforced in UI
 
+## Micro-launch rehearsal — scripted, not yet run
+
+`docs/micro-launch-runbook.md`. ~$20 of seed across two merchants on Base mainnet with
+controlled wallets, to learn what a fork cannot teach: real cost, quote-vs-fill, and where
+the customer flow snags.
+
+**Everything it deploys is disposable** — seed floors are immutable constructor args, so a
+$5-floor factory can never become the production factory, and the router binds to its
+controller. Addresses go in `base-mainnet-rehearsal.json` behind a `_WARNING` key, never in
+`base-mainnet.json`.
+
+**It proves mechanics, not economics.** No customers, no demand — so it says nothing about
+emission rate, drawer size or reward value. Do not cite it for any economic constant.
+Two merchants, not one: cross-merchant routing is the least-proven path and the off-chain
+midpoint quoting has never run against a real pool.
+
+Known gap going in: `dist/` deploys nowhere, so the mobile install-and-pay flow cannot be
+rehearsed until there is an https origin to serve a punchcard-mode build from.
+
 ## Phase 4 — Revenue and mainnet
 
 - [ ] Deployment fee in `deploy()` — onboarding currently recovers neither gas nor labour
