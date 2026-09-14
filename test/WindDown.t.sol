@@ -281,6 +281,39 @@ contract WindDownTest is Test {
         assertTrue(wdc.isComplete(address(t2)), "empty suite still completes");
     }
 
+    // ── regressions from the external review (2026-09-13) ────────────────────
+
+    /// addLiquidity(X, 0, 0, 0) added no liquidity — both mint branches need BOTH halves —
+    /// yet still decremented _reserveTokens, stranding X tokens permanently: they stayed in
+    /// the locker balance, could never be deployed again, and burned at wind-down.
+    function test_addLiquidityRejectsHalfASide() public {
+        uint256 before_ = locker.reserveTokens();
+
+        vm.prank(OWNER);
+        vm.expectRevert("USDC side needs both amounts");
+        locker.addLiquidity(1_000_000, 0, 0, 0, 0, 0, 0, 0);
+
+        vm.prank(OWNER);
+        vm.expectRevert("ETH side needs both amounts");
+        locker.addLiquidity(0, 1_000_000, 0, 0, 0, 0, 0, 0);
+
+        assertEq(locker.reserveTokens(), before_, "reserve must be untouched by a rejected call");
+    }
+
+    /// Only the merchant may deploy reserve.
+    function test_addLiquidityIsOwnerOnly() public {
+        vm.prank(RAND);
+        vm.expectRevert("Not owner");
+        locker.addLiquidity(1_000_000, 0, 1_000_000, 0, 0, 0, 0, 0);
+    }
+
+    /// Reserve is a hard ceiling.
+    function test_addLiquidityCannotExceedReserve() public {
+        vm.prank(OWNER);
+        vm.expectRevert("Exceeds reserve");
+        locker.addLiquidity(RESERVE + 1, 0, 1_000_000, 0, 0, 0, 0, 0);
+    }
+
     function _initiateAndExpire() internal {
         vm.prank(MULTISIG);
         wdc.initiate(address(token));

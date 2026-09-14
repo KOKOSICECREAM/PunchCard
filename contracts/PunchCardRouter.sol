@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IWindDownController.sol";
 import "./interfaces/ILPLocker.sol";
@@ -20,6 +21,8 @@ import "./interfaces/ISwapRouter.sol";
 ///      Swaps can NEVER be paused — guaranteed in immutable code.
 ///      Hard fee ceiling 1% enforced in immutable code.
 contract PunchCardRouter is ReentrancyGuard {
+
+    using SafeERC20 for IERC20;
 
     // ── CONSTANTS ─────────────────────────────────────────────────────────────
 
@@ -195,7 +198,7 @@ contract PunchCardRouter is ReentrancyGuard {
             ? _usdcFeeTier(p.tokenIn)
             : _ethFeeTier(p.tokenIn);
 
-        IERC20(p.tokenIn).transferFrom(msg.sender, address(this), p.amountIn);
+        IERC20(p.tokenIn).safeTransferFrom(msg.sender, address(this), p.amountIn);
         IERC20(p.tokenIn).approve(swapRouter, p.amountIn);
 
         uint256 stableOut = ISwapRouter(swapRouter).exactInputSingle(
@@ -218,8 +221,8 @@ contract PunchCardRouter is ReentrancyGuard {
         // minimum they asked for.
         require(stableToRecipient >= p.amountOutMinimumHop1, "Below minimum after fee");
 
-        if (feeTaken > 0) IERC20(stableToken).transfer(feeRecipient, feeTaken);
-        IERC20(stableToken).transfer(p.recipient, stableToRecipient);
+        if (feeTaken > 0) IERC20(stableToken).safeTransfer(feeRecipient, feeTaken);
+        IERC20(stableToken).safeTransfer(p.recipient, stableToRecipient);
 
         emit Swapped(p.tokenIn, stableToken, p.recipient, p.amountIn, stableToRecipient, feeTaken, stableToken, block.timestamp);
     }
@@ -234,12 +237,12 @@ contract PunchCardRouter is ReentrancyGuard {
             ? _usdcFeeTier(p.tokenOut)
             : _ethFeeTier(p.tokenOut);
 
-        IERC20(stableToken).transferFrom(msg.sender, address(this), p.amountIn);
+        IERC20(stableToken).safeTransferFrom(msg.sender, address(this), p.amountIn);
 
         uint256 feeTaken    = (p.amountIn * feeRate) / FEE_DENOMINATOR;
         uint256 stableToSwap = p.amountIn - feeTaken;
 
-        if (feeTaken > 0) IERC20(stableToken).transfer(feeRecipient, feeTaken);
+        if (feeTaken > 0) IERC20(stableToken).safeTransfer(feeRecipient, feeTaken);
 
         IERC20(stableToken).approve(swapRouter, stableToSwap);
 
@@ -276,7 +279,7 @@ contract PunchCardRouter is ReentrancyGuard {
         uint24 feeIn  = viaUsdc ? _usdcFeeTier(p.tokenIn)  : _ethFeeTier(p.tokenIn);
         uint24 feeOut = viaUsdc ? _usdcFeeTier(p.tokenOut) : _ethFeeTier(p.tokenOut);
 
-        IERC20(p.tokenIn).transferFrom(msg.sender, address(this), p.amountIn);
+        IERC20(p.tokenIn).safeTransferFrom(msg.sender, address(this), p.amountIn);
         IERC20(p.tokenIn).approve(swapRouter, p.amountIn);
 
         // Hop 1: tokenA → USDC
@@ -296,7 +299,7 @@ contract PunchCardRouter is ReentrancyGuard {
         uint256 feeTaken  = (midOut * feeRate) / FEE_DENOMINATOR;
         uint256 midToSwap = midOut - feeTaken;
 
-        if (feeTaken > 0) IERC20(p.midToken).transfer(feeRecipient, feeTaken);
+        if (feeTaken > 0) IERC20(p.midToken).safeTransfer(feeRecipient, feeTaken);
 
         // Hop 2: midToken → tokenB
         IERC20(p.midToken).approve(swapRouter, midToSwap);

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/ITreasuryTimelock.sol";
@@ -15,6 +16,8 @@ import "./interfaces/ITreasuryTimelock.sol";
 ///      Sequencing guarantee: freeze() always fires before burnUnclaimed(),
 ///      so no pending release can survive to executeRelease() with insufficient balance.
 contract TreasuryTimelock is ITreasuryTimelock, ReentrancyGuard {
+
+    using SafeERC20 for IERC20;
 
     // ── IMMUTABLES ────────────────────────────────────────────────────────────
 
@@ -106,7 +109,7 @@ contract TreasuryTimelock is ITreasuryTimelock, ReentrancyGuard {
         // CEI — clear state before transfer
         delete _pending;
 
-        token.transfer(ownerWallet, amount);
+        token.safeTransfer(ownerWallet, amount);
         emit ReleaseExecuted(address(token), amount, block.timestamp);
     }
 

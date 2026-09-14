@@ -99,7 +99,11 @@ interface ILPLocker {
         uint256 usdcTokenAmount,
         uint256 ethTokenAmount,
         uint256 usdcPairAmount,
-        uint256 ethPairAmount
+        uint256 ethPairAmount,
+        uint256 usdcTokenMin,
+        uint256 usdcPairMin,
+        uint256 ethTokenMin,
+        uint256 ethPairMin
     ) external;
 
     // ── WIND-DOWN ─────────────────────────────────────────────────────────────

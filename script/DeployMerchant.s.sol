@@ -39,8 +39,30 @@ contract DeployMerchant is Script {
             perTxMax:       vm.envUint("MERCHANT_PER_TX_MAX")
         });
 
+        // deploy() pulls USDC from p.ownerWallet, NOT from msg.sender. In production the
+        // broadcaster is PunchCard's deployer hot wallet (deploy() is onlyDeployer) and
+        // ownerWallet is the merchant — two different accounts — so approving from the
+        // broadcaster does nothing and the deploy reverts on transferFrom.
+        //
+        // Only approve when the broadcaster genuinely is the owner. Otherwise require the
+        // merchant's allowance to already be in place, and say so clearly rather than
+        // failing later inside the factory.
+        uint256 allowance = IERC20(usdc).allowance(owner, factoryAddr);
+        bool broadcasterIsOwner = msg.sender == owner;
+
+        if (!broadcasterIsOwner) {
+            require(
+                allowance >= usdcSeed,
+                "ownerWallet has not approved the factory for usdcSeed - the MERCHANT must approve from their own wallet before this runs"
+            );
+        }
+
         vm.startBroadcast();
-        IERC20(usdc).approve(factoryAddr, usdcSeed);
+        if (broadcasterIsOwner && allowance < usdcSeed) {
+            // Exact amount, immediately before use — never leave a standing allowance,
+            // since anyone able to call deploy() could consume it with their own params.
+            IERC20(usdc).approve(factoryAddr, usdcSeed);
+        }
         factory.deploy{value: ethSeed}(p);
         vm.stopBroadcast();
 

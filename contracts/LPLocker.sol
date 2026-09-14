@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/ILPLocker.sol";
@@ -17,6 +18,8 @@ import "./interfaces/INonfungiblePositionManager.sol";
 ///      Reserve tokens burned at wind-down — no longer deployable.
 ///      addLiquidity() frozen at wind-down initiation.
 contract LPLocker is ILPLocker, ReentrancyGuard {
+
+    using SafeERC20 for IERC20;
 
     // ── IMMUTABLES ────────────────────────────────────────────────────────────
 
@@ -162,11 +165,24 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     ///      Merchant tokens sourced from reserve held here.
     ///      Goes into same NFT positions — no new positions.
     ///      Dust from increaseLiquidity returns to ownerWallet.
+    /// @param usdcTokenMin Minimum merchant tokens to actually enter the USDC position
+    /// @param usdcPairMin  Minimum USDC to actually enter the USDC position
+    /// @param ethTokenMin  Minimum merchant tokens to actually enter the ETH position
+    /// @param ethPairMin   Minimum WETH to actually enter the ETH position
+    /// @dev The four *Min values are slippage bounds passed straight to Uniswap. They were
+    ///      previously hardcoded to zero, which left a merchant deploying reserve open to
+    ///      being sandwiched: the pool price can move between submission and inclusion, and
+    ///      with no floor the mint accepts whatever ratio it lands on. Pass 0 only if you
+    ///      genuinely do not care about the execution price.
     function addLiquidity(
         uint256 usdcTokenAmount,
         uint256 ethTokenAmount,
         uint256 usdcPairAmount,
-        uint256 ethPairAmount
+        uint256 ethPairAmount,
+        uint256 usdcTokenMin,
+        uint256 usdcPairMin,
+        uint256 ethTokenMin,
+        uint256 ethPairMin
     ) external onlyOwner notFrozen nonReentrant {
         require(_usdcPosition.initialized, "Not initialized");
         require(
@@ -177,6 +193,18 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
             usdcTokenAmount > 0 || ethTokenAmount > 0,
             "Zero amounts"
         );
+        // Each side needs BOTH halves or its mint is skipped below. Without this, a call
+        // like addLiquidity(1_000_000, 0, 0, 0) added no liquidity at all yet still
+        // decremented _reserveTokens, silently stranding those tokens: they stay in this
+        // contract's balance but can never be deployed again, and are burned at wind-down.
+        require(
+            (usdcTokenAmount == 0) == (usdcPairAmount == 0),
+            "USDC side needs both amounts"
+        );
+        require(
+            (ethTokenAmount == 0) == (ethPairAmount == 0),
+            "ETH side needs both amounts"
+        );
 
         INonfungiblePositionManager pm = INonfungiblePositionManager(positionManager);
         uint128 usdcLiqAdded;
@@ -184,7 +212,7 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
 
         // Add to USDC pool
         if (usdcTokenAmount > 0 && usdcPairAmount > 0) {
-            IERC20(usdcAddress).transferFrom(ownerWallet, address(this), usdcPairAmount);
+            IERC20(usdcAddress).safeTransferFrom(ownerWallet, address(this), usdcPairAmount);
             IERC20(merchantToken).approve(positionManager, usdcTokenAmount);
             IERC20(usdcAddress).approve(positionManager, usdcPairAmount);
 
@@ -197,8 +225,8 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
                     tokenId:        _usdcPosition.tokenId,
                     amount0Desired: amount0Desired,
                     amount1Desired: amount1Desired,
-                    amount0Min:     0,
-                    amount1Min:     0,
+                    amount0Min:     _usdcPosition.merchantIsToken0 ? usdcTokenMin : usdcPairMin,
+                    amount1Min:     _usdcPosition.merchantIsToken0 ? usdcPairMin  : usdcTokenMin,
                     deadline:       block.timestamp
                 })
             );
@@ -208,13 +236,13 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
             // Return dust to ownerWallet
             uint256 dust0 = amount0Desired - used0;
             uint256 dust1 = amount1Desired - used1;
-            if (dust0 > 0) IERC20(_usdcPosition.merchantIsToken0 ? merchantToken : usdcAddress).transfer(ownerWallet, dust0);
-            if (dust1 > 0) IERC20(_usdcPosition.merchantIsToken0 ? usdcAddress : merchantToken).transfer(ownerWallet, dust1);
+            if (dust0 > 0) IERC20(_usdcPosition.merchantIsToken0 ? merchantToken : usdcAddress).safeTransfer(ownerWallet, dust0);
+            if (dust1 > 0) IERC20(_usdcPosition.merchantIsToken0 ? usdcAddress : merchantToken).safeTransfer(ownerWallet, dust1);
         }
 
         // Add to ETH pool
         if (ethTokenAmount > 0 && ethPairAmount > 0) {
-            IERC20(wethAddress).transferFrom(ownerWallet, address(this), ethPairAmount);
+            IERC20(wethAddress).safeTransferFrom(ownerWallet, address(this), ethPairAmount);
             IERC20(merchantToken).approve(positionManager, ethTokenAmount);
             IERC20(wethAddress).approve(positionManager, ethPairAmount);
 
@@ -227,8 +255,8 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
                     tokenId:        _ethPosition.tokenId,
                     amount0Desired: amount0Desired,
                     amount1Desired: amount1Desired,
-                    amount0Min:     0,
-                    amount1Min:     0,
+                    amount0Min:     _ethPosition.merchantIsToken0 ? ethTokenMin : ethPairMin,
+                    amount1Min:     _ethPosition.merchantIsToken0 ? ethPairMin  : ethTokenMin,
                     deadline:       block.timestamp
                 })
             );
@@ -238,8 +266,8 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
             // Return dust to ownerWallet
             uint256 dust0 = amount0Desired - used0;
             uint256 dust1 = amount1Desired - used1;
-            if (dust0 > 0) IERC20(_ethPosition.merchantIsToken0 ? merchantToken : wethAddress).transfer(ownerWallet, dust0);
-            if (dust1 > 0) IERC20(_ethPosition.merchantIsToken0 ? wethAddress : merchantToken).transfer(ownerWallet, dust1);
+            if (dust0 > 0) IERC20(_ethPosition.merchantIsToken0 ? merchantToken : wethAddress).safeTransfer(ownerWallet, dust0);
+            if (dust1 > 0) IERC20(_ethPosition.merchantIsToken0 ? wethAddress : merchantToken).safeTransfer(ownerWallet, dust1);
         }
 
         // Decrement reserve by tokens actually committed (dust already returned)
@@ -324,10 +352,10 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
         usdcToMerchant = usdcFees - usdcToPunchcard;
         wethToMerchant = wethFees - wethToPunchcard;
 
-        if (usdcToPunchcard > 0) IERC20(usdcAddress).transfer(punchcardFeeRecipient, usdcToPunchcard);
-        if (wethToPunchcard > 0) IERC20(wethAddress).transfer(punchcardFeeRecipient, wethToPunchcard);
-        if (usdcToMerchant  > 0) IERC20(usdcAddress).transfer(ownerWallet, usdcToMerchant);
-        if (wethToMerchant  > 0) IERC20(wethAddress).transfer(ownerWallet, wethToMerchant);
+        if (usdcToPunchcard > 0) IERC20(usdcAddress).safeTransfer(punchcardFeeRecipient, usdcToPunchcard);
+        if (wethToPunchcard > 0) IERC20(wethAddress).safeTransfer(punchcardFeeRecipient, wethToPunchcard);
+        if (usdcToMerchant  > 0) IERC20(usdcAddress).safeTransfer(ownerWallet, usdcToMerchant);
+        if (wethToMerchant  > 0) IERC20(wethAddress).safeTransfer(ownerWallet, wethToMerchant);
 
         emit FeesCollected(
             merchantToken,
@@ -448,12 +476,12 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
 
         // Transfer USDC to merchant
         if (totalUsdcToMerchant > 0) {
-            IERC20(usdcAddress).transfer(ownerWallet, totalUsdcToMerchant);
+            IERC20(usdcAddress).safeTransfer(ownerWallet, totalUsdcToMerchant);
         }
 
         // Transfer WETH to merchant
         if (totalWethToMerchant > 0) {
-            IERC20(wethAddress).transfer(ownerWallet, totalWethToMerchant);
+            IERC20(wethAddress).safeTransfer(ownerWallet, totalWethToMerchant);
         }
 
         emit LPReleased(

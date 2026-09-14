@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IWindDownController.sol";
 import "./interfaces/ILPLocker.sol";
 import "./deployers/ISuiteDeployer.sol";
@@ -20,6 +21,8 @@ import "./libraries/LaunchPricing.sol";
 ///      Both pools use Uniswap v3 full-range positions.
 ///      Dust from both mints returns to ownerWallet.
 contract TokenFactory {
+
+    using SafeERC20 for IERC20;
 
     // ── NETWORK CONSTANTS ─────────────────────────────────────────────────────
 
@@ -242,10 +245,8 @@ contract TokenFactory {
 
         // ── STEP 0: Pull USDC and wrap ETH ───────────────────────────────────
 
-        require(
-            IERC20(USDC).transferFrom(p.ownerWallet, address(this), p.usdcPairAmount),
-            "USDC transfer failed"
-        );
+        // safeTransferFrom reverts on failure, so no return value to check.
+        IERC20(USDC).safeTransferFrom(p.ownerWallet, address(this), p.usdcPairAmount);
 
         IWETH(WETH).deposit{value: p.ethPairAmount}();
 
@@ -305,9 +306,9 @@ contract TokenFactory {
 
         // ── STEP 6: Distribute non-LP allocations ────────────────────────────
 
-        token.transfer(vesting,  TEAM_ALLOC);
-        token.transfer(treasury, TREASURY_ALLOC);
-        token.transfer(escrow,   REWARDS_ALLOC);
+        token.safeTransfer(vesting,  TEAM_ALLOC);
+        token.safeTransfer(treasury, TREASURY_ALLOC);
+        token.safeTransfer(escrow,   REWARDS_ALLOC);
         // Factory retains full LP_ALLOC (30M) for pool seeding + reserve transfer
 
         assert(token.balanceOf(address(this)) == LP_ALLOC);
@@ -365,8 +366,8 @@ contract TokenFactory {
             // Return USDC pool dust to ownerWallet
             uint256 dust0 = amt0DesiredUsdc - used0;
             uint256 dust1 = amt1DesiredUsdc - used1;
-            if (dust0 > 0) IERC20(token0Usdc).transfer(p.ownerWallet, dust0);
-            if (dust1 > 0) IERC20(token1Usdc).transfer(p.ownerWallet, dust1);
+            if (dust0 > 0) IERC20(token0Usdc).safeTransfer(p.ownerWallet, dust0);
+            if (dust1 > 0) IERC20(token1Usdc).safeTransfer(p.ownerWallet, dust1);
         }
 
         // ── STEP 8: Mint ETH pool position (40% of launch LP) ────────────────
@@ -422,8 +423,8 @@ contract TokenFactory {
             // Return ETH pool dust to ownerWallet (as WETH)
             uint256 dust0 = amt0DesiredEth - used0;
             uint256 dust1 = amt1DesiredEth - used1;
-            if (dust0 > 0) IERC20(token0Eth).transfer(p.ownerWallet, dust0);
-            if (dust1 > 0) IERC20(token1Eth).transfer(p.ownerWallet, dust1);
+            if (dust0 > 0) IERC20(token0Eth).safeTransfer(p.ownerWallet, dust0);
+            if (dust1 > 0) IERC20(token1Eth).safeTransfer(p.ownerWallet, dust1);
         }
 
         // ── STEP 9: Transfer LP reserve to LPLocker ───────────────────────────
@@ -432,7 +433,7 @@ contract TokenFactory {
 
         uint256 reserveBal = token.balanceOf(address(this));
         if (reserveBal > 0) {
-            token.transfer(locker, reserveBal);
+            token.safeTransfer(locker, reserveBal);
         }
 
         assert(token.balanceOf(address(this)) == 0);
