@@ -289,9 +289,9 @@ reverted every deployment forever. `cast code` takes seconds.
     between the two pools.
 - **The merchant's incentive to seed deeply is their own holding, not fee income.** A
   merchant holds 25,000,000 tokens (10M treasury + 15M vesting) — **$25,000** at a $3,000
-  seed. A 10% price move is worth **$2,500** to them; the LP fee share they gave up under
-  the network fee model was worth **$12–$240/year** at realistic volume. The fee share was
-  never the meaningful incentive. Treasury's 90-day timelock and the 180-day vesting cliff
+  seed. A 10% price move is worth **$2,500** to them; the pair-asset fees now used as the
+  network fee were worth **$12–$240/year** at realistic volume. Fee income was never the
+  meaningful incentive. Treasury's 90-day timelock and the 180-day vesting cliff
   mean they cannot exit into a pump, so the only way to act on that incentive is the slow
   one: deeper pools, more customers, more burn from real sales. **This is the pitch** —
   "$3,000 establishes the market for an asset you own 25% of", not "$3,000 to fund a

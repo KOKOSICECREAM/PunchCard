@@ -50,8 +50,8 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     ///      and PunchCard earns when people are buying in, which is when the merchant is
     ///      winning. PunchCard never holds a merchant token, ever.
     ///
-    ///      It replaces a monthly platform fee rather than sitting on top of one: no
-    ///      subscription, no per-transaction cut, no setup rent.
+    ///      It replaces a recurring platform fee rather than sitting on top of one: no
+    ///      subscription and no per-transaction cut.
 
     LPPosition private _usdcPosition;
     LPPosition private _ethPosition;
