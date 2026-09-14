@@ -15,7 +15,7 @@ Last updated 2026-09-14.
 | Deployment | Network + merchant deployed end to end on a Base Sepolia fork, with a reward issued and a swap executed |
 | Coverage | 62% lines. Branch coverage 11% — thin |
 | Audit | None |
-| Customer dapp | **KOKOS only.** Not templated. The prototype at punchcard.club/dapp is mock data |
+| Customer dapp | Template builds and routes through PunchCardRouter. **KOKOS still runs its own untemplated copy — cutover frozen pending the SKOOP relaunch decision.** The prototype at punchcard.club/dapp is mock data |
 | POS | KOKOS only, bespoke |
 | Merchant dashboard | Does not exist |
 | Revenue plumbing | Network fee + router fee built, and the dapp now routes through them. No keeper, no deployment fee |
@@ -25,21 +25,40 @@ ahead of everything around them.
 
 ---
 
-## Phase 1 — Templated customer dapp *(in progress)*
+## Phase 1 — Templated customer dapp *(template building; cutover FROZEN)*
 
-Turn the KOKOS customer dapp into a template plus a config, and make **KOKOS merchant #1
-of the new system**. Running the live, money-handling deployment on the templated build is
-what proves the template — the same logic as validating against a mainnet fork rather than
-a mock.
+Turn the KOKOS customer dapp into a template plus a config. Running a live, money-handling
+deployment on the templated build is what proves the template — the same logic as
+validating against a mainnet fork rather than a mock.
 
-- [ ] Extract 12 contract addresses and ~155 brand literals into `config.json`
+> **The KOKOS cutover is frozen, decided 2026-09-14.** Today's SKOOP stays exactly as it
+> is until the relaunch question below is settled. Nothing in `punchcard-launchpad`
+> reaches `KOKOS-website` in the meantime — the launchpad renders into `dist/`, which is
+> deployed nowhere.
+>
+> The reason to wait is that the two paths want different work. If SKOOP is relaunched
+> through the factory it becomes a **new token with a new address, new pools and
+> `swapMode: 'punchcard'`**, and a cutover done now would be redone in full. If it is not,
+> the cutover is a straight swap onto `swapMode: 'uniswap'` and can happen any time.
+> Cutting over now is the one order that costs work under either outcome.
+
+- [x] Extract 12 contract addresses into `config.json`
+- [ ] Extract ~155 brand literals into `config.json` *(partially done — swap-screen
+      strings now render from `brand.shortName`)*
 - [ ] Brand theme through the existing 21 CSS custom properties
 - [ ] Per-merchant PWA manifest, icons, service-worker cache name
 - [ ] Byte-compare rendered output against the live KOKOS dapp
-- [ ] Cut KOKOS over, verify in-store, keep a rollback
+- [ ] ~~Cut KOKOS over~~ **FROZEN** — see above
 
-**Exit criteria:** KOKOS runs on the template with zero behaviour change, and a second
-merchant's dapp can be produced from a config file alone.
+**Still worth doing while frozen:** everything above the cutover line. The template can be
+finished, byte-compared and proven against a second merchant without touching KOKOS.
+
+**Exit criteria:** a merchant's dapp can be produced from a config file alone, and the
+rendered KOKOS build matches the live dapp modulo intended fixes.
+
+> One intended difference already exists: the $500 swap cap was skipped whenever the ETH
+> price feed was down, including for USDC input. Fixed in the template, so the cap now
+> binds. It reaches KOKOS only at cutover.
 
 ## Phase 1b — route the dapp through PunchCardRouter *(built 2026-09-14)*
 
@@ -147,6 +166,11 @@ through the factory. Do not spend time looking for a bridge that cannot exist.
 
 Today's SKOOP can keep running exactly as it does. It simply cannot be swapped to or from
 any other merchant's token.
+
+**Decided 2026-09-14: leave it running, unchanged, until this is settled.** No cutover, no
+migration, no contract changes to the live deployment. This decision gates the Phase 1
+cutover and nothing else — template work, contracts, launchpad and a second merchant all
+proceed independently of it.
 
 ### Why the clock runs the wrong way
 
