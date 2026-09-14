@@ -16,4 +16,7 @@ remappings = ["@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"]
 [invariant]
 runs = 256
 depth = 64
-fail_on_revert = false
+# The handler computes each action's achievable range before bounding, so a revert now
+# means something genuinely unexpected rather than an unmet precondition. Leaving this
+# false let real failures hide among the noise.
+fail_on_revert = true

@@ -77,22 +77,48 @@ contract Handler is Test {
     }
 
     function distributeReward(uint256 amt) public {
-        uint256 cap = escrow.drawerAvailable(OPERATOR);
-        if (cap == 0) return;
-        amt = bound(amt, escrow.perTxFloor(), cap < escrow.perTxMax() ? cap : escrow.perTxMax());
+        // Same hygiene as treasuryFlow: compute the achievable range first and skip when
+        // it is empty, rather than letting bound() revert with min > max. A reward is
+        // bounded by THREE things — the drawer, the emission schedule, and perTxMax — and
+        // ignoring any of them produced silent reverts that fail_on_revert = false hides.
+        uint256 hi = escrow.drawerAvailable(OPERATOR);
+        uint256 spend = escrow.spendable();
+        if (spend < hi) hi = spend;
+        uint256 maxTx = escrow.perTxMax();
+        if (maxTx < hi) hi = maxTx;
+
+        uint256 lo = escrow.perTxFloor();
+        if (hi < lo) return;
+
+        amt = bound(amt, lo, hi);
         vm.prank(OPERATOR);
-        try escrow.distributeReward(CUSTOMER, amt) {} catch {}
+        escrow.distributeReward(CUSTOMER, amt);
     }
 
-    function addLiquidity(uint256 tokAmt, uint256 pairAmt) public {
+    /// @param side 0 = USDC pool, 1 = ETH pool, 2 = both at once.
+    /// @dev Invariants are most useful when they roam through every live branch. The ETH
+    ///      pool has the opposite token ordering to the USDC one, so restricting this to
+    ///      USDC left half the mapping and half the dust handling unreachable by the fuzzer.
+    function addLiquidity(uint256 tokAmt, uint256 pairAmt, uint256 side) public {
         uint256 res = locker.reserveTokens();
         if (res == 0) return;
+        side    = bound(side, 0, 2);
         tokAmt  = bound(tokAmt, 1, res);
         pairAmt = bound(pairAmt, 1, 1e12);
-        usdc.mint(OWNER, pairAmt);
+
+        uint256 usdcTok = (side == 1) ? 0 : tokAmt / (side == 2 ? 2 : 1);
+        uint256 ethTok  = (side == 0) ? 0 : tokAmt / (side == 2 ? 2 : 1);
+        uint256 usdcPair = usdcTok == 0 ? 0 : pairAmt;
+        uint256 ethPair  = ethTok  == 0 ? 0 : pairAmt;
+        if (usdcTok == 0 && ethTok == 0) return;
+
+        if (usdcPair > 0) usdc.mint(OWNER, usdcPair);
+        if (ethPair  > 0) weth.mint(OWNER, ethPair);
+
         vm.startPrank(OWNER);
         usdc.approve(address(locker), type(uint256).max);
-        try locker.addLiquidity(tokAmt, 0, pairAmt, 0, 0, 0, 0, 0) {} catch {}
+        weth.approve(address(locker), type(uint256).max);
+        try locker.addLiquidity(usdcTok, ethTok, usdcPair, ethPair, 0, 0, 0, 0) {} catch {}
         vm.stopPrank();
     }
 
@@ -108,8 +134,13 @@ contract Handler is Test {
     function releaseVesting() public { try vesting.release() {} catch {} }
 
     function treasuryFlow(uint256 amt) public {
-        amt = bound(amt, 1, token.balanceOf(address(treasury)));
-        if (amt == 0) return;
+        // Guard BEFORE bounding. bound(amt, 1, 0) reverts inside forge-std when the
+        // treasury is empty, and the old `if (amt == 0) return` after it was dead code
+        // since bound(_, 1, _) never returns zero. With fail_on_revert = false those
+        // reverts are silent noise that make the call table harder to read.
+        uint256 bal = token.balanceOf(address(treasury));
+        if (bal == 0) return;
+        amt = bound(amt, 1, bal);
         vm.startPrank(OWNER);
         try treasury.submitRelease(amt) {} catch {}
         vm.stopPrank();
