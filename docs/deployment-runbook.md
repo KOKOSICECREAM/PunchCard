@@ -138,10 +138,39 @@ than **one hour** stale, so do not sit on a prepared transaction.
 
 ## Step 5 — Approve and deploy
 
+**The merchant approves, PunchCard deploys.** `deploy()` pulls USDC from `ownerWallet`, not
+from whoever sends the transaction, so the approval must come from the merchant's own
+wallet. `deploy()` is `onlyDeployer`, so these are necessarily two different accounts and
+two separate transactions.
+
+**1. Merchant approves, from their own wallet, the exact amount:**
+
+```bash
+cast send $USDC "approve(address,uint256)" $TOKEN_FACTORY $USDC_SEED \
+  --rpc-url $RPC --account merchant-wallet
 ```
-ownerWallet  →  approve(TokenFactory, usdcPairAmount)      # USDC
-deployer     →  TokenFactory.deploy(params)                # msg.value == ethPairAmount
+
+Exact amount, immediately before the deploy. Never leave a standing allowance — `deploy()`
+pulls from `ownerWallet`, so a lingering approval could be consumed by anyone able to call
+the factory, with their own parameters, and the merchant would fund a suite they do not
+control.
+
+**2. PunchCard deploys:**
+
+```bash
+forge script script/DeployMerchant.s.sol:DeployMerchant \
+  --rpc-url $RPC --broadcast --account punchcard-deployer
 ```
+
+The script checks the merchant's allowance first and stops with a clear message if it is
+missing, rather than failing deep inside the factory.
+
+> **Testing only.** If you are deliberately broadcasting *as* `ownerWallet` — a local fork
+> or a testnet where one wallet plays every role — set `MERCHANT_SELF_APPROVE=true` and the
+> script will approve for you. The script does not try to detect this: `msg.sender` in a
+> forge script is not reliably the broadcast signer before `vm.startBroadcast()`, so intent
+> is declared rather than guessed. Get it wrong and the deploy reverts immediately on
+> `transferFrom`, which is the failure mode you want.
 
 `deploy()` is `onlyDeployer` — the merchant does not call it. It runs the entire sequence
 in one transaction: mint, distribute 45/30/15/10 to the four contracts, create both pools,

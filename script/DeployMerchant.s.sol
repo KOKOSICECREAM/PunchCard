@@ -41,26 +41,29 @@ contract DeployMerchant is Script {
 
         // deploy() pulls USDC from p.ownerWallet, NOT from msg.sender. In production the
         // broadcaster is PunchCard's deployer hot wallet (deploy() is onlyDeployer) and
-        // ownerWallet is the merchant — two different accounts — so approving from the
-        // broadcaster does nothing and the deploy reverts on transferFrom.
+        // ownerWallet is the merchant, so the merchant must approve the factory themselves.
         //
-        // Only approve when the broadcaster genuinely is the owner. Otherwise require the
-        // merchant's allowance to already be in place, and say so clearly rather than
-        // failing later inside the factory.
+        // This deliberately does NOT try to detect whether the broadcaster is the owner.
+        // `msg.sender` here is the script's sender, which before vm.startBroadcast() is not
+        // reliably the broadcast signer — it depends on --sender, --account and the forge
+        // version. Inferring identity from it looked like it worked and would have been
+        // brittle. Intent is declared explicitly instead.
         uint256 allowance = IERC20(usdc).allowance(owner, factoryAddr);
-        bool broadcasterIsOwner = msg.sender == owner;
 
-        if (!broadcasterIsOwner) {
+        if (allowance < usdcSeed) {
             require(
-                allowance >= usdcSeed,
-                "ownerWallet has not approved the factory for usdcSeed - the MERCHANT must approve from their own wallet before this runs"
+                vm.envOr("MERCHANT_SELF_APPROVE", false),
+                "ownerWallet has not approved the factory. Either have the MERCHANT approve it from their own wallet, or set MERCHANT_SELF_APPROVE=true when you are deliberately broadcasting AS ownerWallet."
             );
         }
 
         vm.startBroadcast();
-        if (broadcasterIsOwner && allowance < usdcSeed) {
-            // Exact amount, immediately before use — never leave a standing allowance,
-            // since anyone able to call deploy() could consume it with their own params.
+        if (allowance < usdcSeed) {
+            // Runs as the broadcaster. If the broadcaster is not actually ownerWallet this
+            // approval lands on the wrong account and deploy() reverts on transferFrom a
+            // few lines later — a loud, immediate failure rather than a silent mis-approval.
+            // Exact amount, immediately before use: never leave a standing allowance, since
+            // anyone able to call deploy() could consume it with their own parameters.
             IERC20(usdc).approve(factoryAddr, usdcSeed);
         }
         factory.deploy{value: ethSeed}(p);
