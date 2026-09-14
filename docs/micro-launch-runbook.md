@@ -3,6 +3,14 @@
 **Status: not yet run.** This is the script for a deliberately tiny live rehearsal on Base
 mainnet, roughly $20 of seed across two merchants, using controlled wallets.
 
+> ## This is a mechanical rehearsal, not an economic pilot.
+>
+> It proves deployability, real Uniswap pool behaviour, quoting, swaps, fee flow, config
+> and dapp mechanics. It does **not** validate emissions, reward size, drawer limits,
+> merchant demand or customer behaviour.
+>
+> Repeat this to yourself at every step where it starts feeling like a launch.
+
 ## What this is, and what it is not
 
 **It is** a rehearsal of the machine against real contracts, real pools, real wallets, real
@@ -71,9 +79,14 @@ from gas refunds and change, and step 7 proves nothing.
 Two merchants at $5 USDC + $5 ETH each, plus gas.
 
 ```
-needed:  ~20 USDC   (10 seed + headroom)
-         ~0.01 ETH  (0.008 seed + gas + margin)
+minimum:    20 USDC  /  0.01 ETH
+preferred:  25 USDC  /  0.015 ETH
 ```
+
+Two merchants, four pools, gas, and room to retry a step — while staying small enough that
+the rehearsal is never financially meaningful. That second property is the point: top up
+enough that you are not tempted to cut a step, and not so much that a bad outcome is
+anything other than tuition.
 
 Measured: the merchant deploy is **~20M gas**, about **$0.30** of L2 execution at 0.006 gwei.
 Gas is not the constraint; the seed is. Check the deploy wallet before starting:
@@ -84,6 +97,11 @@ cast call $PC_USDC 'balanceOf(address)(uint256)' $MERCHANT_OWNER --rpc-url https
 ```
 
 ### Abort conditions
+
+**Abort on the first unexplained mismatch.** The point is not to get the launch through;
+it is to find where the model meets reality and squeaks. A step that "probably" worked is
+the most expensive possible outcome, because it converts an unknown into a false assumption
+and carries it into the merchant launch.
 
 Stop and diagnose rather than pushing through:
 
