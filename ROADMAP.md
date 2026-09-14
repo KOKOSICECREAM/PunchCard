@@ -230,8 +230,26 @@ intent, so announce first and keep the gap between pulling and deploying short.
 
 ### Open on this plan
 
-- **Holder count is assumed, not measured.** The working guess is ~5 real holders with the
-  rest bots. The whole plan's difficulty scales off this number and it has not been checked.
+- ~~**Holder count is assumed, not measured.**~~ **Measured 2026-09-14** by scanning all
+  2,494 Transfer events since deployment (block 43,454,133) and reading every balance
+  on-chain. 76 addresses ever touched SKOOP; 50 hold a non-zero balance.
+
+  **13 public wallets hold $1 or more, worth $338 combined.** Largest is $103, median
+  $11.78, six are under $10. A further 28 wallets hold non-zero dust totalling $1.19.
+
+  Everything else is project infrastructure: five addresses — two contracts and three EOAs,
+  one holding exactly 88,888,890 tokens — hold **95.9% of supply**, plus the two pools and
+  the POS signer.
+
+  **This settles the migration question.** The difficulty was supposed to scale off this
+  number; at 13 wallets and $338 it is not a distribution problem at all. Anything owed
+  can be made whole from the merchant's own treasury allocation rather than the rewards
+  escrow, since the amounts are trivial next to a 10% treasury — and the 90-day timelock
+  is affordable when the date can be announced to thirteen people.
+
+  Caveat: SKOOP's total supply is **886,355,705**, not the factory's 100,000,000. Any
+  relaunch has to pick an exchange ratio and defend it. With $338 of public value at stake,
+  generosity is cheaper than argument.
 - **The recovered capital is close, but the wrong shape.** The old pools hold **$720 USDC
   + 0.76 WETH ≈ $2,598** against the $2,000 USDC / $1,000 ETH floors. The ETH side clears
   with ~$878 to spare; the USDC side is short by $1,280. Rebalancing the ETH surplus into
