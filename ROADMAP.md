@@ -72,6 +72,17 @@ building a UI before the schema settles hardens the wrong thing. Around merchant
 
 ---
 
+## Economics — reviewed 2026-09-14
+
+See `docs/economics-review.md`. Measured against KOKOS on-chain: emission is ~5.7x faster
+than the reference business's peak throughput (a 28-year allocation, not five), the default
+drawer is ~13x larger than peak need, seed minimums are correctly conservative at 2.8x
+KOKOS's actual pool depth, and LP fee revenue at observed volume is negligible — so the
+deployment fee is load-bearing, not optional.
+
+Open question for the business, not the chain: in-store SKOOP throughput fell 98.7% in the
+last 30 days. Do not calibrate against that window.
+
 ## Open design decisions
 
 Each of these is a deliberate choice nobody has made yet.
