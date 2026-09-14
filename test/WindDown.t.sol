@@ -51,9 +51,16 @@ contract MockPM {
     uint256 public useDen = 1;
     function setUse(uint256 n, uint256 d) external { useNum = n; useDen = d; }
 
+    /// Records exactly what the locker asked Uniswap for, so a test can assert the
+    /// slippage bounds landed on the right side of the pair.
+    struct Rec { uint256 amt0Desired; uint256 amt1Desired; uint256 amt0Min; uint256 amt1Min; }
+    mapping(uint256 => Rec) private _rec;
+    function recorded(uint256 tokenId) external view returns (Rec memory) { return _rec[tokenId]; }
+
     function increaseLiquidity(INonfungiblePositionManager.IncreaseLiquidityParams calldata p)
         external returns (uint128, uint256 used0, uint256 used1)
     {
+        _rec[p.tokenId] = Rec(p.amount0Desired, p.amount1Desired, p.amount0Min, p.amount1Min);
         used0 = p.amount0Desired * useNum / useDen;
         used1 = p.amount1Desired * useNum / useDen;
         // Real Uniswap PULLS the consumed amounts out of the caller. Without this the mock
@@ -385,6 +392,74 @@ contract WindDownTest is Test {
 
         // supplied 1,000,000 USDC, half consumed, half returned
         assertEq(usdcBefore - usdc.balanceOf(OWNER), 500_000, "unused USDC came back");
+    }
+
+    /// The four *Min bounds must land on the correct side of each pair.
+    ///
+    /// A reversed mapping does not revert — it silently protects the wrong asset, so the
+    /// merchant thinks they are covered and are not. addLiquidity has been edited three
+    /// times with nothing checking this.
+    ///
+    /// The fixture covers both orderings: the merchant token is token0 in the USDC pool
+    /// and token1 in the ETH pool, so one call exercises both permutations.
+    function test_slippageBoundsMapToTheCorrectSideOfEachPair() public {
+        usdc.mint(OWNER, 1e12);
+        weth.mint(OWNER, 1e12);
+        vm.startPrank(OWNER);
+        usdc.approve(address(locker), type(uint256).max);
+        weth.approve(address(locker), type(uint256).max);
+        vm.stopPrank();
+
+        // distinct sentinels so any swap is unambiguous
+        uint256 usdcTokenMin = 1111;
+        uint256 usdcPairMin  = 2222;
+        uint256 ethTokenMin  = 3333;
+        uint256 ethPairMin   = 4444;
+
+        vm.prank(OWNER);
+        locker.addLiquidity(
+            100_000 * 1e6, 100_000 * 1e6,   // merchant tokens into each pool
+            50_000, 60_000,                 // pair amounts
+            usdcTokenMin, usdcPairMin, ethTokenMin, ethPairMin
+        );
+
+        // USDC pool — merchant token IS token0
+        assertTrue(locker.getPositions().usdc.merchantIsToken0, "fixture: merchant is token0 here");
+        MockPM.Rec memory u = pm.recorded(1);
+        assertEq(u.amt0Min, usdcTokenMin, "USDC pool: amount0Min must bound the MERCHANT token");
+        assertEq(u.amt1Min, usdcPairMin,  "USDC pool: amount1Min must bound USDC");
+
+        // ETH pool — merchant token is token1, so the mapping must flip
+        assertFalse(locker.getPositions().eth.merchantIsToken0, "fixture: merchant is token1 here");
+        MockPM.Rec memory e = pm.recorded(2);
+        assertEq(e.amt0Min, ethPairMin,  "ETH pool: amount0Min must bound WETH");
+        assertEq(e.amt1Min, ethTokenMin, "ETH pool: amount1Min must bound the MERCHANT token");
+    }
+
+    /// The desired amounts must follow the same ordering as the bounds.
+    function test_desiredAmountsMapToTheCorrectSideOfEachPair() public {
+        usdc.mint(OWNER, 1e12);
+        weth.mint(OWNER, 1e12);
+        vm.startPrank(OWNER);
+        usdc.approve(address(locker), type(uint256).max);
+        weth.approve(address(locker), type(uint256).max);
+        vm.stopPrank();
+
+        uint256 usdcTokens = 100_000 * 1e6;
+        uint256 ethTokens  = 200_000 * 1e6;
+        uint256 usdcPair   = 50_000;
+        uint256 ethPair    = 60_000;
+
+        vm.prank(OWNER);
+        locker.addLiquidity(usdcTokens, ethTokens, usdcPair, ethPair, 0, 0, 0, 0);
+
+        MockPM.Rec memory u = pm.recorded(1);
+        assertEq(u.amt0Desired, usdcTokens, "USDC pool: token0 is the merchant token");
+        assertEq(u.amt1Desired, usdcPair,   "USDC pool: token1 is USDC");
+
+        MockPM.Rec memory e = pm.recorded(2);
+        assertEq(e.amt0Desired, ethPair,   "ETH pool: token0 is WETH");
+        assertEq(e.amt1Desired, ethTokens, "ETH pool: token1 is the merchant token");
     }
 
     function _initiateAndExpire() internal {
