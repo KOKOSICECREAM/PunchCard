@@ -16,7 +16,8 @@ import "./libraries/LaunchPricing.sol";
 /// @notice Deploys full PunchCard merchant suite in a single transaction.
 /// @dev Deployer hot wallet executes after off-chain PunchCard review.
 ///      Multisig updates deployer if compromised.
-///      Launch LP: 3% of supply split 60% USDC pool / 40% ETH pool.
+///      Launch LP: 3% of supply, split between the pools in proportion to the USD
+///      value seeded into each — derived, not fixed. See LaunchPricing.
 ///      Remaining 27% held as reserve in LPLocker — merchant deploys over time.
 ///      Both pools use Uniswap v3 full-range positions.
 ///      Pair-token dust from both mints returns to ownerWallet — the merchant's own
@@ -37,9 +38,10 @@ contract TokenFactory {
     /// @notice Tokens deployed into pools at launch — 3% of total supply
     uint256 public constant LAUNCH_LP_ALLOC    = 3_000_000 * 1e6;
 
-    /// @notice 60% of launch LP goes to USDC pool
-
-    /// @notice 40% of launch LP goes to ETH pool
+    /// @dev The launch LP split is NOT fixed. It is derived per deployment from the USD
+    ///      value seeded into each pool, so both pools open at the same price for any seed
+    ///      — see LaunchPricing.deriveTokenSplit. Two constants used to live here at 60/40
+    ///      and their @notice lines outlived them by four stale-doc sweeps.
 
     /// @notice Remaining 27% held as reserve in LPLocker
     uint256 public constant LP_RESERVE         = LP_ALLOC - LAUNCH_LP_ALLOC; // 27_000_000 * 1e6
@@ -211,8 +213,9 @@ contract TokenFactory {
     /// @notice Deploys full merchant suite with dual LP pools in one transaction
     /// @dev msg.value must equal ethPairAmount.
     ///      ownerWallet must approve factory for usdcPairAmount before calling.
-    ///      Launch: 1.8M tokens + usdcPairAmount → USDC pool
-    ///              1.2M tokens + ethPairAmount  → ETH pool (WETH wrapped)
+    ///      Launch: launchTokensUsdc + usdcPairAmount → USDC pool
+    ///              launchTokensEth  + ethPairAmount  → ETH pool (WETH wrapped)
+    ///      Both token amounts are derived from the seeded USD value, not fixed.
     ///      Reserve: 27M tokens held in LPLocker for merchant-controlled release.
     function deploy(DeployParams calldata p)
         external
@@ -315,7 +318,7 @@ contract TokenFactory {
 
         assert(token.balanceOf(address(this)) == LP_ALLOC);
 
-        // ── STEP 7: Mint USDC pool position (60% of launch LP) ───────────────
+        // ── STEP 7: Mint USDC pool position (share derived from seeded USD) ──
 
         uint256 usdcTokenId;
         {
@@ -376,7 +379,7 @@ contract TokenFactory {
             if (token1Usdc != tokenAddr && dust1 > 0) IERC20(token1Usdc).safeTransfer(p.ownerWallet, dust1);
         }
 
-        // ── STEP 8: Mint ETH pool position (40% of launch LP) ────────────────
+        // ── STEP 8: Mint ETH pool position (share derived from seeded USD) ───
 
         uint256 ethTokenId;
         {

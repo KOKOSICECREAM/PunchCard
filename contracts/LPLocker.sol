@@ -10,8 +10,9 @@ import "./interfaces/INonfungiblePositionManager.sol";
 
 /// @title LPLocker
 /// @notice Holds and manages merchant LP positions across USDC and ETH pools.
-/// @dev Two Uniswap v3 NFT positions — USDC pool (60%) and ETH pool (40%).
-///      Launch deploys 3% of supply split 60/40 across both pools.
+/// @dev Two Uniswap v3 NFT positions — one against USDC, one against ETH.
+///      Launch deploys 3% of supply across both, split in proportion to the USD value
+///      seeded into each pool rather than at a fixed ratio, so both open at one price.
 ///      Remaining 27% held as reserve, merchant adds over time via addLiquidity().
 ///      Wind-down: 90/10 split on each position independently.
 ///      Merchant token portions always burned. USDC + WETH to ownerWallet.
