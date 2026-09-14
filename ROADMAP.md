@@ -72,16 +72,20 @@ building a UI before the schema settles hardens the wrong thing. Around merchant
 
 ---
 
-## Economics — reviewed 2026-09-14
+## Economics — UNVALIDATED
 
-See `docs/economics-review.md`. Measured against KOKOS on-chain: emission is ~5.7x faster
-than the reference business's peak throughput (a 28-year allocation, not five), the default
-drawer is ~13x larger than peak need, seed minimums are correctly conservative at 2.8x
-KOKOS's actual pool depth, and LP fee revenue at observed volume is negligible — so the
-deployment fee is load-bearing, not optional.
+See `docs/economics-review.md`. There is no usage evidence. KOKOS is in beta and barely
+used; its on-chain activity is correctness testing, not commerce, and must not be used to
+calibrate emission, drawer size or fee share. An earlier version of that document drew
+conclusions from it and was wrong.
 
-Open question for the business, not the chain: in-store SKOOP throughput fell 98.7% in the
-last 30 days. Do not calibrate against that window.
+What holds on logic alone: loyalty tokens generate burns and transfers rather than swaps, so
+LP fees will contribute approximately nothing at merchant #1–10, which makes the unbuilt
+deployment fee load-bearing.
+
+**Merchant #1 is the experiment.** Instrument rewards issued per day, drawer utilisation,
+swap volume and the dollar value of a typical reward. Treat their parameters as provisional
+— redeploying one suite is far cheaper than locking a wrong constant across a network.
 
 ## Open design decisions
 

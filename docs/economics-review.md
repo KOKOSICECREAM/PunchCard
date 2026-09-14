@@ -1,110 +1,77 @@
-# Economics review against KOKOS
+# Economics: still unvalidated
 
-The contracts have had multiple review passes. The **numbers** had none. Emission rate,
-drawer size, seed minimums and the fee share are all `constant` or `immutable`, so they are
-expensive to change after merchant #1 — and all were reasoned from first principles rather
-than from evidence.
+**Status: no usage evidence exists.** This document previously drew conclusions from KOKOS's
+on-chain activity. That was an error — KOKOS is in beta and barely used, and its
+transactions are correctness checks rather than commerce. The numbers below are recorded so
+nobody mistakes them for demand data a second time.
 
-KOKOS is the only evidence that exists. Measured on-chain 2026-09-14 from Base mainnet.
+Emission rate, drawer size, seed minimums and the fee share are all `constant` or
+`immutable`, so they are expensive to change after merchant #1. All were reasoned from first
+principles. **None has been tested against a real shop, and none can be until one runs.**
 
 ---
 
-## What KOKOS actually does
+## What is actually on-chain (2026-09-14, Base mainnet)
 
-Every SKOOP spent in-store is burned, so supply decline is a direct measure of in-store
-SKOOP throughput.
+Every SKOOP spent in-store is burned, so supply decline tracks SKOOP throughput.
 
 | Window | SKOOP burned | Per day |
 |---|---|---|
 | 150–120d ago | 11,804 | 393 |
-| 120–90d ago | 1,150,856 | **38,362** |
+| 120–90d ago | 1,150,856 | 38,362 |
 | 90–60d ago | 741,189 | 24,706 |
 | 60–30d ago | 539,950 | 17,998 |
-| **30–0d ago** | **6,963** | **232** |
+| 30–0d ago | 6,963 | 232 |
 
-**Rewards paid from the rewards vault in the last 90 days: zero.** The vault has sat at
-486,899,824 SKOOP unchanged since it was funded.
+Rewards paid from the rewards vault in the last 90 days: zero. USDC pool depth: $720.
+SKOOP at $0.00008558.
 
-Pool depth: the USDC/SKOOP pool holds **$720 of USDC** (~$1,440 TVL). SKOOP trades at
-$0.00008558.
+**This is beta test traffic.** It measures how often someone exercised the system, not how
+often a customer bought ice cream with SKOOP. The shape — a burst, then a taper — is what
+testing looks like, not what a business looks like. It cannot be used to calibrate anything,
+and the earlier reading of it as a demand signal (and of the taper as a possible symptom of
+the quoter bug) was wrong.
 
 ---
 
-## What that says about each parameter
+## What can still be said, on logic rather than data
 
-### Emission: 24,657/day is roughly 5.7× too fast
+**Loyalty tokens produce burns and transfers, not swaps — and swaps are what pay LP fees.**
+A customer earns a token and spends it at the counter. That is a transfer and a burn.
+Neither touches a pool. LP fees arrive only when someone *converts*, and the cross-merchant
+routing that would drive conversion needs network density that does not exist at merchant
+#1.
 
-Normalised for the different supplies (SKOOP 889M, PunchCard 100M):
+This is structural, not empirical, so beta usage does not weaken it:
 
-| | % of supply per day |
+- **The deployment fee is load-bearing, not optional.** It is what funds onboarding until
+  density arrives. Still unbuilt, and still the highest-value item on the roadmap.
+- **Revenue is back-loaded and density-dependent.** Plan the first several merchants
+  assuming LP fees contribute approximately nothing.
+
+**Seed minimums are defensible on arithmetic.** A $5,000 pool moves ~5% on a ~$100 swap.
+That is workable for a $20 coffee-to-ice-cream conversion and poor for anything larger,
+which is why the 27M reserve exists and why merchants need a reason to deploy it.
+
+---
+
+## What genuinely cannot be answered yet
+
+None of these is knowable without a merchant doing real volume:
+
+| Parameter | Question |
 |---|---|
-| KOKOS at peak | 0.0043% |
-| KOKOS last 30 days | ~0.0000% |
-| **PunchCard emission** | **0.0247%** |
+| Emission 24,657/day | Is that generous, tight, or irrelevant at real throughput? |
+| Drawer default ~$82/day | Does it cover a real day's rewards, or throttle the till? |
+| 45/30/15/10 split | Does 45% rewards last, at a rate customers notice? |
+| 20% LP fee share | Is there enough swap volume for the share to matter? |
+| 5-year emission period | Right horizon, or an order of magnitude out? |
 
-At KOKOS-peak-equivalent volume a merchant would draw ~4,300 tokens/day, so the 45M
-allocation lasts **28.6 years**, not five.
+**The first real merchant is the experiment.** Instrument them from day one — rewards issued
+per day, drawer utilisation, swap volume, and the dollar value of a typical reward — because
+those numbers are the calibration data, and the parameters are immutable per merchant once
+deployed.
 
-This is not dangerous — a merchant simply never reaches the ceiling — but it means the
-emission schedule will **never be the binding constraint**, and describing it as a
-"five-year runway" overstates what it does. If the intent is for emission to actually pace
-a programme, it is an order of magnitude loose.
-
-### Drawer: ~13× larger than the reference peak needs
-
-At KOKOS's peak, 10% rewards on 38,362/day of spend is roughly 3,800 tokens/day of reward
-issuance. The default drawer is 49,315/day. The theft ceiling is therefore ~13× higher than
-a KOKOS-sized shop would ever need, which makes the "$100 cash drawer" framing generous
-rather than tight. Worth considering a smaller default, since the drawer's whole purpose is
-to cap loss.
-
-### Seed minimums: conservative, and correctly so
-
-PunchCard requires ~$2,000 USDC-side. KOKOS runs on **$720**. The minimum is 2.8× deeper
-than the live reference — the one parameter that evidence says is set right, or even
-generously.
-
-### LP fee share: the finding that matters
-
-20% of trading fees is a sound *mechanism*. But at KOKOS's current volume it earns
-approximately nothing, and even at peak the pool was ~$1,440 deep.
-
-**A loyalty token that customers earn and spend generates burns and transfers, not swaps.**
-Swaps only happen when someone converts — and the cross-merchant routing that would drive
-that needs network density which does not exist yet.
-
-So revenue is genuinely back-loaded and density-dependent, and the **deployment fee is not
-optional** — it is what funds the business until the network is dense enough for LP fees to
-matter. It is still unbuilt.
-
----
-
-## The thing to investigate before merchant #1
-
-**In-store SKOOP throughput fell 98.7% in the last 30 days** — 17,998/day to 232/day.
-
-A hypothesis worth checking rather than assuming: the customer dapp's price quoter has been
-broken, falling back to raw spot price and **over-quoting by up to 58% on larger purchases**
-(see `docs/audit-2026-09.md`). Customers shown one number and receiving materially less
-would stop buying. That bug was fixed 2026-09-13; whether the timelines line up is a
-question for KOKOS's own records, not something on-chain data can settle.
-
-Other explanations are equally plausible — seasonality, the shop de-emphasising SKOOP,
-customers paying with card instead. But a payments bug that mis-quotes in the merchant's
-favour is the kind of thing that quietly kills usage, and it was live during the decline.
-
-**Do not calibrate PunchCard's parameters against the last 30 days.** Use the 120–60 day
-window, when the programme was actually running.
-
----
-
-## Recommendations
-
-1. **Reduce emission or stop calling it a five-year runway.** At realistic volume it is a
-   28-year allocation. Either is fine; the mismatch between the two is not.
-2. **Consider a smaller default drawer.** 13× headroom over peak need is loss ceiling given
-   away for nothing.
-3. **Keep the seed minimums.** Evidence says they are right.
-4. **Build the deployment fee.** LP fees will not carry the business at merchant #1–10.
-5. **Find out what happened to KOKOS volume** before assuming a second merchant behaves
-   differently.
+A practical consequence: **merchant #1 should be treated as a pilot whose parameters may be
+wrong**, not as the template. Redeploying a suite is cheap compared with locking a bad
+constant across a network.
