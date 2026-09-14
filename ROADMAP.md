@@ -119,6 +119,64 @@ deployment fee load-bearing.
 swap volume and the dollar value of a typical reward. Treat their parameters as provisional
 — redeploying one suite is far cheaper than locking a wrong constant across a network.
 
+## Decision: relaunch SKOOP through the factory
+
+**The existing SKOOP can never join the network.** `WindDownController.register()` is
+`onlyFactory` and is only ever called inside `TokenFactory.deploy()`; the router then
+refuses anything unregistered (`"Token not on network"`). There is no admin override and no
+adapter. This is binary, not a preference — if SKOOP is to be routable, it must be deployed
+through the factory. Do not spend time looking for a bridge that cannot exist.
+
+Today's SKOOP can keep running exactly as it does. It simply cannot be swapped to or from
+any other merchant's token.
+
+### Why the clock runs the wrong way
+
+Migration cost grows with holder count, and KOKOS is in beta — 2.5M of 888M burned, a $720
+pool, few third-party holders. **It will never be cheaper than now.** The deadline is not
+when the contracts are ready; it is when SKOOP has enough holders to make migration
+political.
+
+What a relaunch buys beyond network membership:
+
+- **The drawer model.** Live SKOOP has the un-rotatable operator problem PunchCard fixed. A
+  leaked POS key today has no per-kiosk cap and no removal path.
+- Emission schedule, wind-down protections, treasury timelock.
+- **"Merchant #1" becomes true.** The site says *"Where This Was Built"* precisely because
+  KOKOS is not a factory deployment.
+
+### Migrating holders — use the rewards escrow, not an exception
+
+The factory mints 100M into fixed allocations with no airdrop bucket, and the treasury's
+90-day timelock makes a fast distribution awkward. **Do not carve out a migration
+allocation** — every merchant would inherit a bucket they do not need, and it would break
+the uniformity the network is sold on.
+
+Use `RewardEscrow.distributeReward()`. It sends to any address, and existing SKOOP holders
+*are* customers who earned loyalty rewards — paying them from the rewards pool is what that
+pool is for. No new contract, no new bytecode to audit, and the drawer and emission limits
+apply, so a botched airdrop cannot drain anything.
+
+**Throughput:** the default drawer is two days of emission (49,315/day). The owner can raise
+it to `MAX_DRAWER_DAYS` (14 days, ~345,205/day) with `setDrawerAllowance`, then lower it
+again. A 1M-token migration takes about three days at the raised rate.
+
+**Mechanics:**
+
+- [ ] Snapshot SKOOP balances at an announced block
+- [ ] Exclude KOKOS's own addresses — rewards vault, team vesting, both pools, payment
+      escrow, treasury and marketing wallets. Only genuine third-party holders qualify
+- [ ] Allocate a migration pool as a share of the 45M rewards allocation and distribute
+      **proportionally** — supply falls from 888M to 100M, so 1:1 is impossible and any
+      promise of it would be wrong
+- [ ] Raise the operator drawer for the distribution window, then put it back
+- [ ] **Pick a distinct symbol.** Two tokens called SKOOP on Base is a support problem and a
+      phishing surface
+
+> The escrow route is deliberately rate-limited rather than a bulk send. That is the point:
+> the migration runs through the same machinery a normal reward does, so it inherits every
+> protection already tested rather than needing a trusted one-off path.
+
 ## Open design decisions
 
 Each of these is a deliberate choice nobody has made yet.
