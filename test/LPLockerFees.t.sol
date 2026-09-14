@@ -84,13 +84,23 @@ contract LPLockerFeesTest is Test {
         );
     }
 
-    function test_splitsPairTokens80_20() public {
+    /// The network fee is the entire pair-asset side — a toll on using the network, not a
+    /// share of the merchant's LP yield.
+    function test_networkFeeTakesTheWholePairSide() public {
         locker.collectFees();
-        // USDC fees 500, ETH-pool WETH fees 2e18
-        assertEq(usdc.balanceOf(PUNCHCARD), 100 * 1e6,  "PunchCard 20% of USDC");
-        assertEq(usdc.balanceOf(OWNER),     400 * 1e6,  "merchant 80% of USDC");
-        assertEq(weth.balanceOf(PUNCHCARD), 0.4 ether,  "PunchCard 20% of WETH");
-        assertEq(weth.balanceOf(OWNER),     1.6 ether,  "merchant 80% of WETH");
+        assertEq(usdc.balanceOf(PUNCHCARD), 500 * 1e6, "all USDC fees are the network fee");
+        assertEq(weth.balanceOf(PUNCHCARD), 2 ether,   "all WETH fees are the network fee");
+        assertEq(usdc.balanceOf(OWNER), 0, "merchant receives no pair-asset fees");
+        assertEq(weth.balanceOf(OWNER), 0, "merchant receives no pair-asset fees");
+    }
+
+    /// ...and the merchant's half is not taken by anyone — it is burned, which is what
+    /// makes "we never take your token" true rather than a slogan.
+    function test_merchantSideIsBurnedNotTaken() public {
+        (,, uint256 burned) = locker.collectFees();
+        assertEq(burned, 1_400 * 1e6, "merchant-token fees burned");
+        assertEq(merchant.balanceOf(PUNCHCARD), 0, "PunchCard holds none of the merchant token");
+        assertEq(merchant.balanceOf(OWNER), 0,     "and it is not paid out either");
     }
 
     /// Merchant-token fees are burned, never shared — PunchCard stays off the cap table.

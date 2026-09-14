@@ -263,6 +263,47 @@ contract PunchCardRouterTest is Test {
         assertEq(wethFee * 10_000 / (amountIn * 667_000),  30, "WETH route charges 30bps");
     }
 
+    // ── where the money goes on each real-world flow ─────────────────────────
+
+    /// Coffee -> Pizza. Two hops through USDC, and PunchCard's router fee is skimmed once,
+    /// at the midpoint, in USDC. Neither merchant token is ever taken.
+    function test_crossMerchantSwap_feeTakenOnceInPairAsset() public {
+        uint256 amountIn = 100_000 * 1e6;
+        vm.prank(USER);
+        router.swap(_p(address(skoop), address(frothy), amountIn, 0, 0));
+
+        // $200 midpoint, 30bps
+        assertEq(usdc.balanceOf(FEES), 600_000, "router fee taken once, in USDC");
+        assertEq(skoop.balanceOf(FEES),  0, "PunchCard never holds the origin merchant token");
+        assertEq(frothy.balanceOf(FEES), 0, "nor the destination merchant token");
+    }
+
+    /// A customer buying a merchant token with USDC. The fee comes off the USDC input
+    /// before the swap, so PunchCard is paid in the pair asset and the customer receives
+    /// the token net of it.
+    function test_customerBuysWithUsdc_feeInUsdc() public {
+        usdc.mint(USER, 10 * 1e6);
+        vm.prank(USER);
+        usdc.approve(address(router), type(uint256).max);
+
+        vm.prank(USER);
+        router.swap(_p(address(usdc), address(frothy), 1e6, 0, 0));
+
+        assertEq(usdc.balanceOf(FEES), 3_000, "30bps of the USDC input");
+        assertEq(frothy.balanceOf(FEES), 0,   "PunchCard holds none of the merchant token");
+        assertEq(frothy.balanceOf(USER), 249_250_000, "customer receives the rest");
+    }
+
+    /// A customer cashing out. The fee is taken from the USDC proceeds, never from the
+    /// merchant token being sold.
+    function test_customerSellsForUsdc_feeStillInUsdc() public {
+        vm.prank(USER);
+        router.swap(_p(address(skoop), address(usdc), 100_000 * 1e6, 0, 0));
+
+        assertEq(usdc.balanceOf(FEES), 600_000, "fee in USDC, off the proceeds");
+        assertEq(skoop.balanceOf(FEES), 0, "the token sold is never taken");
+    }
+
     function test_feeRateCeiling() public {
         PunchCardRouter.RouterParams memory bad = PunchCardRouter.RouterParams({
             feeRate: 101, feeRecipient: FEES

@@ -112,9 +112,13 @@ propose/execute timelock.
 ### How PunchCard gets paid
 
 `LPLocker.collectFees()` sweeps accrued Uniswap trading fees from both positions and splits
-them: **20% to PunchCard, 80% to whoever seeded the pools.** Merchant-token fees are not
-split — they are **burned**, so PunchCard never accumulates a position in a merchant's
-token.
+them by asset: **the entire pair-asset side (USDC/WETH) is PunchCard's network fee.**
+Merchant-token fees are never taken — they are **burned**.
+
+Deliberately not all of the fee. Uniswap charges on the *input* token of each swap, so a
+buyer pays in USDC and a seller pays in the merchant token. PunchCard takes the first; the
+second shrinks supply and lifts everything the merchant holds. Sell pressure converts into
+burn, and PunchCard earns when people are buying in — which is when the merchant is winning.
 
 It is permissionless: every destination is fixed and immutable, so there is nothing to gain
 by calling it and no operational key needed to keep fees flowing. It is disabled once
@@ -137,8 +141,9 @@ Most of the system is genuinely trustless. Two things are not, and the distincti
 - Swap logic in the router.
 
 **What PunchCard earns**
-20% of LP trading fees per merchant, plus the router swap fee when a trade is routed
-through it. PunchCard holds no merchant tokens and no claim on any merchant's treasury,
+The pair-asset side of trading fees, plus the router skim when a trade is routed through it.
+Both in USDC and ETH. It replaces a subscription rather than sitting on top of one: no
+monthly fee, no per-sale cut. PunchCard holds no merchant tokens and no claim on any merchant's treasury,
 rewards or team allocation.
 
 **What PunchCard's multisig can do**

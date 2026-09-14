@@ -36,13 +36,22 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
 
     // ── STATE ─────────────────────────────────────────────────────────────────
 
-    /// @notice PunchCard's share of Uniswap trading fees, in basis points.
-    /// @dev A network constant, not a per-merchant term — every merchant is on identical
-    ///      terms, the same way the allocations are. The merchant (or whoever seeded the
-    ///      pools) keeps the remainder. Merchant-token fees are never shared: they are
-    ///      burned, so PunchCard never accumulates a position in a merchant's token.
-    uint256 public constant PUNCHCARD_FEE_SHARE_BPS = 2_000;   // 20%
-    uint256 private constant BPS_DENOMINATOR        = 10_000;
+    /// @notice The network fee: PunchCard takes the pair-asset side of trading fees in full.
+    /// @dev This is a toll on using the network, not a share of the merchant's LP yield, and
+    ///      it is deliberately NOT all of the fee.
+    ///
+    ///      Uniswap charges the fee on the INPUT token of each swap, so fees accrue in both
+    ///      assets. Someone buying the merchant's token with USDC pays in USDC; someone
+    ///      selling it pays in the merchant token. PunchCard takes the first. The second is
+    ///      BURNED — it reduces supply and lifts every token the merchant holds, including
+    ///      their treasury and team allocations.
+    ///
+    ///      So sell pressure, the thing that hurts a merchant's token, converts into burn;
+    ///      and PunchCard earns when people are buying in, which is when the merchant is
+    ///      winning. PunchCard never holds a merchant token, ever.
+    ///
+    ///      It replaces a monthly platform fee rather than sitting on top of one: no
+    ///      subscription, no per-transaction cut, no setup rent.
 
     LPPosition private _usdcPosition;
     LPPosition private _ethPosition;
@@ -333,14 +342,14 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     ///
     ///      Disabled once frozen: during wind-down, release() returns accrued fees to the
     ///      merchant rather than splitting them.
-    /// @return usdcToMerchant  USDC paid to the merchant
-    /// @return wethToMerchant  WETH paid to the merchant
-    /// @return merchantBurned  Merchant-token fees burned
+    /// @return usdcNetworkFee  USDC taken as the network fee
+    /// @return wethNetworkFee  WETH taken as the network fee
+    /// @return merchantBurned  Merchant-token fees burned — never taken, never held
     function collectFees()
         external
         notFrozen
         nonReentrant
-        returns (uint256 usdcToMerchant, uint256 wethToMerchant, uint256 merchantBurned)
+        returns (uint256 usdcNetworkFee, uint256 wethNetworkFee, uint256 merchantBurned)
     {
         require(_usdcPosition.initialized, "Not initialized");
         require(!_usdcPosition.released,   "Already released");
@@ -384,20 +393,18 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
             merchantBurned = merchantFees;
         }
 
-        uint256 usdcToPunchcard = (usdcFees * PUNCHCARD_FEE_SHARE_BPS) / BPS_DENOMINATOR;
-        uint256 wethToPunchcard = (wethFees * PUNCHCARD_FEE_SHARE_BPS) / BPS_DENOMINATOR;
-        usdcToMerchant = usdcFees - usdcToPunchcard;
-        wethToMerchant = wethFees - wethToPunchcard;
+        // The whole pair-asset side is the network fee. No split, so nothing here can drift
+        // out of step with a percentage declared somewhere else.
+        if (usdcFees > 0) IERC20(usdcAddress).safeTransfer(punchcardFeeRecipient, usdcFees);
+        if (wethFees > 0) IERC20(wethAddress).safeTransfer(punchcardFeeRecipient, wethFees);
 
-        if (usdcToPunchcard > 0) IERC20(usdcAddress).safeTransfer(punchcardFeeRecipient, usdcToPunchcard);
-        if (wethToPunchcard > 0) IERC20(wethAddress).safeTransfer(punchcardFeeRecipient, wethToPunchcard);
-        if (usdcToMerchant  > 0) IERC20(usdcAddress).safeTransfer(ownerWallet, usdcToMerchant);
-        if (wethToMerchant  > 0) IERC20(wethAddress).safeTransfer(ownerWallet, wethToMerchant);
+        usdcNetworkFee = usdcFees;
+        wethNetworkFee = wethFees;
 
         emit FeesCollected(
             merchantToken,
-            usdcToMerchant, usdcToPunchcard,
-            wethToMerchant, wethToPunchcard,
+            0, usdcFees,          // nothing to the merchant; the whole pair side is the fee
+            0, wethFees,
             merchantBurned,
             block.timestamp
         );

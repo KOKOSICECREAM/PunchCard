@@ -64,7 +64,7 @@ None of these is knowable without a merchant doing real volume:
 | Emission 24,657/day | Is that generous, tight, or irrelevant at real throughput? |
 | Drawer default ~$82/day | Does it cover a real day's rewards, or throttle the till? |
 | 45/30/15/10 split | Does 45% rewards last, at a rate customers notice? |
-| 20% LP fee share | Is there enough swap volume for the share to matter? |
+| Network fee (whole pair side) | Is there enough swap volume for it to matter? |
 | 5-year emission period | Right horizon, or an order of magnitude out? |
 
 **The first real merchant is the experiment.** Instrument them from day one — rewards issued

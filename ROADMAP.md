@@ -102,8 +102,15 @@ Each of these is a deliberate choice nobody has made yet.
    still split across two thin pools. Worth revisiting whether both are earning.
 5. **`teamWallet` recovery.** Immutable forever, controls 15% of supply. A lost key means
    that allocation vests to a dead address permanently.
-6. **LP fee share is 20%.** A judgement call, not a decision. Should invert if PunchCard
-   ever funds a seed.
+6. ~~**LP fee share is 20%.**~~ — **decided 2026-09-14.** It is now the **network fee**:
+   PunchCard takes the entire pair-asset side (USDC/WETH); the merchant-token side is
+   burned. The renaming matters as much as the number — "LP fee share" described a rent on
+   the merchant's capital, when the mechanism is a toll on using the network, and it
+   replaces the monthly platform fee a merchant would otherwise pay forever. It is also not
+   the whole fee: Uniswap charges on the input token, so roughly half of fee value accrues
+   in the merchant token and is burned, lifting what the merchant already holds.
+
+
 
 ---
 

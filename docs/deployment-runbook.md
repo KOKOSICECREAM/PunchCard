@@ -48,7 +48,7 @@ _usdc                — see deploy/network/base-mainnet.json
 _weth                — see deploy/network/base-mainnet.json
 _ethUsdOracle        — Chainlink ETH/USD feed, see the network file. Verified on-chain:
                        description() is "ETH / USD" and decimals() is 8
-_punchcardFeeRecipient — receives PunchCard's 20% share of every merchant's LP fees
+_punchcardFeeRecipient — receives the network fee — the pair-asset side of every merchant's trading fees
 _suiteDeployer       — from step 2a
 _lockerDeployer      — from step 2b
 ```

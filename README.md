@@ -171,18 +171,19 @@ $2k + $3k → 40/60 split. $50k + $50k → 50/50. Any seed → one price.
 
 | Source | Mechanism | Reliability |
 |---|---|---|
-| **LP trading fees** | `LPLocker.collectFees()` — 20% PunchCard / 80% seeder | **Unavoidable.** Every trade in the pool pays, however routed — including USDC sales at the counter |
+| **Network fee** | `LPLocker.collectFees()` — the whole pair-asset side | **Unavoidable.** Every trade in the pool pays, however routed — including USDC sales at the counter |
 | Router swap fee | 30 bps of the midpoint, on swaps through `PunchCardRouter` | **Avoidable** — these are ordinary Uniswap pools, so a determined user can hop manually. In practice the interface routes here |
 | Deployment fee | **not built** | The gap. Onboarding costs real gas and real labour and currently recovers neither |
 
-A cross-merchant swap pays PunchCard three times: 20% of the LP fee in the origin pool, the
-full router skim at the midpoint, and 20% of the LP fee in the destination pool — roughly
-42 bps of swap value at 0.3% tiers, with each merchant keeping ~24 bps on their own leg.
+A cross-merchant swap pays the pair-asset fee in both pools plus the router skim at the
+midpoint. The merchant-token side of every fee is burned instead — not nothing for the
+merchant, since it shrinks supply and lifts their treasury and team allocations.
 
-**The merchant supplies 100% of the LP capital and carries all the impermanent loss**, on
-tokens from their own supply. PunchCard supplies none. So the 20% is a platform fee on
-someone else's capital return, and the principle worth holding to is that **fee share should
-follow capital** — if PunchCard ever funds a seed, the split should invert until repaid.
+**Why the whole pair side, when the merchant seeds the capital?** Because it is not a share
+of their yield — it is the price of the network, and it replaces the monthly platform fee
+they would otherwise pay forever. They are not buying yield; they are funding a market in
+which their rewards are redeemable. Nor do they give up the whole fee: Uniswap charges on
+the input token, so roughly half of fee value accrues in the merchant token and is burned.
 
 Merchant-token fees are **burned**, never kept, so PunchCard never holds a position in a
 merchant's token. PunchCard receives no allocation of any merchant's supply.
