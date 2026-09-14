@@ -95,6 +95,14 @@ interface ILPLocker {
     /// @param ethTokenAmount   Merchant tokens to add to ETH pool (from reserve)
     /// @param usdcPairAmount   USDC to pair — pulled from ownerWallet
     /// @param ethPairAmount    WETH to pair — pulled from ownerWallet
+    /// @param usdcTokenMin     Slippage floor: merchant tokens into the USDC position
+    /// @param usdcPairMin      Slippage floor: USDC into the USDC position
+    /// @param ethTokenMin      Slippage floor: merchant tokens into the ETH position
+    /// @param ethPairMin       Slippage floor: WETH into the ETH position
+    /// @dev Each side needs both its amounts or neither. Unused PAIR tokens are returned
+    ///      to ownerWallet; unused MERCHANT tokens stay locked here as reserve, and the
+    ///      reserve decrements by tokens actually consumed rather than the amounts asked
+    ///      for. Returning merchant-token dust made the whole reserve drainable.
     function addLiquidity(
         uint256 usdcTokenAmount,
         uint256 ethTokenAmount,

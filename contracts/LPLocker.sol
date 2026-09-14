@@ -164,7 +164,10 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     /// @dev ownerWallet only. Pulls pair tokens from ownerWallet.
     ///      Merchant tokens sourced from reserve held here.
     ///      Goes into same NFT positions — no new positions.
-    ///      Dust from increaseLiquidity returns to ownerWallet.
+    ///      PAIR-token dust from increaseLiquidity returns to ownerWallet — that is the
+    ///      merchant's own capital. Merchant-token dust stays here and stays counted as
+    ///      reserve, and _reserveTokens decrements by tokens actually consumed, never by
+    ///      the desired amounts. Returning merchant-token dust made the reserve drainable.
     /// @param usdcTokenMin Minimum merchant tokens to actually enter the USDC position
     /// @param usdcPairMin  Minimum USDC to actually enter the USDC position
     /// @param ethTokenMin  Minimum merchant tokens to actually enter the ETH position
