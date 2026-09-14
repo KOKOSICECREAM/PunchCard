@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IWindDownController.sol";
 import "./interfaces/ILPLocker.sol";
 import "./interfaces/ISwapRouter.sol";
+import "./interfaces/IWETH.sol";
 
 /// @title PunchCardRouter
 /// @notice Routes swaps between merchant tokens via USDC or ETH pools.
@@ -141,7 +142,9 @@ contract PunchCardRouter is ReentrancyGuard {
     /// @notice Routes a swap. Never pausable — immutable code guarantee.
     /// @dev tokenIn/tokenOut can be merchant tokens, USDC, or WETH.
     ///      Fee denomination follows the pair token of the pool used.
-    function swap(SwapParams calldata p) external nonReentrant {
+    ///      Native ETH is accepted only as WETH input: set tokenIn = WETH and msg.value =
+    ///      amountIn. All other routes must send zero ETH so value cannot be stranded.
+    function swap(SwapParams calldata p) external payable nonReentrant {
         require(p.recipient  != address(0), "Invalid recipient");
         require(p.amountIn   > 0,           "Zero amount");
         require(block.timestamp <= p.deadline, "Deadline passed");
@@ -160,6 +163,13 @@ contract PunchCardRouter is ReentrancyGuard {
         bool inIsWETH  = p.tokenIn  == WETH;
         bool outIsUSDC = p.tokenOut == USDC;
         bool outIsWETH = p.tokenOut == WETH;
+        bool nativeWethIn = msg.value > 0;
+
+        if (nativeWethIn) {
+            require(inIsWETH, "ETH only for WETH input");
+            require(msg.value == p.amountIn, "ETH amount mismatch");
+            IWETH(WETH).deposit{value: msg.value}();
+        }
 
         if (!inIsUSDC && !inIsWETH && !outIsUSDC && !outIsWETH) {
             // Case: token → token (cross-merchant, via the caller-chosen midToken)
@@ -180,12 +190,12 @@ contract PunchCardRouter is ReentrancyGuard {
         } else if (inIsUSDC && !outIsUSDC && !outIsWETH) {
             // Case: USDC → token (USDC pool, fee in USDC)
             _validateMerchantToken(p.tokenOut, true);
-            _swapStableToToken(p, USDC, true);
+            _swapStableToToken(p, USDC, true, false);
 
         } else if (inIsWETH && !outIsUSDC && !outIsWETH) {
             // Case: WETH → token (ETH pool, fee in WETH)
             _validateMerchantToken(p.tokenOut, true);
-            _swapStableToToken(p, WETH, false);
+            _swapStableToToken(p, WETH, false, nativeWethIn);
 
         } else {
             revert("Invalid swap pair");
@@ -238,13 +248,16 @@ contract PunchCardRouter is ReentrancyGuard {
     function _swapStableToToken(
         SwapParams calldata p,
         address stableToken,
-        bool isUsdcPool
+        bool isUsdcPool,
+        bool inputAlreadyHeld
     ) internal {
         uint24 fee = isUsdcPool
             ? _usdcFeeTier(p.tokenOut)
             : _ethFeeTier(p.tokenOut);
 
-        IERC20(stableToken).safeTransferFrom(msg.sender, address(this), p.amountIn);
+        if (!inputAlreadyHeld) {
+            IERC20(stableToken).safeTransferFrom(msg.sender, address(this), p.amountIn);
+        }
 
         uint256 feeTaken    = (p.amountIn * feeRate) / FEE_DENOMINATOR;
         uint256 stableToSwap = p.amountIn - feeTaken;

@@ -12,6 +12,11 @@ contract Tok is ERC20 {
     function mint(address a, uint256 v) external { _mint(a, v); }
 }
 
+contract MockWETH is Tok {
+    constructor() Tok("WETH", 18) {}
+    function deposit() external payable { _mint(msg.sender, msg.value); }
+}
+
 /// Prices every swap off a fixed rate table, so the test controls the exchange rate.
 contract MockSwapRouter {
     mapping(address => mapping(address => uint256)) public rateNum;
@@ -63,7 +68,7 @@ contract PunchCardRouterTest is Test {
         skoop  = new Tok("SKOOP", 6);
         frothy = new Tok("FROTHY", 6);
         usdc   = new Tok("USDC", 6);
-        weth   = new Tok("WETH", 18);
+        weth   = new MockWETH();
         uni    = new MockSwapRouter();
         wdc    = new MockWDC();
 
@@ -292,6 +297,58 @@ contract PunchCardRouterTest is Test {
         assertEq(usdc.balanceOf(FEES), 3_000, "30bps of the USDC input");
         assertEq(frothy.balanceOf(FEES), 0,   "PunchCard holds none of the merchant token");
         assertEq(frothy.balanceOf(USER), 249_250_000, "customer receives the rest");
+    }
+
+    /// A customer paying with native ETH should not need a separate wrap and approve. The
+    /// router accepts ETH only when the input is WETH, wraps it, skims the WETH fee, and
+    /// swaps the remainder.
+    function test_customerBuysWithNativeEth_wrapsAndSwaps() public {
+        uni.setRate(address(weth), address(frothy), 750_000 * 1e6, 1 ether);
+        vm.deal(USER, 1 ether);
+
+        vm.prank(USER);
+        router.swap{value: 1 ether}(_p(address(weth), address(frothy), 1 ether, 747_750 * 1e6, 0));
+
+        assertEq(weth.balanceOf(FEES), 0.003 ether, "30bps of the ETH input, held as WETH");
+        assertEq(frothy.balanceOf(USER), 747_750 * 1e6, "customer receives the WETH route output");
+        assertEq(weth.balanceOf(address(router)), 0, "no wrapped ETH stranded in the router");
+        assertEq(address(router).balance, 0, "no native ETH stranded in the router");
+    }
+
+    function test_customerBuysWithAlreadyWrappedEth_stillWorks() public {
+        uni.setRate(address(weth), address(frothy), 750_000 * 1e6, 1 ether);
+        weth.mint(USER, 1 ether);
+        vm.prank(USER);
+        weth.approve(address(router), type(uint256).max);
+
+        vm.prank(USER);
+        router.swap(_p(address(weth), address(frothy), 1 ether, 747_750 * 1e6, 0));
+
+        assertEq(weth.balanceOf(FEES), 0.003 ether, "30bps of the WETH input");
+        assertEq(frothy.balanceOf(USER), 747_750 * 1e6, "same output as native ETH path");
+        assertEq(weth.balanceOf(address(router)), 0, "no WETH stranded");
+    }
+
+    function test_nativeEthRequiresWethInput() public {
+        vm.deal(USER, 1 ether);
+
+        vm.prank(USER);
+        vm.expectRevert("ETH only for WETH input");
+        router.swap{value: 1 ether}(_p(address(usdc), address(frothy), 1 ether, 0, 0));
+
+        assertEq(address(router).balance, 0, "reverted ETH is not stranded");
+        assertEq(weth.balanceOf(address(router)), 0, "no WETH minted before rejection");
+    }
+
+    function test_nativeEthMustMatchAmountIn() public {
+        vm.deal(USER, 1 ether);
+
+        vm.prank(USER);
+        vm.expectRevert("ETH amount mismatch");
+        router.swap{value: 1 ether}(_p(address(weth), address(frothy), 0.5 ether, 0, 0));
+
+        assertEq(address(router).balance, 0, "mismatched ETH is not stranded");
+        assertEq(weth.balanceOf(address(router)), 0, "no WETH minted before rejection");
     }
 
     /// A customer cashing out. The fee is taken from the USDC proceeds, never from the

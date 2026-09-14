@@ -80,16 +80,16 @@ config carrying a `punchCardRouter` address while `swapMode` is `uniswap` — a 
 with no legitimate reading — and the dapp throws at load on an incoherent mode rather than
 failing quietly at the till.
 
-### Still open — native ETH costs two extra transactions
+### Native ETH path fixed 2026-09-14
 
-`PunchCardRouter.swap()` is not `payable` and has no WETH handling, so in `punchcard` mode
-a customer paying with ETH must **wrap → approve → swap**. That is three transactions on
-the most-used path in the app, against one today. The dapp implements the wrap, so it
-works, but it is the worst UX in the product and it lands on the default token.
+`PunchCardRouter.swap()` is now `payable`. In `punchcard` mode, a customer paying with ETH
+sets `tokenIn = WETH` and sends `msg.value == amountIn`; the router wraps it, skims the WETH
+fee, and swaps the rest in one transaction. Users who already hold WETH can still approve
+and swap WETH directly.
 
-- [ ] Make `swap()` `payable`; when `tokenIn == WETH` and `msg.value > 0`, deposit
-      `msg.value` instead of `safeTransferFrom`, and require `msg.value == 0` on every
-      other path so ETH cannot be stranded. Collapses it back to one transaction.
+Any native ETH sent on a non-WETH route reverts, and native ETH on the WETH route must match
+`amountIn`, so ETH cannot be silently stranded in the router. Covered by router tests for the
+native happy path, the already-wrapped WETH path, and both rejection cases.
 
 ## Phase 2 — POS, dashboard, provisioning
 
