@@ -180,6 +180,89 @@ contract PunchCardRouterTest is Test {
         router.swap(_p(address(skoop), address(frothy), 1_000 * 1e6, 0, 0, address(skoop)));
     }
 
+    // ── failure cases: every path's minimum must actually bind ───────────────
+
+    /// stable -> token: the fee is taken from amountIn BEFORE the swap, so
+    /// amountOutMinimumHop1 bounds what the recipient actually receives.
+    function test_stableToToken_minimumBinds() public {
+        usdc.mint(USER, 10 * 1e6);
+        vm.prank(USER);
+        usdc.approve(address(router), type(uint256).max);
+
+        // 1 USDC in, 30bps fee -> 0.997 swapped, FROTHY at $0.004 -> 249.25 FROTHY
+        uint256 amountIn = 1e6;
+        uint256 expected = 249_250_000;
+
+        vm.prank(USER);
+        vm.expectRevert("Too little received");
+        router.swap(_p(address(usdc), address(frothy), amountIn, expected + 1, 0));
+
+        vm.prank(USER);
+        router.swap(_p(address(usdc), address(frothy), amountIn, expected, 0));
+        assertEq(frothy.balanceOf(USER), expected, "exactly the boundary still executes");
+    }
+
+    /// token -> token: hop1's minimum bounds the midpoint, hop2's bounds the final output.
+    /// They must be enforced independently — a generous hop1 must not mask a failing hop2.
+    function test_tokenToToken_hop2MinimumBinds() public {
+        uint256 amountIn = 100_000 * 1e6;   // $200 of SKOOP
+        uint256 expected = 49_850 * 1e6;    // after the 30bps midpoint skim
+
+        vm.prank(USER);
+        vm.expectRevert("Too little received");
+        router.swap(_p(address(skoop), address(frothy), amountIn, 0, expected + 1));
+
+        vm.prank(USER);
+        router.swap(_p(address(skoop), address(frothy), amountIn, 0, expected));
+        assertEq(frothy.balanceOf(USER), expected, "hop2 minimum binds at the boundary");
+    }
+
+    /// ...and hop1's minimum binds on the midpoint, before the fee is skimmed.
+    function test_tokenToToken_hop1MinimumBindsOnMidpoint() public {
+        uint256 amountIn = 100_000 * 1e6;
+        uint256 midpoint = 200 * 1e6;       // $200 gross, pre-fee
+
+        vm.prank(USER);
+        vm.expectRevert("Too little received");
+        router.swap(_p(address(skoop), address(frothy), amountIn, midpoint + 1, 0));
+    }
+
+    /// Routing via WETH must skim the fee in WETH, at the midpoint, at the configured rate.
+    /// The decimals differ across the hop (6dp token -> 18dp WETH -> 6dp token), which is
+    /// where a units error would hide.
+    function test_wethMidpointFeeMath() public {
+        uni.setRate(address(weth), address(frothy), 1, 1_334_000);
+
+        uint256 amountIn = 1_000 * 1e6;                 // 1,000 SKOOP
+        uint256 midOut   = amountIn * 667_000;          // -> wei, per the fixture rate
+        uint256 expFee   = midOut * 30 / 10_000;        // 30 bps, in WETH
+
+        vm.prank(USER);
+        router.swap(_p(address(skoop), address(frothy), amountIn, 0, 0, address(weth)));
+
+        assertEq(weth.balanceOf(FEES), expFee, "fee skimmed in WETH at the midpoint");
+        assertEq(usdc.balanceOf(FEES), 0,      "USDC pool untouched on a WETH route");
+        assertEq(frothy.balanceOf(USER), (midOut - expFee) / 1_334_000, "output is net of the fee");
+    }
+
+    /// The same trade routed either way must differ only by the route, never by the rate.
+    function test_feeRateIsIdenticalAcrossRoutes() public {
+        uni.setRate(address(weth), address(frothy), 1, 1_334_000);
+        uint256 amountIn = 100_000 * 1e6;
+
+        vm.prank(USER);
+        router.swap(_p(address(skoop), address(frothy), amountIn, 0, 0, address(usdc)));
+        uint256 usdcFee = usdc.balanceOf(FEES);
+
+        vm.prank(USER);
+        router.swap(_p(address(skoop), address(frothy), amountIn, 0, 0, address(weth)));
+        uint256 wethFee = weth.balanceOf(FEES);
+
+        // both are 30bps of their own midpoint; compare as a rate, not an amount
+        assertEq(usdcFee * 10_000 / (amountIn * 2 / 1000), 30, "USDC route charges 30bps");
+        assertEq(wethFee * 10_000 / (amountIn * 667_000),  30, "WETH route charges 30bps");
+    }
+
     function test_feeRateCeiling() public {
         PunchCardRouter.RouterParams memory bad = PunchCardRouter.RouterParams({
             feeRate: 101, feeRecipient: FEES
