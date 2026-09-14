@@ -173,28 +173,28 @@ contract PunchCardRouter is ReentrancyGuard {
 
         if (!inIsUSDC && !inIsWETH && !outIsUSDC && !outIsWETH) {
             // Case: token → token (cross-merchant, via the caller-chosen midToken)
-            _validateMerchantToken(p.tokenIn,  false);
-            _validateMerchantToken(p.tokenOut, true);
+            _validateMerchantToken(p.tokenIn);
+            _validateMerchantToken(p.tokenOut);
             _swapTokenToToken(p);
 
         } else if (!inIsUSDC && !inIsWETH && outIsUSDC) {
             // Case: token → USDC (USDC pool, fee in USDC)
-            _validateMerchantToken(p.tokenIn, false);
+            _validateMerchantToken(p.tokenIn);
             _swapTokenToStable(p, USDC, true);
 
         } else if (!inIsUSDC && !inIsWETH && outIsWETH) {
             // Case: token → WETH (ETH pool, fee in WETH)
-            _validateMerchantToken(p.tokenIn, false);
+            _validateMerchantToken(p.tokenIn);
             _swapTokenToStable(p, WETH, false);
 
         } else if (inIsUSDC && !outIsUSDC && !outIsWETH) {
             // Case: USDC → token (USDC pool, fee in USDC)
-            _validateMerchantToken(p.tokenOut, true);
+            _validateMerchantToken(p.tokenOut);
             _swapStableToToken(p, USDC, true, false);
 
         } else if (inIsWETH && !outIsUSDC && !outIsWETH) {
             // Case: WETH → token (ETH pool, fee in WETH)
-            _validateMerchantToken(p.tokenOut, true);
+            _validateMerchantToken(p.tokenOut);
             _swapStableToToken(p, WETH, false, nativeWethIn);
 
         } else {
@@ -341,13 +341,30 @@ contract PunchCardRouter is ReentrancyGuard {
 
     // ── ROUTING POLICY ────────────────────────────────────────────────────────
 
-    function _validateMerchantToken(address token, bool rejectIfWindDown) internal view {
+    /// @dev The router gates MEMBERSHIP, not HEALTH.
+    ///
+    ///      `isRegistered` asks: is this a PunchCard merchant token?
+    ///      `isComplete`   asks: is this still an active network suite?
+    ///
+    ///      Both are questions about whether the token belongs on this router at all. A
+    ///      completed suite has settled — escrow and treasury burned, LP released — so
+    ///      there is no PunchCard merchant left to route for. That is a statement about
+    ///      scope, not a judgement about the buyer.
+    ///
+    ///      `isInitiated` is deliberately NOT checked. It asks how healthy a merchant is,
+    ///      which is disclosure, not scope. Blocking buys on it was removed before deploy:
+    ///      initiate() is onlyMultisig, so that check let PunchCard make a merchant's token
+    ///      unbuyable on the official route by fiat — a kill switch over someone else's
+    ///      market, inside a protocol whose promise is that PunchCard does not control the
+    ///      merchant's token. Wind-down is a scheduled, published state; the interface
+    ///      discloses the expiry date and what happens on it, and the holder decides.
+    ///      Customers can already trade these pools directly on Uniswap regardless, and
+    ///      10% of liquidity stays in the pool permanently after completion, so the block
+    ///      never prevented the trade — it only prevented the informed one.
+    function _validateMerchantToken(address token) internal view {
         IWindDownController wdc = IWindDownController(windDownController);
         require(wdc.isRegistered(token), "Token not on network");
         require(!wdc.isComplete(token),  "Token wind-down complete");
-        if (rejectIfWindDown) {
-            require(!wdc.isInitiated(token), "Destination token in wind-down");
-        }
     }
 
     /// @dev Reads USDC pool fee tier from merchant's LPLocker

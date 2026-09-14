@@ -47,8 +47,14 @@ contract MockWDC {
     constructor() { locker = address(new MockLocker()); }
     function setRegistered(address t, bool v) external { registered[t] = v; }
     function isRegistered(address t) external view returns (bool) { return registered[t]; }
-    function isComplete(address) external pure returns (bool) { return false; }
-    function isInitiated(address) external pure returns (bool) { return false; }
+    // Both were hardcoded false, so neither wind-down state was ever exercised — the
+    // router's wind-down policy passed every test without a single one reaching it.
+    mapping(address => bool) public complete;
+    mapping(address => bool) public initiated;
+    function setComplete(address t, bool v)  external { complete[t] = v; }
+    function setInitiated(address t, bool v) external { initiated[t] = v; }
+    function isComplete(address t) external view returns (bool) { return complete[t]; }
+    function isInitiated(address t) external view returns (bool) { return initiated[t]; }
 
     /// The router reads fee tiers via getSuite(token).lpLocker
     function getSuite(address) external view returns (IWindDownController.WindDownSuite memory s) {
@@ -349,6 +355,60 @@ contract PunchCardRouterTest is Test {
 
         assertEq(address(router).balance, 0, "mismatched ETH is not stranded");
         assertEq(weth.balanceOf(address(router)), 0, "no WETH minted before rejection");
+    }
+
+    // ── WIND-DOWN POLICY: the router gates membership, not health ─────────────
+
+    /// A merchant winding down is still a merchant. initiate() is onlyMultisig, so
+    /// blocking buys here would have let PunchCard make a token unbuyable on the official
+    /// route by fiat — a kill switch over someone else's market. Wind-down is disclosed in
+    /// the interface instead. The trade was never actually preventable: these are ordinary
+    /// Uniswap pools.
+    function test_windDownInitiated_doesNotBlockBuying() public {
+        wdc.setInitiated(address(frothy), true);
+        uni.setRate(address(usdc), address(frothy), 1_000_000, 1);
+        usdc.mint(USER, 100e6);
+        vm.prank(USER);
+        usdc.approve(address(router), type(uint256).max);
+
+        vm.prank(USER);
+        router.swap(_p(address(usdc), address(frothy), 100e6, 0, 0));
+
+        assertGt(frothy.balanceOf(USER), 0, "a token in wind-down is still buyable");
+    }
+
+    /// And selling out of one must never be blocked — that is the holder's exit.
+    function test_windDownInitiated_doesNotBlockSelling() public {
+        wdc.setInitiated(address(frothy), true);
+        uni.setRate(address(frothy), address(usdc), 1, 1_000_000);
+        frothy.mint(USER, 100_000_000e6);
+        vm.prank(USER);
+        frothy.approve(address(router), type(uint256).max);
+
+        vm.prank(USER);
+        router.swap(_p(address(frothy), address(usdc), 100_000_000e6, 0, 0));
+
+        assertGt(usdc.balanceOf(USER), 0, "holders can always exit a winding-down token");
+    }
+
+    /// Completion is a membership question, not a health one: the suite has settled and
+    /// there is no PunchCard merchant left to route for. Uniswap stays open — 10% of
+    /// liquidity remains in the pool permanently — so this scopes the router, it does not
+    /// strand anyone.
+    function test_windDownComplete_isRejectedBothWays() public {
+        wdc.setComplete(address(frothy), true);
+        usdc.mint(USER, 100e6);
+        frothy.mint(USER, 100e6);
+        vm.startPrank(USER);
+        usdc.approve(address(router), type(uint256).max);
+        frothy.approve(address(router), type(uint256).max);
+
+        vm.expectRevert("Token wind-down complete");
+        router.swap(_p(address(usdc), address(frothy), 100e6, 0, 0));
+
+        vm.expectRevert("Token wind-down complete");
+        router.swap(_p(address(frothy), address(usdc), 100e6, 0, 0));
+        vm.stopPrank();
     }
 
     /// A customer cashing out. The fee is taken from the USDC proceeds, never from the
