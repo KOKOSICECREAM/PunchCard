@@ -89,7 +89,7 @@ contract TokenFactory {
     /// @notice Chainlink ETH/USD feed — values the ETH seed so the pools can be split
     address public immutable ethUsdOracle;
 
-    /// @notice Receives PunchCard's share of every merchant's LP trading fees.
+    /// @notice Receives PunchCard's network fee from every merchant's LP trading fees.
     /// @dev Passed to each LPLocker at deploy. Immutable per merchant, so a merchant's
     ///      fee destination can never be changed after they launch.
     address public immutable punchcardFeeRecipient;

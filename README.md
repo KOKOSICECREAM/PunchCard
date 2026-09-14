@@ -100,7 +100,7 @@ Merchant status on the network is exactly this: a `MerchantDeployed` event plus
 
 `MerchantToken` is a **template, deployed once per merchant** with their own name, symbol
 and metadata — not a network asset. PunchCard issues no token and holds no allocation of
-any merchant's supply. Revenue is LP fee share, the router skim, and (once built) a
+any merchant's supply. Revenue is the network fee, the router skim, and (once built) a
 deployment fee, all denominated in dollars.
 
 That is a deliberate position, not an oversight. The claim that PunchCard has no conflict
@@ -324,8 +324,8 @@ centralisation surface, so it is a deliberate decision rather than an obvious fi
 ### 10. No deployment fee
 
 Onboarding costs PunchCard real gas plus real labour, and currently recovers neither at the
-point of sale. A flat USDC fee in `deploy()` would cover it without touching the LP fee
-share.
+point of sale. A flat USDC fee in `deploy()` would cover it without touching the network
+fee.
 
 ---
 

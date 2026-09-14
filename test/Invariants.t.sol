@@ -200,7 +200,7 @@ contract InvariantsTest is Test {
     function handlerOperator() internal pure returns (address) { return address(0x0B3); }
 
     /// THE published claim: PunchCard receives no piece of any merchant's token.
-    /// Merchant-token LP fees are burned rather than shared, so the fee recipient must
+    /// Merchant-token LP fees are burned, never taken, so the fee recipient must
     /// never hold a single unit.
     function invariant_punchcardNeverHoldsMerchantTokens() public view {
         assertEq(token.balanceOf(address(0xFEE5)), 0,

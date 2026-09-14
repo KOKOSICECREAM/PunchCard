@@ -5,7 +5,7 @@ on-chain activity. That was an error — KOKOS is in beta and barely used, and i
 transactions are correctness checks rather than commerce. The numbers below are recorded so
 nobody mistakes them for demand data a second time.
 
-Emission rate, drawer size, seed minimums and the fee share are all `constant` or
+Emission rate, drawer size, seed minimums and the network fee are all `constant` or
 `immutable`, so they are expensive to change after merchant #1. All were reasoned from first
 principles. **None has been tested against a real shop, and none can be until one runs.**
 
@@ -47,7 +47,7 @@ This is structural, not empirical, so beta usage does not weaken it:
 - **The deployment fee is load-bearing, not optional.** It is what funds onboarding until
   density arrives. Still unbuilt, and still the highest-value item on the roadmap.
 - **Revenue is back-loaded and density-dependent.** Plan the first several merchants
-  assuming LP fees contribute approximately nothing.
+  assuming the network fee contributes approximately nothing.
 
 **Seed minimums are defensible on arithmetic.** A $5,000 pool moves ~5% on a ~$100 swap.
 That is workable for a $20 coffee-to-ice-cream conversion and poor for anything larger,

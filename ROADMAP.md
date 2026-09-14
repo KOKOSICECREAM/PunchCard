@@ -3,7 +3,7 @@
 Living document. The point is that a decision made once stays made — several things here
 were worked out at some cost and would be expensive to rediscover.
 
-Last updated 2026-09-13.
+Last updated 2026-09-14.
 
 ---
 
@@ -18,7 +18,7 @@ Last updated 2026-09-13.
 | Customer dapp | **KOKOS only.** Not templated. The prototype at punchcard.club/dapp is mock data |
 | POS | KOKOS only, bespoke |
 | Merchant dashboard | Does not exist |
-| Revenue plumbing | LP fee share + router fee built. No keeper, no deployment fee |
+| Revenue plumbing | Network fee + router fee built. No keeper, no deployment fee |
 
 **A merchant today could have a token and no way to issue a reward.** The contracts are
 ahead of everything around them.
@@ -76,11 +76,11 @@ building a UI before the schema settles hardens the wrong thing. Around merchant
 
 See `docs/economics-review.md`. There is no usage evidence. KOKOS is in beta and barely
 used; its on-chain activity is correctness testing, not commerce, and must not be used to
-calibrate emission, drawer size or fee share. An earlier version of that document drew
+calibrate emission, drawer size or network fee. An earlier version of that document drew
 conclusions from it and was wrong.
 
 What holds on logic alone: loyalty tokens generate burns and transfers rather than swaps, so
-LP fees will contribute approximately nothing at merchant #1–10, which makes the unbuilt
+the network fee will contribute approximately nothing at merchant #1–10, which makes the unbuilt
 deployment fee load-bearing.
 
 **Merchant #1 is the experiment.** Instrument rewards issued per day, drawer utilisation,
@@ -138,7 +138,7 @@ reverted every deployment forever. `cast code` takes seconds.
 
 ## Settled — do not relitigate without new information
 
-- **No PunchCard token.** Revenue is LP fee share, router skim, deployment fee — all in
+- **No PunchCard token.** Revenue is network fee, router skim, deployment fee — all in
   dollars. A network token reintroduces the conflict of interest the model is built
   against, adds a securities question, and muddies an equity raise. See README.
 - **Split the factory, don't use clone proxies.** Clones cannot use `immutable`, which

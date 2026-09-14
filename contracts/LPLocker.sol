@@ -29,7 +29,7 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     address public immutable override positionManager;
     address public immutable factory;
 
-    /// @notice Receives PunchCard's share of collected trading fees
+    /// @notice Receives PunchCard's network fee from collected trading fees
     address public immutable punchcardFeeRecipient;
     address public immutable override usdcAddress;
     address public immutable override wethAddress;
