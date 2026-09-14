@@ -18,7 +18,7 @@ Last updated 2026-09-14.
 | Customer dapp | **KOKOS only.** Not templated. The prototype at punchcard.club/dapp is mock data |
 | POS | KOKOS only, bespoke |
 | Merchant dashboard | Does not exist |
-| Revenue plumbing | Network fee + router fee built. No keeper, no deployment fee |
+| Revenue plumbing | Network fee + router fee built, and the dapp now routes through them. No keeper, no deployment fee |
 
 **A merchant today could have a token and no way to issue a reward.** The contracts are
 ahead of everything around them.
@@ -41,7 +41,7 @@ a mock.
 **Exit criteria:** KOKOS runs on the template with zero behaviour change, and a second
 merchant's dapp can be produced from a config file alone.
 
-## Phase 1b — route the dapp through PunchCardRouter *(blocks revenue)*
+## Phase 1b — route the dapp through PunchCardRouter *(built 2026-09-14)*
 
 The templated customer dapp calls Uniswap's `SwapRouter02` **directly**:
 
@@ -61,17 +61,35 @@ work — the dapp's calling code has to change.
 Correct for KOKOS, which is not a network merchant and has no PunchCardRouter to use. Wrong
 the moment a real merchant launches, and it fails *silently*:
 
-- [ ] **No network fee is collected** on any swap made in the app — the primary revenue
-      line, uncollected at exactly the moment a customer uses the product
-- [ ] **No cross-merchant swaps.** The dapp knows one token, so the network thesis is not
-      reachable from the thing customers actually hold
-- [ ] `getPoolFeeTiers()` and best-execution routing go unused
+- [x] **Network fee collected** on swaps made in the app, via `network.swapMode`
+- [x] **Cross-merchant swaps** via `network.partnerTokens`
+- [x] `getPoolFeeTiers()` used, both midpoints quoted off-chain to choose `midToken`
 
-The template needs two modes: direct Uniswap for KOKOS, and PunchCardRouter for network
-merchants — with the interface quoting both midpoints off-chain to choose `midToken`.
+Done in `punchcard-launchpad` (`f302944`). `swapMode: 'uniswap'` keeps KOKOS on
+SwapRouter02 — SKOOP is not registered with `WindDownController`, so `PunchCardRouter`
+would reject it. `swapMode: 'punchcard'` is required for every factory-deployed merchant.
+
+Quotes subtract the network fee off-chain, since on stable→token it comes off the input
+before the swap and quoting the gross overstates every quote by the fee.
 
 > Easy to ship the Phase 1 cutover and not notice that swaps quietly stopped paying you.
 > Nothing errors. The money simply never arrives.
+
+Guarded on both sides, because that silence is the whole problem: `build.mjs` refuses a
+config carrying a `punchCardRouter` address while `swapMode` is `uniswap` — a combination
+with no legitimate reading — and the dapp throws at load on an incoherent mode rather than
+failing quietly at the till.
+
+### Still open — native ETH costs two extra transactions
+
+`PunchCardRouter.swap()` is not `payable` and has no WETH handling, so in `punchcard` mode
+a customer paying with ETH must **wrap → approve → swap**. That is three transactions on
+the most-used path in the app, against one today. The dapp implements the wrap, so it
+works, but it is the worst UX in the product and it lands on the default token.
+
+- [ ] Make `swap()` `payable`; when `tokenIn == WETH` and `msg.value > 0`, deposit
+      `msg.value` instead of `safeTransferFrom`, and require `msg.value == 0` on every
+      other path so ETH cannot be stranded. Collapses it back to one transaction.
 
 ## Phase 2 — POS, dashboard, provisioning
 
