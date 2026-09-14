@@ -80,7 +80,8 @@ The merchant never calls it. In one transaction:
 4. Deploy token, vesting, treasury, escrow via `SuiteDeployer`; LP locker via `LockerDeployer`
 5. Distribute 15M / 10M / 45M to vesting, treasury, escrow — factory retains exactly 30M
 6. Create and initialise both Uniswap pools at the derived price, mint both positions into
-   the locker, return any dust to `ownerWallet`
+   the locker, return unused **pair-token** dust to `ownerWallet` (merchant-token dust
+   stays behind and is swept into the locker as reserve at step 7)
 7. Move the 27M LP reserve into the locker
 8. Register the suite with `WindDownController`; emit `MerchantDeployed`
 
@@ -286,11 +287,17 @@ At wind-down, 90% of liquidity returns to the merchant and the remaining 10% is 
 position forever — not to PunchCard, not burned, just abandoned. That is probably not a
 deliberate choice. Decide where it should go.
 
-### 7. LP dust leaks to the merchant
+### ~~7. LP dust leaks to the merchant~~ — ✅ FIXED
 
-After each mint, leftover amounts go to `ownerWallet`. When the leftover is merchant tokens,
-that is allocation escaping the locked LP into the merchant's hands. Small, but it is a hole
-in "30% is locked." Sending token dust to the locker's reserve instead would close it.
+This turned out to be understated. The merchant-token half was not a small hole but a
+**critical drain**: because `addLiquidity` returned merchant-token dust and decremented the
+reserve by the amount *asked for* rather than the amount Uniswap *consumed*, a single
+off-ratio call could move the entire 27M reserve into the merchant's wallet. The same
+pattern existed on both of the factory's launch pools.
+
+Merchant-token dust now stays locked everywhere and the reserve decrements by actual usage.
+Pair-token dust is still returned, which is correct — it is the merchant's own capital.
+See `docs/audit-2026-09.md`.
 
 ### 8. `teamWallet` has no recovery path
 

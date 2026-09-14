@@ -186,7 +186,9 @@ WindDownController, and emit `MerchantDeployed`.
 - [ ] Confirm `WindDownController.isRegistered(token) == true`
 - [ ] Confirm both pools quote a sane price in each direction
 - [ ] Save every address into the merchant's JSON file and commit it
-- [ ] Confirm any LP dust was returned to `ownerWallet`
+- [ ] Confirm `ownerWallet` received **no merchant tokens** — only unused USDC/WETH comes
+      back. Merchant-token dust stays locked in the LPLocker as reserve; any arriving at
+      the merchant means allocation escaped the locked 30%
 
 ## Step 7 — Wire up the merchant
 

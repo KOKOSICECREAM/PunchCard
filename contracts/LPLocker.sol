@@ -305,9 +305,9 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
             IERC20(wethAddress).approve(positionManager, 0);
         }
 
-        // Decrement reserve by tokens actually committed (dust already returned)
         // Actual, not desired. Unused merchant tokens never left this contract, so they
-        // are still reserve and must still be counted as such.
+        // are still reserve and must still be counted as such. (The old comment here said
+        // 'dust already returned', which was true only while the reserve was drainable.)
         _reserveTokens -= (usdcTokenUsed + ethTokenUsed);
 
         emit LiquidityAdded(

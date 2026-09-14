@@ -19,7 +19,9 @@ import "./libraries/LaunchPricing.sol";
 ///      Launch LP: 3% of supply split 60% USDC pool / 40% ETH pool.
 ///      Remaining 27% held as reserve in LPLocker — merchant deploys over time.
 ///      Both pools use Uniswap v3 full-range positions.
-///      Dust from both mints returns to ownerWallet.
+///      Pair-token dust from both mints returns to ownerWallet — the merchant's own
+///      capital. Merchant-token dust is deliberately retained and swept into the LPLocker
+///      as reserve in step 9; returning it would let allocation escape the locked 30%.
 contract TokenFactory {
 
     using SafeERC20 for IERC20;
