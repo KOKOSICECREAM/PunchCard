@@ -420,11 +420,11 @@ contract TokenFactory {
 
             ethTokenId = id;
 
-            // Return ETH pool dust to ownerWallet (as WETH)
+            // Pair-token dust only — see the note on the USDC pool above.
             uint256 dust0 = amt0DesiredEth - used0;
             uint256 dust1 = amt1DesiredEth - used1;
-            if (dust0 > 0) IERC20(token0Eth).safeTransfer(p.ownerWallet, dust0);
-            if (dust1 > 0) IERC20(token1Eth).safeTransfer(p.ownerWallet, dust1);
+            if (token0Eth != tokenAddr && dust0 > 0) IERC20(token0Eth).safeTransfer(p.ownerWallet, dust0);
+            if (token1Eth != tokenAddr && dust1 > 0) IERC20(token1Eth).safeTransfer(p.ownerWallet, dust1);
         }
 
         // ── STEP 9: Transfer LP reserve to LPLocker ───────────────────────────

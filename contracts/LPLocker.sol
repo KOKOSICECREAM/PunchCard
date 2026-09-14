@@ -209,6 +209,10 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
         INonfungiblePositionManager pm = INonfungiblePositionManager(positionManager);
         uint128 usdcLiqAdded;
         uint128 ethLiqAdded;
+        // Merchant tokens Uniswap ACTUALLY consumed. The reserve is decremented by these,
+        // never by the desired amounts — see the note on dust below.
+        uint256 usdcTokenUsed;
+        uint256 ethTokenUsed;
 
         // Add to USDC pool
         if (usdcTokenAmount > 0 && usdcPairAmount > 0) {
@@ -233,11 +237,25 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
 
             usdcLiqAdded = liq;
 
-            // Return dust to ownerWallet
-            uint256 dust0 = amount0Desired - used0;
-            uint256 dust1 = amount1Desired - used1;
-            if (dust0 > 0) IERC20(_usdcPosition.merchantIsToken0 ? merchantToken : usdcAddress).safeTransfer(ownerWallet, dust0);
-            if (dust1 > 0) IERC20(_usdcPosition.merchantIsToken0 ? usdcAddress : merchantToken).safeTransfer(ownerWallet, dust1);
+            // Only PAIR-token dust goes back to the merchant — that is their own capital.
+            //
+            // Merchant-token dust stays in this contract and stays counted as reserve.
+            // Returning it was a complete bypass of the LP lock: supply a large token
+            // amount against a trivial pair amount, Uniswap consumes almost none of the
+            // tokens because liquidity is bounded by the smaller side, and the remainder
+            // was transferred straight to ownerWallet while the reserve was decremented by
+            // the desired amount. One call could drain the whole 27M.
+            (uint256 tokenUsed, uint256 pairUsed) = _usdcPosition.merchantIsToken0
+                ? (used0, used1)
+                : (used1, used0);
+            usdcTokenUsed = tokenUsed;
+
+            uint256 pairDust = usdcPairAmount - pairUsed;
+            if (pairDust > 0) IERC20(usdcAddress).safeTransfer(ownerWallet, pairDust);
+
+            // Leave no standing allowance on the locker's own reserve.
+            IERC20(merchantToken).approve(positionManager, 0);
+            IERC20(usdcAddress).approve(positionManager, 0);
         }
 
         // Add to ETH pool
@@ -263,15 +281,31 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
 
             ethLiqAdded = liq;
 
-            // Return dust to ownerWallet
-            uint256 dust0 = amount0Desired - used0;
-            uint256 dust1 = amount1Desired - used1;
-            if (dust0 > 0) IERC20(_ethPosition.merchantIsToken0 ? merchantToken : wethAddress).safeTransfer(ownerWallet, dust0);
-            if (dust1 > 0) IERC20(_ethPosition.merchantIsToken0 ? wethAddress : merchantToken).safeTransfer(ownerWallet, dust1);
+            // Only PAIR-token dust goes back to the merchant — that is their own capital.
+            //
+            // Merchant-token dust stays in this contract and stays counted as reserve.
+            // Returning it was a complete bypass of the LP lock: supply a large token
+            // amount against a trivial pair amount, Uniswap consumes almost none of the
+            // tokens because liquidity is bounded by the smaller side, and the remainder
+            // was transferred straight to ownerWallet while the reserve was decremented by
+            // the desired amount. One call could drain the whole 27M.
+            (uint256 tokenUsed, uint256 pairUsed) = _ethPosition.merchantIsToken0
+                ? (used0, used1)
+                : (used1, used0);
+            ethTokenUsed = tokenUsed;
+
+            uint256 pairDust = ethPairAmount - pairUsed;
+            if (pairDust > 0) IERC20(wethAddress).safeTransfer(ownerWallet, pairDust);
+
+            // Leave no standing allowance on the locker's own reserve.
+            IERC20(merchantToken).approve(positionManager, 0);
+            IERC20(wethAddress).approve(positionManager, 0);
         }
 
         // Decrement reserve by tokens actually committed (dust already returned)
-        _reserveTokens -= (usdcTokenAmount + ethTokenAmount);
+        // Actual, not desired. Unused merchant tokens never left this contract, so they
+        // are still reserve and must still be counted as such.
+        _reserveTokens -= (usdcTokenUsed + ethTokenUsed);
 
         emit LiquidityAdded(
             merchantToken,

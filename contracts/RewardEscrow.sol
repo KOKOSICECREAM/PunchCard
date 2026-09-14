@@ -111,6 +111,10 @@ contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
         emissionStart      = block.timestamp;
 
         uint256 perDay = (_rewardsAllocation * 1 days) / EMISSION_PERIOD;
+        // Drawer bookkeeping is uint128. The bound holds comfortably for any sane
+        // allocation, but assert it rather than reason about it — a silent truncation in
+        // `spent` would hand an operator an unbounded till.
+        require(perDay * MAX_DRAWER_DAYS <= type(uint128).max, "Drawer ceiling exceeds uint128");
         emissionPerDay = perDay;
         bufferCap      = perDay * BUFFER_DAYS;
         maxDrawer      = perDay * MAX_DRAWER_DAYS;

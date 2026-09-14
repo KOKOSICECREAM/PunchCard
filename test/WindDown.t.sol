@@ -45,8 +45,19 @@ contract MockPM {
         if (a0 > 0) Tok(q.t0).mint(p.recipient, a0);
         if (a1 > 0) Tok(q.t1).mint(p.recipient, a1);
     }
-    function increaseLiquidity(INonfungiblePositionManager.IncreaseLiquidityParams calldata)
-        external pure returns (uint128, uint256, uint256) { return (0,0,0); }
+    /// Consumes only `useRatio` of each desired amount, mimicking Uniswap bounding
+    /// liquidity by whichever side is scarcer. The rest is dust.
+    uint256 public useNum = 1;
+    uint256 public useDen = 1;
+    function setUse(uint256 n, uint256 d) external { useNum = n; useDen = d; }
+
+    function increaseLiquidity(INonfungiblePositionManager.IncreaseLiquidityParams calldata p)
+        external returns (uint128, uint256 used0, uint256 used1)
+    {
+        used0 = p.amount0Desired * useNum / useDen;
+        used1 = p.amount1Desired * useNum / useDen;
+        return (1, used0, used1);
+    }
 }
 
 contract WindDownTest is Test {
@@ -312,6 +323,55 @@ contract WindDownTest is Test {
         vm.prank(OWNER);
         vm.expectRevert("Exceeds reserve");
         locker.addLiquidity(RESERVE + 1, 0, 1_000_000, 0, 0, 0, 0, 0);
+    }
+
+    /// The LP lock must survive a deliberately off-ratio add.
+    ///
+    /// Supplying a large token amount against a trivial pair amount makes Uniswap consume
+    /// almost none of the tokens. The unused remainder used to be transferred to
+    /// ownerWallet as "dust" while the reserve was decremented by the DESIRED amount — so
+    /// a merchant could drain the whole 27M reserve into their own wallet in one call, with
+    /// the accounting left looking consistent.
+    function test_addLiquidityCannotDrainReserveAsDust() public {
+        pm.setUse(1, 1000);          // Uniswap consumes 0.1% of what was offered
+        usdc.mint(OWNER, 1_000_000);
+        vm.prank(OWNER);
+        usdc.approve(address(locker), type(uint256).max);
+
+        uint256 ownerTokensBefore = token.balanceOf(OWNER);
+        uint256 lockerBefore      = token.balanceOf(address(locker));
+        uint256 reserveBefore     = locker.reserveTokens();
+
+        uint256 offered = 10_000_000 * 1e6;
+        vm.prank(OWNER);
+        locker.addLiquidity(offered, 0, 1_000_000, 0, 0, 0, 0, 0);
+
+        assertEq(token.balanceOf(OWNER), ownerTokensBefore,
+            "merchant must receive NO merchant tokens back as dust");
+        assertEq(token.balanceOf(address(locker)), lockerBefore,
+            "unused merchant tokens stay in the locker");
+
+        // reserve falls only by what Uniswap actually consumed, not by what was offered
+        uint256 consumed = offered / 1000;
+        assertEq(reserveBefore - locker.reserveTokens(), consumed,
+            "reserve decrements by actual usage, not the desired amount");
+        assertEq(token.balanceOf(address(locker)), locker.reserveTokens() + consumed,
+            "balance and reserve accounting stay consistent");
+    }
+
+    /// The merchant's own pair capital is still returned.
+    function test_addLiquidityReturnsPairDustToMerchant() public {
+        pm.setUse(1, 2);
+        usdc.mint(OWNER, 1_000_000);
+        vm.prank(OWNER);
+        usdc.approve(address(locker), type(uint256).max);
+
+        uint256 usdcBefore = usdc.balanceOf(OWNER);
+        vm.prank(OWNER);
+        locker.addLiquidity(1_000_000 * 1e6, 0, 1_000_000, 0, 0, 0, 0, 0);
+
+        // supplied 1,000,000 USDC, half consumed, half returned
+        assertEq(usdcBefore - usdc.balanceOf(OWNER), 500_000, "unused USDC came back");
     }
 
     function _initiateAndExpire() internal {
