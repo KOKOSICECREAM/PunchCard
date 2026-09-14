@@ -145,6 +145,44 @@ What a relaunch buys beyond network membership:
 - **"Merchant #1" becomes true.** The site says *"Where This Was Built"* precisely because
   KOKOS is not a factory deployment.
 
+### Working plan — DEBATABLE, not decided
+
+Relaunch through the standard factory. No special contract, no exception: KOKOS is the
+reference merchant and is the one that most needs to run identical bytecode to everyone
+else.
+
+```
+verify the real holder count (basescan token holders page — do not guess)
+  → pick a snapshot block that has ALREADY PASSED, then announce
+  → pull the old SKOOP LP, recovering the capital
+  → deploy the new token through TokenFactory with that capital
+  → distribute to holders over the following months
+```
+
+**Snapshot retroactively.** Announcing a future block lets anyone buy SKOOP cheaply to farm
+the airdrop, and with a $720 pool a large share of circulating supply costs a few hundred
+dollars. A block already in the past closes that completely.
+
+**Sequence matters for how it reads.** Pulling the LP makes old SKOOP untradeable. A holder
+who finds a drained pool with no prior announcement will assume the worst regardless of
+intent, so announce first and keep the gap between pulling and deploying short.
+
+### Open on this plan
+
+- **Holder count is assumed, not measured.** The working guess is ~5 real holders with the
+  rest bots. The whole plan's difficulty scales off this number and it has not been checked.
+- **The recovered capital does not meet the minimums, and is the wrong shape.** The old
+  pools hold **$720 USDC + 0.76 WETH ≈ $2,598** against a $2,000 / $3,000 per-asset floor.
+  It clears ETH comfortably and fails USDC badly. Rebalance, top up, or change the floor.
+- **Which raises a harder question: our own shop cannot meet our own minimum.** That is
+  either a one-off top-up or evidence the floor is wrong for the merchant being targeted.
+  An independent coffee shop asked for $5,000 of working capital before seeing a single
+  reward issued is a real barrier, and KOKOS is currently the evidence. Note the minimums
+  are **factory-level policy**, not per-merchant — lowering them for KOKOS lowers them for
+  every merchant that factory deploys.
+- **Distribution source.** Rewards escrow (fast, consumes reward budget) or treasury
+  (90-day timelock, uses the merchant's own allocation). See below.
+
 ### Migrating holders — use the rewards escrow, not an exception
 
 The factory mints 100M into fixed allocations with no airdrop bucket, and the treasury's
