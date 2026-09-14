@@ -43,6 +43,8 @@
     "minUsdcSeedUsd": 200000000000,
     "minEthSeedUsd": 100000000000,
     "_seed_human": "$2,000 USDC and $1,000 ETH. USDC is weighted heavier because it carries commerce, cross-merchant routing and cash-out.",
-    "maxOracleAgeSeconds": 3600
+    "maxOracleAgeSeconds": 3600,
+    "_routerFeeBps_note": "PC_ROUTER_FEE_BPS for DeployNetwork.s.sol. Basis points of the midpoint, skimmed by PunchCardRouter. Ceiling is MAX_FEE_RATE = 100 (1%), enforced in immutable code. Recorded here because the deploy script required it and no config file carried it — the figure lived only in README prose, so it would have been typed from memory at deploy time and then sat behind a 48-hour timelock.",
+    "routerFeeBps": 30
   }
 }

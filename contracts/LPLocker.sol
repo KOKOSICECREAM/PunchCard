@@ -53,6 +53,22 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     ///      It replaces a recurring platform fee rather than sitting on top of one: no
     ///      subscription and no cut of the merchant's sales.
 
+    /// @notice Share of liquidity withdrawn at wind-down completion, as a percent.
+    /// @dev Public and named because it is quoted to customers verbatim: the Swap screen
+    ///      tells a buyer how much liquidity leaves on the expiry date. That disclosure is
+    ///      the reason PunchCardRouter permits buying a winding-down token at all, so the
+    ///      figure must be read from here rather than retyped in the interface. It used to
+    ///      be a bare literal in two places with the app hardcoding a third copy beside
+    ///      them, and changing the split would have quietly turned a financial disclosure
+    ///      into a false statement.
+    uint256 public constant WIND_DOWN_RELEASE_PCT = 90;
+
+    /// @notice Share of liquidity left in the position permanently. Load-bearing: it is
+    ///         what keeps a wound-down token tradable, which is what makes "you can still
+    ///         hold or sell after the expiry date" true. Do not reclaim it without
+    ///         changing that disclosure.
+    uint256 public constant PERMANENT_LP_PCT = 100 - WIND_DOWN_RELEASE_PCT;
+
     LPPosition private _usdcPosition;
     LPPosition private _ethPosition;
     uint256 private _reserveTokens;
@@ -443,7 +459,7 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
             (,,,,,,,uint128 usdcLiq,,,,) = pm.positions(_usdcPosition.tokenId);
 
             if (usdcLiq > 0) {
-                uint128 usdcToRemove = uint128(uint256(usdcLiq) * 90 / 100);
+                uint128 usdcToRemove = uint128(uint256(usdcLiq) * WIND_DOWN_RELEASE_PCT / 100);
                 usdcPermanent = usdcLiq - usdcToRemove;
 
                 pm.decreaseLiquidity(
@@ -477,7 +493,7 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
             (,,,,,,,uint128 ethLiq,,,,) = pm.positions(_ethPosition.tokenId);
 
             if (ethLiq > 0) {
-                uint128 ethToRemove = uint128(uint256(ethLiq) * 90 / 100);
+                uint128 ethToRemove = uint128(uint256(ethLiq) * WIND_DOWN_RELEASE_PCT / 100);
                 ethPermanent = ethLiq - ethToRemove;
 
                 pm.decreaseLiquidity(

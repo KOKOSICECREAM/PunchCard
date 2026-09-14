@@ -345,6 +345,13 @@ reverted every deployment forever. `cast code` takes seconds.
 - **Never add a page under `/Customer_dapp/`** in the KOKOS repo — its service worker
   caches any in-scope navigation as the app shell and would replace the dapp for installed
   customers.
+- **A change touching customer flow crosses two repos.** Contracts here, dapp in the
+  private `punchcard-launchpad`. Both must be committed *and pushed*; a commit is not a
+  push, and the gap is silent. Checklist lives in that repo's README — single copy on
+  purpose.
+- **Figures quoted to customers are read from the contract, not retyped in the app.** The
+  wind-down disclosure reads `LPLocker.WIND_DOWN_RELEASE_PCT()`. A hardcoded copy would
+  keep asserting a number the contract had stopped meaning.
 - **Build-time config, one origin per merchant.** Not runtime multi-tenant: these apps take
   money at a counter, and a bad deploy should have a blast radius of one merchant.
 - **The router gates membership, not health** — **decided 2026-09-14, pre-deploy.**
