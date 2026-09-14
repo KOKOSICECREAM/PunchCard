@@ -346,7 +346,10 @@ Two constraints that are load-bearing and easy to undo by accident:
 1. `cp deploy/merchants/_template.json deploy/merchants/<business>.json`
 2. Fill in three wallets, IPFS metadata hash, pool seeds, reward bounds
 3. Work the pre-flight checklist in [`docs/deployment-runbook.md`](docs/deployment-runbook.md)
-4. `ownerWallet` approves USDC → deployer calls `TokenFactory.deploy()`
+4. **Two transactions, two accounts.** The merchant approves the exact USDC seed from
+   `ownerWallet`; then PunchCard's deployer broadcasts `TokenFactory.deploy()`. `deploy()`
+   pulls from `ownerWallet` rather than from the sender and is `onlyDeployer`, so these are
+   necessarily different wallets — see the runbook for the exact commands
 5. Record the deployed addresses back into the JSON and commit
 
 > **Source of truth is this repo.** The contracts previously lived only in an iCloud Remix
