@@ -17,7 +17,14 @@ import "./interfaces/ISwapRouter.sol";
 ///        token → WETH    ETH pool     1 hop    fee in WETH
 ///        USDC → token    USDC pool    1 hop    fee in USDC
 ///        WETH → token    ETH pool     1 hop    fee in WETH
-///        token → token   USDC pool×2  2 hops   fee in USDC at mid-point
+///        token → token   both pools   2 hops   fee at the mid-point, in midToken
+///
+///      token → token routes through a shared midpoint the CALLER chooses via
+///      SwapParams.midToken — USDC or WETH — so either pool can carry network flow and
+///      earn from it. Both hops and the fee skim use that asset. Best execution is quoted
+///      off-chain; getPoolFeeTiers() exposes both tiers so an interface can price each
+///      route. The midpoint was hardcoded to USDC, which left every merchant's ETH pool
+///      unable to earn from cross-merchant swaps at all.
 ///      Swaps can NEVER be paused — guaranteed in immutable code.
 ///      Hard fee ceiling 1% enforced in immutable code.
 contract PunchCardRouter is ReentrancyGuard {
@@ -69,7 +76,7 @@ contract PunchCardRouter is ReentrancyGuard {
         uint256 amountIn;
         uint256 amountOutMinimumHop1; // token→stable: min received, AFTER the router fee
                                       // stable→token: min tokenOut (fee is taken from amountIn)
-                                      // token→token:  min USDC at the hop-1 midpoint, pre-fee
+                                      // token→token:  min midToken at the hop-1 midpoint, pre-fee
         uint256 amountOutMinimumHop2; // token→token only: min tokenOut of hop2
         address midToken;             // token→token only: USDC or WETH — whichever the
                                       // caller quoted as the better route. Ignored on
@@ -155,7 +162,7 @@ contract PunchCardRouter is ReentrancyGuard {
         bool outIsWETH = p.tokenOut == WETH;
 
         if (!inIsUSDC && !inIsWETH && !outIsUSDC && !outIsWETH) {
-            // Case: token → token (cross-merchant via USDC pool)
+            // Case: token → token (cross-merchant, via the caller-chosen midToken)
             _validateMerchantToken(p.tokenIn,  false);
             _validateMerchantToken(p.tokenOut, true);
             _swapTokenToToken(p);
@@ -261,8 +268,8 @@ contract PunchCardRouter is ReentrancyGuard {
         emit Swapped(stableToken, p.tokenOut, p.recipient, p.amountIn, tokenOut, feeTaken, stableToken, block.timestamp);
     }
 
-    /// @dev token → token cross-merchant. Routes through USDC pool twice.
-    ///      Fee skimmed from USDC mid-point.
+    /// @dev token → token cross-merchant. Two hops through the caller-chosen midToken.
+    ///      Fee skimmed from the mid-point, in whichever asset midToken is.
     /// @dev Routes through whichever pool the caller quoted as better. Both hops use the
     ///      same midpoint asset, so liquidity in either pool can serve network flow —
     ///      previously this was hardcoded to USDC, which left every merchant's ETH pool
@@ -282,7 +289,7 @@ contract PunchCardRouter is ReentrancyGuard {
         IERC20(p.tokenIn).safeTransferFrom(msg.sender, address(this), p.amountIn);
         IERC20(p.tokenIn).approve(swapRouter, p.amountIn);
 
-        // Hop 1: tokenA → USDC
+        // Hop 1: tokenA → midToken
         uint256 midOut = ISwapRouter(swapRouter).exactInputSingle(
             ISwapRouter.ExactInputSingleParams({
                 tokenIn:           p.tokenIn,
