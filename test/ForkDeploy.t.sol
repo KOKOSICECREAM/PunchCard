@@ -122,8 +122,17 @@ contract ForkDeployTest is Test {
         assertEq(IERC20(token).balanceOf(address(factory)), 0, "factory drained of tokens");
         assertEq(IERC20(USDC).balanceOf(address(factory)),  0, "factory drained of USDC");
 
-        // ── LP: 27M reserve in the locker, both positions minted to it ──
-        assertEq(IERC20(token).balanceOf(locker), 27_000_000 * 1e6, "27M reserve");
+        // ── LP: the reserve, plus any launch dust, in the locker ──
+        // At least 27M: merchant-token dust from the launch mints is deliberately NOT
+        // returned to the merchant, so it falls through the step-9 sweep into the locker
+        // and the reserve comes out a few base units ABOVE the nominal figure. Asserting
+        // equality here hid nothing, but it would have failed the moment that leak was
+        // closed — which is exactly what happened.
+        uint256 lockerHeld = IERC20(token).balanceOf(locker);
+        assertGe(lockerHeld, 27_000_000 * 1e6, "at least the 27M reserve");
+        assertLt(lockerHeld - 27_000_000 * 1e6, 1e6, "any excess is rounding dust, under one token");
+        // And it must be dust that stayed, never allocation that escaped:
+        assertEq(IERC20(token).balanceOf(OWNER), 0, "merchant receives no merchant tokens at launch");
         assertEq(IERC721(POSITION_MANAGER).balanceOf(locker), 2, "two Uniswap positions");
 
         // ── registered on the network ──
