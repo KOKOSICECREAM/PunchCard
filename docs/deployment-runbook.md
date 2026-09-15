@@ -233,6 +233,22 @@ later   owner:    LPLockerPilot.lockLP()                     ← when the pilot 
 - [ ] **The hatch is unaffected by any of this.** Disabling the factory does not lock the
       LP. Only `lockLP()` does, and only when you decide.
 
+## The pilot token is `pSKOOP`, not `SKOOP`
+
+Decided 2026-09-15. The live 2023 SKOOP keeps running, so both exist on Base at once and
+every surface has to say which one it means. `SKOOP2` reads as a migration token; `pSKOOP`
+reads as a pilot, which is what it is.
+
+- [ ] Deploy with name `KOKOS SKOOPS Pilot`, symbol `pSKOOP`
+- [ ] Launchpad slug `pilot-skoop`, `brand.shortName` = `pSKOOP`
+- [ ] **The two pages still share artwork.** `merchants/pilot-skoop/assets/` is a copy of
+      KOKOS's icon and logo, so an installed PWA looks the same on a home screen. The symbol
+      and app title differ; the images do not. Supply pilot artwork before announcing, or
+      accept that the two are told apart by text alone.
+- [ ] Graduation is a later decision — keep `pSKOOP`, or redeploy as `SKOOP` once the live
+      one is retired. Do not decide it now; ambiguity during testing is the thing being
+      avoided.
+
 ## Wallets — all fresh, none shared with KOKOS's existing deployment
 
 Decided 2026-09-15. The pilot reuses nothing. No script is ever handed authority over a
@@ -269,7 +285,7 @@ as possible.
 
 ## While the hatch is open
 
-- [ ] The dapp shows *"SKOOP pilot liquidity is not permanently locked yet"* on the Swap screen.
+- [ ] The dapp shows *"pSKOOP pilot liquidity is not permanently locked yet"* on the Swap screen.
       Confirm it renders **before** announcing the pilot — `lpLockState()` reads the locker
       directly, so a misconfigured `windDownController` shows "status unavailable" rather
       than a false lock claim, but unavailable is not the message you want on day one.
@@ -285,7 +301,7 @@ as possible.
 
 - [ ] `lockLP()` is one-way and callable by the owner wallet or the controller. After it,
       `LPLockerPilot` behaves exactly as production does.
-- [ ] Confirm the dapp flips to *"SKOOP liquidity is permanently locked."* That sentence is
+- [ ] Confirm the dapp flips to *"pSKOOP liquidity is permanently locked."* That sentence is
       a claim; it may only appear once the contract says so.
 - [ ] Only then may the strong liquidity language be used anywhere else.
 

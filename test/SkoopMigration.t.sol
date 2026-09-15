@@ -92,6 +92,20 @@ contract SkoopMigrationTest is Test {
     uint256 constant DEFAULT_SEED_USDC = 2_000 * 1e6;     // $2,000 — the USDC floor exactly
     uint256 constant DEFAULT_SEED_ETH  = 0.415 ether;     // ~$1,001 at ~$2,412/ETH
 
+    // ── THE PILOT TOKEN ──────────────────────────────────────────────────────
+    /// @dev Decided 2026-09-15: a DISTINCT symbol from the live 2023 SKOOP.
+    ///
+    ///      Both tokens exist on Base at the same time, and the LP-lock disclosure reads
+    ///      "<symbol> pilot liquidity is not permanently locked yet." With one symbol
+    ///      shared between them that sentence does not say which token it means — on the
+    ///      one screen whose entire job is being unmistakable at a glance.
+    ///
+    ///      Deployed here rather than only in the launchpad config so the rehearsal mints
+    ///      what the deploy mints. The factory-lineage mismatch fixed in 644e8b8 was the
+    ///      same shape of error: rehearsing something adjacent to the plan.
+    string constant PILOT_TOKEN_NAME   = "KOKOS SKOOPS Pilot";
+    string constant PILOT_TOKEN_SYMBOL = "pSKOOP";
+
     // ── MAINNET POLICY FLOORS ────────────────────────────────────────────────
     uint256 constant MAINNET_USDC_FLOOR = 2_000 * 1e8;
     uint256 constant MAINNET_ETH_FLOOR  = 1_000 * 1e8;
@@ -227,7 +241,7 @@ contract SkoopMigrationTest is Test {
                     ? bytes("USDC seed below minimum")
                     : bytes("ETH seed below minimum")
             );
-            strict.deploy{value: ethCapital}(_params("KOKOS SKOOPS", "SKOOP", usdcCapital, ethCapital));
+            strict.deploy{value: ethCapital}(_params(PILOT_TOKEN_NAME, PILOT_TOKEN_SYMBOL, usdcCapital, ethCapital));
         }
     }
 
@@ -514,7 +528,7 @@ contract SkoopMigrationTest is Test {
         IERC20(USDC).approve(address(f), usdcCapital);
 
         vm.recordLogs();
-        f.deploy{value: ethCapital}(_params("KOKOS SKOOPS", "SKOOP", usdcCapital, ethCapital));
+        f.deploy{value: ethCapital}(_params(PILOT_TOKEN_NAME, PILOT_TOKEN_SYMBOL, usdcCapital, ethCapital));
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
         address token; address locker;
@@ -598,7 +612,7 @@ contract SkoopMigrationTest is Test {
         IERC20(USDC).approve(address(s.factory), usdcCapital);
 
         vm.recordLogs();
-        s.factory.deploy{value: ethCapital}(_params("KOKOS SKOOPS", "SKOOP", usdcCapital, ethCapital));
+        s.factory.deploy{value: ethCapital}(_params(PILOT_TOKEN_NAME, PILOT_TOKEN_SYMBOL, usdcCapital, ethCapital));
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
         for (uint256 i = 0; i < logs.length; i++) {
