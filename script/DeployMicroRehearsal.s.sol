@@ -78,6 +78,14 @@ contract DeployMicroRehearsal is Script {
     ///      out through evacuateLP() anyway.
     uint256 constant DEFAULT_ETH_SEED = 0.0025 ether;
 
+    /// @notice Gas headroom required of wallet A on top of the seeds.
+    /// @dev The full run is roughly 26M gas — a network deploy plus two merchant suites,
+    ///      each of which deploys five contracts and creates and mints two Uniswap pools.
+    ///      At Base's typical sub-0.01 gwei that is well under a dollar, so this margin is
+    ///      deliberately generous rather than tight. Running out halfway through leaves a
+    ///      half-built network on mainnet that nothing cleans up.
+    uint256 constant GAS_MARGIN = 0.0005 ether;
+
     struct Merchant {
         string  name;
         string  symbol;
@@ -147,7 +155,15 @@ contract DeployMicroRehearsal is Script {
         // micro-launch runbook is written against. Cap it in code.
         require(totalUsdc <= 100 * 1e6, "Total USDC seed above $100 - this is no longer a micro rehearsal");
         require(IERC20(usdc).balanceOf(B) >= totalUsdc, "Wallet B (merchant owner) does not hold enough USDC - deploy() pulls from ownerWallet, not from the deployer");
-        require(A.balance >= totalEth, "Wallet A (deployer) does not hold enough ETH for the pool seeds plus gas");
+        // Seeds AND a gas margin. The message used to say "plus gas" while checking only
+        // the seeds, so a wallet holding exactly the seed total passed the check and then
+        // ran out mid-broadcast — after the controller, factory and router were already
+        // deployed and paid for. Base is cheap enough that the margin is rounding error:
+        // the whole run is ~26M gas, well under $1 at current prices.
+        require(
+            A.balance >= totalEth + GAS_MARGIN,
+            "Wallet A (deployer) does not hold enough ETH for the pool seeds plus a gas margin"
+        );
 
         // B never sends ETH, only the approve() — but an approve still costs gas, and a
         // wallet funded with USDC and nothing else fails on its first transaction. Cheap to
