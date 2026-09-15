@@ -203,7 +203,7 @@ export PC_MULTISIG=<eoa>
 export PC_DEPLOYER=<hot wallet>
 export PC_FEE_RECIPIENT=<distinct address>
 
-forge script script/DeployNetworkRehearsal.s.sol \
+forge script script/DeployMicroRehearsal.s.sol \
   --rpc-url https://mainnet.base.org \
   --account pc-testnet \
   --broadcast
