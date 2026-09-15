@@ -46,6 +46,56 @@ executeFactory(addr)              multisig, after the timelock
   `register()` refuses a token that is already registered, so a newly blessed factory
   cannot reach an existing merchant's terms, liquidity or tokens.
 
+## The pilot lineage — SKOOP only
+
+Added 2026-09-15. A third lineage sits beside beta and production, for **one deployment**.
+
+| | Production | Beta | **Pilot** |
+|---|---|---|---|
+| Factory | `TokenFactory` | `TokenFactoryBeta` | `TokenFactoryPilot` |
+| Locker | `LPLocker` | `LPLockerBeta` | `LPLockerPilot` |
+| LP recovery | none, ever | 30 days, self-closing | **open until closed by hand** |
+| Who | any merchant | beta merchants | **KOKOS/SKOOP only** |
+
+`LPLockerBeta`'s first guardrail says a hatch that must be closed by hand can be left open
+forever through neglect or intent, and that `EVACUATION_WINDOW` closes it regardless of
+whether anyone acts. **The pilot deletes that guardrail on purpose.** The reasoning is not
+refuted, it is accepted: KOKOS's pilot is PunchCard testing its own machine with its own
+money, on a schedule set by the work rather than by a constant. A 30-day fuse there fails in
+the worst direction — the window shuts mid-test and real capital is committed for a year
+because nobody watched a calendar.
+
+**That reasoning does not transfer to a merchant.** A merchant is owed a liquidity guarantee
+that does not depend on PunchCard remembering to honour it, which is exactly what a
+self-closing window provides and an open-ended one does not. Merchants get beta or
+production. Nothing else.
+
+**Enforced structurally, not by policy.** The pilot is a separate contract, separate
+deployer and separate factory, so "SKOOP only" is enforced by which factory the controller
+has authorised. Authorise `TokenFactoryPilot`, deploy KOKOS, then
+`proposeFactory(pilot, false)` to close the path — merchants already registered keep
+working, which is what that path was built for.
+
+```
+cast call $FACTORY 'HAS_LP_RECOVERY()(bool)'            → true on beta and pilot
+cast call $FACTORY 'HAS_UNLIMITED_LP_RECOVERY()(bool)'  → true on pilot only
+```
+
+At the locker level there is no marker constant on `LPLockerBeta`, so which calls *answer*
+is the discriminator: `evacuationOpen()` reverts on production; `evacuationExpiresAt()`
+answers only on the pilot, returning `type(uint256).max`. The inherited `evacuationDeadline`
+on a pilot locker still reads deploy + 30 days and **does not apply** — read
+`evacuationExpiresAt()`.
+
+**While the hatch is open, SKOOP's liquidity is not locked, and no PunchCard surface may say
+that it is.** This is the same rule as beta, for a longer and open-ended period. Closing it
+is a deliberate act (`lockLP()`), one-way, and after it the contract behaves exactly as
+production does.
+
+Covered by `test/PilotRecovery.t.sol` (10 tests, including that beta still self-closes and
+production still has no hatch at all) and `test_phase4_pilotHatchSurvivesBeyondThirtyDays`
+against live Base.
+
 ## What is guaranteed, and by what
 
 The distinction merchants and customers are owed, stated exactly.

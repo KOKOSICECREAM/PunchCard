@@ -4,6 +4,9 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import "../contracts/beta/TokenFactoryBeta.sol";
 import "../contracts/beta/LockerDeployerBeta.sol";
+import "../contracts/pilot/TokenFactoryPilot.sol";
+import "../contracts/pilot/LockerDeployerPilot.sol";
+import "../contracts/pilot/LPLockerPilot.sol";
 import "../contracts/beta/LPLockerBeta.sol";
 import "../contracts/WindDownController.sol";
 import "../contracts/RewardEscrow.sol";
@@ -452,6 +455,73 @@ contract SkoopMigrationTest is Test {
         assertLt(IERC20(s.token).totalSupply(), supplyBefore, "undistributed supply was burned");
 
         emit log_named_decimal_uint("supply burned by wind-down", supplyBefore - IERC20(s.token).totalSupply(), 6);
+    }
+
+    /// SKOOP's pilot is not on a 30-day clock. The beta window is the right default for a
+    /// merchant — it closes whether or not anyone is paying attention — but KOKOS is
+    /// PunchCard testing its own machine with its own money, and a fuse lit by a constant
+    /// rather than by the work fails in the worst direction: the hatch shuts mid-test and
+    /// the capital is committed for a year because nobody watched a calendar.
+    ///
+    /// This deploys the real migration through TokenFactoryPilot and proves the hatch is
+    /// still open a year later, against live Uniswap positions.
+    function test_phase4_pilotHatchSurvivesBeyondThirtyDays() public {
+        _requireFork();
+
+        (uint256 usdcCapital, uint256 ethCapital) = _migrationCapital();
+
+        address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 2);
+        WindDownController w = new WindDownController(MULTISIG, predicted);
+        LockerDeployerPilot pilotLockers = new LockerDeployerPilot();
+        TokenFactoryPilot f = new TokenFactoryPilot(
+            MULTISIG, address(this), address(w), POSITION_MANAGER, USDC, WETH,
+            ETH_USD_FEED, FEE_RECIP, address(suiteDeployer), address(pilotLockers), 1, 1
+        );
+        assertEq(address(f), predicted, "factory landed where predicted");
+
+        // The marker is queryable before anyone trusts it.
+        assertTrue(f.HAS_LP_RECOVERY(),           "pilot factory still advertises LP recovery");
+        assertTrue(f.HAS_UNLIMITED_LP_RECOVERY(), "and advertises that it never expires");
+
+        _fund(OWNER, usdcCapital, ethCapital);
+        vm.prank(OWNER);
+        IERC20(USDC).approve(address(f), usdcCapital);
+
+        vm.recordLogs();
+        f.deploy{value: ethCapital}(_params("KOKOS SKOOPS", "SKOOP", usdcCapital, ethCapital));
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        address token; address locker;
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == keccak256(
+                "MerchantDeployed(address,address,address,address,address,address,address,address,bytes32,uint256)"
+            )) {
+                token  = address(uint160(uint256(logs[i].topics[1])));
+                (,,,,, locker,,) = abi.decode(
+                    logs[i].data, (address,address,address,address,address,address,bytes32,uint256)
+                );
+            }
+        }
+        assertTrue(token != address(0), "pilot merchant deployed");
+        assertTrue(LPLockerPilot(locker).HAS_UNLIMITED_LP_RECOVERY(), "got a pilot locker, not a beta one");
+
+        // ── a year later, against real positions, the hatch is still open ──
+        vm.warp(block.timestamp + 365 days);
+        assertTrue(LPLockerPilot(locker).evacuationOpen(), "hatch open a year in");
+        assertEq(LPLockerPilot(locker).evacuationExpiresAt(), type(uint256).max, "and it never expires");
+
+        uint256 usdcBefore = IERC20(USDC).balanceOf(OWNER);
+        uint256 wethBefore = IERC20(WETH).balanceOf(OWNER);
+
+        vm.prank(OWNER);
+        LPLockerPilot(locker).evacuateLP();
+
+        assertGt(IERC20(USDC).balanceOf(OWNER) - usdcBefore, (usdcCapital * 90) / 100, "most USDC back, a year later");
+        assertGt(IERC20(WETH).balanceOf(OWNER) - wethBefore, (ethCapital  * 90) / 100, "most ETH back, a year later");
+        assertGe(IERC20(token).balanceOf(OWNER), 27_000_000 * 1e6, "reserve back");
+        assertTrue(LPLockerPilot(locker).lpPermanentlyLocked(), "and the locker is dead");
+
+        emit log("pilot LP recovered 365 days after launch, against live Uniswap");
     }
 
     // ═════════════════════════════════════════════════════════════════════════
