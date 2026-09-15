@@ -233,6 +233,40 @@ later   owner:    LPLockerPilot.lockLP()                     ← when the pilot 
 - [ ] **The hatch is unaffected by any of this.** Disabling the factory does not lock the
       LP. Only `lockLP()` does, and only when you decide.
 
+## Wallets — all fresh, none shared with KOKOS's existing deployment
+
+Decided 2026-09-15. The pilot reuses nothing. No script is ever handed authority over a
+contract or position KOKOS already has.
+
+- [ ] PunchCard multisig
+- [ ] PunchCard deployer (the only caller of `deploy()`)
+- [ ] PunchCard fee recipient
+- [ ] KOKOS owner wallet — receives treasury releases, and **is the only wallet that can
+      call `evacuateLP()` or `lockLP()`**. Hardware wallet.
+- [ ] KOKOS team wallet — receives vesting. Hardware wallet, verified on-chain.
+- [ ] KOKOS POS / operator wallet — the kiosk key, rotatable via `addOperator` /
+      `removeOperator`, so it does not need to be a hardware wallet
+- [ ] A couple of throwaway wallets for a test reward and a test swap
+
+The owner wallet is the one to be careful about. For as long as the pilot hatch is open it
+can move the entire pool, which is the point of the pilot and also its largest custody risk.
+
+## Moving the old SKOOP LP — by hand, and not on the launch's critical path
+
+Not a script and not a deploy step. Do it on its own schedule, after the new token is live
+and tradeable, so the gap where a holder can see a drained pool and nothing else is as short
+as possible.
+
+- [ ] Announce first. Pulling the LP makes old SKOOP untradeable and a holder who finds a
+      drained pool with no announcement assumes the worst, whatever the intent.
+- [ ] Watch it on a fork before doing it live:
+      `PC_SKOOP_LP_OWNER=0x… forge test --match-test test_phase1 --fork-url … -vv`
+      That is a dry run for a human, not a gate — it shows exactly what `decreaseLiquidity`
+      and `collect` do to those positions.
+- [ ] Remove liquidity per position through the Uniswap UI, collecting fees in the same step.
+- [ ] The recovered capital is **not** needed to fund the pilot. It is yours to redeploy,
+      hold, or use for holder distribution.
+
 ## While the hatch is open
 
 - [ ] The dapp shows *"SKOOP pilot liquidity is currently recoverable"* on the Swap screen.

@@ -222,13 +222,21 @@ else.
 ```
 verify the real holder count (basescan token holders page — do not guess)
   → pick a snapshot block that has ALREADY PASSED, then announce
-  → rehearse the whole cutover on a Base fork (test/SkoopMigration.t.sol)
-  → pull the old SKOOP LP, recovering the capital
-  → top up to the floors with fresh capital
-  → deploy the new token through TokenFactoryBeta with that capital
-  → verify, then lockLP() inside the 30-day window
+  → rehearse the cutover on a Base fork with the real seed amounts
+  → fund fresh wallets with $2,000 USDC + $1,000 of ETH
+  → deploy the new token through TokenFactoryPilot from those wallets
+  → move the old SKOOP LP out BY HAND, on your own schedule
+  → verify, then lockLP() when the pilot is proven
   → distribute to holders over the following months
 ```
+
+**Nothing automated touches KOKOS's existing deployment.** Decided 2026-09-15. The pilot
+launches from fresh wallets with fresh capital, and the old LP is moved manually rather than
+drained by a script that has to be handed the keys to live positions. That removes a whole
+class of risk — no automated path has authority over anything KOKOS already has — at the
+cost of the cutover step being unrehearsed by construction. Accepted: the mechanical risk in
+`decreaseLiquidity` + `collect` through the Uniswap UI is low and well-trodden. The risk that
+remains is **sequencing**, which no test was ever going to cover (see below).
 
 **Beta factory, mainnet floors.** These are two separate dials and conflating them is the
 mistake this document keeps warning about. Clearing the $2,000 / $1,000 floors does *not*
@@ -267,31 +275,18 @@ intent, so announce first and keep the gap between pulling and deploying short.
   Caveat: SKOOP's total supply is **886,355,705**, not the factory's 100,000,000. Any
   relaunch has to pick an exchange ratio and defend it. With $338 of public value at stake,
   generosity is cheaper than argument.
-- ~~**The recovered capital is close, but the wrong shape.**~~ **Verified against a live
-  Base fork 2026-09-15** by `test_phase2_recoveredCapitalAgainstSeedFloors`. The old pools
-  hold **$720 USDC + 0.76 WETH** against the $2,000 USDC / $1,000 ETH floors:
+- ~~**The recovered capital is close, but the wrong shape.**~~ **Moot as of 2026-09-15** —
+  the pilot is funded with fresh capital, not with the old pools. Recorded because the
+  measurement stands and explains why: the live pools hold **$720 USDC + 0.76 WETH**, so the
+  ETH side cleared its floor with ~$826 to spare while the USDC side was short $1,280.
+  Recycling that would have meant a top-up *and* handing a script authority over live
+  positions, to save roughly $1,290. Not worth it.
 
-  | side | recovered | floor | result |
-  |---|---|---|---|
-  | USDC | $720.00 | $2,000 | **short $1,280** |
-  | ETH | $1,826.64 | $1,000 | clears, $826.64 surplus |
-  | total | $2,546.64 | $3,000 | short $453.36 |
+  The pilot seeds **$2,000 USDC + $1,000 of ETH** — the floors exactly. Verified against a
+  live Base fork: $2,000.00 + $1,010.28 = **$3,010.28**, clears both.
 
-  The ETH figure moves with the price — it was ~$1,878 when first measured and $1,826.64 at
-  the fork block. Rebalancing the ETH surplus into USDC leaves roughly **$450 to top up**;
-  topping up the USDC side directly and leaving the ETH surplus in place costs $1,280 and
-  opens a deeper market. **Decided 2026-09-15: add fresh capital to reach the full $2,000
-  USDC + $1,000 ETH.** Micro floors would technically pass and leave KOKOS's own customers
-  trading against shallow pools.
-
-  The test also asserts that a factory built at mainnet floors genuinely **rejects** the
-  recovered capital. A floor that exists is not the same as a floor that binds, and only
-  one of those protects anything.
-
-  > **Do not read "a $720 pool" elsewhere in this document as the total.** That phrase means
-  > the USDC side alone. Reading it as the whole recovery understates the capital threefold
-  > and inverts the answer — it briefly did exactly that while this section was being
-  > written.
+  The old LP still comes out eventually; it is now a manual step on its own schedule rather
+  than a dependency of the launch.
 - **This is what set the floors.** KOKOS being unable to meet its own minimum was the
   evidence that $5,000 was wrong, and it drove the move to $3,000 total weighted toward
   USDC (settled 2026-09-14, below). The minimums are **factory-level policy**, not
@@ -304,21 +299,32 @@ intent, so announce first and keep the gap between pulling and deploying short.
 Settled 2026-09-15 after the fork rehearsal. Everything downstream of these two is proven;
 these two are not.
 
-**Gate 1 — run phase 1 against the real positions.**
+**Gate 1 — sequencing, not a test run.** ~~Run phase 1 against the real positions.~~
+Superseded 2026-09-15: the LP is moved by hand from fresh wallets, so there is no automated
+drain to rehearse. What that step still carries is unchanged and no test ever covered it —
+
+- **Announce before pulling.** Pulling the LP makes old SKOOP untradeable. A holder who
+  finds a drained pool with no prior announcement assumes the worst regardless of intent.
+- **Keep the gap short.** Between pulling and the new token being tradeable, there is
+  nothing for a holder to do and nothing for them to read except silence.
+- **Snapshot retroactively**, on a block already in the past. See above.
+
+`test_phase1_liveSkoopLiquidityIsRecoverable` is kept and still runs with
+`PC_SKOOP_LP_OWNER` set. It is now a **dry run for a human**, not a gate: whoever pulls those
+positions by hand can watch exactly what `decreaseLiquidity` + `collect` do on a fork first.
+
+**Gate 2 — real launch capital.** $2,000 USDC + $1,000 of ETH into fresh wallets. Rehearse
+the real numbers before the day:
 
 ```
-PC_SKOOP_LP_OWNER=0x… forge test --match-path test/SkoopMigration.t.sol \
-  --fork-url https://mainnet.base.org -vv
+PC_MIGRATION_USDC=2000000000 PC_MIGRATION_ETH=415000000000000000 \
+  forge test --match-path test/SkoopMigration.t.sol --fork-url https://mainnet.base.org -vv
 ```
 
-Without that variable the drain is skipped and the rehearsal runs on the documented
-estimates. Phases 2–4 pass, so the suite reads green while the single riskiest action in
-the whole migration has never executed — and it is the one action holders see *before*
-anything good has happened. Pulling the LP makes old SKOOP untradeable; if that transaction
-fails halfway, the announcement has already gone out.
-
-**Gate 2 — real launch capital, not micro floors.** See the capital table above. Decided:
-top up to $2,000 USDC + $1,000 ETH.
+The ETH side is sized in **wei**, not dollars, because the floor is USD-denominated against
+Chainlink and the wei that clears $1,000 moves with the price. Re-run this close to the day
+and read what phase 2 prints; a seed sized in dollars months earlier is how a deploy reverts
+on the morning it matters.
 
 **What the rehearsal already proves** (`test/SkoopMigration.t.sol`, 6 passing against a live
 Base fork):

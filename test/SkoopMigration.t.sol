@@ -67,16 +67,23 @@ contract SkoopMigrationTest is Test {
     address constant CUSTOMER  = address(0xC0FFEE);
     address constant TRADER    = address(0xDEAF);
 
-    /// @notice Fallback capital if the real LP is not drained.
-    /// @dev These are the figures ROADMAP.md records for the live pools, measured
-    ///      2026-09-14: $720 USDC and 0.76 WETH. They are NOT a 50/50 split of a "$720
-    ///      pool" — that phrasing appears earlier in the same document and means the USDC
-    ///      side alone. Getting that wrong understates the recovered capital by a factor
-    ///      of three and inverts the answer to phase 2, so the shape matters as much as
-    ///      the total: the ETH side clears its floor comfortably while the USDC side does
-    ///      not clear its own.
-    uint256 constant ASSUMED_USDC_RECOVERED = 720 * 1e6;      // $720
-    uint256 constant ASSUMED_ETH_RECOVERED  = 0.76 ether;     // ~$1,878 at ~$2,470/ETH
+    /// @notice The seed the pilot will actually launch with.
+    /// @dev **Decided 2026-09-15: the LP is moved by hand, from fresh wallets.** Nothing in
+    ///      the pilot touches KOKOS's existing infrastructure, so the rehearsal no longer
+    ///      derives its capital from draining the old positions — it rehearses the seed
+    ///      that will really be used.
+    ///
+    ///      Defaults are the agreed target: $2,000 USDC and $1,000 of ETH, the mainnet
+    ///      floors exactly. Override with PC_MIGRATION_USDC (6dp) and PC_MIGRATION_ETH
+    ///      (wei) to rehearse whatever is actually going in, which is the point of running
+    ///      it again once the number is final.
+    ///
+    ///      The ETH default is deliberately a WEI amount rather than a dollar target: the
+    ///      floor is USD-denominated against Chainlink, so the wei that clears $1,000 moves
+    ///      with the price. test_phase2 prints what it is worth at the fork block, and a
+    ///      seed sized in dollars months ago is exactly how a deploy reverts on the day.
+    uint256 constant DEFAULT_SEED_USDC = 2_000 * 1e6;     // $2,000 — the USDC floor exactly
+    uint256 constant DEFAULT_SEED_ETH  = 0.415 ether;     // ~$1,001 at ~$2,412/ETH
 
     // ── MAINNET POLICY FLOORS ────────────────────────────────────────────────
     uint256 constant MAINNET_USDC_FLOOR = 2_000 * 1e8;
@@ -118,9 +125,19 @@ contract SkoopMigrationTest is Test {
     // PHASE 1 — can the live SKOOP liquidity actually be recovered?
     // ═════════════════════════════════════════════════════════════════════════
 
-    /// The step that makes old SKOOP untradeable and funds the relaunch. It is the one
-    /// action in the whole migration that is visible to holders before anything good has
-    /// happened, so it had better not fail halfway.
+    /// @dev **Not a gate any more.** Decided 2026-09-15: the pilot launches from fresh
+    ///      wallets and the old LP is moved by hand, so no automated path touches KOKOS's
+    ///      existing positions and this does not run in the normal course.
+    ///
+    ///      It is kept because it is the only executable description of what pulling those
+    ///      positions actually does — decreaseLiquidity to zero, then collect principal and
+    ///      fees together, per position — and because whoever does it by hand should be
+    ///      able to watch it happen on a fork first. Set PC_SKOOP_LP_OWNER to run it.
+    ///
+    ///      The risk it used to cover has not gone away, it has moved: pulling the LP still
+    ///      makes old SKOOP untradeable, and that is still visible to holders before
+    ///      anything good has happened. That is now a sequencing and announcement problem
+    ///      rather than a contract one.
     function test_phase1_liveSkoopLiquidityIsRecoverable() public {
         _requireFork();
 
@@ -532,16 +549,21 @@ contract SkoopMigrationTest is Test {
     /// otherwise the documented estimate. Logs which one it used — a rehearsal that is
     /// vague about whether it touched real money is not a rehearsal.
     function _migrationCapital() internal returns (uint256 usdcCapital, uint256 ethCapital) {
-        address lpOwner = vm.envOr("PC_SKOOP_LP_OWNER", address(0));
+        usdcCapital = vm.envOr("PC_MIGRATION_USDC", DEFAULT_SEED_USDC);
+        ethCapital  = vm.envOr("PC_MIGRATION_ETH",  DEFAULT_SEED_ETH);
 
-        if (lpOwner == address(0)) {
-            emit log("capital source: ESTIMATE (set PC_SKOOP_LP_OWNER to drain the real positions)");
-            return (ASSUMED_USDC_RECOVERED, ASSUMED_ETH_RECOVERED);
+        address lpOwner = vm.envOr("PC_SKOOP_LP_OWNER", address(0));
+        if (lpOwner != address(0)) {
+            // Optional, and no longer how the pilot is funded. Kept because it is the only
+            // executable description of what pulling those positions does, and someone will
+            // want that before doing it by hand.
+            (uint256 usdcOut, uint256 wethOut,) = _drainSkoopPositions(lpOwner);
+            emit log("capital source: DRAINED from the live SKOOP positions");
+            return (usdcOut, wethOut);
         }
 
-        (uint256 usdcOut, uint256 wethOut,) = _drainSkoopPositions(lpOwner);
-        emit log("capital source: REAL, drained from the live SKOOP positions");
-        return (usdcOut, wethOut);
+        emit log("capital source: fresh wallets, seed as configured (LP moved by hand)");
+        return (usdcCapital, ethCapital);
     }
 
     /// Deploy the relaunched SKOOP through the beta factory, with floors set low enough
