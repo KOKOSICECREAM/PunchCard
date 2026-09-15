@@ -101,6 +101,33 @@ contract DeploymentInvariantsTest is Test {
             "the rehearsal must demand its own acknowledgement, separate from PC_CREATE_NEW_NETWORK");
     }
 
+    /// The micro rehearsal must use the SELF-CLOSING lineage, not the pilot's.
+    ///
+    /// It is a disposable artifact left on public mainnet, so its most important property
+    /// is that it decays into safety when nobody is minding it: a beta locker's evacuation
+    /// hatch shuts by itself after 30 days, a pilot locker's never does. "Rehearse the
+    /// lineage you will deploy" is the right rule for `test/SkoopMigration.t.sol`, which
+    /// rehearses the pSKOOP pilot. It is the wrong rule here, and this stops the two being
+    /// conflated again later.
+    function test_microRehearsalUsesTheSelfClosingLineage() public view {
+        string memory src = vm.readFile("script/DeployMicroRehearsal.s.sol");
+        assertTrue(_contains(src, "contracts/beta/"),
+            "the micro rehearsal must use the beta lineage, whose hatch self-closes");
+        assertFalse(_contains(src, "contracts/pilot/"),
+            "the micro rehearsal must NOT use the pilot lineage - a throwaway with a hatch that never expires is a loaded gun left on mainnet");
+        // `new TokenFactoryPilot`, not the bare name. These checks are substring matches
+        // over source, so a bare name also matches the comment that explains why the pilot
+        // lineage is NOT used here — which is prose doing the opposite of what it says, and
+        // exactly the false positive that teaches people to weaken an assertion. Match the
+        // construction instead: that is the thing being forbidden.
+        assertFalse(_contains(src, "new TokenFactoryPilot"),
+            "the micro rehearsal must not deploy the pilot factory");
+        assertFalse(_contains(src, "new LockerDeployerPilot"),
+            "the micro rehearsal must not deploy the pilot locker deployer");
+        assertTrue(_contains(src, "new TokenFactoryBeta"),
+            "the micro rehearsal must deploy the beta factory");
+    }
+
     function _contains(string memory haystack, string memory needle) private pure returns (bool) {
         bytes memory h = bytes(haystack);
         bytes memory n = bytes(needle);

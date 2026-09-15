@@ -5,8 +5,8 @@ import "forge-std/Script.sol";
 import "../contracts/WindDownController.sol";
 import "../contracts/PunchCardRouter.sol";
 import "../contracts/deployers/SuiteDeployer.sol";
-import "../contracts/pilot/TokenFactoryPilot.sol";
-import "../contracts/pilot/LockerDeployerPilot.sol";
+import "../contracts/beta/TokenFactoryBeta.sol";
+import "../contracts/beta/LockerDeployerBeta.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title DeployMicroRehearsal — a ~$25 disposable network, start to finish, in one command
@@ -31,6 +31,21 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 ///      stops NEW registrations. A $25 throwaway in the real controller becomes the first
 ///      thing on the PunchCard network, for good. So this script always deploys its own
 ///      controller and offers no way to point at an existing one.
+///
+///      **Why the BETA lineage and not the pilot's.** The pSKOOP pilot uses
+///      `TokenFactoryPilot`, whose hatch never closes by itself, and the fork rehearsal in
+///      `test/SkoopMigration.t.sol` deploys that lineage precisely because it should
+///      rehearse the plan. This script is not rehearsing the pilot. It is testing live
+///      deploy mechanics — fresh controller, pool creation, approvals, quoting, fees, dapp
+///      wiring — and its most important property is different: it is a disposable artifact
+///      left on public mainnet, so if whoever runs it gets distracted it must **decay into
+///      safety**. A beta locker's hatch self-closes after 30 days. A pilot locker's stays
+///      open forever, which is correct for a pilot somebody is actively minding and wrong
+///      for a throwaway nobody is.
+///
+///          micro       disposable mechanical test    Beta       hatch self-closes
+///          pilot       live pSKOOP                   Pilot      hatch open until lockLP()
+///          production  merchants                     none       no hatch, ever
 ///
 ///      **Keys.** This broadcasts as two different signers, because the step most likely to
 ///      fail on launch day is the cross-wallet one: ownerWallet approves the factory, the
@@ -130,12 +145,12 @@ contract DeployMicroRehearsal is Script {
         vm.startBroadcast(keyA);
 
         SuiteDeployer       suite  = new SuiteDeployer();
-        LockerDeployerPilot locker = new LockerDeployerPilot();
+        LockerDeployerBeta  locker = new LockerDeployerBeta();
 
         address predictedFactory = vm.computeCreateAddress(A, vm.getNonce(A) + 1);
         WindDownController wdc = new WindDownController(A, predictedFactory);
 
-        TokenFactoryPilot factory = new TokenFactoryPilot(
+        TokenFactoryBeta factory = new TokenFactoryBeta(
             A,              // multisig — wallet A stands in, disposable
             A,              // deployer hot wallet
             address(wdc), posMgr, usdc, weth, oracle,
@@ -184,15 +199,16 @@ contract DeployMicroRehearsal is Script {
         console2.log("and no real merchant may ever be deployed against this factory.");
         console2.log("");
         console2.log("windDownController  ", address(wdc));
-        console2.log("tokenFactoryPilot   ", address(factory));
+        console2.log("tokenFactoryBeta    ", address(factory));
         console2.log("punchCardRouter     ", address(router));
         console2.log("suiteDeployer       ", address(suite));
-        console2.log("lockerDeployerPilot ", address(locker));
+        console2.log("lockerDeployerBeta  ", address(locker));
         console2.log("walletA (deployer)  ", A);
         console2.log("walletB (merchant)  ", B);
         console2.log("");
         console2.log("Read the merchant addresses from the MerchantDeployed events.");
         console2.log("When finished: evacuateLP() from wallet B recovers the seed and bricks each locker.");
+        console2.log("If you forget, the hatch closes by itself 30 days from deploy and the seed stays in.");
     }
 
     /// @dev The pilot's symbol was chosen so that two tokens on Base could be told apart.
