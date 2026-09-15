@@ -222,10 +222,28 @@ else.
 ```
 verify the real holder count (basescan token holders page — do not guess)
   → pick a snapshot block that has ALREADY PASSED, then announce
-  → pull the old SKOOP LP, recovering the capital
-  → deploy the new token through TokenFactory with that capital
+  → rehearse the cutover on a Base fork with the real seed amounts
+  → fund fresh wallets with $2,000 USDC + $1,000 of ETH
+  → deploy the new token through TokenFactoryPilot from those wallets
+  → move the old SKOOP LP out BY HAND, on your own schedule
+  → verify, then lockLP() when the pilot is proven
   → distribute to holders over the following months
 ```
+
+**Nothing automated touches KOKOS's existing deployment.** Decided 2026-09-15. The pilot
+launches from fresh wallets with fresh capital, and the old LP is moved manually rather than
+drained by a script that has to be handed the keys to live positions. That removes a whole
+class of risk — no automated path has authority over anything KOKOS already has — at the
+cost of the cutover step being unrehearsed by construction. Accepted: the mechanical risk in
+`decreaseLiquidity` + `collect` through the Uniswap UI is low and well-trodden. The risk that
+remains is **sequencing**, which no test was ever going to cover (see below).
+
+**Pilot factory, mainnet floors.** These are two separate dials and conflating them is the
+mistake this document keeps warning about. Clearing the $2,000 / $1,000 floors does *not*
+mean launching through the production factory — `TokenFactoryPilot` takes its floors as
+constructor arguments, so the fresh pilot gets the real liquidity depth AND the open-ended
+recovery hatch. The micro floors exist for the $20 mechanical rehearsal, where nobody
+trades. A live pilot with real customers uses real floors.
 
 **Snapshot retroactively.** Announcing a future block lets anyone buy SKOOP cheaply to farm
 the airdrop, and with a $720 pool a large share of circulating supply costs a few hundred
@@ -257,16 +275,95 @@ intent, so announce first and keep the gap between pulling and deploying short.
   Caveat: SKOOP's total supply is **886,355,705**, not the factory's 100,000,000. Any
   relaunch has to pick an exchange ratio and defend it. With $338 of public value at stake,
   generosity is cheaper than argument.
-- **The recovered capital is close, but the wrong shape.** The old pools hold **$720 USDC
-  + 0.76 WETH ≈ $2,598** against the $2,000 USDC / $1,000 ETH floors. The ETH side clears
-  with ~$878 to spare; the USDC side is short by $1,280. Rebalancing the ETH surplus into
-  USDC leaves roughly **$402 to top up** — a real number, not a blocker.
+- ~~**The recovered capital is close, but the wrong shape.**~~ **Moot as of 2026-09-15** —
+  the pilot is funded with fresh capital, not with the old pools. Recorded because the
+  measurement stands and explains why: the live pools hold **$720 USDC + 0.76 WETH**, so the
+  ETH side cleared its floor with ~$826 to spare while the USDC side was short $1,280.
+  Recycling that would have meant a top-up *and* handing a script authority over live
+  positions, to save roughly $1,290. Not worth it.
+
+  The pilot seeds **$2,000 USDC + $1,000 of ETH** — the floors exactly. Verified against a
+  live Base fork: $2,000.00 + $1,010.28 = **$3,010.28**, clears both.
+
+  The old LP still comes out eventually; it is now a manual step on its own schedule rather
+  than a dependency of the launch.
 - **This is what set the floors.** KOKOS being unable to meet its own minimum was the
   evidence that $5,000 was wrong, and it drove the move to $3,000 total weighted toward
   USDC (settled 2026-09-14, below). The minimums are **factory-level policy**, not
   per-merchant — they cannot be bent for one shop without bending for all.
 - **Distribution source.** Rewards escrow (fast, consumes reward budget) or treasury
   (90-day timelock, uses the merchant's own allocation). See below.
+
+### Gates before mainnet — both must clear
+
+Settled 2026-09-15 after the fork rehearsal. Everything downstream of these two is proven;
+these two are not.
+
+**Gate 1 — sequencing, not a test run.** ~~Run phase 1 against the real positions.~~
+Superseded 2026-09-15: the LP is moved by hand from fresh wallets, so there is no automated
+drain to rehearse. What that step still carries is unchanged and no test ever covered it —
+
+- **Announce before pulling.** Pulling the LP makes old SKOOP untradeable. A holder who
+  finds a drained pool with no prior announcement assumes the worst regardless of intent.
+- **Keep the gap short.** Between pulling and the new token being tradeable, there is
+  nothing for a holder to do and nothing for them to read except silence.
+- **Snapshot retroactively**, on a block already in the past. See above.
+
+`test_phase1_liveSkoopLiquidityIsRecoverable` is kept and still runs with
+`PC_SKOOP_LP_OWNER` set. It is now a **dry run for a human**, not a gate: whoever pulls those
+positions by hand can watch exactly what `decreaseLiquidity` + `collect` do on a fork first.
+
+**Gate 2 — real launch capital.** $2,000 USDC + $1,000 of ETH into fresh wallets. Rehearse
+the real numbers before the day:
+
+```
+PC_MIGRATION_USDC=2000000000 PC_MIGRATION_ETH=415000000000000000 \
+  forge test --match-path test/SkoopMigration.t.sol --fork-url https://mainnet.base.org -vv
+```
+
+The ETH side is sized in **wei**, not dollars, because the floor is USD-denominated against
+Chainlink and the wei that clears $1,000 moves with the price. Re-run this close to the day
+and read what phase 2 prints; a seed sized in dollars months earlier is how a deploy reverts
+on the morning it matters.
+
+**What the rehearsal already proves** (`test/SkoopMigration.t.sol`, 6 passing against a live
+Base fork):
+
+- the migrated suite deploys with allocations landing exactly — 45/30/15/10, factory drained
+- day zero pays no rewards and that is correct: `emitted()` accrues from deploy, so the POS
+  reverts with `"Emission limit"` for the first few minutes. **Brief the operator.** It will
+  look like a bricked kiosk on launch morning.
+- a real trade through live Uniswap generates collectable fees and the network fee reaches
+  PunchCard
+- `evacuateLP()` returns the seed and the full 27M reserve from a suite that had already
+  issued rewards and been traded against, then bricks the locker
+- **wind-down completes end to end — the first time it has ever been executed.** Freezes
+  land on `initiate`, the terminal gate refuses until the other three legs settle, 94.3M
+  burns. It is not on the operating path (every suite contract gates it behind
+  `onlyWindDown`, and their `notFrozen` checks read a local bool rather than calling out),
+  so a bug there could never have bricked day-to-day SKOOP — but it is a promise made to
+  merchants, and it now has evidence behind it.
+
+**What it does not prove.** Mechanism, not economics. It says nothing about whether 45M over
+1825 days is the right emission rate, what a reward should be worth, or whether drawer sizes
+match real kiosk traffic. See `docs/economics-review.md`, which is correct to call those
+unvalidated.
+
+### Vesting does not behave like KOKOS's — check before quoting a date
+
+Pinned by `test_phase3_vestingAndTreasuryOnTheLongClock`, because the live deployment is the
+obvious thing to reason from and it will mislead you:
+
+| | KOKOS `TeamVesting` (live) | PunchCard `VestingWallet` |
+|---|---|---|
+| accrues from | `startTimestamp` | `cliffTime` |
+| at the cliff | ~17% immediately claimable | **zero** |
+| fully vested | start + duration | start + cliff + duration — **day 1260, not 1080** |
+
+Same three words in the docs, different money. KOKOS's live contracts are a good
+*differential oracle* for the new ones, but they are different code — 295 lines against 332
+for the vault, 103 against 155 for vesting — so "KOKOS works" is not evidence about this
+bytecode.
 
 ### Migrating holders — use the rewards escrow, not an exception
 

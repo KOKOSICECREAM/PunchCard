@@ -76,7 +76,10 @@ contract LPLockerBeta is LPLocker {
 
     /// @notice True while liquidity can still be pulled. The dapp reads this to disclose
     ///         the state to buyers — an unlocked locker must never be presented as locked.
-    function evacuationOpen() public view returns (bool) {
+    /// @dev `virtual` for exactly one subclass: LPLockerPilot, which drops the deadline for
+    ///      KOKOS's own open-ended pilot. No merchant locker may override it — see the
+    ///      warning on that contract.
+    function evacuationOpen() public view virtual returns (bool) {
         return !lpPermanentlyLocked && block.timestamp < evacuationDeadline;
     }
 
