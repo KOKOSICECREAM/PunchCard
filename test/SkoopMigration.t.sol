@@ -64,13 +64,16 @@ contract SkoopMigrationTest is Test {
     address constant CUSTOMER  = address(0xC0FFEE);
     address constant TRADER    = address(0xDEAF);
 
-    /// @notice Fallback capital if the real LP is not drained, sized to the live pool.
-    /// @dev ROADMAP.md records a ~$720 pool as of 2026-09-14. Deliberately NOT rounded up
-    ///      to something comfortable — the whole point of phase 2 is to find out whether
-    ///      the real figure clears the real floors, and a flattering default would hide
-    ///      the answer.
-    uint256 constant ASSUMED_USDC_RECOVERED = 360 * 1e6;      // ~$360
-    uint256 constant ASSUMED_ETH_RECOVERED  = 0.145 ether;    // ~$360 at ~$2,475/ETH
+    /// @notice Fallback capital if the real LP is not drained.
+    /// @dev These are the figures ROADMAP.md records for the live pools, measured
+    ///      2026-09-14: $720 USDC and 0.76 WETH. They are NOT a 50/50 split of a "$720
+    ///      pool" — that phrasing appears earlier in the same document and means the USDC
+    ///      side alone. Getting that wrong understates the recovered capital by a factor
+    ///      of three and inverts the answer to phase 2, so the shape matters as much as
+    ///      the total: the ETH side clears its floor comfortably while the USDC side does
+    ///      not clear its own.
+    uint256 constant ASSUMED_USDC_RECOVERED = 720 * 1e6;      // $720
+    uint256 constant ASSUMED_ETH_RECOVERED  = 0.76 ether;     // ~$1,878 at ~$2,470/ETH
 
     // ── MAINNET POLICY FLOORS ────────────────────────────────────────────────
     uint256 constant MAINNET_USDC_FLOOR = 2_000 * 1e8;
