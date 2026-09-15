@@ -29,31 +29,55 @@ constant.
 
 ### The rehearsal contracts are a separate lineage
 
-The rehearsal deploys `TokenFactoryRehearsal` and `LockerDeployerRehearsal`, which produce
-lockers with a **temporary, self-expiring LP evacuation hatch**. Production contracts do
-not have one and must never gain one — the escape hatch exists because the first live
-deployment runs unaudited code, not because merchants should be able to pull liquidity.
+> **Renamed 2026-09-14.** `TokenFactoryRehearsal`, `LockerDeployerRehearsal`,
+> `LPLockerRehearsal` and `REHEARSAL_ONLY()` no longer exist — that lineage became the
+> **Beta** lineage in `47048e0`, and `base-mainnet-rehearsal.json` was never created. This
+> section named four things that were not there, in the one document somebody would follow
+> to run a live micro-launch. Corrected below.
 
-| | Production | Rehearsal |
-|---|---|---|
-| Contract | `TokenFactory` / `LPLocker` | `TokenFactoryRehearsal` / `LPLockerRehearsal` |
-| LP evacuation | **none, ever** | owner-only, ≤30 days, one-way |
-| Marker | `REHEARSAL_ONLY()` reverts | `REHEARSAL_ONLY()` returns `true` |
-| Config file | `base-mainnet.json` | `base-mainnet-rehearsal.json` |
-| Deploy script | `DeployNetwork.s.sol` | `DeployNetworkRehearsal.s.sol` |
+A rehearsal deploys `TokenFactoryBeta` and `LockerDeployerBeta`, which produce lockers with
+a **temporary, self-expiring LP evacuation hatch**. Production contracts do not have one and
+must never gain one — the escape hatch exists because the first live deployment runs
+unaudited code, not because merchants should be able to pull liquidity.
 
-**Why a separate factory at all,** when it is byte-identical logic: a rehearsal factory is
-just a `TokenFactory` constructed with the rehearsal locker deployer. That is a constructor
-argument — invisible on a block explorer. Someone reading the chain later would see
-"TokenFactory" with no way to know every merchant under it has evacuable LP. Configuration
-that silently changes a trust guarantee is the failure this codebase keeps producing, so
-the distinction is structural instead:
+| | Production | Rehearsal / Beta | Pilot |
+|---|---|---|---|
+| Contract | `TokenFactory` / `LPLocker` | `TokenFactoryBeta` / `LPLockerBeta` | `TokenFactoryPilot` / `LPLockerPilot` |
+| LP evacuation | **none, ever** | owner-only, ≤30 days, one-way | owner-only, **never expires**, one-way |
+| Marker | both revert | `HAS_LP_RECOVERY()` true | both true |
+| Deploy script | `DeployNetwork.s.sol` | `DeployNetworkBeta.s.sol` | — |
+
+**Why a separate factory at all,** when it is byte-identical logic: a beta factory is just a
+`TokenFactory` constructed with the beta locker deployer. That is a constructor argument —
+invisible on a block explorer. Someone reading the chain later would see "TokenFactory" with
+no way to know every merchant under it has evacuable LP. Configuration that silently changes
+a trust guarantee is the failure this codebase keeps producing, so the distinction is
+structural instead:
 
 ```bash
-cast call $FACTORY 'REHEARSAL_ONLY()(bool)' --rpc-url https://mainnet.base.org
-# reverts  -> production
-# true     -> rehearsal, evacuable LP, never onboard an outside merchant
+cast call $FACTORY 'HAS_LP_RECOVERY()(bool)'           # reverts -> production
+cast call $FACTORY 'HAS_UNLIMITED_LP_RECOVERY()(bool)' # true    -> pilot, hatch never expires
 ```
+
+### A rehearsal MUST use a throwaway controller
+
+The single rule that cannot be recovered from if broken.
+
+`WindDownController.register()` sets `_registered[token] = true` and **there is no function
+anywhere that clears it.** A merchant registered into a controller is on that network
+permanently — the router will quote and route it forever, and disabling the factory that
+created it changes nothing, because disabling only stops *new* registrations.
+
+So a $15 throwaway registered into the real controller is the first thing on the PunchCard
+network, for good. Not removable, not hideable, quotable by anyone who finds it.
+
+- [ ] The rehearsal deploys its **own** `WindDownController`, and the real network never
+      sees it. `DeployNetworkBeta.s.sol` demands `PC_CREATE_NEW_NETWORK` before it will
+      create one, and `DeploymentInvariants.t.sol` enforces that it keeps demanding it.
+- [ ] The rehearsal token gets a **throwaway symbol**. Not `pSKOOP`, not `SKOOP` — a second
+      token bearing the pilot's symbol reintroduces exactly the ambiguity the pilot symbol
+      was chosen to remove.
+- [ ] Record rehearsal addresses in their own file, **never** in `base-mainnet.json`.
 
 The rehearsal script also **refuses to run** with seed floors above $100, so it cannot be
 pointed at production-sized amounts.
@@ -82,10 +106,11 @@ So this leaves a dead `SuiteDeployer`, `LockerDeployer`, `WindDownController`,
 That is fine — it is the cost of the rehearsal — but it is a loaded gun. Someone reading
 the deploy record later must not point a real merchant at a factory with $5 floors.
 
-- [ ] Record every rehearsal address in `deploy/network/base-mainnet-rehearsal.json`,
-      **never** in `base-mainnet.json`
-- [ ] First key in that file is `"_WARNING": "REHEARSAL ONLY — $5 seed floors. Never
-      deploy a merchant against these addresses."`
+- [ ] Record every rehearsal address in a dedicated file — `deploy/network/` currently holds
+      only `base-mainnet.json` and `base-sepolia.json`, so create it — **never** in
+      `base-mainnet.json`
+- [ ] First key in that file is `"_WARNING": "REHEARSAL ONLY — $5 seed floors and a
+      THROWAWAY controller. Never deploy a merchant against these addresses."`
 - [ ] Do this in the **same commit** that records the addresses, not afterwards
 
 ### What this rehearsal does NOT exercise
@@ -207,11 +232,13 @@ cast call $ROUTER  'feeRate()(uint256)'           --rpc-url https://mainnet.base
 cast call $ROUTER  'windDownController()(address)' --rpc-url https://mainnet.base.org  # == $WIND_DOWN
 ```
 
-- [ ] `cast call $FACTORY 'REHEARSAL_ONLY()(bool)'` returns **true** — you are on the
-      rehearsal lineage, not production
+- [ ] `cast call $FACTORY 'HAS_LP_RECOVERY()(bool)'` returns **true** — you are on a
+      recovery lineage, not production
+- [ ] `cast call $FACTORY 'windDownController()(address)'` is the **throwaway** controller,
+      not the real one. Check this before every rehearsal deploy: registration is permanent
 - [ ] Factory floors read back as `500000000`, proving the units went in correctly
 - [ ] Router's controller matches the deployed controller
-- [ ] Addresses recorded in `base-mainnet-rehearsal.json` with the warning key
+- [ ] Addresses recorded in the dedicated rehearsal file with the warning key
 
 ## Step 3 — Deploy merchant A
 
