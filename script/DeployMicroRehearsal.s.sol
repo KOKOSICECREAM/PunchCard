@@ -70,6 +70,14 @@ contract DeployMicroRehearsal is Script {
 
     uint256 constant ROUTER_FEE_BPS = 30;
 
+    /// @notice ~$6 of ETH at $2,400, against a $5 floor.
+    /// @dev Headroom is the whole point of the number. The floor is USD-denominated and
+    ///      checked against Chainlink inside deploy(), so a seed sized to clear $5 exactly
+    ///      reverts on a 1% price move between funding the wallet and running the script.
+    ///      That is not a hypothetical margin for ETH. Overshoot; the surplus comes back
+    ///      out through evacuateLP() anyway.
+    uint256 constant DEFAULT_ETH_SEED = 0.0025 ether;
+
     struct Merchant {
         string  name;
         string  symbol;
@@ -116,14 +124,14 @@ contract DeployMicroRehearsal is Script {
             name:     vm.envOr("PC_MICRO_NAME_A",   string("PunchCard Micro A")),
             symbol:   vm.envOr("PC_MICRO_SYMBOL_A", string("PCMA")),
             usdcSeed: vm.envOr("PC_MICRO_USDC_A",   uint256(5 * 1e6)),
-            ethSeed:  vm.envOr("PC_MICRO_ETH_A",    uint256(0.0021 ether))
+            ethSeed:  vm.envOr("PC_MICRO_ETH_A",    uint256(DEFAULT_ETH_SEED))
         });
         if (two) {
             ms[1] = Merchant({
                 name:     vm.envOr("PC_MICRO_NAME_B",   string("PunchCard Micro B")),
                 symbol:   vm.envOr("PC_MICRO_SYMBOL_B", string("PCMB")),
                 usdcSeed: vm.envOr("PC_MICRO_USDC_B",   uint256(5 * 1e6)),
-                ethSeed:  vm.envOr("PC_MICRO_ETH_B",    uint256(0.0021 ether))
+                ethSeed:  vm.envOr("PC_MICRO_ETH_B",    uint256(DEFAULT_ETH_SEED))
             });
         }
 
@@ -140,6 +148,11 @@ contract DeployMicroRehearsal is Script {
         require(totalUsdc <= 100 * 1e6, "Total USDC seed above $100 - this is no longer a micro rehearsal");
         require(IERC20(usdc).balanceOf(B) >= totalUsdc, "Wallet B (merchant owner) does not hold enough USDC - deploy() pulls from ownerWallet, not from the deployer");
         require(A.balance >= totalEth, "Wallet A (deployer) does not hold enough ETH for the pool seeds plus gas");
+
+        // B never sends ETH, only the approve() — but an approve still costs gas, and a
+        // wallet funded with USDC and nothing else fails on its first transaction. Cheap to
+        // check here, annoying to diagnose halfway through a broadcast.
+        require(B.balance > 0, "Wallet B (merchant owner) has no ETH for gas - it broadcasts the USDC approval and cannot pay for it");
 
         // ── network, as wallet A ──────────────────────────────────────────────
         vm.startBroadcast(keyA);
