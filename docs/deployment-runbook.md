@@ -269,7 +269,7 @@ as possible.
 
 ## While the hatch is open
 
-- [ ] The dapp shows *"SKOOP pilot liquidity is currently recoverable"* on the Swap screen.
+- [ ] The dapp shows *"SKOOP pilot liquidity is not permanently locked yet"* on the Swap screen.
       Confirm it renders **before** announcing the pilot — `lpLockState()` reads the locker
       directly, so a misconfigured `windDownController` shows "status unavailable" rather
       than a false lock claim, but unavailable is not the message you want on day one.

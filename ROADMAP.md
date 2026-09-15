@@ -238,12 +238,12 @@ cost of the cutover step being unrehearsed by construction. Accepted: the mechan
 `decreaseLiquidity` + `collect` through the Uniswap UI is low and well-trodden. The risk that
 remains is **sequencing**, which no test was ever going to cover (see below).
 
-**Beta factory, mainnet floors.** These are two separate dials and conflating them is the
+**Pilot factory, mainnet floors.** These are two separate dials and conflating them is the
 mistake this document keeps warning about. Clearing the $2,000 / $1,000 floors does *not*
-mean launching through the production factory — `TokenFactoryBeta` takes its floors as
-constructor arguments, so KOKOS gets the real liquidity depth AND the 30-day recovery
-window. The micro floors exist for the $20 mechanical rehearsal, where nobody trades. SKOOP
-beta has actual customers, so it uses real floors.
+mean launching through the production factory — `TokenFactoryPilot` takes its floors as
+constructor arguments, so the fresh pilot gets the real liquidity depth AND the open-ended
+recovery hatch. The micro floors exist for the $20 mechanical rehearsal, where nobody
+trades. A live pilot with real customers uses real floors.
 
 **Snapshot retroactively.** Announcing a future block lets anyone buy SKOOP cheaply to farm
 the airdrop, and with a $720 pool a large share of circulating supply costs a few hundred

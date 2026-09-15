@@ -16,12 +16,19 @@ import "../contracts/deployers/SuiteDeployer.sol";
 import "../contracts/interfaces/ISwapRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @title SKOOP migration rehearsal — the real cutover, against live Base state
+/// @title SKOOP pilot rehearsal — the real launch, against live Base state
 ///
 /// @notice `ForkDeploy.t.sol` proves `deploy()` works. It says nothing about the operation
-///         that is actually frightening: pulling KOKOS's live SKOOP liquidity, relaunching
-///         through the beta factory with that exact capital, running the suite for a year
-///         of simulated time, and getting the money back out if something is wrong.
+///         that is actually frightening: standing up a real merchant through the pilot
+///         factory on the real seed, running the suite for a year of simulated time, and
+///         getting the money back out if something is wrong.
+///
+/// @dev **The plan this rehearses changed on 2026-09-15, and the file name is older than
+///      the plan.** It was a migration: drain KOKOS's live SKOOP positions and relaunch on
+///      that capital. It is now a fresh deployment — fresh token, fresh wallets, fresh seed
+///      — with nothing automated touching KOKOS's existing infrastructure, and the old LP
+///      moved by hand as a separate business step. Phase 1 survives as a dry run for
+///      whoever does that by hand; every other phase rehearses the fresh launch.
 ///
 ///         This is that rehearsal. It answers four questions, each as a pass/fail rather
 ///         than a judgement call:
@@ -95,7 +102,7 @@ contract SkoopMigrationTest is Test {
     bool forked;
 
     struct Suite {
-        TokenFactoryBeta   factory;
+        TokenFactoryPilot  factory;
         WindDownController wdc;
         address token;
         address escrow;
@@ -210,7 +217,7 @@ contract SkoopMigrationTest is Test {
         // this capital when it is short. The floors existing is not the same as the floors
         // binding, and only one of those protects anything.
         if (!clearsMainnet) {
-            TokenFactoryBeta strict = _newFactory(MAINNET_USDC_FLOOR, MAINNET_ETH_FLOOR);
+            TokenFactoryPilot strict = _newFactory(MAINNET_USDC_FLOOR, MAINNET_ETH_FLOOR);
             _fund(OWNER, usdcCapital, ethCapital);
             vm.prank(OWNER);
             IERC20(USDC).approve(address(strict), usdcCapital);
@@ -237,6 +244,8 @@ contract SkoopMigrationTest is Test {
 
         // ── the beta marker is queryable, so nobody has to trust a doc ──
         assertTrue(s.factory.HAS_LP_RECOVERY(), "factory advertises LP recovery");
+        assertTrue(s.factory.HAS_UNLIMITED_LP_RECOVERY(), "and that the hatch never expires - this is the PILOT lineage");
+        assertTrue(LPLockerPilot(s.locker).HAS_UNLIMITED_LP_RECOVERY(), "and the locker it produced is a pilot locker");
         assertTrue(LPLockerBeta(s.locker).evacuationOpen(), "hatch open at launch");
 
         // ── allocations landed exactly where the migration plan says ──
@@ -566,8 +575,15 @@ contract SkoopMigrationTest is Test {
         return (usdcCapital, ethCapital);
     }
 
-    /// Deploy the relaunched SKOOP through the beta factory, with floors set low enough
-    /// that the recovered capital is what is actually tested rather than the floor.
+    /// Deploy the pilot suite through TokenFactoryPilot — the lineage that will actually be
+    /// deployed — with floors set to 1 so the configured seed is what is tested rather than
+    /// the floor. Phase 2 is where the floors themselves are checked.
+    ///
+    /// @dev This used to build a TokenFactoryBeta. The two are logic-identical and differ
+    ///      only in which locker deployer they hold, so every assertion here passed either
+    ///      way — which is precisely why it was worth fixing. A rehearsal that deploys a
+    ///      different lineage than the plan deploys is not rehearsing the plan, and the
+    ///      difference it silently skipped is the one guarantee the pilot exists to change.
     function _deployMigratedSuite() internal returns (Suite memory s) {
         (uint256 usdcCapital, uint256 ethCapital) = _migrationCapital();
         require(usdcCapital > 0 && ethCapital > 0, "no capital to migrate");
@@ -598,12 +614,15 @@ contract SkoopMigrationTest is Test {
         require(s.token != address(0), "MerchantDeployed not emitted");
     }
 
-    function _newFactory(uint256 usdcFloor, uint256 ethFloor) internal returns (TokenFactoryBeta f) {
-        address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
+    /// @dev Returns the pilot factory. TokenFactoryPilot extends TokenFactoryBeta, so the
+    ///      beta marker still answers and callers typed against the parent keep working.
+    function _newFactory(uint256 usdcFloor, uint256 ethFloor) internal returns (TokenFactoryPilot f) {
+        address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 2);
         WindDownController w = new WindDownController(MULTISIG, predicted);
-        f = new TokenFactoryBeta(
+        LockerDeployerPilot ld = new LockerDeployerPilot();
+        f = new TokenFactoryPilot(
             MULTISIG, address(this), address(w), POSITION_MANAGER, USDC, WETH,
-            ETH_USD_FEED, FEE_RECIP, address(suiteDeployer), address(lockerDeployer),
+            ETH_USD_FEED, FEE_RECIP, address(suiteDeployer), address(ld),
             usdcFloor, ethFloor
         );
         require(address(f) == predicted, "factory did not land where predicted");
