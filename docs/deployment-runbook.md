@@ -203,6 +203,60 @@ WindDownController, and emit `MerchantDeployed`.
 
 ---
 
+# Part 3 — The SKOOP pilot (once, and never again)
+
+KOKOS deploys through `TokenFactoryPilot`, whose lockers have an LP hatch that **never
+closes by itself**. No merchant may use this path. See `docs/staged-rollout.md`.
+
+## The 48-hour clock is the whole difficulty
+
+`proposeFactory` / `executeFactory` are both multisig, with `FACTORY_TIMELOCK = 48 hours`
+between them. That applies to **authorising and to disabling**, so the pilot factory is
+reachable for at least 48 hours after you finish with it. Plan the calendar first; the
+sequence below has two unavoidable two-day waits in it.
+
+```
+day 0   multisig: proposeFactory(TokenFactoryPilot, true)
+day 2   multisig: executeFactory(TokenFactoryPilot)          ← path opens
+day 2   deployer: TokenFactoryPilot.deploy(SKOOP)            ← do this the same day
+day 2   multisig: proposeFactory(TokenFactoryPilot, false)   ← immediately, same session
+day 4   multisig: executeFactory(TokenFactoryPilot)          ← path closes
+later   owner:    LPLockerPilot.lockLP()                     ← when the pilot is proven
+```
+
+- [ ] **Deploy and propose-disable in the same session.** The gap between the path opening
+      and the disable proposal is the only window in which a second pilot merchant could be
+      created. Make it minutes, not days. Nothing enforces this — it is a habit, which is
+      why it is written down.
+- [ ] **Disabling does not orphan SKOOP.** `executeFactory(addr, false)` stops the factory
+      registering *new* merchants. SKOOP keeps working, keeps routing, keeps its hatch.
+- [ ] **The hatch is unaffected by any of this.** Disabling the factory does not lock the
+      LP. Only `lockLP()` does, and only when you decide.
+
+## While the hatch is open
+
+- [ ] The dapp shows *"SKOOP pilot liquidity is currently recoverable"* on the Swap screen.
+      Confirm it renders **before** announcing the pilot — `lpLockState()` reads the locker
+      directly, so a misconfigured `windDownController` shows "status unavailable" rather
+      than a false lock claim, but unavailable is not the message you want on day one.
+- [ ] No PunchCard surface says SKOOP's liquidity is locked. Not the site, not the deck,
+      not a reply to a holder. It is not locked and there is no date on which it becomes
+      locked.
+- [ ] Re-check the ETH floor if the gap between pulling the old LP and deploying runs long.
+      The floor is USD-denominated against the Chainlink feed, so 0.762 WETH clears $1,000
+      only above roughly $1,312/ETH. `deploy()` reverts rather than underfunding, so the
+      failure is safe — just badly timed.
+
+## Closing it
+
+- [ ] `lockLP()` is one-way and callable by the owner wallet or the controller. After it,
+      `LPLockerPilot` behaves exactly as production does.
+- [ ] Confirm the dapp flips to *"SKOOP liquidity is permanently locked."* That sentence is
+      a claim; it may only appear once the contract says so.
+- [ ] Only then may the strong liquidity language be used anywhere else.
+
+---
+
 ## Pre-flight checklist
 
 - [ ] `teamWallet` is a hardware wallet, verified on-chain
@@ -215,3 +269,6 @@ WindDownController, and emit `MerchantDeployed`.
 - [ ] Chainlink feed is live and fresh — `deploy()` reverts on an answer over an hour old
 - [ ] `perTxFloor` / `perTxMax` inside `DAILY_CAP`
 - [ ] Merchant JSON committed to `deploy/merchants/`
+- [ ] Factory is the intended lineage — `HAS_UNLIMITED_LP_RECOVERY()` must **revert**
+      for any merchant deployment. It answers only on `TokenFactoryPilot`, which is
+      for SKOOP alone.
