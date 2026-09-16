@@ -27,7 +27,8 @@ contract VestingWalletTest is Test {
 
     function setUp() public {
         token = new Tok();
-        v = new VestingWallet(address(token), TEAM, WDC, CLIFF, VEST);
+        v = new VestingWallet(address(token), TEAM, WDC, CLIFF, VEST, address(this));
+        v.activate();
         token.mint(address(v), ALLOC);
         start = block.timestamp;
     }
@@ -112,7 +113,8 @@ contract TreasuryTimelockTest is Test {
 
     function setUp() public {
         token = new Tok();
-        t = new TreasuryTimelock(address(token), OWNER, WDC, DELAY);
+        t = new TreasuryTimelock(address(token), OWNER, WDC, DELAY, address(this));
+        t.activate();
         token.mint(address(t), ALLOC);
     }
 

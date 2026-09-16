@@ -99,15 +99,15 @@ contract GasCeilingTest is Test {
         emit log_named_uint("1. deployToken   ", g - gasleft());
 
         g = gasleft();
-        suiteDeployer.deployVesting(token, OWNER, address(0xDD), 180 days, 1080 days);
+        suiteDeployer.deployVesting(token, OWNER, address(0xDD), 180 days, 1080 days, address(this));
         emit log_named_uint("2. deployVesting ", g - gasleft());
 
         g = gasleft();
-        suiteDeployer.deployTreasury(token, OWNER, address(0xDD), 90 days);
+        suiteDeployer.deployTreasury(token, OWNER, address(0xDD), 90 days, address(this));
         emit log_named_uint("3. deployTreasury", g - gasleft());
 
         g = gasleft();
-        suiteDeployer.deployEscrow(token, OWNER, OWNER, address(0xDD), 45_000_000 * 1e6, 1e6, 20_000 * 1e6);
+        suiteDeployer.deployEscrow(token, OWNER, OWNER, address(0xDD), 45_000_000 * 1e6, 1e6, 20_000 * 1e6, address(this));
         emit log_named_uint("4. deployEscrow  ", g - gasleft());
 
         g = gasleft();

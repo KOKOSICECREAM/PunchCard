@@ -11,6 +11,7 @@ import "./interfaces/INonfungiblePositionManager.sol";
 import "./interfaces/IWETH.sol";
 import "./interfaces/IEthUsdOracle.sol";
 import "./libraries/LaunchPricing.sol";
+import "./Activatable.sol";
 
 /// @title TokenFactory
 /// @notice Deploys full PunchCard merchant suite in a single transaction.
@@ -298,9 +299,9 @@ contract TokenFactory {
             tokenAddr = sd.deployToken(p.name, p.symbol, TOTAL_SUPPLY, address(this), p.ipfsHash);
             token     = IERC20(tokenAddr);
 
-            vesting  = sd.deployVesting(tokenAddr, p.teamWallet, windDownController, CLIFF_DURATION, VEST_DURATION);
-            treasury = sd.deployTreasury(tokenAddr, p.ownerWallet, windDownController, TIMELOCK_DURATION);
-            escrow   = sd.deployEscrow(tokenAddr, p.operator, p.ownerWallet, windDownController, REWARDS_ALLOC, p.perTxFloor, p.perTxMax);
+            vesting  = sd.deployVesting(tokenAddr, p.teamWallet, windDownController, CLIFF_DURATION, VEST_DURATION, address(this));
+            treasury = sd.deployTreasury(tokenAddr, p.ownerWallet, windDownController, TIMELOCK_DURATION, address(this));
+            escrow   = sd.deployEscrow(tokenAddr, p.operator, p.ownerWallet, windDownController, REWARDS_ALLOC, p.perTxFloor, p.perTxMax, address(this));
 
             // `factory` is this contract, so initializeLP() below passes onlyFactory.
             locker = ILockerDeployer(lockerDeployer).deployLocker(
@@ -452,7 +453,15 @@ contract TokenFactory {
 
         ILPLocker(locker).initializeLP(usdcTokenId, ethTokenId, p.usdcFeeTier, p.ethFeeTier);
 
-        // ── STEP 11: Register suite ───────────────────────────────────────────
+        // ── STEP 11: Activate, then register ──────────────────────────────────
+        // The suite contracts are built inert and every schedule in them starts here. In
+        // this atomic factory that is the same instant as construction, so nothing about a
+        // merchant deployed through deploy() changes. It matters for the staged path,
+        // where construction happens in an earlier transaction: see Activatable.
+
+        IActivatable(escrow).activate();
+        IActivatable(vesting).activate();
+        IActivatable(treasury).activate();
 
         IWindDownController(windDownController).register(
             tokenAddr,

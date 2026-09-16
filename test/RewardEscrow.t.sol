@@ -26,7 +26,8 @@ contract RewardEscrowTest is Test {
 
     function setUp() public {
         token  = new MockToken();
-        escrow = new RewardEscrow(address(token), KIOSK_1, OWNER, WINDDOWN, ALLOC, 1e6, 20_000 * 1e6);
+        escrow = new RewardEscrow(address(token), KIOSK_1, OWNER, WINDDOWN, ALLOC, 1e6, 20_000 * 1e6, address(this));
+        escrow.activate();
         token.mint(address(escrow), ALLOC);
         vm.warp(block.timestamp + 60 days);   // let some emission accrue
     }

@@ -97,9 +97,10 @@ contract WindDownTest is Test {
         pm = new MockPM();
         wdc = new WindDownController(MULTISIG, FACTORY);
 
-        escrow   = new RewardEscrow(address(token), OP, OWNER, address(wdc), REWARDS, 1e6, 20_000*1e6);
-        vesting  = new VestingWallet(address(token), TEAM, address(wdc), 180 days, 1080 days);
-        treasury = new TreasuryTimelock(address(token), OWNER, address(wdc), 90 days);
+        escrow   = new RewardEscrow(address(token), OP, OWNER, address(wdc), REWARDS, 1e6, 20_000*1e6, address(this));
+        vesting  = new VestingWallet(address(token), TEAM, address(wdc), 180 days, 1080 days, address(this));
+        treasury = new TreasuryTimelock(address(token), OWNER, address(wdc), 90 days, address(this));
+        escrow.activate(); vesting.activate(); treasury.activate();
         locker   = new LPLocker(address(token), OWNER, address(wdc), address(pm), FACTORY,
                                 address(usdc), address(weth), PCFEE);
 
@@ -285,9 +286,10 @@ contract WindDownTest is Test {
     /// otherwise an unused merchant could brick at the LP gate forever.
     function test_windDownCompletesOnAnEmptySuite() public {
         Tok t2 = new Tok("EMPTY");
-        RewardEscrow e2  = new RewardEscrow(address(t2), OP, OWNER, address(wdc), REWARDS, 1e6, 20_000*1e6);
-        VestingWallet v2 = new VestingWallet(address(t2), TEAM, address(wdc), 180 days, 1080 days);
-        TreasuryTimelock r2 = new TreasuryTimelock(address(t2), OWNER, address(wdc), 90 days);
+        RewardEscrow e2  = new RewardEscrow(address(t2), OP, OWNER, address(wdc), REWARDS, 1e6, 20_000*1e6, address(this));
+        VestingWallet v2 = new VestingWallet(address(t2), TEAM, address(wdc), 180 days, 1080 days, address(this));
+        TreasuryTimelock r2 = new TreasuryTimelock(address(t2), OWNER, address(wdc), 90 days, address(this));
+        e2.activate(); v2.activate(); r2.activate();
         LPLocker l2 = new LPLocker(address(t2), OWNER, address(wdc), address(pm), FACTORY,
                                    address(usdc), address(weth), PCFEE);
         pm.setPos(3, address(t2), address(usdc), 0);   // zero liquidity
