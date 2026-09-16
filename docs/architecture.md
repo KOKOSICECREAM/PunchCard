@@ -43,9 +43,9 @@ Identical for every merchant — set as `constant` in `TokenFactory`, not parame
 | `MIN_ETH_SEED_USD` | $1,000 floor — constructor arg, 8dp |
 | `LP_RESERVE` | 27,000,000 held for merchant-controlled release |
 | `DAILY_CAP` | 500,000 tokens/day |
-| `CLIFF_DURATION` | 180 days |
-| *fully vested at* | *day 1,260 (cliff + duration)* |
-| `VEST_DURATION` | 1,080 days |
+| `CLIFF_DURATION` | 30 days |
+| *fully vested at* | *day 760 (cliff + duration)* |
+| `VEST_DURATION` | 730 days |
 | `TIMELOCK_DURATION` | 90 days |
 | `WIND_DOWN_DURATION` | 365 days |
 
@@ -68,10 +68,10 @@ signer). The merchant (`ownerWallet`) can tune `perTxMax` and `lowThreshold` but
 withdraw. All addresses immutable after deploy.
 
 ### VestingWallet — 15%, the team allocation
-Linear vesting: nothing for 180 days, then linear over the following 1,080 — **fully vested
-at day 1,260**, about 3.45 years. `vestingEnd = start + cliff + duration`, so the schedule is
-continuous with no jump at the end. Worth stating precisely, because "180-day cliff,
-1,080-day duration" reads as if it completes at day 1,080. `teamWallet` is **immutable forever —
+Linear vesting: nothing for 30 days, then linear over the following 730 — **fully vested
+at day 760**, about 2.08 years. `vestingEnd = activation + cliff + duration`, so the schedule is
+continuous with no jump at the end. Worth stating precisely, because "30-day cliff,
+730-day duration" reads as if it completes at day 730. `teamWallet` is **immutable forever —
 there is no update function**, so getting it right at deploy time matters more than any
 other parameter.
 

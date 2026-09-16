@@ -241,7 +241,7 @@ WindDownController, and emit `MerchantDeployed`.
 - [ ] POS signs reward distributions as `operator`
 - [ ] Customer dapp reads the token via the factory's `MerchantDeployed` event
 - [ ] Owner dashboard points at the escrow, treasury and LP locker
-- [ ] Merchant briefed on: the 90-day treasury delay, the 180-day team cliff, and what
+- [ ] Merchant briefed on: the 90-day treasury delay, the 30-day team cliff, and what
       wind-down means
 
 ---

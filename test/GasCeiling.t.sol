@@ -99,7 +99,7 @@ contract GasCeilingTest is Test {
         emit log_named_uint("1. deployToken   ", g - gasleft());
 
         g = gasleft();
-        suiteDeployer.deployVesting(token, OWNER, address(0xDD), 180 days, 1080 days, address(this));
+        suiteDeployer.deployVesting(token, OWNER, address(0xDD), 30 days, 730 days, address(this));
         emit log_named_uint("2. deployVesting ", g - gasleft());
 
         g = gasleft();

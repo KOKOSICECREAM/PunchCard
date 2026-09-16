@@ -86,8 +86,21 @@ contract TokenFactory {
     uint256 public constant EMISSION_PER_DAY  = REWARDS_ALLOC / EMISSION_DAYS;
     uint256 public constant MAX_DRAWER_DAYS   = 14;
     uint256 public constant MAX_PER_TX        = EMISSION_PER_DAY * MAX_DRAWER_DAYS;
-    uint256 public constant CLIFF_DURATION    = 180 days;
-    uint256 public constant VEST_DURATION     = 1080 days;
+    /// @notice Team vesting: a 30-day cliff, then linear over 730 days.
+    /// @dev Changed 2026-09-15, from 180 + 1080. The old curve was a long-term lockup; the
+    ///      intent here is launch protection — a short cliff that stops an immediate dump,
+    ///      then a steady two-year release. Full unlock at day 760 rather than day 1260.
+    ///
+    ///      The SHAPE is deliberately not KOKOS's. Its live TeamVesting accrues from the
+    ///      start timestamp and uses the cliff only to gate claiming, so 12.3% is claimable
+    ///      the instant the cliff passes. `VestingWallet` starts accrual AT the cliff, so
+    ///      nothing at all is claimable on day 30. Same two words, different money.
+    ///
+    ///      `constant`, so this is the schedule for every merchant on the network and not a
+    ///      term pSKOOP negotiated. Changing it was clean only because no merchant had
+    ///      launched yet.
+    uint256 public constant CLIFF_DURATION    = 30 days;
+    uint256 public constant VEST_DURATION     = 730 days;
     uint256 public constant TIMELOCK_DURATION = 90 days;
 
     int24 private constant MIN_TICK = -887272;

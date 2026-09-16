@@ -42,7 +42,7 @@ contract ActivationTest is Test {
     function setUp() public {
         token    = new ATok();
         escrow   = new RewardEscrow(address(token), OP, OWNER, WDC, REWARDS, 1e6, 20_000 * 1e6, address(this));
-        vesting  = new VestingWallet(address(token), TEAM, WDC, 180 days, 1080 days, address(this));
+        vesting  = new VestingWallet(address(token), TEAM, WDC, 30 days, 730 days, address(this));
         treasury = new TreasuryTimelock(address(token), OWNER, WDC, 90 days, address(this));
 
         token.mint(address(escrow),   REWARDS);
@@ -109,9 +109,15 @@ contract ActivationTest is Test {
         assertEq(escrow.emitted(),      0, "emission starts at activation, not construction");
         assertEq(escrow.spendable(),    0, "so nothing is spendable on day one");
         assertEq(vesting.totalVested(), 0, "vesting likewise");
-        assertEq(vesting.vestingStart(), block.timestamp, "vesting starts now");
-        assertEq(vesting.cliffTime(), block.timestamp + 180 days, "full cliff still ahead");
-        assertEq(vesting.vestingEnd(), block.timestamp + 1260 days, "full schedule still ahead");
+        // Assert against the contract's own start, not against `block.timestamp + 30 days`.
+        // The warp above uses that exact expression, and under via_ir the compiler folds two
+        // identical block.timestamp reads into one — so the assertion would compare the real
+        // cliff against a PRE-warp value. It only shows when the two expressions match
+        // textually, which is why this passed at 180 days and broke at 30.
+        uint256 start = vesting.vestingStart();
+        assertEq(start, vm.getBlockTimestamp(), "vesting starts now");
+        assertEq(vesting.cliffTime(), start + 30 days,  "full cliff still ahead");
+        assertEq(vesting.vestingEnd(), start + 760 days, "full schedule still ahead");
     }
 
     function test_schedulesRunNormallyOnceActivated() public {
@@ -127,14 +133,22 @@ contract ActivationTest is Test {
         escrow.distributeReward(address(0xCAFE), 1_000 * 1e6);
         assertEq(token.balanceOf(address(0xCAFE)), 1_000 * 1e6, "kiosk works once live");
 
-        // Cliff measured from activation: nothing at 179 days after going live.
-        vm.warp(live + 179 days);
+        // Cliff measured from activation: nothing at 29 days after going live.
+        vm.warp(vesting.cliffTime() - 1 days);
         vesting.release();
-        assertEq(token.balanceOf(TEAM), 0, "still pre-cliff 179 days after going live");
+        assertEq(token.balanceOf(TEAM), 0, "still pre-cliff the day before it lands");
 
-        vm.warp(vesting.cliffTime() + 540 days);
+        // Zero AT the cliff too — accrual starts there, it does not unlock a chunk.
+        vm.warp(vesting.cliffTime());
+        assertEq(vesting.totalVested(), 0, "nothing unlocks at the cliff itself");
+
+        vm.warp(vesting.cliffTime() + 365 days);
         vesting.release();
-        assertApproxEqRel(token.balanceOf(TEAM), TEAM_AL / 2, 0.001e18, "half vested at the midpoint");
+        assertApproxEqRel(token.balanceOf(TEAM), TEAM_AL / 2, 0.001e18, "half vested at the midpoint of 730 days");
+
+        vm.warp(vesting.vestingEnd());
+        vesting.release();
+        assertEq(token.balanceOf(TEAM), TEAM_AL, "fully vested at day 760");
     }
 
     // ── activation is once, and factory-only ──────────────────────────────────

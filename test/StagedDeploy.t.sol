@@ -148,7 +148,7 @@ contract StagedDeployTest is Test {
         assertTrue(RewardEscrow(escrow).isActivated(),   "escrow live");
         assertTrue(VestingWallet(vesting).isActivated(), "vesting live");
         assertTrue(LPLockerBeta(locker).isActivated(),   "locker live");
-        assertEq(VestingWallet(vesting).cliffTime(), block.timestamp + 180 days, "full cliff ahead");
+        assertEq(VestingWallet(vesting).cliffTime(), block.timestamp + 30 days, "full cliff ahead");
         assertEq(LPLockerBeta(locker).evacuationDeadline(), block.timestamp + 30 days, "full hatch ahead");
         assertEq(RewardEscrow(escrow).emitted(), 0, "no emission accrued before going live");
     }

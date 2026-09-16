@@ -241,7 +241,7 @@ contract StagedNetworkRehearsalTest is Test {
 
         // clocks start here, all at one instant
         assertEq(RewardEscrow(escrow).emissionStart(), liveAt, "emission starts at activation");
-        assertEq(VestingWallet(vesting).cliffTime(), liveAt + 180 days, "full cliff ahead");
+        assertEq(VestingWallet(vesting).cliffTime(), liveAt + 30 days, "full cliff ahead");
         assertEq(LPLockerPilot(locker).evacuationExpiresAt(), type(uint256).max, "pilot hatch never expires");
         assertTrue(LPLockerPilot(locker).evacuationOpen(), "and is open");
 

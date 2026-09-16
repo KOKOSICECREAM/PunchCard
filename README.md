@@ -8,7 +8,7 @@ between any two merchant tokens.
 **Site:** [punchcard.club](https://punchcard.club)
 
 **The premise is uniformity.** Every merchant gets byte-identical contracts and identical
-terms — the same 45/30/15/10 split, the same 180-day cliff, the same 90-day treasury delay,
+terms — the same 45/30/15/10 split, the same 30-day cliff, the same 90-day treasury delay,
 the same five-year emission schedule. All of it is `constant` in the contracts, not a
 parameter, so terms
 cannot be negotiated even if someone wanted to. That is what makes the customer promise
@@ -63,7 +63,7 @@ transactions of 6.7M / 10.5M / 0.6M.
 ├── contracts/
 │   ├── MerchantToken.sol             the merchant's ERC-20 (one per merchant)
 │   ├── RewardEscrow.sol               45% — 5yr emission + per-kiosk drawers
-│   ├── VestingWallet.sol              15% — team, 180d cliff / 1080d linear
+│   ├── VestingWallet.sol              15% — team, 30d cliff / 730d linear
 │   ├── TreasuryTimelock.sol           10% — merchant capital, 90d delay
 │   ├── LPLocker.sol                   30% — dual Uniswap positions + fee collection
 │   ├── TokenFactory.sol               orchestrates a merchant deployment
@@ -113,7 +113,7 @@ to close the record.
 
 ### Clocks start at activation, not construction
 
-The escrow's five-year emission, the 180-day team cliff, the treasury clock and the beta LP
+The escrow's five-year emission, the 30-day team cliff, the treasury clock and the beta LP
 recovery window all begin when the merchant **goes live**. Under the atomic factory those
 were the same instant as construction, so nobody had to decide it. Staged, they are not: a
 suite built on Monday and activated on Friday would otherwise open with four days of
@@ -174,7 +174,7 @@ Two consequences worth holding in view:
 |---|---|---|
 | Rewards | 45,000,000 | `RewardEscrow`, emitted over 5 years, spent through per-kiosk drawers |
 | Liquidity | 30,000,000 | `LPLocker` — 3M seeds the pools, 27M reserve |
-| Team | 15,000,000 | `VestingWallet`, 180d cliff then linear — fully vested day 1,260 |
+| Team | 15,000,000 | `VestingWallet`, 30d cliff then linear — fully vested day 760 |
 | Treasury | 10,000,000 | `TreasuryTimelock`, 90d delay per release |
 
 100,000,000 fixed supply, 6 decimals, no mint function.

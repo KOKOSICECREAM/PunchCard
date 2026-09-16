@@ -20,7 +20,7 @@ contract VestingWalletTest is Test {
     address constant RAND = address(0x4A4D);
 
     uint256 constant ALLOC = 15_000_000 * 1e6;
-    uint256 constant CLIFF = 180 days;
+    uint256 constant CLIFF = 30 days;
     uint256 constant VEST  = 1080 days;
 
     uint256 start;

@@ -118,7 +118,7 @@ All merchants use the same economic terms by PunchCard POLICY and deployment che
 LP is recoverable by the merchant for up to 30 days after launch, then permanently locked.
 ```
 
-- The 45/30/15/10 split, 180-day cliff, 90-day treasury delay and daily cap **are**
+- The 45/30/15/10 split, 30-day cliff, 90-day treasury delay and daily cap **are**
   contractual — they are `constant` in the factory and cannot be negotiated.
 - What is *not* contractual in beta is the LP lock. It becomes contractual when the window
   closes, either by `lockLP()` or by expiry.
