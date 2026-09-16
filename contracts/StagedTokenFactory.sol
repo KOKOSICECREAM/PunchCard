@@ -268,13 +268,12 @@ contract StagedTokenFactory {
             address(this), USDC, WETH, punchcardFeeRecipient
         );
 
-        token.safeTransfer(vesting,  TEAM_ALLOC);
-        token.safeTransfer(treasury, TREASURY_ALLOC);
-        token.safeTransfer(escrow,   REWARDS_ALLOC);
+        _distributeAllocations(token, escrow, vesting, treasury, p.ownerWallet);
 
-        // The 30% LP allocation stays here until activation, alongside the LP positions
-        // stage 2 will mint. Per-token balances, so concurrent stagings cannot commingle.
-        assert(token.balanceOf(address(this)) == LP_ALLOC);
+        // Whatever the lineage did with the supply, none of it may be left unaccounted for.
+        assert(token.balanceOf(address(this))
+             + token.balanceOf(escrow) + token.balanceOf(vesting)
+             + token.balanceOf(treasury) + token.balanceOf(p.ownerWallet) == TOTAL_SUPPLY);
 
         suites[tokenAddr] = MerchantSuite({
             stage:       Stage.Staged,
@@ -298,6 +297,37 @@ contract StagedTokenFactory {
             tokenAddr, p.ownerWallet, p.teamWallet, p.operator,
             escrow, vesting, treasury, locker, p.ipfsHash, block.timestamp
         );
+    }
+
+    /// @dev Where stage 1 puts the supply. Overridable for exactly one reason, and the
+    ///      override lives in `StagedTokenFactoryPilot`.
+    ///
+    ///      The default is atomic: 45/15/10 straight into the suite contracts, the factory
+    ///      keeping the 30% LP share. That is right for a merchant, who should not have to
+    ///      make three transfers correctly and whose programme should be funded the moment
+    ///      it is assembled.
+    ///
+    ///      It is wrong for a first launch of unaudited code. Putting 70% of supply into
+    ///      three contracts nobody has exercised, in the same transaction that creates them,
+    ///      means the first test of those contracts happens with everything already inside.
+    ///      The pilot mints to the merchant instead so they can fund each contract by hand
+    ///      and test as they go.
+    ///
+    ///      **Neither path weakens the guarantee**, because `activateMerchant` checks the
+    ///      final balances before it registers anything. A suite funded by hand and a suite
+    ///      funded atomically are indistinguishable by then, or activation refuses.
+    function _distributeAllocations(
+        IERC20  token,
+        address escrow,
+        address vesting,
+        address treasury,
+        address /* ownerWallet */
+    ) internal virtual {
+        token.safeTransfer(vesting,  TEAM_ALLOC);
+        token.safeTransfer(treasury, TREASURY_ALLOC);
+        token.safeTransfer(escrow,   REWARDS_ALLOC);
+        // The 30% LP share stays here until activation, alongside the positions stage 2
+        // mints. Per-token balances, so concurrent stagings cannot commingle.
     }
 
     // ── STAGE 2 ───────────────────────────────────────────────────────────────
@@ -328,6 +358,17 @@ contract StagedTokenFactory {
 
         IERC20(USDC).safeTransferFrom(s.ownerWallet, address(this), f.usdcPairAmount);
         IWETH(WETH).deposit{value: f.ethPairAmount}();
+
+        // The LP share may be here already (atomic distribution) or with the merchant (the
+        // pilot's hand-funded path). Pull whatever is missing, exactly like the USDC seed —
+        // the merchant approves it, and the factory never holds more than it needs.
+        {
+            uint256 held = IERC20(f.token).balanceOf(address(this));
+            if (held < LP_ALLOC) {
+                IERC20(f.token).safeTransferFrom(s.ownerWallet, address(this), LP_ALLOC - held);
+            }
+            require(IERC20(f.token).balanceOf(address(this)) == LP_ALLOC, "LP allocation not assembled");
+        }
 
         uint256 launchTokensUsdc;
         uint256 launchTokensEth;

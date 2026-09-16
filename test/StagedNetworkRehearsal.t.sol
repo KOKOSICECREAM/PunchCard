@@ -181,7 +181,34 @@ contract StagedNetworkRehearsalTest is Test {
         }));
         vm.stopPrank();
 
-        // ── 3. the merchant approves ─────────────────────────────────────────
+        // ── 2b. the whole supply is with the MERCHANT, not in the suite ──────
+        // The pilot lineage mints to the owner so each contract can be funded and tested
+        // one at a time, rather than the first test of an unaudited escrow happening with
+        // 45M already inside it.
+        assertEq(IERC20(token).balanceOf(OWNER), 100_000_000 * 1e6, "whole supply with the merchant");
+        assertEq(IERC20(token).balanceOf(escrow),   0, "escrow starts empty");
+        assertEq(IERC20(token).balanceOf(vesting),  0, "vesting starts empty");
+        assertEq(IERC20(token).balanceOf(treasury), 0, "treasury starts empty");
+
+        // Activation must refuse an unfunded suite. This is what keeps hand-funding from
+        // weakening what registration means.
+        //
+        // Called directly rather than through the script: a reverting script leaves its
+        // vm.startBroadcast open, and every later vm.prank in this test then fails with
+        // "cannot prank for a broadcasted transaction" — an error about the harness that
+        // reads like an error about the contract.
+        vm.expectRevert("Not funded");
+        f.activateMerchant(token);
+
+        // ── 3. the merchant funds each contract by hand, testing as they go ──
+        vm.startPrank(OWNER);
+        IERC20(token).transfer(escrow,   45_000_000 * 1e6);
+        IERC20(token).transfer(vesting,  15_000_000 * 1e6);
+        IERC20(token).transfer(treasury, 10_000_000 * 1e6);
+        // The LP share is approved rather than sent: stage 2 pulls exactly what it needs.
+        IERC20(token).approve(address(f), 30_000_000 * 1e6);
+        vm.stopPrank();
+
         deal(USDC, OWNER, USDC_SEED);
         vm.prank(OWNER);
         IERC20(USDC).approve(address(f), USDC_SEED);
@@ -302,6 +329,10 @@ contract StagedNetworkRehearsalTest is Test {
             ownerWallet: OWNER, teamWallet: TEAM, operator: OPERATOR,
             perTxFloor: 1e6, perTxMax: 20_000 * 1e6
         }));
+
+        // Pilot lineage: the supply is with the merchant, so they approve the LP share.
+        vm.prank(OWNER);
+        IERC20(token).approve(address(f), 30_000_000 * 1e6);
 
         deal(USDC, OWNER, USDC_SEED);
         vm.prank(OWNER);
