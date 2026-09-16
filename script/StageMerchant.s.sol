@@ -31,7 +31,7 @@ contract StageMerchant is Script {
 
         if (stage == 1) {
             vm.startBroadcast();
-            address token = f.stageSuite(StagedTokenFactory.StageParams({
+            address staged = f.stageSuite(StagedTokenFactory.StageParams({
                 name:        vm.envString("MERCHANT_NAME"),
                 symbol:      vm.envString("MERCHANT_SYMBOL"),
                 ipfsHash:    keccak256(bytes(vm.envString("MERCHANT_IPFS"))),
@@ -44,7 +44,7 @@ contract StageMerchant is Script {
             vm.stopBroadcast();
 
             console2.log("STAGED - not a merchant yet, not registered, no clocks running.");
-            console2.log("merchantToken ", token);
+            console2.log("merchantToken ", staged);
             console2.log("Pass it as PC_TOKEN for stage 2.");
             return;
         }
