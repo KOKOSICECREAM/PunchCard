@@ -367,6 +367,73 @@ reads as a pilot, which is what it is.
       one is retired. Do not decide it now; ambiguity during testing is the thing being
       avoided.
 
+## Admitting a hand-assembled merchant
+
+The manual path, used by SKOOP and by approved migrations. See `docs/staged-rollout.md` for
+why it exists and what it does and does not prove.
+
+`registerManual` checks runtime codehashes and nothing else, deliberately — encoding
+balances and pools on-chain would rebuild the factory inside the controller. Everything else
+is the registrar's homework, and `VerifyManualSuite.s.sol` is that homework.
+
+### Inspect before admitting
+
+Read-only. Registers nothing, signs nothing, deploys nothing.
+
+```bash
+PC_WIND_DOWN_CONTROLLER=0x…  PC_ROUTER=0x… \
+PC_TOKEN=0x… PC_ESCROW=0x… PC_VESTING=0x… PC_TREASURY=0x… PC_LOCKER=0x… \
+PC_EXPECT_OWNER=0x… PC_EXPECT_TEAM=0x… PC_EXPECT_OPERATOR=0x… \
+PC_USDC_POOL=0x… PC_ETH_POOL=0x… \
+PC_USDC=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 \
+PC_WETH=0x4200000000000000000000000000000000000006 \
+PC_ETH_USD_FEED=0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70 \
+PC_MODE=pilot \
+  forge script script/VerifyManualSuite.s.sol --rpc-url https://mainnet.base.org
+```
+
+It reports every check before deciding rather than stopping at the first problem — a
+registrar fixing three things wants to see three — then prints the exact `registerManual`
+command if nothing failed, and reverts if anything did.
+
+| | checked |
+|---|---|
+| code exists at all five addresses | fatal |
+| every runtime codehash approved for its role | fatal |
+| total supply is 100M | fatal |
+| locker initialised, both pools exist with liquidity | fatal |
+| pool fee tiers match the locker's | fatal |
+| both pools imply the same price, within 5% | fatal |
+| owner / team / operator wallets are the expected ones | fatal |
+| operator has an active drawer | fatal |
+| token not already registered, router refuses it | fatal |
+| escrow / vesting / treasury at their targets | **mode-dependent** |
+| owner wallet holds no leftover supply | **mode-dependent** |
+
+### The two modes
+
+```
+PC_MODE=strict   a future merchant admitted by hand. Allocations must be exact.
+PC_MODE=pilot    SKOOP. Allocations are reported with the shortfall, and do not fail.
+```
+
+Pilot exists because SKOOP is funded by hand on purpose and must not be blocked by a
+transfer that can still be topped up. **Everything that makes the token unusable still fails
+in both modes** — a missing pool, a wrong price, an unapproved codehash. The mode only
+changes whether an under-funded allocation stops the run.
+
+- [ ] Use `strict` unless the merchant is SKOOP or an explicitly approved exception.
+- [ ] In `pilot`, read the shortfall lines and **do not describe the allocations as funded**
+      until they are.
+
+### The price check is the one that earns its keep
+
+The pools are seeded independently, so their implied prices never match exactly and 5% is
+the tolerance. What it catches is a pool opened at a price somebody else chose — possible
+whenever assembly is spread across transactions, which is exactly what hand-assembly is.
+The factory path closes that by creating pools and reverting if one exists; the manual path
+has no such moment, so it is checked here instead.
+
 ## Source verification
 
 A token customers hold should be readable. Verification is also where a launch quietly goes

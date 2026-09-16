@@ -22,7 +22,7 @@ contract DeploymentInvariantsTest is Test {
     ///      covering whatever is added next, and the check it stops applying is the one
     ///      that keeps a second controller — a second network — from being deployed by
     ///      accident. DeployMicroRehearsal.s.sol was added in exactly that gap.
-    string[9] scripts = [
+    string[10] scripts = [
         "script/DeployNetwork.s.sol",
         "script/DeployNetworkBeta.s.sol",
         "script/DeployProductionFactory.s.sol",
@@ -31,7 +31,8 @@ contract DeploymentInvariantsTest is Test {
         "script/DeployNetworkStaged.s.sol",
         "script/DeployNetworkStagedPilot.s.sol",
         "script/StageMerchant.s.sol",
-        "script/VerifyMerchant.s.sol"
+        "script/VerifyMerchant.s.sol",
+        "script/VerifyManualSuite.s.sol"
     ];
 
     /// Scripts that build or drive the ATOMIC lineage. deploy() costs 17,325,962 against
