@@ -167,6 +167,80 @@ rehearsed until there is an https origin to serve a punchcard-mode build from.
 
 ---
 
+## BLOCKER — `deploy()` does not fit in a Base transaction
+
+Found 2026-09-15 by the $25 micro rehearsal, on its first live run. The rehearsal paid for
+itself in seventeen cents of gas.
+
+```
+TokenFactory.deploy()   17,011,396 gas
+Base per-tx ceiling     16,777,216 gas   (2^24)
+                        ------------
+over by                    234,180 gas   (1.4%)
+```
+
+**No merchant can be deployed on Base today.** Not beta, not pilot, not production — all
+three lineages share `TokenFactory.deploy()` and the number above is that function.
+
+### It is the chain's ceiling, not a provider's
+
+`mainnet.base.org`, `base-rpc.publicnode.com` and `1rpc.io/base` all answer
+`gas required exceeds: 16777216`, identically, while the block gas limit is 400,000,000. It
+is exactly 2^24. No paid endpoint, gas override or `--gas-limit` flag makes the transaction
+includable.
+
+### Compiler settings do not close it
+
+| optimizer_runs | deploy() gas | over by |
+|---|---|---|
+| 1 | 16,972,887 | 195,671 |
+| 50 | 16,973,993 | 196,777 |
+| 200 (current) | 17,011,396 | 234,180 |
+
+The most aggressive setting saves 38k of the 234k needed. **The fix is structural.**
+
+### Where the gas goes
+
+Measured on a Base fork:
+
+| step | gas |
+|---|---|
+| deployToken | 654,622 |
+| deployVesting | 662,297 |
+| deployTreasury | 759,607 |
+| deployEscrow | 1,458,571 |
+| deployLocker | 2,539,822 |
+| **suite subtotal** | **6,074,919** |
+| pools, transfers, registration | ~10,936,477 |
+
+### The fix is the thing this document opened by arguing against
+
+Splitting `deploy()` in two is the obvious remedy, and the natural seam is exactly where the
+gas divides:
+
+```
+stage 1   deploy the five suite contracts, distribute allocations    ~6.3M
+stage 2   create and mint both pools, initialise locker, register   ~10.7M
+```
+
+Both fit with room. But this is the **assemble, then verify, then register** model that was
+considered and set aside — see the modular-launchpad discussion. The argument against it was
+that atomicity is the cheapest possible verifier: every invariant holds by construction,
+with nothing to check because nothing can be observed half-built.
+
+That argument was sound and is now moot. **The chain does not permit the atomic version.**
+So the half-assembled window has to exist, which means the things atomicity was giving for
+free now have to be enforced:
+
+- what stops a stage-1 suite being abandoned, or stage 2 being run twice
+- what stops anyone creating the token's Uniswap pool between the two transactions and
+  setting the launch price — today impossible only because the token is minted and pooled in
+  one transaction, which the factory's own comment relies on
+- whether registration happens at stage 2, and what an unregistered half-suite can do
+
+Do not design this in a hurry. Nothing can launch on Base until it is done, so it is now the
+critical path, but it is also the decision with the longest shadow.
+
 ## Economics — UNVALIDATED
 
 See `docs/economics-review.md`. There is no usage evidence. KOKOS is in beta and barely
