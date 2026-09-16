@@ -308,7 +308,7 @@ factory already authorised, so this is a single sitting.
 5  -- inspect everything --         allocations, pool prices, positions, wallets
 6  StageMerchant  PC_STAGE=3        activate: LP to the locker, clocks start, registered
 7  fill pilot-skoop config          controller, router, token, escrow, pools
-8  confirm the page reads           "pSKOOP pilot liquidity is not permanently locked yet."
+8  confirm the page reads           "pSKOOP liquidity is not permanently locked."
 9  later, when proven               lockLP() from the owner wallet
 ```
 
@@ -422,7 +422,8 @@ as possible.
 
 ## While the hatch is open
 
-- [ ] The dapp shows *"pSKOOP pilot liquidity is not permanently locked yet"* on the Swap screen.
+- [ ] The dapp shows *"pSKOOP liquidity is not permanently locked"* on the Swap screen.
+      No "yet" — the pilot hatch has no expiry and may never be closed.
       Confirm it renders **before** announcing the pilot — `lpLockState()` reads the locker
       directly, so a misconfigured `windDownController` shows "status unavailable" rather
       than a false lock claim, but unavailable is not the message you want on day one.
@@ -436,8 +437,12 @@ as possible.
 
 ## Closing it
 
-- [ ] `lockLP()` is one-way and callable by the owner wallet or the controller. After it,
-      `LPLockerPilot` behaves exactly as production does.
+- [ ] `lockLP()` is one-way. Callable by the owner wallet in practice: it also names the
+      controller, but no function on `WindDownController` ever calls it and the locker's
+      controller address is immutable, so that path is unreachable.
+- [ ] **Do not call it for SKOOP unless you are giving up migration forever.** Decided
+      2026-09-15: SKOOP keeps permanent recoverability as the first-party network merchant.
+      Future merchants get beta's self-closing window, then production's absence of one.
 - [ ] Confirm the dapp flips to *"pSKOOP liquidity is permanently locked."* That sentence is
       a claim; it may only appear once the contract says so.
 - [ ] Only then may the strong liquidity language be used anywhere else.
