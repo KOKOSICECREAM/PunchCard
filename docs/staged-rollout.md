@@ -107,6 +107,62 @@ Covered by `test/PilotRecovery.t.sol` (10 tests, including that beta still self-
 production still has no hatch at all) and `test_phase4_pilotHatchSurvivesBeyondThirtyDays`
 against live Base.
 
+## Two ways onto the network
+
+Settled 2026-09-16, after an attempt to make the factory serve both went badly.
+
+| | Factory path | Manual registrar path |
+|---|---|---|
+| Who | every merchant | SKOOP, and approved migrations |
+| Assembly | `StagedTokenFactory*`, three transactions | by hand, in any order |
+| Guarantee | the suite was **created** by known code | the suite **is** known code, checked at admission |
+| Allocations | exact, enforced before registration | the registrar's job, off-chain |
+| Admission | `register()`, `onlyFactory` | `registerManual()`, `onlyRegistrar` |
+| Who approves | multisig authorises factories, 48h timelock | multisig approves registrars and code hashes |
+
+Both write the same registry record through the same private function, so the router cannot
+tell them apart and does not try. A merchant is a merchant.
+
+### Why the manual path exists
+
+SKOOP has to stay movable while unaudited code is proven — liquidity recoverable,
+allocations fixable, nothing stranded by a transfer that landed wrong. Making the factory
+allow that meant soft allocation gates, permissive registration and overridable stage
+checks, each needing its own invariant to stop it leaking into merchant launches.
+
+**That put exceptions inside the thing whose entire value is having none.** A factory whose
+main job is having exceptions carved out of it is not a standard. So the factory stayed
+strict and SKOOP stopped using it.
+
+### What the manual path does and does not prove
+
+It cannot prove how a suite was built — a registrar admits contracts that already exist. It
+proves the next best thing, and the only one that matters in practice: **every contract is
+bytecode the multisig approved.** `registerManual` compares the runtime `codehash` of the
+token, escrow, vesting wallet, treasury and locker against `approvedCode[role]`, and reverts
+naming the role that failed.
+
+Without that comparison a registrar's signature would mean "trust me", and the network's
+promise would rest on a person rather than a property. `test/ManualRegistration.t.sol` proves
+a token that can mint more of itself is refused even though it has code, the right interface
+and the right supply.
+
+What it deliberately does **not** check is balances, pools or liquidity. Those are the
+registrar's job, done off-chain with a verification script, because encoding them here would
+rebuild the factory inside the controller — which is the thing this path exists to avoid.
+
+### The rule
+
+```
+Normal merchants   staged factory -> automatic registration
+SKOOP and approved migrations   manual launch -> bytecode-verified registrar admission
+Both               same WindDownController, same router, same network
+```
+
+A merchant uses the factory unless the multisig has explicitly decided otherwise. The manual
+path is an exception that should stay rare, and the registrar list is the lever: a registrar
+is a person, and people change.
+
 ## What is guaranteed, and by what
 
 The distinction merchants and customers are owed, stated exactly.
