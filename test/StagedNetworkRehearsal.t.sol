@@ -190,8 +190,8 @@ contract StagedNetworkRehearsalTest is Test {
         assertEq(IERC20(token).balanceOf(vesting),  0, "vesting starts empty");
         assertEq(IERC20(token).balanceOf(treasury), 0, "treasury starts empty");
 
-        // Activation must refuse an unfunded suite. This is what keeps hand-funding from
-        // weakening what registration means.
+        // Activation still refuses before the pools exist — that is a hard gate on every
+        // lineage, because a merchant that cannot trade is not a network test.
         //
         // Called directly rather than through the script: a reverting script leaves its
         // vm.startBroadcast open, and every later vm.prank in this test then fails with
@@ -201,8 +201,10 @@ contract StagedNetworkRehearsalTest is Test {
         f.activateMerchant(token);
 
         // ── 3. the merchant funds each contract by hand, testing as they go ──
+        // Deliberately SHORT on the escrow: the pilot must not strand a launch because one
+        // transfer landed wrong, and this proves it activates anyway and records the gap.
         vm.startPrank(OWNER);
-        IERC20(token).transfer(escrow,   45_000_000 * 1e6);
+        IERC20(token).transfer(escrow,   44_000_000 * 1e6);   // 1M short, on purpose
         IERC20(token).transfer(vesting,  15_000_000 * 1e6);
         IERC20(token).transfer(treasury, 10_000_000 * 1e6);
         // The LP share is approved rather than sent: stage 2 pulls exactly what it needs.
@@ -231,10 +233,10 @@ contract StagedNetworkRehearsalTest is Test {
         }
         assertFalse(wdc.isRegistered(token), "STILL not registered after funding");
         assertEq(IERC20(token).totalSupply(),      100_000_000 * 1e6, "supply");
-        assertEq(IERC20(token).balanceOf(escrow),   45_000_000 * 1e6, "45M rewards");
+        assertEq(IERC20(token).balanceOf(escrow),   44_000_000 * 1e6, "escrow funded short, on purpose");
         assertEq(IERC20(token).balanceOf(vesting),  15_000_000 * 1e6, "15M team");
         assertEq(IERC20(token).balanceOf(treasury), 10_000_000 * 1e6, "10M treasury");
-        assertEq(IERC20(token).balanceOf(OWNER),                   0, "no merchant tokens leaked to owner");
+        assertEq(IERC20(token).balanceOf(OWNER),           1_000_000 * 1e6, "the unfunded 1M is still with the owner, to top up later");
         assertEq(IERC20(token).balanceOf(locker),                  0, "LP NOT in the locker before activation");
         assertEq(IERC721Rehearsal(POSITION_MANAGER).ownerOf(usdcId), address(f), "USDC position held by factory");
         assertEq(IERC721Rehearsal(POSITION_MANAGER).ownerOf(ethId),  address(f), "ETH position held by factory");
@@ -271,6 +273,28 @@ contract StagedNetworkRehearsalTest is Test {
         assertEq(VestingWallet(vesting).cliffTime(), liveAt + 30 days, "full cliff ahead");
         assertEq(LPLockerPilot(locker).evacuationExpiresAt(), type(uint256).max, "pilot hatch never expires");
         assertTrue(LPLockerPilot(locker).evacuationOpen(), "and is open");
+
+        // ── the shortfall is recorded, not hidden ────────────────────────────
+        {
+            (uint256 eF, uint256 vF, uint256 tF,, bool met) = f.fundingAtActivation(token);
+            assertEq(eF, 44_000_000 * 1e6, "escrow funding recorded as it really was");
+            assertEq(vF, 15_000_000 * 1e6, "vesting recorded");
+            assertEq(tF, 10_000_000 * 1e6, "treasury recorded");
+            assertFalse(met, "targetsMet must be FALSE - the allocations were not fully funded");
+        }
+
+        // ── and the owner can finish the job afterwards ──────────────────────
+        vm.prank(OWNER);
+        IERC20(token).transfer(escrow, 1_000_000 * 1e6);
+        assertEq(IERC20(token).balanceOf(escrow), 45_000_000 * 1e6, "escrow topped up to target");
+        assertEq(IERC20(token).balanceOf(OWNER),  0, "owner now holds nothing");
+
+        // The record does NOT change. It says what was true at activation, which is the
+        // only honest thing for it to say.
+        {
+            (,,,, bool met) = f.fundingAtActivation(token);
+            assertFalse(met, "the activation record is history, not live state");
+        }
 
         emit log_named_uint("stage 1 gas", gStage1);
         emit log_named_uint("stage 2 gas", gStage2);

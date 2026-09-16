@@ -320,10 +320,33 @@ wrong for a first launch of unaudited code, because the first test of each contr
 happen with everything already inside it. The pilot mints the whole supply to the owner so
 each can be funded and exercised one at a time, with the rest still in a wallet you control.
 
-**It does not weaken registration.** `activateMerchant` checks every balance before it
-registers anything, so a hand-funded suite is either identical to an atomically-funded one
-by then, or it never reaches the network. Run step 7 early and it reverts with "Not funded".
-The owner also ends at zero — everything must have moved, the LP share included.
+**On the pilot, the allocations are targets rather than gates.** Decided 2026-09-16. Beta
+and production refuse to register a merchant whose escrow, vesting or treasury is off by a
+single unit — that is what makes "every business runs the same programme with the same
+numbers" true. The pilot does not, because a first-party launch of unaudited code must not
+be stranded by one transfer landing wrong.
+
+What still binds on every lineage:
+
+| gate | pilot | beta / production |
+|---|---|---|
+| token exists, supply is 100M | hard | hard |
+| both pools created, positions held by the factory | hard | hard |
+| locker empty before handover | hard | hard |
+| escrow = 45M, vesting = 15M, treasury = 10M | **target** | hard |
+| merchant holds no supply | **target** | hard |
+
+A merchant that cannot trade is not a network test, so the market gates stay hard. Run step
+7 before step 5 and it still reverts with "Not funded".
+
+**What it costs is a claim.** At activation the pilot cannot say the allocations are fully
+funded — only that they are targets the owner can still complete, and nothing stops a top-up
+afterwards. `fundingAtActivation(token)` records what was actually there, including a
+`targetsMet` flag, so the difference is readable on-chain rather than resting on anyone's
+word. That record is history: topping up later does not change it, and should not.
+
+- [ ] After activation, read `fundingAtActivation(token)`. If `targetsMet` is false, top up
+      the shortfall and **do not describe the allocations as funded** until you have.
 
 Step 6 is the one that staging exists for, and the only one with no transaction in it. If
 something is wrong, `PC_STAGE=0` aborts and returns the seed; after step 7 there is no undo.

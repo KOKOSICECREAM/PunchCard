@@ -215,6 +215,45 @@ contract DeploymentInvariantsTest is Test {
             "DeployNetworkStaged must not deploy the pilot locker deployer");
     }
 
+    /// Allocations may be relaxed for exactly one lineage.
+    ///
+    /// "Every business runs the same programme with the same numbers" is only true if the
+    /// numbers are checked before the network accepts a token. The pilot relaxes that
+    /// because it is a first-party launch that must not be stranded by one transfer landing
+    /// wrong — and the cost is a claim it can no longer make. Anything else relaxing it
+    /// would take that cost without the reason.
+    function test_onlyThePilotRelaxesTheAllocationCheck() public view {
+        // Precise rather than keyword-matched. An earlier version asserted that the base
+        // factory contained neither "_checkAllocations" nor "override" and failed
+        // immediately: the base file legitimately contains both, one being the definition
+        // and the other belonging to unrelated functions. Substring checks over source trip
+        // on the very code they are describing, so match the declarations.
+        string memory base = vm.readFile("contracts/StagedTokenFactory.sol");
+        assertTrue(_contains(base, "function _checkAllocations"),
+            "the base factory must define the allocation check");
+        assertTrue(_contains(base, "internal virtual view"),
+            "and define it as virtual, so relaxing it is an explicit override somewhere else");
+
+        // Beta and the atomic lineage must not mention it at all: inheriting the base
+        // behaviour unchanged is the merchant standard.
+        string[2] memory inheritUnchanged = [
+            "contracts/beta/StagedTokenFactoryBeta.sol",
+            "contracts/TokenFactory.sol"
+        ];
+        for (uint256 i = 0; i < inheritUnchanged.length; i++) {
+            assertFalse(
+                _contains(vm.readFile(inheritUnchanged[i]), "_checkAllocations"),
+                string.concat(inheritUnchanged[i], " must inherit the allocation check unchanged")
+            );
+        }
+
+        string memory pilot = vm.readFile("contracts/pilot/StagedTokenFactoryPilot.sol");
+        assertTrue(_contains(pilot, "function _checkAllocations(address, MerchantSuite storage) internal pure override"),
+            "the pilot must be the one that relaxes it, as an explicit override");
+        assertTrue(_contains(pilot, "ALLOCATIONS_ARE_TARGETS"),
+            "and must advertise it on-chain, so nobody has to read this file to find out");
+    }
+
     function _contains(string memory haystack, string memory needle) private pure returns (bool) {
         bytes memory h = bytes(haystack);
         bytes memory n = bytes(needle);

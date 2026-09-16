@@ -129,6 +129,21 @@ contract StagedTokenFactory {
 
     mapping(address => MerchantSuite) public suites;
 
+    /// @notice What each allocation actually held at the moment of activation.
+    /// @dev Recorded for every lineage, because "what was funded when this went live" is a
+    ///      question worth being able to answer years later whether or not it was enforced.
+    ///      On beta and production it can only ever equal the targets — `_checkAllocations`
+    ///      refuses otherwise. On the pilot it is the record of what was really there.
+    struct FundingStatus {
+        uint256 escrowFunded;
+        uint256 vestingFunded;
+        uint256 treasuryFunded;
+        uint256 lpFunded;
+        bool    targetsMet;
+    }
+
+    mapping(address => FundingStatus) public fundingAtActivation;
+
     /// @notice Who may stage, fund and activate merchants.
     /// @dev A set rather than a single address, so a compromised or lost hot wallet has a
     ///      standby rather than a recovery project. Multisig-controlled and deliberately
@@ -149,6 +164,11 @@ contract StagedTokenFactory {
         uint256 usdcSeed, uint256 ethSeed, uint256 timestamp
     );
     event MerchantActivated(address indexed merchantToken, uint256 timestamp);
+    event ActivationFunding(
+        address indexed merchantToken,
+        uint256 escrowFunded, uint256 vestingFunded, uint256 treasuryFunded, uint256 lpFunded,
+        bool targetsMet, uint256 timestamp
+    );
     event StagingAborted(
         address indexed merchantToken, address indexed by, Stage fromStage,
         uint256 usdcReturned, uint256 wethReturned, uint256 timestamp
@@ -410,15 +430,35 @@ contract StagedTokenFactory {
 
         IERC20 t = IERC20(token);
 
-        // ── the invariants atomicity used to give for free ───────────────────
+        // ── hard gates: true for every lineage, no exceptions ────────────────
+        // A token that exists, a suite that is really this factory's, pools that were
+        // created and positions this contract can actually hand over. Without these the
+        // merchant either cannot trade or is not the thing that was staged, and neither is
+        // survivable by topping anything up later.
         require(IERC20Meta(token).totalSupply() == TOTAL_SUPPLY,      "Supply changed");
-        require(t.balanceOf(s.escrow)   == REWARDS_ALLOC,             "Escrow allocation wrong");
-        require(t.balanceOf(s.vesting)  == TEAM_ALLOC,                "Team allocation wrong");
-        require(t.balanceOf(s.treasury) == TREASURY_ALLOC,            "Treasury allocation wrong");
-        require(t.balanceOf(s.ownerWallet) == 0,                      "Merchant holds supply");
         require(t.balanceOf(s.locker)   == 0,                         "Locker not empty before handover");
         require(IERC721Min(positionManager).ownerOf(s.usdcTokenId) == address(this), "USDC position not held here");
         require(IERC721Min(positionManager).ownerOf(s.ethTokenId)  == address(this), "ETH position not held here");
+
+        // ── soft on the pilot, hard everywhere else ──────────────────────────
+        _checkAllocations(token, s);
+
+        {
+            FundingStatus memory fs = FundingStatus({
+                escrowFunded:   t.balanceOf(s.escrow),
+                vestingFunded:  t.balanceOf(s.vesting),
+                treasuryFunded: t.balanceOf(s.treasury),
+                lpFunded:       t.balanceOf(address(this)),
+                targetsMet:     t.balanceOf(s.escrow)   == REWARDS_ALLOC
+                             && t.balanceOf(s.vesting)  == TEAM_ALLOC
+                             && t.balanceOf(s.treasury) == TREASURY_ALLOC
+            });
+            fundingAtActivation[token] = fs;
+            emit ActivationFunding(
+                token, fs.escrowFunded, fs.vestingFunded, fs.treasuryFunded, fs.lpFunded,
+                fs.targetsMet, block.timestamp
+            );
+        }
 
         // ── hand the LP over ─────────────────────────────────────────────────
         INonfungiblePositionManager(positionManager).transferFrom(address(this), s.locker, s.usdcTokenId);
@@ -442,6 +482,28 @@ contract StagedTokenFactory {
 
         IWindDownController(windDownController).register(token, s.escrow, s.vesting, s.treasury, s.locker);
         emit MerchantActivated(token, block.timestamp);
+    }
+
+    /// @dev The allocations, enforced. Overridable for exactly one reason, and the override
+    ///      lives in `StagedTokenFactoryPilot`.
+    ///
+    ///      For a merchant these are the point. "Every business runs the same programme with
+    ///      the same numbers" is only true if the numbers are checked before the network
+    ///      accepts the token, and a merchant who is 10% short on rewards is running a
+    ///      different programme while claiming to run this one.
+    ///
+    ///      The pilot relaxes them because it is a first-party launch of unaudited code that
+    ///      must not be stranded by one transfer landing wrong. It costs a promise: at
+    ///      activation the pilot cannot claim the allocations are fully funded, only that
+    ///      they are targets the owner can still complete. `fundingAtActivation` records
+    ///      what was really there so that distinction is legible on-chain rather than
+    ///      resting on anyone's word.
+    function _checkAllocations(address token, MerchantSuite storage s) internal virtual view {
+        IERC20 t = IERC20(token);
+        require(t.balanceOf(s.escrow)      == REWARDS_ALLOC,   "Escrow allocation wrong");
+        require(t.balanceOf(s.vesting)     == TEAM_ALLOC,      "Team allocation wrong");
+        require(t.balanceOf(s.treasury)    == TREASURY_ALLOC,  "Treasury allocation wrong");
+        require(t.balanceOf(s.ownerWallet) == 0,               "Merchant holds supply");
     }
 
     // ── ABORT ─────────────────────────────────────────────────────────────────
