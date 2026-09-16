@@ -248,15 +248,15 @@ WindDownController, and emit `MerchantDeployed`.
 
 # Part 3 — The pSKOOP pilot (once, and never again)
 
-pSKOOP deploys through `StagedTokenFactoryPilot`, whose lockers have an LP hatch that
-**never closes by itself**. No merchant may use this path. See `docs/staged-rollout.md`.
+pSKOOP uses **`LPLockerPilot`** — an LP hatch that **never closes by itself** — and is
+**hand-assembled, not factory-deployed**. See `docs/staged-rollout.md`.
 
-Use **`DeployNetworkStagedPilot.s.sol`**. It is a separate script rather than a flag on
-`DeployNetworkStaged`, because the runbook used to say "substitute the pilot contracts" —
-meaning hand-edit a deploy script on launch day, which is worse than a configuration flag
-rather than better. It takes `PC_PILOT_LINEAGE=true` on top of `PC_CREATE_NEW_NETWORK=true`,
-and `DeploymentInvariants.t.sol` asserts that the ordinary staged script can never reach the
-pilot lineage.
+> **`StagedTokenFactoryPilot` and `DeployNetworkStagedPilot.s.sol` now have no user.** They
+> were built when pSKOOP was going to launch through a factory. It launches by hand instead,
+> so the pilot *locker* is still needed and the pilot *factory* is not. They are kept for
+> now rather than deleted, because a pilot factory is the obvious tool if a second
+> first-party token ever needs one — but nothing in the pSKOOP path touches them, and
+> anything that does should be treated as a mistake.
 
 ## No authorisation step for the first network
 
@@ -296,60 +296,56 @@ day 2   multisig: executeFactory(stagedProductionFactory)     ← path opens
 
 ## The pSKOOP launch sequence
 
-No timelock anywhere in it. `DeployNetworkStaged` creates the controller with the staged
-factory already authorised, so this is a single sitting.
+**SKOOP does not use the factory.** It is hand-assembled and admitted through the manual
+registrar path — see `docs/staged-rollout.md`. Bending the factory to suit it meant soft
+allocation gates, permissive registration and overridable stage checks, each needing its own
+invariant to stop it leaking into merchant launches; that put exceptions inside the thing
+whose entire value is having none.
 
 ```
-1  DeployNetworkStagedPilot.s.sol   PC_CREATE_NEW_NETWORK=true PC_PILOT_LINEAGE=true
-                                    -> controller, StagedTokenFactoryPilot, router
-2  StageMerchant  PC_STAGE=1        suite deployed EMPTY; all 100M to the owner wallet
-3  owner funds by hand              45M escrow, 15M vesting, 10M treasury — one at a
-                                    time, testing each before sending the next
-4  owner approves                   30M token + the USDC seed, to the factory
-5  StageMerchant  PC_STAGE=2        pulls both, creates pools, LP held by the factory
-6  -- inspect everything --         allocations, pool prices, positions, wallets
-7  StageMerchant  PC_STAGE=3        activate: LP to the locker, clocks start, registered
-8  fill pilot-skoop config          controller, router, token, escrow, pools
-9  confirm the page reads           "pSKOOP liquidity is not permanently locked."
--  lockLP()                         NOT for SKOOP. See above.
+ 1  create the real wallets            multisig, deployer, registrar, fee recipient,
+                                       owner (hardware), team (hardware), operator
+ 2  deploy the network                 DeployNetworkStaged.s.sol
+                                       -> controller, router, and the factory FUTURE
+                                          merchants will use. SKOOP joins it, not through it.
+ 3  hand-launch the SKOOP suite        token, escrow, vesting, treasury, LPLockerPilot.
+                                       Fund each one and exercise it before the next.
+ 4  seed the pools                     both pools, at one price
+ 5  publish the source                 Sourcify and/or Basescan, for all five contracts
+ 6  multisig approves five codehashes  setApprovedCode(role, codehash, true)
+ 7  VerifyManualSuite  PC_MODE=pilot   read-only; reports everything, refuses if broken
+ 8  fix whatever it reports            then run 7 again
+ 9  registrar admits it                registerManual(token, escrow, vesting, treasury, locker)
+10  confirm the router serves it       getPoolFeeTiers(token) stops reverting
+11  fill the pilot-skoop config        controller, router, token, escrow, pools
+12  confirm the page reads             "pSKOOP liquidity is not permanently locked."
+13  point the POS at the new escrow    when you are ready, not before
+ -  lockLP()                           NOT for SKOOP. See above.
 ```
 
-**Step 3 is why the pilot lineage mints differently.** The default factory funds the escrow,
-vesting wallet and treasury in the same transaction that creates them — right for a merchant,
-wrong for a first launch of unaudited code, because the first test of each contract would
-happen with everything already inside it. The pilot mints the whole supply to the owner so
-each can be funded and exercised one at a time, with the rest still in a wallet you control.
+**Steps 5 and 6 are in that order for a reason.** Approval is per deployment, because
+Solidity writes immutables into runtime bytecode — two escrows from identical source with
+different owner wallets have different codehashes. So the multisig cannot approve
+implementations in advance; it approves the exact contracts that were just deployed.
 
-**On the pilot, the allocations are targets rather than gates.** Decided 2026-09-16. Beta
-and production refuse to register a merchant whose escrow, vesting or treasury is off by a
-single unit — that is what makes "every business runs the same programme with the same
-numbers" true. The pilot does not, because a first-party launch of unaudited code must not
-be stranded by one transfer landing wrong.
+Which makes step 5 load-bearing rather than cosmetic. Approving the codehash of a contract
+nobody has verified is a rubber stamp. Approving one whose published source matches its
+bytecode is an attestation. Do them out of order and the check still passes and stops
+meaning anything.
 
-What still binds on every lineage:
+**Step 7 is the only step with no transaction in it**, and the one this whole path exists
+for. It is read-only: registers nothing, signs nothing. Before step 9 everything is still
+fixable; after it, SKOOP is on the network for good — registration has no undo short of a
+365-day wind-down.
 
-| gate | pilot | beta / production |
-|---|---|---|
-| token exists, supply is 100M | hard | hard |
-| both pools created, positions held by the factory | hard | hard |
-| locker empty before handover | hard | hard |
-| escrow = 45M, vesting = 15M, treasury = 10M | **target** | hard |
-| merchant holds no supply | **target** | hard |
+### The two claims, kept apart
 
-A merchant that cannot trade is not a network test, so the market gates stay hard. Run step
-7 before step 5 and it still reverts with "Not funded".
+```
+Factory path   automatically standardised   the suite could not have been built wrong
+Manual path    reviewed and attested        the multisig looked at this exact bytecode
+```
 
-**What it costs is a claim.** At activation the pilot cannot say the allocations are fully
-funded — only that they are targets the owner can still complete, and nothing stops a top-up
-afterwards. `fundingAtActivation(token)` records what was actually there, including a
-`targetsMet` flag, so the difference is readable on-chain rather than resting on anyone's
-word. That record is history: topping up later does not change it, and should not.
-
-- [ ] After activation, read `fundingAtActivation(token)`. If `targetsMet` is false, top up
-      the shortfall and **do not describe the allocations as funded** until you have.
-
-Step 6 is the one that staging exists for, and the only one with no transaction in it. If
-something is wrong, `PC_STAGE=0` aborts and returns the seed; after step 7 there is no undo.
+Neither is the other. Do not describe a manually-admitted merchant as factory-standard.
 
 ## The pilot token is `pSKOOP`, not `SKOOP`
 
@@ -473,8 +469,9 @@ forge script script/DeployNetworkStagedPilot.s.sol \
 # Basescan — add --etherscan-api-key $BASESCAN_API_KEY, or rerun verify-contract later
 ```
 
-That covers `SuiteDeployer`, `LockerDeployerPilot`, `WindDownController`,
-`StagedTokenFactoryPilot` and `PunchCardRouter`.
+That covers the network contracts a deploy script creates. For the hand-assembled pSKOOP
+suite there is no deploy script, so each contract is verified individually — and that
+verification is step 5 of the launch sequence, not an afterthought.
 
 - [ ] Use `--verify` on the deploy. Retrofitting it afterwards means retyping twelve
       constructor arguments for the factory alone.
@@ -585,6 +582,7 @@ as possible.
 - [ ] Chainlink feed is live and fresh — `deploy()` reverts on an answer over an hour old
 - [ ] `perTxFloor` / `perTxMax` inside `DAILY_CAP`
 - [ ] Merchant JSON committed to `deploy/merchants/`
-- [ ] Factory is the intended lineage — `HAS_UNLIMITED_LP_RECOVERY()` must **revert**
-      for any merchant deployment. It answers only on `StagedTokenFactoryPilot`, which is
-      for pSKOOP alone.
+- [ ] Factory is the intended lineage — `HAS_UNLIMITED_LP_RECOVERY()` must **revert** for
+      any merchant deployment. A merchant gets the beta lineage's self-closing window or
+      production's absence of one; a hatch that never expires belongs to pSKOOP, which does
+      not come through a factory at all.
