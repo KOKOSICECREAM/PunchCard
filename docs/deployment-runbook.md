@@ -367,13 +367,31 @@ reads as a pilot, which is what it is.
       one is retired. Do not decide it now; ambiguity during testing is the thing being
       avoided.
 
-## Basescan verification
+## Source verification
 
 A token customers hold should be readable. Verification is also where a launch quietly goes
 wrong months later, so the commands live here rather than in somebody's history.
 
-**Prerequisite:** a free Basescan API key, exported as `BASESCAN_API_KEY`. Nothing else —
-verification needs no private key and deploys nothing.
+### Two registries, and they are not the same
+
+Verifying on one does **not** verify on the other.
+
+| | Sourcify | Basescan |
+|---|---|---|
+| API key | none | free key, `BASESCAN_API_KEY` |
+| Storage | decentralised, source and metadata on IPFS | Etherscan's database |
+| Match quality | full match proves the exact metadata hash | verified, or not |
+| Who reads it | Blockscout, tooling, some wallets | **most people** |
+
+Sourcify's full match is the technically stronger claim. Basescan is where a customer
+actually lands when they follow a block-explorer link. **Do both** — the arguments are
+identical, so it costs one extra paste per contract.
+
+**Forge's default verifier is `sourcify`.** A command with no `--verifier` flag goes there,
+which is worth knowing before waiting on a Basescan key for commands that never touch
+Basescan. Every command below names its registry.
+
+Verification needs no private key and deploys nothing.
 
 ### The five network contracts: verify at deploy time
 
@@ -381,8 +399,11 @@ verification needs no private key and deploys nothing.
 to the deploy command and there is nothing to reconstruct:
 
 ```bash
+# Sourcify — no key
 forge script script/DeployNetworkStagedPilot.s.sol \
-  --rpc-url https://mainnet.base.org --broadcast --verify
+  --rpc-url https://mainnet.base.org --broadcast --verify --verifier sourcify
+
+# Basescan — add --etherscan-api-key $BASESCAN_API_KEY, or rerun verify-contract later
 ```
 
 That covers `SuiteDeployer`, `LockerDeployerPilot`, `WindDownController`,
@@ -401,7 +422,7 @@ PC_FACTORY=0x… PC_TOKEN=0x… \
   forge script script/VerifyMerchant.s.sol --rpc-url https://mainnet.base.org
 ```
 
-Read-only. It prints five ready-to-paste `forge verify-contract` commands with
+Read-only. It prints two ready-to-paste `forge verify-contract` commands per contract — one per registry — with
 `--constructor-args` already ABI-encoded, reading every value off the chain — including
 which locker lineage the factory produced, since production, beta and pilot are three
 different contract paths.

@@ -62,9 +62,14 @@ contract VerifyMerchant is Script {
         Suite memory s = _load();
         StagedTokenFactory f = StagedTokenFactory(payable(s.factory));
 
-        console2.log(string.concat("# Basescan verification for merchant ", vm.toString(s.token)));
+        console2.log(string.concat("# Source verification for merchant ", vm.toString(s.token)));
         console2.log("# Read from chain, not retyped. Paste as-is.");
-        console2.log("# Requires BASESCAN_API_KEY in your environment.");
+        console2.log("#");
+        console2.log("# Two commands per contract, because Sourcify and Basescan are separate");
+        console2.log("# registries and verifying on one does NOT verify on the other.");
+        console2.log("#   sourcify  - no API key, decentralised, read by Blockscout and tooling");
+        console2.log("#   basescan  - needs a free BASESCAN_API_KEY, and is where people actually look");
+        console2.log("# Do both. Same arguments, so it costs one extra paste.");
         console2.log("");
 
         _cmd("contracts/MerchantToken.sol:MerchantToken", s.token, abi.encode(
@@ -126,10 +131,19 @@ contract VerifyMerchant is Script {
         return "contracts/LPLocker.sol:LPLocker";
     }
 
+    /// @dev Emits both, with `--verifier` explicit in each. Forge's default verifier is
+    ///      sourcify, so a command that omits the flag silently goes there — which is fine
+    ///      until a runbook tells you to set a Basescan key for commands that never touch
+    ///      Basescan. Saying which registry each line targets removes that trap.
     function _cmd(string memory path, address addr, bytes memory args) internal view {
         console2.log(string.concat(
             "forge verify-contract ", vm.toString(addr), " ", path, " \\\n",
-            "  --chain base --watch \\\n",
+            "  --chain base --watch --verifier sourcify \\\n",
+            "  --constructor-args ", vm.toString(args)
+        ));
+        console2.log(string.concat(
+            "forge verify-contract ", vm.toString(addr), " ", path, " \\\n",
+            "  --chain base --watch --verifier etherscan --etherscan-api-key $BASESCAN_API_KEY \\\n",
             "  --constructor-args ", vm.toString(args)
         ));
         console2.log("");
