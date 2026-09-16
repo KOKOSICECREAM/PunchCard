@@ -331,6 +331,61 @@ reads as a pilot, which is what it is.
       one is retired. Do not decide it now; ambiguity during testing is the thing being
       avoided.
 
+## Basescan verification
+
+A token customers hold should be readable. Verification is also where a launch quietly goes
+wrong months later, so the commands live here rather than in somebody's history.
+
+**Prerequisite:** a free Basescan API key, exported as `BASESCAN_API_KEY`. Nothing else —
+verification needs no private key and deploys nothing.
+
+### The five network contracts: verify at deploy time
+
+`forge script` verifies as it broadcasts, using the arguments it just passed. Add `--verify`
+to the deploy command and there is nothing to reconstruct:
+
+```bash
+forge script script/DeployNetworkStagedPilot.s.sol \
+  --rpc-url https://mainnet.base.org --broadcast --verify
+```
+
+That covers `SuiteDeployer`, `LockerDeployerPilot`, `WindDownController`,
+`StagedTokenFactoryPilot` and `PunchCardRouter`.
+
+- [ ] Use `--verify` on the deploy. Retrofitting it afterwards means retyping twelve
+      constructor arguments for the factory alone.
+
+### The five merchant contracts: generated, never retyped
+
+`stageSuite` builds the token, escrow, vesting, treasury and locker from the factory's own
+constants and immutables. **Nobody typed those arguments, so nobody can retype them.**
+
+```bash
+PC_FACTORY=0x… PC_TOKEN=0x… \
+  forge script script/VerifyMerchant.s.sol --rpc-url https://mainnet.base.org
+```
+
+Read-only. It prints five ready-to-paste `forge verify-contract` commands with
+`--constructor-args` already ABI-encoded, reading every value off the chain — including
+which locker lineage the factory produced, since production, beta and pilot are three
+different contract paths.
+
+- [ ] Run it and paste the commands. Do not assemble them by hand.
+
+> **Why reading beats retyping, demonstrated.** Run against the 2026-09-15 rehearsal
+> merchant, the generator emits a 180-day cliff and a 1080-day duration — because that
+> factory was deployed before the schedule changed to 30 / 730. Anyone retyping from the
+> current source would supply the new values, and the verification would fail without
+> explaining why. The generator reads the deployment; the source describes the next one.
+
+### Compiler settings must match the deployment
+
+`foundry.toml` pins `via_ir = true` and `optimizer_runs = 200`, and verification reproduces
+bytecode with whatever the working tree says. Verifying an old deployment from a tree whose
+settings have moved produces a mismatch with an unhelpful error.
+
+- [ ] Verify from the commit that deployed, not from `main`, if they have diverged.
+
 ## Wallets — all fresh, none shared with KOKOS's existing deployment
 
 Decided 2026-09-15. The pilot reuses nothing. No script is ever handed authority over a
