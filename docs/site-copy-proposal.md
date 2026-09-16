@@ -21,7 +21,13 @@ Both good. Each is missing one thing, and the gaps are below.
 
 ---
 
-## 1. The gap in the network-effect section
+## 1. The gap in the network-effect section — **SHIPPED to the branch**
+
+Added to `index.html` as a lead sentence in `.ne-intro` rather than a fourth card: the grid
+is three columns, so a fourth would strand one on its own row, and the mechanism is the
+premise the three cards rest on rather than a fourth item beside them. Blocks 2 and 3 below
+remain proposals.
+
 
 It describes the benefit and never says the mechanism. "A standing invitation to return" is
 a feeling; the reason it works is that the tokens actually move.
