@@ -156,6 +156,33 @@ contract ManualRegistrationTest is Test {
         vm.stopPrank();
     }
 
+    /// Approval is per DEPLOYMENT, not per implementation — and that shapes the whole
+    /// operational model, so it is pinned here rather than left to be rediscovered.
+    ///
+    /// Solidity writes immutables into runtime bytecode, so two escrows compiled from the
+    /// same source with different owner wallets have different codehashes. The multisig
+    /// therefore cannot approve "the RewardEscrow" once and cover every merchant; it
+    /// approves the exact contracts of one suite, after checking they are what they claim.
+    ///
+    /// That is why source verification is load-bearing rather than cosmetic. Approving the
+    /// codehash of a contract nobody has verified is a rubber stamp; approving one whose
+    /// source is published and matches is an attestation.
+    function test_approvalIsPerDeploymentBecauseImmutablesAreInTheBytecode() public {
+        RewardEscrow other = new RewardEscrow(
+            address(token), OP, address(0xB9), address(wdc), 45_000_000 * 1e6, 1e6, 20_000 * 1e6, address(this)
+        );
+        assertTrue(
+            address(other).codehash != address(escrow).codehash,
+            "same source, different owner wallet, different codehash"
+        );
+
+        // So the approval for one escrow does not admit the other.
+        vm.startPrank(REGISTRAR);
+        vm.expectRevert("Unapproved escrow code");
+        wdc.registerManual(address(token), address(other), address(vesting), address(treasury), address(locker));
+        vm.stopPrank();
+    }
+
     function test_registrationIsStillOnce() public {
         _register();
         vm.prank(REGISTRAR);

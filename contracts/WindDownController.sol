@@ -68,6 +68,22 @@ contract WindDownController is IWindDownController {
     /// @dev `keccak256(role) => codehash => allowed`. Several may be allowed per role: a
     ///      locker lineage differs between production, beta and pilot, and all three are
     ///      legitimate for different merchants.
+    ///
+    ///      **Approval is per DEPLOYMENT, not per implementation.** Solidity writes
+    ///      immutables into runtime bytecode, so two escrows compiled from identical source
+    ///      with different owner wallets have different codehashes. There is no way to
+    ///      approve "the RewardEscrow" once and cover every merchant.
+    ///
+    ///      That makes the guarantee narrower than it first looks, and worth stating
+    ///      exactly. It is **not** "this suite is built from known-good code" proven
+    ///      automatically. It is: *the registrar can admit only contracts the multisig has
+    ///      already looked at and approved by hash.* Two different keys, one reviewing and
+    ///      one admitting, and no way for the second to act alone.
+    ///
+    ///      Which is why publishing source is load-bearing rather than cosmetic. Approving
+    ///      the codehash of a contract nobody has verified is a rubber stamp. Approving one
+    ///      whose source is published and matches its bytecode is an attestation, and the
+    ///      order matters: **verify the source, then approve the hash.**
     mapping(bytes32 => mapping(bytes32 => bool)) public approvedCode;
 
     bytes32 public constant ROLE_TOKEN    = keccak256("MERCHANT_TOKEN");

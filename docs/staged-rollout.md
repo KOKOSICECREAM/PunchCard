@@ -136,16 +136,33 @@ strict and SKOOP stopped using it.
 
 ### What the manual path does and does not prove
 
-It cannot prove how a suite was built — a registrar admits contracts that already exist. It
-proves the next best thing, and the only one that matters in practice: **every contract is
-bytecode the multisig approved.** `registerManual` compares the runtime `codehash` of the
-token, escrow, vesting wallet, treasury and locker against `approvedCode[role]`, and reverts
-naming the role that failed.
+It cannot prove how a suite was built — a registrar admits contracts that already exist.
+What it proves is narrower than it first looks, and worth stating exactly:
 
-Without that comparison a registrar's signature would mean "trust me", and the network's
-promise would rest on a person rather than a property. `test/ManualRegistration.t.sol` proves
-a token that can mint more of itself is refused even though it has code, the right interface
-and the right supply.
+> **The registrar can admit only contracts the multisig has already looked at and approved
+> by hash.** Two keys, one reviewing and one admitting, and no way for the second to act
+> alone.
+
+`registerManual` compares the runtime `codehash` of the token, escrow, vesting wallet,
+treasury and locker against `approvedCode[role]`, reverting with the role that failed.
+`test/ManualRegistration.t.sol` proves a token that can mint more of itself is refused even
+though it has code, the right interface and the right supply.
+
+**Approval is per deployment, not per implementation.** Solidity writes immutables into
+runtime bytecode, so two escrows compiled from identical source with different owner wallets
+have different codehashes — measured, not assumed. There is no way to approve "the
+RewardEscrow" once and cover every merchant; the multisig approves the exact contracts of
+one suite.
+
+Which makes publishing source **load-bearing rather than cosmetic**, and fixes the order:
+
+```
+deploy the suite -> verify the source -> multisig approves the hashes -> registrar admits
+```
+
+Approving the codehash of a contract nobody has verified is a rubber stamp. Approving one
+whose published source matches its bytecode is an attestation. Skip the middle step and the
+check still passes and stops meaning anything.
 
 What it deliberately does **not** check is balances, pools or liquidity. Those are the
 registrar's job, done off-chain with a verification script, because encoding them here would
