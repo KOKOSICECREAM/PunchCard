@@ -1,16 +1,16 @@
 # Site copy proposal — three things worth saying that the site does not say
 
-**Draft for review. Not published.** Nothing here should reach punchcard.club until someone
-has checked every claim against the contracts, the way `3c8c4d4` had to after the last round
-of copy went too far.
+**Draft for review. Not published.** Check every claim against the contracts before anything
+ships, the way `3c8c4d4` had to after the last round of copy went too far.
 
-The site currently mentions wind-down **once** and the drawer **once**. Those are the two
-most distinctive things the protocol does, and both are buried. A third — that a stranger
-can verify which promises apply to them without trusting this website — is not mentioned at
-all.
+The site mentions winding down **once** and the reward till **once**. Those are the two most
+distinctive things the protocol does. A third — that you can check the terms yourself rather
+than trust this website — is not mentioned at all.
 
-Written in the voice of the existing *PunchCard Promise* section: a claim in plain language,
-a paragraph a shop owner would read, then a dash line with the fact that makes it true.
+Kept plain on purpose. The contract names, the constants and the gas numbers belong in a
+sit-down conversation and on GitHub, not on a page a shop owner reads on their phone. Each
+block below is a claim, a paragraph, and one closing line in the same register as the
+existing *PunchCard Promise* copy.
 
 ---
 
@@ -19,26 +19,18 @@ a paragraph a shop owner would read, then a dash line with the fact that makes i
 > ### Even the ending is written down.
 >
 > Most loyalty programmes just stop. An app goes dark, a card stops scanning, and whatever
-> you had is gone with no one to ask. A token nobody can end is not better — it is the same
-> silence with extra steps.
+> you had is gone with nobody to ask.
 >
-> So a PunchCard programme has an ending, and the ending is in the contract before anyone
-> accepts a single token. If a business winds down, it takes a year. Rewards that were never
-> handed out are burned rather than dumped. The pooled liquidity is returned, most of it to
-> the merchant who put it there. Nothing about it is decided in the moment, because all of it
-> was decided at the start.
+> A PunchCard programme has an ending, and it is written down before anyone accepts a single
+> token. If a business winds down it takes a year, not a weekend. Rewards that were never
+> handed out are destroyed rather than dumped. The money behind the token goes back to the
+> business that put it there.
 >
-> — `WindDownController` runs a 365-day settlement with four independent legs. Undistributed
-> escrow burns, unclaimed treasury burns, vesting settles to what was actually earned, and
-> liquidity releases only after the other three complete. PunchCard can start it; nobody can
-> alter its terms.
+> — None of it is decided in the moment, because all of it was decided at the start.
 
-**Why this is the strongest thing to say.** It is the question every merchant and every
-customer eventually asks, almost nobody in this space answers, and the answer here is
-checkable in advance. It costs nothing to claim because it is already built.
-
-**Check before publishing:** the 90/10 release split, and that "most of it to the merchant"
-matches `LPLocker.release()`.
+**Why this is the strongest of the three.** It is the question every merchant and every
+customer eventually asks, almost nobody in this space answers it, and here the answer is
+readable in advance. It costs nothing to claim because it is already built.
 
 ---
 
@@ -46,70 +38,61 @@ matches `LPLocker.release()`.
 
 > ### Built for a Saturday shift.
 >
-> Rewards are issued from a till, not a vault. Each point of sale gets its own, it refills
-> gradually through the day rather than resetting at midnight, and it has a ceiling that
-> nobody — not you, not us — can raise past what the programme can afford.
+> Rewards come out of a till, not a vault. Every register has its own. It refills through
+> the day instead of resetting at midnight, and it has a limit nobody can raise — not you,
+> not us.
 >
-> If a phone goes missing, you remove that till and carry on. The other registers never
-> stop. Nothing about the rest of the programme is touched.
+> If a phone goes missing, you switch off that till and carry on. Every other register keeps
+> working. Nothing else about your programme is touched.
 >
-> — Per-operator drawers with continuous linear replenishment, a hard `MAX_DRAWER_DAYS`
-> ceiling enforced in immutable code, and `removeOperator` for rotation. The owner key can
-> lower a drawer or halt the programme; it can never move a token to itself.
+> — You can slow a till down or stop the whole programme. Neither you nor we can move a
+> customer's tokens.
 
-**Why this is worth saying.** It is the only part of the design that is visibly about
-physical retail rather than about tokens, and it answers a question every owner has whether
-or not they ask it. The continuous refill is a real design decision — a midnight reset has a
-boundary worth gaming, and this has none.
+**Why it is worth saying.** It is the only part of the design that is visibly about a real
+shop rather than about tokens, and it answers something every owner wonders whether or not
+they ask.
 
 ---
 
 ## 3. Don't take our word for it
 
-> ### You can check, without asking us.
+> ### You can check for yourself.
 >
-> Every business on the network runs the same contracts, with the same numbers. Not "the
-> same policy" — the same code, so the terms cannot be quietly different for one shop.
+> Every business on the network runs the same programme, with the same numbers. Not the same
+> policy — the same code, so the terms cannot quietly be different for one shop and not
+> another.
 >
-> Where a programme is genuinely different, the difference is a question you can ask the
-> contract directly rather than a promise on a website. A programme still in its launch
-> window will tell you so. One that is permanently locked will tell you that instead.
+> Where a programme really is different, you can ask it directly instead of taking our word
+> for it. A new programme still in its opening period will say so. One that is locked for
+> good will say that instead.
 >
-> — Allocation, cliff, treasury delay and reward ceilings are `constant` in the factory.
-> Lineages differ by which functions answer — `HAS_LP_RECOVERY`, `HAS_UNLIMITED_LP_RECOVERY`
-> — rather than by configuration, so a programme's guarantees are readable from the chain by
-> anyone.
+> — Anyone can look. You do not need our permission and you do not need to ask us.
 
-**Why this matters more than it sounds.** It is the reason the beta and pilot lineages are
-separate contracts instead of a constructor argument. A guarantee that varies by
-configuration looks identical in a block explorer to one that does not, and this repo kept
-producing exactly that failure until the distinction was made structural.
+**Why this matters more than it sounds.** It is the reason a programme's differences are
+built into separate contracts rather than settings. A guarantee that varies by setting looks
+identical from the outside to one that does not.
 
 ---
 
 ## What must NOT go on the site
 
-Written down so a future round of copy does not have to rediscover it.
+Written down so the next round of copy does not have to rediscover it.
 
-- **Nothing about returns, appreciation, or holding.** `3c8c4d4` removed
-  investment-adjacent claims once already.
-- **No "permanently locked liquidity" for a merchant whose window is still open.** Beta and
-  pilot programmes are not locked until `lockLP()` or expiry. The dapp reads the state; the
-  site must not assert it.
-- **No economics.** A live micro-launch with no customers proves the machine moves. It says
-  nothing about emission rate, reward size, drawer sizing or demand. See
-  `docs/economics-review.md`.
+- **Nothing about returns, appreciation, or holding.** Investment-adjacent claims were
+  removed once already.
+- **Never "permanently locked" for a programme whose opening period is still running.** It
+  is not locked until it is. The dapp reads that state live; the site must not assert it.
+- **No economics.** A live test with no customers proves the machine moves. It says nothing
+  about how much a reward should be worth, or whether anyone wants one.
 - **No "audited".** It has not been.
-- **No merchant count implying real businesses.** The only merchants ever deployed through
-  the factory are two throwaways on a disposable network, already retired. See
-  `docs/micro-launch-results.md`.
+- **No merchant count.** The only businesses ever deployed through the factory were two
+  throwaways on a disposable test network, already retired.
 
 ## The one status change that is newly sayable
 
-The contracts have executed on Base mainnet — deployment, activation, rewards,
-cross-merchant routing, fee collection and capital recovery. That is a fact and a change
-from "never deployed."
+The contracts have run on Base — a programme deployed, rewards issued, tokens swapped
+between two businesses, fees collected, money recovered.
 
-It is also not a pitch. If it appears at all it belongs as a line in the status section, not
-a banner, and it must sit next to the sentence that keeps it honest: **the machine is proven,
-the economics are not.**
+That is a fact and a change from "never deployed". It is not a pitch. If it appears at all
+it belongs as a line in the status section rather than a banner, and it sits next to the
+sentence that keeps it honest: **the machine works; whether the economics work is untested.**
