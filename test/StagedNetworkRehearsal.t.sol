@@ -154,10 +154,22 @@ contract StagedNetworkRehearsalTest is Test {
         assertFalse(VestingWallet(vesting).isActivated(),"vesting clock not running");
         assertEq(IERC20(token).balanceOf(locker), 0,     "locker empty");
 
-        // The router must refuse to trade it. This is what "not a merchant yet" means to a
-        // customer, and it is the swap path that enforces it — `getPoolFeeTiers` does not
-        // check registration at all, it just reads a zero locker and reverts with no
-        // message. See the report: that is a poor error for a dapp to surface.
+        // The handoff file stage 1 wrote carries the whole suite, not just the token.
+        {
+            string memory json = vm.readFile(string.concat("deploy/staged/", vm.toString(block.chainid), "-latest.json"));
+            assertEq(vm.parseJsonAddress(json, ".token"),   token,   "handoff records the token");
+            assertEq(vm.parseJsonAddress(json, ".factory"), address(f), "and the factory it belongs to");
+            assertEq(vm.parseJsonAddress(json, ".escrow"),  escrow,  "and the escrow");
+            assertEq(vm.parseJsonAddress(json, ".locker"),  locker,  "and the locker");
+        }
+
+        // The router must refuse to trade it, and must SAY SO — both on the swap path and
+        // on the view the interface calls first when quoting. getPoolFeeTiers used to read
+        // a zero locker and revert with no data at all, which surfaced in the dapp's quote
+        // flow as an unexplained failure for a token that was merely not live yet.
+        vm.expectRevert("Token not on network");
+        router.getPoolFeeTiers(token);
+
         deal(USDC, TRADER, 1e6);
         vm.startPrank(TRADER);
         IERC20(USDC).approve(address(router), 1e6);
@@ -175,8 +187,9 @@ contract StagedNetworkRehearsalTest is Test {
         IERC20(USDC).approve(address(f), USDC_SEED);
 
         // ── 4. stage 2 ───────────────────────────────────────────────────────
+        // Deliberately NOT setting PC_TOKEN: stage 2 must find the token in the file
+        // stage 1 wrote. That is the copy-paste this removes.
         vm.setEnv("PC_STAGE", "2");
-        vm.setEnv("PC_TOKEN", vm.toString(token));
         g = gasleft();
         sm.run();
         uint256 gStage2 = g - gasleft();

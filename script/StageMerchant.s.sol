@@ -23,6 +23,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 ///      merchant must approve the factory themselves first — same rule the atomic
 ///      DeployMerchant.s.sol had, and the same reason: the broadcaster is PunchCard's hot
 ///      wallet and the capital is the merchant's.
+///
+///      **Addresses are handed between stages in a file, not by hand.** Stage 1 writes
+///      `deploy/staged/<chainid>-latest.json`; stages 2, 3 and abort read the token back
+///      out of it. `PC_TOKEN` still overrides, for running two stagings at once or for
+///      picking up one from a previous session — but the default path removes a
+///      copy-paste an operator would otherwise do between transactions, under time
+///      pressure, from terminal scrollback.
 contract StageMerchant is Script {
     function run() external {
         address factoryAddr = vm.envAddress("PC_FACTORY");
@@ -43,13 +50,33 @@ contract StageMerchant is Script {
             }));
             vm.stopBroadcast();
 
+            (, , , , address e, address v, address tr, address l,,,,,,,) = f.suites(staged);
+
+            string memory out = "staged";
+            vm.serializeUint(out,    "chainId",  block.chainid);
+            vm.serializeAddress(out, "factory",  factoryAddr);
+            vm.serializeAddress(out, "token",    staged);
+            vm.serializeAddress(out, "escrow",   e);
+            vm.serializeAddress(out, "vesting",  v);
+            vm.serializeAddress(out, "treasury", tr);
+            vm.serializeAddress(out, "locker",   l);
+            vm.serializeString(out,  "symbol",   vm.envString("MERCHANT_SYMBOL"));
+            string memory json = vm.serializeUint(out, "stagedAt", block.timestamp);
+            vm.writeJson(json, _handoffPath());
+
             console2.log("STAGED - not a merchant yet, not registered, no clocks running.");
             console2.log("merchantToken ", staged);
-            console2.log("Pass it as PC_TOKEN for stage 2.");
+            console2.log("escrow        ", e);
+            console2.log("vesting       ", v);
+            console2.log("treasury      ", tr);
+            console2.log("locker        ", l);
+            console2.log("");
+            console2.log("Written to", _handoffPath());
+            console2.log("Stages 2 and 3 read it from there - no need to pass PC_TOKEN.");
             return;
         }
 
-        address token = vm.envAddress("PC_TOKEN");
+        address token = _token(factoryAddr);
 
         if (stage == 2) {
             uint256 usdcSeed = vm.envUint("MERCHANT_USDC_SEED");
@@ -99,5 +126,34 @@ contract StageMerchant is Script {
         }
 
         revert("PC_STAGE must be 1, 2, 3, or 0 to abort");
+    }
+
+    // ── handoff ───────────────────────────────────────────────────────────────
+
+    function _handoffPath() internal view returns (string memory) {
+        return string.concat("deploy/staged/", vm.toString(block.chainid), "-latest.json");
+    }
+
+    /// @dev PC_TOKEN wins when set. Otherwise read stage 1's file, and check it belongs to
+    ///      the factory being driven — a stale handoff from another network would
+    ///      otherwise send stage 2 at a token this factory has never heard of, and the
+    ///      revert ("Not staged") would say nothing about why.
+    function _token(address factoryAddr) internal view returns (address) {
+        address override_ = vm.envOr("PC_TOKEN", address(0));
+        if (override_ != address(0)) return override_;
+
+        string memory path = _handoffPath();
+        require(
+            vm.exists(path),
+            string.concat("No staged handoff at ", path, " - run PC_STAGE=1 first, or set PC_TOKEN explicitly.")
+        );
+
+        string memory json = vm.readFile(path);
+        address fileFactory = vm.parseJsonAddress(json, ".factory");
+        require(
+            fileFactory == factoryAddr,
+            "The staged handoff file belongs to a different factory. Check PC_FACTORY, or set PC_TOKEN explicitly."
+        );
+        return vm.parseJsonAddress(json, ".token");
     }
 }
