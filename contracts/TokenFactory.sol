@@ -462,6 +462,7 @@ contract TokenFactory {
         IActivatable(escrow).activate();
         IActivatable(vesting).activate();
         IActivatable(treasury).activate();
+        IActivatable(locker).activate();
 
         IWindDownController(windDownController).register(
             tokenAddr,

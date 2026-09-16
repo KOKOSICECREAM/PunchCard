@@ -65,9 +65,9 @@ contract LPLockerPilot is LPLockerBeta {
         _factory, _usdc, _weth, _punchcardFeeRecipient
     ) {}
 
-    /// @notice Open until someone closes it. `evacuationDeadline` is inherited and
+    /// @notice Open until someone closes it. `evacuationDeadline()` is inherited and
     ///         meaningless here — deliberately not read.
-    /// @dev The inherited immutable still says deploy + 30 days. Leaving a stale value
+    /// @dev The inherited accessor still reports activation + 30 days. Leaving that
     ///      readable would be a trap for anything reading it directly, so
     ///      `evacuationExpiresAt()` below is the value to read, and it says never.
     function evacuationOpen() public view override returns (bool) {

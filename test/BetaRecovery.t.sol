@@ -70,8 +70,13 @@ contract BetaRecoveryTest is Test {
             address(merchant), OWNER, WINDDOWN, address(pm), FACTORY,
             address(usdc), address(weth), PUNCHCARD
         );
-        vm.prank(FACTORY);
+        vm.startPrank(FACTORY);
         locker.initializeLP(1, 2, 3000, 3000);
+        // The factory activates the locker as its last step, so the 30-day hatch starts
+        // when the merchant goes live. Without this the locker is "staged": hatch open,
+        // clock not running. See Activatable.
+        locker.activate();
+        vm.stopPrank();
         merchant.mint(address(locker), RESERVE);
     }
 
@@ -107,6 +112,53 @@ contract BetaRecoveryTest is Test {
     }
 
     // ── the hatch closes, both ways ───────────────────────────────────────────
+
+    // ── staged, before the merchant goes live ────────────────────────────────
+
+    /// A staged suite's hatch is open and NOT counting down. Two reasons, and they pull in
+    /// the same direction: the merchant is not live so nothing has been promised about
+    /// their liquidity, and the seed in this contract is real money that an abandoned
+    /// staging must not strand.
+    function test_aStagedLockerHatchIsOpenAndNotCountingDown() public {
+        LPLockerBeta staged = new LPLockerBeta(
+            address(merchant), OWNER, WINDDOWN, address(pm), FACTORY,
+            address(usdc), address(weth), PUNCHCARD
+        );
+        vm.prank(FACTORY);
+        staged.initializeLP(1, 2, 3000, 3000);
+
+        assertFalse(staged.isActivated(), "staged, not live");
+        assertEq(staged.evacuationDeadline(), 0, "no deadline while staged");
+        assertTrue(staged.evacuationOpen(), "hatch open while staged");
+
+        // A year of sitting staged must not consume any of the window.
+        vm.warp(block.timestamp + 365 days);
+        assertTrue(staged.evacuationOpen(), "still open a year later - the clock has not started");
+        assertEq(staged.evacuationDeadline(), 0, "and still has no deadline");
+    }
+
+    /// The bug this fixes. A suite staged for a week then activated must still get the
+    /// full thirty days, not twenty-three.
+    function test_theWindowIsThirtyDaysFromGoingLiveNotFromConstruction() public {
+        LPLockerBeta staged = new LPLockerBeta(
+            address(merchant), OWNER, WINDDOWN, address(pm), FACTORY,
+            address(usdc), address(weth), PUNCHCARD
+        );
+        vm.prank(FACTORY);
+        staged.initializeLP(1, 2, 3000, 3000);
+
+        vm.warp(block.timestamp + 7 days);
+        vm.prank(FACTORY);
+        staged.activate();
+        uint256 live = block.timestamp;
+
+        assertEq(staged.evacuationDeadline(), live + 30 days, "full window from going live");
+
+        vm.warp(live + 29 days);
+        assertTrue(staged.evacuationOpen(), "open on day 29 after launch");
+        vm.warp(live + 30 days);
+        assertFalse(staged.evacuationOpen(), "shut on day 30 after launch");
+    }
 
     /// The guardrail that matters most: a hatch nobody closes must close itself.
     function test_windowExpiresOnItsOwn() public {

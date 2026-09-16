@@ -89,6 +89,8 @@ contract PilotRecoveryTest is Test {
         vm.startPrank(FACTORY);
         pilot.initializeLP(1, 2, 3000, 3000);
         beta.initializeLP(1, 2, 3000, 3000);
+        pilot.activate();
+        beta.activate();
         vm.stopPrank();
 
         merchant.mint(address(pilot), RESERVE);

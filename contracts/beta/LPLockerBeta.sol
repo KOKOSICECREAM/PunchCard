@@ -21,7 +21,9 @@ import "../LPLocker.sol";
 ///
 ///      1. **It expires by itself.** A manually-closed hatch can be left open forever
 ///         through neglect or intent, which is the trapdoor this was supposed to avoid.
-///         `EVACUATION_WINDOW` closes it regardless of whether anyone acts.
+///         `EVACUATION_WINDOW` closes it regardless of whether anyone acts — counted from
+///         the moment the merchant goes live, not from when this contract was built, so a
+///         suite that sat staged for a week still gets its full thirty days.
 ///      2. **It closes early on demand.** `lockLP()` is one-way; once testing passes, call
 ///         it and the contract becomes equivalent to production.
 ///      3. **Evacuation is all-or-nothing.** Partial withdrawal means recomputing
@@ -37,8 +39,15 @@ contract LPLockerBeta is LPLocker {
     /// @notice How long after deployment the hatch stays open, at most.
     uint256 public constant EVACUATION_WINDOW = 30 days;
 
-    /// @notice Hard deadline. After this, evacuation is impossible whatever anyone does.
-    uint256 public immutable evacuationDeadline;
+    /// @notice Hard deadline, measured from ACTIVATION rather than construction.
+    /// @dev Zero while the suite is staged. A merchant must not lose part of a 30-day
+    ///      recovery window to days the suite spent sitting between stageSuite() and
+    ///      activateMerchant() — they were not live and had nothing to recover from.
+    ///      Same bug family as the emission and vesting clocks; see Activatable.
+    function evacuationDeadline() public view returns (uint256) {
+        if (activatedAt == 0) return 0;
+        return activatedAt + EVACUATION_WINDOW;
+    }
 
     /// @notice Set by lockLP() or by evacuating. One-way, never cleared.
     bool public lpPermanentlyLocked;
@@ -68,10 +77,9 @@ contract LPLockerBeta is LPLocker {
         _merchantToken, _ownerWallet, _windDownController, _positionManager,
         _factory, _usdc, _weth, _punchcardFeeRecipient
     ) {
-        // Derived, not passed. A constructor argument could be set to a far-future date,
-        // which would turn a 30-day hatch into a permanent one without anything looking
-        // different at the call site.
-        evacuationDeadline = block.timestamp + EVACUATION_WINDOW;
+        // Nothing to set. The window is derived from activatedAt, so it cannot be passed
+        // a far-future date at the call site — the old reason for deriving it — and it
+        // cannot start before the merchant is live.
     }
 
     /// @notice True while liquidity can still be pulled. The dapp reads this to disclose
@@ -80,7 +88,12 @@ contract LPLockerBeta is LPLocker {
     ///      KOKOS's own open-ended pilot. No merchant locker may override it — see the
     ///      warning on that contract.
     function evacuationOpen() public view virtual returns (bool) {
-        return !lpPermanentlyLocked && block.timestamp < evacuationDeadline;
+        if (lpPermanentlyLocked) return false;
+        // Staged but not live: open, and not yet counting down. The suite is not a merchant
+        // yet and nothing has been promised about its liquidity, but the seed is real money
+        // sitting in this contract — an abandoned staging must not strand it.
+        if (activatedAt == 0) return true;
+        return block.timestamp < evacuationDeadline();
     }
 
     /// @notice Close the hatch early and permanently. One-way.
