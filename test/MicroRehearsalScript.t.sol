@@ -63,8 +63,9 @@ contract MicroRehearsalScriptTest is Test {
     function _fundLikeTheRealWallets() internal returns (address A, address B) {
         A = vm.addr(KEY_A);
         B = vm.addr(KEY_B);
-        // The amounts actually sitting in the real wallets right now.
-        vm.deal(A, 0.006153 ether);
+        // The amounts actually sitting in the real wallets right now (A topped up by
+        // 0.002 for the staged run, which costs more gas than the atomic one did).
+        vm.deal(A, 0.008083 ether);
         vm.deal(B, 0.003393 ether);
         deal(USDC, B, 10_006_944);
     }
@@ -105,7 +106,7 @@ contract MicroRehearsalScriptTest is Test {
 
         // ── guard: USDC with no ETH cannot pay for its own approval ──────────
         _env();
-        vm.deal(vm.addr(KEY_A), 0.006153 ether);
+        vm.deal(vm.addr(KEY_A), 0.008083 ether);
         vm.deal(vm.addr(KEY_B), 0);
         vm.expectRevert(bytes("Wallet B (merchant owner) has no ETH for gas - it broadcasts the USDC approval and cannot pay for it"));
         script.run();
