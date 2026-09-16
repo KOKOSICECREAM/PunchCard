@@ -251,9 +251,12 @@ WindDownController, and emit `MerchantDeployed`.
 pSKOOP deploys through `StagedTokenFactoryPilot`, whose lockers have an LP hatch that
 **never closes by itself**. No merchant may use this path. See `docs/staged-rollout.md`.
 
-`DeployNetworkStaged.s.sol` wires `StagedTokenFactoryBeta` by default; for the pilot,
-substitute `StagedTokenFactoryPilot` and `LockerDeployerPilot`. Everything else about the
-script is the same, including the `PC_CREATE_NEW_NETWORK` acknowledgement.
+Use **`DeployNetworkStagedPilot.s.sol`**. It is a separate script rather than a flag on
+`DeployNetworkStaged`, because the runbook used to say "substitute the pilot contracts" —
+meaning hand-edit a deploy script on launch day, which is worse than a configuration flag
+rather than better. It takes `PC_PILOT_LINEAGE=true` on top of `PC_CREATE_NEW_NETWORK=true`,
+and `DeploymentInvariants.t.sol` asserts that the ordinary staged script can never reach the
+pilot lineage.
 
 ## No authorisation step for the first network
 
@@ -297,7 +300,7 @@ No timelock anywhere in it. `DeployNetworkStaged` creates the controller with th
 factory already authorised, so this is a single sitting.
 
 ```
-1  DeployNetworkStaged.s.sol        PC_CREATE_NEW_NETWORK=true
+1  DeployNetworkStagedPilot.s.sol   PC_CREATE_NEW_NETWORK=true PC_PILOT_LINEAGE=true
                                     -> controller, StagedTokenFactoryPilot, router
 2  StageMerchant  PC_STAGE=1        stage the suite; nothing is live
 3  merchant       approve USDC      from the OWNER wallet, to the factory

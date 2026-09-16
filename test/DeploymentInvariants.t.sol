@@ -22,13 +22,14 @@ contract DeploymentInvariantsTest is Test {
     ///      covering whatever is added next, and the check it stops applying is the one
     ///      that keeps a second controller — a second network — from being deployed by
     ///      accident. DeployMicroRehearsal.s.sol was added in exactly that gap.
-    string[7] scripts = [
+    string[8] scripts = [
         "script/DeployNetwork.s.sol",
         "script/DeployNetworkBeta.s.sol",
         "script/DeployProductionFactory.s.sol",
         "script/DeployMerchant.s.sol",
         "script/DeployMicroRehearsal.s.sol",
         "script/DeployNetworkStaged.s.sol",
+        "script/DeployNetworkStagedPilot.s.sol",
         "script/StageMerchant.s.sol"
     ];
 
@@ -155,7 +156,11 @@ contract DeploymentInvariantsTest is Test {
     /// The staged path must NOT carry that guard — it is the one that works on Base, and a
     /// guard copied into it by habit would block the only usable deployment path.
     function test_theStagedScriptsRunOnBase() public view {
-        string[2] memory staged = ["script/DeployNetworkStaged.s.sol", "script/StageMerchant.s.sol"];
+        string[3] memory staged = [
+            "script/DeployNetworkStaged.s.sol",
+            "script/DeployNetworkStagedPilot.s.sol",
+            "script/StageMerchant.s.sol"
+        ];
         for (uint256 i = 0; i < staged.length; i++) {
             string memory src = vm.readFile(staged[i]);
             assertFalse(
@@ -181,6 +186,32 @@ contract DeploymentInvariantsTest is Test {
         string memory src = vm.readFile("contracts/TokenFactory.sol");
         assertTrue(_contains(src, "THIS CANNOT DEPLOY A MERCHANT ON BASE"),
             "TokenFactory must carry an unmissable notice that it is reference-only on Base");
+    }
+
+    /// The pilot lineage exists for exactly one token. Deploying it takes its own
+    /// acknowledgement on top of the network one, because reaching for the wrong script is
+    /// the whole failure being guarded against — a merchant under a pilot factory has a
+    /// liquidity guarantee that can be withdrawn at any time, which is not a guarantee.
+    function test_thePilotNetworkScriptDemandsItsOwnAcknowledgement() public view {
+        string memory src = vm.readFile("script/DeployNetworkStagedPilot.s.sol");
+        assertTrue(_contains(src, "PC_PILOT_LINEAGE"),
+            "the pilot network script must demand PC_PILOT_LINEAGE, separate from PC_CREATE_NEW_NETWORK");
+        assertTrue(_contains(src, "new StagedTokenFactoryPilot"),
+            "and must actually deploy the pilot factory");
+        assertTrue(_contains(src, "new LockerDeployerPilot"),
+            "with the pilot locker deployer - the factory alone does not make the hatch open-ended");
+    }
+
+    /// The non-pilot staged script must NOT reach the pilot lineage, or the acknowledgement
+    /// above is decoration: a merchant launch would quietly get an open-ended hatch.
+    function test_theOrdinaryStagedScriptNeverReachesThePilotLineage() public view {
+        string memory src = vm.readFile("script/DeployNetworkStaged.s.sol");
+        assertFalse(_contains(src, "contracts/pilot/"),
+            "DeployNetworkStaged is the merchant path and must not import the pilot lineage");
+        assertFalse(_contains(src, "new StagedTokenFactoryPilot"),
+            "DeployNetworkStaged must not deploy the pilot factory");
+        assertFalse(_contains(src, "new LockerDeployerPilot"),
+            "DeployNetworkStaged must not deploy the pilot locker deployer");
     }
 
     function _contains(string memory haystack, string memory needle) private pure returns (bool) {

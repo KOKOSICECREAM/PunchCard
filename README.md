@@ -1,11 +1,35 @@
 # PunchCard Network
 
-A launchpad for merchant loyalty tokens on Base. One factory call deploys a complete,
-self-contained suite for a business: its own ERC-20, a metered reward escrow, team vesting,
-a timelocked treasury, and locked dual-pool liquidity. A shared router lets customers swap
-between any two merchant tokens.
+A launchpad for merchant loyalty tokens on Base. Deploys a complete, self-contained suite
+for a business: its own ERC-20, a metered reward escrow, team vesting, a timelocked
+treasury, and locked dual-pool liquidity. A shared router lets customers swap between any
+two merchant tokens.
 
 **Site:** [punchcard.club](https://punchcard.club)
+
+## Why this exists
+
+KOKOS Ice Cream in Nashville has run a loyalty token called SKOOP since 2025. It works. Real
+customers earn it at the register, hold it, and spend it. The reward vault, the point of
+sale, the team vesting — all of it has been running in a real shop taking real money, and
+the mechanics are sound.
+
+What it could never prove is the part that needs more than one shop.
+
+A loyalty token at a single business is a closed loop. The points are worth something at
+exactly one counter, which is what makes every loyalty scheme forgettable — customers cannot
+do anything with them anywhere else, so they stop thinking about them. SKOOP had no
+neighbours, because there was no network to have them in.
+
+**This repository is that network.** Not a replacement for what KOKOS built, and not a
+migration of it — the same lessons rebuilt on something that can have neighbours. A customer
+who earns at the coffee shop can trade for the token they want at the pizza place, with
+neither business arranging anything. Every merchant that joins is somewhere every existing
+customer can now spend.
+
+The uniformity below is what makes that possible. Tokens can only be treated as
+interchangeable by a router, and as comparable by a customer, if they are genuinely the
+same thing underneath.
 
 **The premise is uniformity.** Every merchant gets byte-identical contracts and identical
 terms — the same 45/30/15/10 split, the same 30-day cliff, the same 90-day treasury delay,
