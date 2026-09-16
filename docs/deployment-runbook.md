@@ -5,9 +5,52 @@ repeats identically for every business that joins.
 
 ---
 
+## Rules for Base — read these before anything else
+
+Settled 2026-09-15, after a live micro rehearsal found the ceiling that makes them
+necessary.
+
+1. **The atomic `TokenFactory` lineage is reference-only on Base.** `deploy()` costs
+   17,325,962 gas against a 16,777,216 per-transaction cap — a chain-level limit, identical
+   across every RPC and exactly 2^24. It is kept as the readable version of what the stages
+   do and as the oracle the staged tests compare against. `DeployNetwork.s.sol`,
+   `DeployNetworkBeta.s.sol`, `DeployProductionFactory.s.sol` and `DeployMerchant.s.sol` all
+   refuse to run on chainid 8453, mechanically.
+
+2. **Base merchant launches use `StagedTokenFactory*`**, through
+   `DeployNetworkStaged.s.sol` and `StageMerchant.s.sol`.
+
+3. **pSKOOP starts a fresh staged network.** `DeployNetworkStaged` creates its own
+   `WindDownController` with the staged factory already authorised, so there is **no
+   authorisation step** for the first network. `proposeFactory` / `executeFactory` exist
+   for adding *later* factories to that same controller.
+
+4. **Never reuse the micro rehearsal controller.** The one at
+   `0x54BeC817f99f1a477944e84688bCeBEAF92175E7` is a disposable artifact of the rehearsal
+   that found the gas ceiling. It has no merchants, it is not the network, and it stays
+   dead. Registration is permanent, so anything registered into it would be stuck there.
+
+5. **Do not deploy a second controller once pSKOOP exists.** A controller *is* the network.
+   The router binds to one, so merchants under a second could never swap against the
+   first's — unfixable afterwards and invisible until a cross-merchant swap fails. After
+   pSKOOP, every new deployment path is added to its controller, never alongside it.
+
+6. **The later production factory is added, not deployed beside.**
+   `proposeFactory(stagedProductionFactory, true)`, wait 48 hours, `executeFactory`.
+   Merchants already registered are untouched.
+
+---
+
 # Part 1 — Network setup (once)
 
-`WindDownController` and `TokenFactory` reference each other, so the order matters.
+> **On Base, run `DeployNetworkStaged.s.sol` and skip the manual order below.** It resolves
+> the circular dependency with `vm.computeCreateAddress`, wires `StagedTokenFactoryBeta`,
+> and demands `PC_CREATE_NEW_NETWORK` first. The manual sequence is kept because it
+> describes what the script does and because the constructor arguments are the same either
+> way — but the atomic `TokenFactory` it names cannot onboard a merchant on Base. Substitute
+> `StagedTokenFactoryBeta`; the constructor signature is identical.
+
+`WindDownController` and the factory reference each other, so the order matters.
 
 ### The circular dependency
 `WindDownController` needs the factory address; `TokenFactory` needs the controller
@@ -203,35 +246,71 @@ WindDownController, and emit `MerchantDeployed`.
 
 ---
 
-# Part 3 — The SKOOP pilot (once, and never again)
+# Part 3 — The pSKOOP pilot (once, and never again)
 
-KOKOS deploys through `TokenFactoryPilot`, whose lockers have an LP hatch that **never
-closes by itself**. No merchant may use this path. See `docs/staged-rollout.md`.
+pSKOOP deploys through `StagedTokenFactoryPilot`, whose lockers have an LP hatch that
+**never closes by itself**. No merchant may use this path. See `docs/staged-rollout.md`.
 
-## The 48-hour clock is the whole difficulty
+`DeployNetworkStaged.s.sol` wires `StagedTokenFactoryBeta` by default; for the pilot,
+substitute `StagedTokenFactoryPilot` and `LockerDeployerPilot`. Everything else about the
+script is the same, including the `PC_CREATE_NEW_NETWORK` acknowledgement.
+
+## No authorisation step for the first network
+
+`DeployNetworkStaged` constructs the `WindDownController` with the staged factory already
+authorised, so the pSKOOP pilot network needs **no** `proposeFactory` / `executeFactory` at
+all. That removes two 48-hour waits from the critical path.
+
+The timelocked pair below applies only when adding a **later** factory to the controller
+pSKOOP created — a production factory at Stage 2, for instance. Keep it for that.
+
+Two things that do not change:
+
+- **Do not deploy a second controller** once pSKOOP exists. A controller is the network.
+- **Do not reuse the micro rehearsal controller** at
+  `0x54BeC817f99f1a477944e84688bCeBEAF92175E7`. Registration is permanent; anything put
+  there is stuck there.
+
+## The 48-hour clock, for later factories only
 
 `proposeFactory` / `executeFactory` are both multisig, with `FACTORY_TIMELOCK = 48 hours`
-between them. That applies to **authorising and to disabling**, so the pilot factory is
-reachable for at least 48 hours after you finish with it. Plan the calendar first; the
-sequence below has two unavoidable two-day waits in it.
+between them, and that applies to **authorising and to disabling**. None of it is needed for
+the first staged network — see above — but it is exactly what a later factory costs, in both
+directions. Plan the calendar before the day.
 
 ```
-day 0   multisig: proposeFactory(TokenFactoryPilot, true)
-day 2   multisig: executeFactory(TokenFactoryPilot)          ← path opens
-day 2   deployer: TokenFactoryPilot.deploy(SKOOP)            ← do this the same day
-day 2   multisig: proposeFactory(TokenFactoryPilot, false)   ← immediately, same session
-day 4   multisig: executeFactory(TokenFactoryPilot)          ← path closes
-later   owner:    LPLockerPilot.lockLP()                     ← when the pilot is proven
+later, for a Stage 2 production factory added to the pSKOOP controller:
+
+day 0   multisig: proposeFactory(stagedProductionFactory, true)
+day 2   multisig: executeFactory(stagedProductionFactory)     ← path opens
 ```
 
-- [ ] **Deploy and propose-disable in the same session.** The gap between the path opening
-      and the disable proposal is the only window in which a second pilot merchant could be
-      created. Make it minutes, not days. Nothing enforces this — it is a habit, which is
-      why it is written down.
-- [ ] **Disabling does not orphan SKOOP.** `executeFactory(addr, false)` stops the factory
-      registering *new* merchants. SKOOP keeps working, keeps routing, keeps its hatch.
-- [ ] **The hatch is unaffected by any of this.** Disabling the factory does not lock the
-      LP. Only `lockLP()` does, and only when you decide.
+- [ ] **Disabling does not orphan anyone.** `executeFactory(addr, false)` stops a factory
+      registering *new* merchants. Merchants it already registered keep working, keep
+      routing, and keep whatever hatch they have.
+- [ ] **Neither direction touches an existing merchant's LP.** Only `lockLP()` locks a
+      pilot hatch, and only when you decide.
+
+## The pSKOOP launch sequence
+
+No timelock anywhere in it. `DeployNetworkStaged` creates the controller with the staged
+factory already authorised, so this is a single sitting.
+
+```
+1  DeployNetworkStaged.s.sol        PC_CREATE_NEW_NETWORK=true
+                                    -> controller, StagedTokenFactoryPilot, router
+2  StageMerchant  PC_STAGE=1        stage the suite; nothing is live
+3  merchant       approve USDC      from the OWNER wallet, to the factory
+4  StageMerchant  PC_STAGE=2        pools created, LP minted, held by the factory
+5  -- inspect everything --         allocations, pool prices, positions, wallets
+6  StageMerchant  PC_STAGE=3        activate: LP to the locker, clocks start, registered
+7  fill pilot-skoop config          controller, router, token, escrow, pools
+8  confirm the page reads           "pSKOOP pilot liquidity is not permanently locked yet."
+9  later, when proven               lockLP() from the owner wallet
+```
+
+Step 5 is the one that staging exists for, and the only one with no transaction in it. If
+something is wrong, `PC_STAGE=0` aborts and returns the seed; after step 6 there is no undo.
 
 ## The pilot token is `pSKOOP`, not `SKOOP`
 
@@ -320,5 +399,5 @@ as possible.
 - [ ] `perTxFloor` / `perTxMax` inside `DAILY_CAP`
 - [ ] Merchant JSON committed to `deploy/merchants/`
 - [ ] Factory is the intended lineage — `HAS_UNLIMITED_LP_RECOVERY()` must **revert**
-      for any merchant deployment. It answers only on `TokenFactoryPilot`, which is
-      for SKOOP alone.
+      for any merchant deployment. It answers only on `StagedTokenFactoryPilot`, which is
+      for pSKOOP alone.

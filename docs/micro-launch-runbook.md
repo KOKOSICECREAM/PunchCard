@@ -35,17 +35,19 @@ constant.
 > section named four things that were not there, in the one document somebody would follow
 > to run a live micro-launch. Corrected below.
 
-A rehearsal deploys `TokenFactoryBeta` and `LockerDeployerBeta`, which produce lockers with
-a **temporary, self-expiring LP evacuation hatch**. Production contracts do not have one and
+A rehearsal deploys `StagedTokenFactoryBeta` and `LockerDeployerBeta`, which produce lockers
+with a **temporary, self-expiring LP evacuation hatch**. Staged, not atomic: the atomic
+lineage cannot deploy a merchant on Base at all, which is what the first live run of this
+rehearsal discovered. Production contracts do not have one and
 must never gain one — the escape hatch exists because the first live deployment runs
 unaudited code, not because merchants should be able to pull liquidity.
 
 | | Production | Rehearsal / Beta | Pilot |
 |---|---|---|---|
-| Contract | `TokenFactory` / `LPLocker` | `TokenFactoryBeta` / `LPLockerBeta` | `TokenFactoryPilot` / `LPLockerPilot` |
+| Contract | `StagedTokenFactory` / `LPLocker` | `StagedTokenFactoryBeta` / `LPLockerBeta` | `StagedTokenFactoryPilot` / `LPLockerPilot` |
 | LP evacuation | **none, ever** | owner-only, ≤30 days, one-way | owner-only, **never expires**, one-way |
 | Marker | both revert | `HAS_LP_RECOVERY()` true | both true |
-| Deploy script | `DeployNetwork.s.sol` | `DeployNetworkBeta.s.sol` | — |
+| Deploy script | `DeployNetworkStaged.s.sol` | `DeployNetworkStaged.s.sol` | `DeployNetworkStaged.s.sol`, pilot deployer |
 
 **Why a separate factory at all,** when it is byte-identical logic: a beta factory is just a
 `TokenFactory` constructed with the beta locker deployer. That is a constructor argument —

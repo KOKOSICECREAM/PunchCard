@@ -52,10 +52,19 @@ Added 2026-09-15. A third lineage sits beside beta and production, for **one dep
 
 | | Production | Beta | **Pilot** |
 |---|---|---|---|
-| Factory | `TokenFactory` | `TokenFactoryBeta` | `TokenFactoryPilot` |
+| Factory | `StagedTokenFactory` | `StagedTokenFactoryBeta` | `StagedTokenFactoryPilot` |
 | Locker | `LPLocker` | `LPLockerBeta` | `LPLockerPilot` |
-| LP recovery | none, ever | 30 days, self-closing | **open until closed by hand** |
-| Who | any merchant | beta merchants | **KOKOS/SKOOP only** |
+| LP recovery | none, ever | 30 days from activation, self-closing | **open until closed by hand** |
+| Who | any merchant | beta merchants | **pSKOOP only** |
+
+> **The atomic `TokenFactory` / `TokenFactoryBeta` / `TokenFactoryPilot` lineage is
+> reference-only on Base.** `deploy()` is 17,325,962 gas against a 16,777,216 cap. The three
+> lineages above are the staged equivalents and carry the same marker constants —
+> `HAS_LP_RECOVERY` on beta and pilot, `HAS_UNLIMITED_LP_RECOVERY` on pilot alone.
+>
+> Note "30 days **from activation**": every clock in a suite — emission, team cliff,
+> treasury, and the recovery hatch — starts when the merchant goes live, not when the
+> contracts were built. Staging means those are no longer the same instant.
 
 `LPLockerBeta`'s first guardrail says a hatch that must be closed by hand can be left open
 forever through neglect or intent, and that `EVACUATION_WINDOW` closes it regardless of
@@ -72,9 +81,11 @@ production. Nothing else.
 
 **Enforced structurally, not by policy.** The pilot is a separate contract, separate
 deployer and separate factory, so "SKOOP only" is enforced by which factory the controller
-has authorised. Authorise `TokenFactoryPilot`, deploy KOKOS, then
-`proposeFactory(pilot, false)` to close the path — merchants already registered keep
-working, which is what that path was built for.
+has authorised. For the first pilot network there is nothing to authorise:
+`DeployNetworkStaged` creates the controller with `StagedTokenFactoryPilot` already wired
+in. `proposeFactory` / `executeFactory` are for adding a **later** factory — a production
+one at Stage 2 — to that same controller, and disabling one leaves merchants it already
+registered working, which is what that path was built for.
 
 ```
 cast call $FACTORY 'HAS_LP_RECOVERY()(bool)'            → true on beta and pilot
