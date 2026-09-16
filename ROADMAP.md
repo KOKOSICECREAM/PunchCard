@@ -216,12 +216,24 @@ Measured on a Base fork:
 ### Status as of 2026-09-15
 
 ```
-Contracts            conceptually tested — 125 passing, fork-exercised
-Base deployability   BLOCKED
-Critical path        modular staged deployment
-pSKOOP pilot         PAUSED until deploy() is split
+Contracts            145 passing, fork-exercised
+Base deployability   UNBLOCKED by StagedTokenFactory — every stage fits
+Atomic TokenFactory  dead on Base; kept for reference and existing tests
+pSKOOP pilot         ready to re-plan against the staged path
 micro rehearsal      halted after the network deployed; no merchants exist
 ```
+
+Measured against a live Base fork:
+
+| stage | gas | vs 16,777,216 |
+|---|---|---|
+| `stageSuite` | 6,657,752 | 40% |
+| `fundAndMintLP` | 10,643,851 | 63% |
+| `activateMerchant` | 527,034 | 3% |
+| atomic `deploy()` | 17,325,962 | **103% — refused** |
+
+Stage 2 is the tightest at 6.1M of headroom, so this is not living at the edge the way a
+234k shave would have been.
 
 Everything else in this document that depends on deploying a merchant is downstream of
 this. The pilot slug, the wallets, the seed capital and the disclosure work all remain
