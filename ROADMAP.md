@@ -288,6 +288,41 @@ What atomicity used to give for free, and now has to be checked explicitly at st
 - [ ] owner wallet received no merchant tokens
 - [ ] router and controller accept the token only after activation
 
+### Settled 2026-09-15 — stage 1 issues a claim that stage 2 must present
+
+```
+stageSuite(params)                        -> suiteId
+fundAndMintLP(suiteId, seeds, slippage)   -> pools, LP, reserve
+activateMerchant(suiteId)                 -> final invariant check + register()
+```
+
+The `suiteId` is consumed exactly once, which buys three properties the atomic version had
+implicitly:
+
+- an abandoned staged suite cannot be completed by a random actor
+- stage 2 cannot be replayed
+- activation proves it is completing **the exact staged suite that was inspected**, not a
+  different one assembled in between
+
+The id must bind the parameters, not just name the suite. If `suiteId` is a bare counter,
+stage 2 or 3 can present a valid claim while supplying a different owner, team or operator
+than the one staged — and "the suite that was inspected" stops meaning anything. Hash the
+params into it.
+
+### Pools: create-or-revert on the first pass
+
+Stage 2 must not silently join a pool someone else created. Three options exist —
+
+```
+create the pool at the expected price
+or verify an existing pool's price and liquidity are exactly acceptable
+or revert
+```
+
+— and the first pass takes **create-or-revert**. If the pool already exists, stop. Verifying
+someone else's pool is a second mechanism with its own failure modes, and it can be added
+later against a working split rather than designed alongside one.
+
 ### The front-run that atomicity was silently preventing
 
 `TokenFactory.deploy()` carries this comment, twice:
@@ -305,6 +340,36 @@ and the remedy is an abort rather than a deploy. Step 3 must instead *create* th
 revert if one already exists, so a poisoned pool stops the staging rather than being
 discovered after it. That is a stricter call than
 `createAndInitializePoolIfNecessary`, which is deliberately tolerant of an existing pool.
+
+### The suite clocks start at stage 1, not at activation
+
+Not on anyone's checklist yet, and it is not an invariant — it is a behaviour change that
+staging introduces by existing.
+
+```
+VestingWallet.sol:66   vestingStart = block.timestamp
+VestingWallet.sol:67   cliffTime    = block.timestamp + _cliffDuration
+RewardEscrow.sol:111   emissionStart = block.timestamp
+```
+
+All three are set in the constructors, which run in **stage 1**. Under atomic deploy, stage
+1 and activation were the same instant, so "the clock starts when the merchant goes live"
+was true without anyone deciding it. Split them and it stops being true: a suite staged on
+Monday and activated on Friday opens with four days of emission already accrued and four
+days already served against the 180-day team cliff.
+
+At minutes between stages this is noise. At days it is a merchant quietly starting with
+rewards unlocked that nobody issued, and `bufferCap` is 30 days of emission, so a month-long
+staging window would open the escrow at its full spendable ceiling on day one.
+
+Decide deliberately, do not inherit it:
+
+- **accept it**, and require stages to complete within some short window
+- **or pass the timestamps in**, so the constructors take a start time that stage 3 sets to
+  the activation block
+
+The second is more code and makes the suite contracts take an argument they currently
+derive. The first is free and needs enforcing, or it is just a hope.
 
 ## Economics — UNVALIDATED
 
