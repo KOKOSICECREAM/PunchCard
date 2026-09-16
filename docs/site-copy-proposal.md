@@ -23,14 +23,22 @@ existing *PunchCard Promise* copy.
 >
 > A PunchCard programme has an ending, and it is written down before anyone accepts a single
 > token. If a business winds down it takes a year, not a weekend. Rewards that were never
-> handed out are destroyed rather than dumped. The money behind the token goes back to the
-> business that put it there.
+> handed out are destroyed rather than dumped. Most of the money behind the token goes back
+> to the business that put it there — and a slice stays behind on purpose, so anyone still
+> holding tokens can still sell them afterwards.
 >
 > — None of it is decided in the moment, because all of it was decided at the start.
 
 **Why this is the strongest of the three.** It is the question every merchant and every
 customer eventually asks, almost nobody in this space answers it, and here the answer is
 readable in advance. It costs nothing to claim because it is already built.
+
+**Verified 2026-09-15**, and the first draft of this block was wrong. It said the money
+"goes back to the business", which reads as all of it and is 90%. The remaining 10% stays in
+the pool permanently and is load-bearing: it is the only reason a customer can still sell a
+token after the programme has ended. Writing the merchant's half and omitting the customer's
+half dropped the better story — a shop closing down is exactly when a customer wants to know
+their tokens are not stranded.
 
 ---
 
