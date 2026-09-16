@@ -111,6 +111,19 @@ Written down so the next round of copy does not have to rediscover it.
 - **No "audited".** It has not been.
 - **No merchant count.** The only businesses ever deployed through the factory were two
   throwaways on a disposable test network, already retired.
+- **Never call SKOOP "factory-standard".** SKOOP is hand-assembled and admitted through the
+  manual registrar path, so the claim the factory makes — *this could not have been built
+  wrong* — is not available to it. What is true of SKOOP:
+
+  ```
+  PunchCard-registered      admitted to the network
+  bytecode-reviewed         the multisig approved this exact deployed code
+  network-admitted          same registry, same router, same rules for routing
+  ```
+
+  All three are accurate and none of them overclaims. "Factory-standard", "factory-deployed"
+  or "identical contracts to every merchant" are not, and the distinction will be tempting
+  to blur once SKOOP is live and someone is writing a headline.
 - **Any number the contracts also know should be read from them, not typed twice.** The dapp
   already does this for the figures it quotes. A number that lives in two places eventually
   disagrees with itself, and then a disclosure is quietly false.

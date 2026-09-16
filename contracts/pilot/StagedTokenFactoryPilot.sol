@@ -3,6 +3,21 @@ pragma solidity ^0.8.24;
 
 import "../beta/StagedTokenFactoryBeta.sol";
 
+/// @notice **NOT USED FOR pSKOOP. Nothing on the live path deploys this.**
+///
+///         pSKOOP is hand-assembled and admitted through `WindDownController.registerManual`
+///         — the manual registrar path. This contract was built when pSKOOP was going to
+///         launch through a factory, and it no longer is.
+///
+///         Kept rather than deleted because a pilot factory is the obvious tool if a second
+///         first-party token ever needs one, and pruning while the architecture is still
+///         settling is churn. **Do not deploy it unless you are deliberately choosing a
+///         factory-launched first-party pilot**, which is a decision, not a default.
+///
+///         `LPLockerPilot` is a different matter and IS live: it is the never-closing LP
+///         hatch pSKOOP's hand-assembled suite uses. The pilot locker is needed; the pilot
+///         factory is not.
+///
 /// @title StagedTokenFactoryPilot — pSKOOP's own path, LP hatch that never expires.
 ///
 /// @notice One merchant is meant to come through here. Authorise it, stage/fund/activate

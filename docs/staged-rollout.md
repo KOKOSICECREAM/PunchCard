@@ -180,6 +180,26 @@ A merchant uses the factory unless the multisig has explicitly decided otherwise
 path is an exception that should stay rare, and the registrar list is the lever: a registrar
 is a person, and people change.
 
+### What a manually-admitted merchant may be called
+
+The two claims are not interchangeable and the difference is easy to lose in a sentence.
+
+| accurate for SKOOP | not accurate for SKOOP |
+|---|---|
+| PunchCard-registered | factory-standard |
+| bytecode-reviewed | factory-deployed |
+| network-admitted | built from identical contracts to every merchant |
+
+The factory's claim is *this could not have been built wrong*. The manual path's is *the
+multisig looked at this exact bytecode and approved it*. The second is a real assurance and
+a weaker one, and saying the first about a token that earned the second is the specific way
+this gets misrepresented.
+
+**Unused for now:** `StagedTokenFactoryPilot` and `DeployNetworkStagedPilot.s.sol` were built
+for a pSKOOP that launched through a factory. It does not. Both carry a notice saying so.
+`LPLockerPilot` is separate and is live — it is the never-closing hatch the hand-assembled
+suite uses.
+
 ## What is guaranteed, and by what
 
 The distinction merchants and customers are owed, stated exactly.
