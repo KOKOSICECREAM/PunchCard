@@ -302,18 +302,31 @@ factory already authorised, so this is a single sitting.
 ```
 1  DeployNetworkStagedPilot.s.sol   PC_CREATE_NEW_NETWORK=true PC_PILOT_LINEAGE=true
                                     -> controller, StagedTokenFactoryPilot, router
-2  StageMerchant  PC_STAGE=1        stage the suite; nothing is live
-3  merchant       approve USDC      from the OWNER wallet, to the factory
-4  StageMerchant  PC_STAGE=2        pools created, LP minted, held by the factory
-5  -- inspect everything --         allocations, pool prices, positions, wallets
-6  StageMerchant  PC_STAGE=3        activate: LP to the locker, clocks start, registered
-7  fill pilot-skoop config          controller, router, token, escrow, pools
-8  confirm the page reads           "pSKOOP liquidity is not permanently locked."
-9  later, when proven               lockLP() from the owner wallet
+2  StageMerchant  PC_STAGE=1        suite deployed EMPTY; all 100M to the owner wallet
+3  owner funds by hand              45M escrow, 15M vesting, 10M treasury — one at a
+                                    time, testing each before sending the next
+4  owner approves                   30M token + the USDC seed, to the factory
+5  StageMerchant  PC_STAGE=2        pulls both, creates pools, LP held by the factory
+6  -- inspect everything --         allocations, pool prices, positions, wallets
+7  StageMerchant  PC_STAGE=3        activate: LP to the locker, clocks start, registered
+8  fill pilot-skoop config          controller, router, token, escrow, pools
+9  confirm the page reads           "pSKOOP liquidity is not permanently locked."
+-  lockLP()                         NOT for SKOOP. See above.
 ```
 
-Step 5 is the one that staging exists for, and the only one with no transaction in it. If
-something is wrong, `PC_STAGE=0` aborts and returns the seed; after step 6 there is no undo.
+**Step 3 is why the pilot lineage mints differently.** The default factory funds the escrow,
+vesting wallet and treasury in the same transaction that creates them — right for a merchant,
+wrong for a first launch of unaudited code, because the first test of each contract would
+happen with everything already inside it. The pilot mints the whole supply to the owner so
+each can be funded and exercised one at a time, with the rest still in a wallet you control.
+
+**It does not weaken registration.** `activateMerchant` checks every balance before it
+registers anything, so a hand-funded suite is either identical to an atomically-funded one
+by then, or it never reaches the network. Run step 7 early and it reverts with "Not funded".
+The owner also ends at zero — everything must have moved, the LP share included.
+
+Step 6 is the one that staging exists for, and the only one with no transaction in it. If
+something is wrong, `PC_STAGE=0` aborts and returns the seed; after step 7 there is no undo.
 
 ## The pilot token is `pSKOOP`, not `SKOOP`
 
