@@ -79,12 +79,18 @@ contract DeployMicroRehearsal is Script {
     uint256 constant DEFAULT_ETH_SEED = 0.0025 ether;
 
     /// @notice Gas headroom required of wallet A on top of the seeds.
-    /// @dev The full run is roughly 26M gas — a network deploy plus two merchant suites,
-    ///      each of which deploys five contracts and creates and mints two Uniswap pools.
-    ///      At Base's typical sub-0.01 gwei that is well under a dollar, so this margin is
-    ///      deliberately generous rather than tight. Running out halfway through leaves a
-    ///      half-built network on mainnet that nothing cleans up.
-    uint256 constant GAS_MARGIN = 0.0005 ether;
+    /// @dev **Measured, not guessed.** A live simulation against Base on 2026-09-15 came
+    ///      back at 66,570,248 gas — 0.00072 ETH at 0.01083 gwei, about $1.74. The first
+    ///      value here was 0.0005 ether, reasoned from a gas figure the fork test appeared
+    ///      to show, and it was too small: a wallet holding exactly seeds + 0.0005 would
+    ///      have passed this guard and then run out of gas partway through, which is the
+    ///      precise failure the guard was added to prevent.
+    ///
+    ///      The fork test could never have caught that. It funds wallets with vm.deal and
+    ///      the broadcast it simulates is not charged gas, so the only place the real
+    ///      number exists is a live estimate. Re-run the simulation and read it again if
+    ///      Base's gas price has moved.
+    uint256 constant GAS_MARGIN = 0.001 ether;
 
     struct Merchant {
         string  name;
