@@ -213,6 +213,20 @@ Measured on a Base fork:
 | **suite subtotal** | **6,074,919** |
 | pools, transfers, registration | ~10,936,477 |
 
+### Status as of 2026-09-15
+
+```
+Contracts            conceptually tested — 125 passing, fork-exercised
+Base deployability   BLOCKED
+Critical path        modular staged deployment
+pSKOOP pilot         PAUSED until deploy() is split
+micro rehearsal      halted after the network deployed; no merchants exist
+```
+
+Everything else in this document that depends on deploying a merchant is downstream of
+this. The pilot slug, the wallets, the seed capital and the disclosure work all remain
+valid and all wait.
+
 ### The fix is the thing this document opened by arguing against
 
 Splitting `deploy()` in two is the obvious remedy, and the natural seam is exactly where the
@@ -240,6 +254,57 @@ free now have to be enforced:
 
 Do not design this in a hurry. Nothing can launch on Base until it is done, so it is now the
 critical path, but it is also the decision with the longest shadow.
+
+**The split fits, with room.** From the measured table above: stage 1 is the 6,074,919 of
+suite deployment plus four allocation transfers, call it ~6.3M. Stage 2 is the remaining
+~10.94M plus a new transaction's base cost and the SLOADs to re-read what stage 1 wrote —
+call it ~11.1M. Both are comfortably under 16,777,216, and neither is close enough to the
+ceiling to be fragile the way a 234k shave would be.
+
+### Staged shape, decided 2026-09-15
+
+```
+1. create suite
+2. fund allocations / seed capital
+3. create pools + LP
+4. verify exact invariants
+5. register / activate merchant
+```
+
+**Nothing is a PunchCard merchant until step 5.** Before that it is staged, inspectable and
+abortable. `register()` remains the activation gate and the router keeps refusing anything
+unregistered, so this changes what happens *before* activation and nothing about what
+activation means.
+
+What atomicity used to give for free, and now has to be checked explicitly at step 4:
+
+- [ ] token allocation totals — 45/30/15/10 of exactly 100,000,000e6
+- [ ] suite contract addresses are the ones this staging produced
+- [ ] owner / team / operator match what was staged, and are immutable
+- [ ] USDC and ETH seed amounts are what was funded
+- [ ] both pool prices agree
+- [ ] LP positions exist and are owned by the locker
+- [ ] 27M reserve sits in the locker
+- [ ] owner wallet received no merchant tokens
+- [ ] router and controller accept the token only after activation
+
+### The front-run that atomicity was silently preventing
+
+`TokenFactory.deploy()` carries this comment, twice:
+
+> The merchant token was created moments ago in this same transaction, so its pool cannot
+> exist yet. `mint()` reverts against an uninitialised pool, and `sqrtPriceX96` is what
+> actually sets the launch price.
+
+Split steps 1 and 3 into separate transactions and that stops being true. Between them,
+anyone watching the mempool can call `createAndInitializePoolIfNecessary` on the new token
+at a price of their choosing, and the launch mint lands into a pre-poisoned pool.
+
+**Checking for this at step 4 is too late** — the seed is already in the bad pool by then,
+and the remedy is an abort rather than a deploy. Step 3 must instead *create* the pool and
+revert if one already exists, so a poisoned pool stops the staging rather than being
+discovered after it. That is a stricter call than
+`createAndInitializePoolIfNecessary`, which is deliberately tolerant of an existing pool.
 
 ## Economics — UNVALIDATED
 
