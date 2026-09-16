@@ -217,7 +217,8 @@ Measured on a Base fork:
 
 ```
 Contracts            145 passing, fork-exercised
-Base deployability   UNBLOCKED by StagedTokenFactory — every stage fits
+Base deployability   PROVEN LIVE — see docs/micro-launch-results.md
+Full network loop    PROVEN LIVE — rewards, cross-merchant routing, fees, recovery
 Atomic TokenFactory  dead on Base; kept for reference and existing tests
 pSKOOP pilot         ready to re-plan against the staged path
 micro rehearsal      halted after the network deployed; no merchants exist
