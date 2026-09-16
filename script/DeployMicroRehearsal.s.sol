@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "../contracts/WindDownController.sol";
 import "../contracts/PunchCardRouter.sol";
 import "../contracts/deployers/SuiteDeployer.sol";
-import "../contracts/beta/TokenFactoryBeta.sol";
+import "../contracts/beta/StagedTokenFactoryBeta.sol";
 import "../contracts/beta/LockerDeployerBeta.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -31,6 +31,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 ///      stops NEW registrations. A $25 throwaway in the real controller becomes the first
 ///      thing on the PunchCard network, for good. So this script always deploys its own
 ///      controller and offers no way to point at an existing one.
+///
+///      **Staged, because atomic does not run on Base.** This script originally used the
+///      atomic TokenFactoryBeta, and its first live run is how the 16,777,216 ceiling was
+///      found: the network deployed and the first merchant deploy could not be sent. It now
+///      uses StagedTokenFactoryBeta and runs the real three-stage choreography.
 ///
 ///      **Why the BETA lineage and not the pilot's.** The pSKOOP pilot uses
 ///      `TokenFactoryPilot`, whose hatch never closes by itself, and the fork rehearsal in
@@ -185,7 +190,7 @@ contract DeployMicroRehearsal is Script {
         address predictedFactory = vm.computeCreateAddress(A, vm.getNonce(A) + 1);
         WindDownController wdc = new WindDownController(A, predictedFactory);
 
-        TokenFactoryBeta factory = new TokenFactoryBeta(
+        StagedTokenFactoryBeta factory = new StagedTokenFactoryBeta(
             A,              // multisig — wallet A stands in, disposable
             A,              // deployer hot wallet
             address(wdc), posMgr, usdc, weth, oracle,
@@ -201,9 +206,24 @@ contract DeployMicroRehearsal is Script {
 
         vm.stopBroadcast();
 
-        // ── merchants: B approves, A deploys ──────────────────────────────────
+        // ── merchants: stage, approve, fund, activate ────────────────────────
+        // Four transactions each, because the atomic one does not fit on Base. This is the
+        // rehearsal's real job now: the three-stage choreography is the thing nobody has
+        // executed live, and doing it here costs a few cents instead of a merchant launch.
         for (uint256 i = 0; i < ms.length; i++) {
             Merchant memory m = ms[i];
+
+            vm.broadcast(keyA);
+            address token = factory.stageSuite(StagedTokenFactory.StageParams({
+                name:        m.name,
+                symbol:      m.symbol,
+                ipfsHash:    keccak256(bytes(m.symbol)),
+                ownerWallet: B,
+                teamWallet:  B,
+                operator:    B,
+                perTxFloor:  1e6,
+                perTxMax:    20_000 * 1e6
+            }));
 
             // Exact amount, immediately before use. A standing allowance on a factory
             // anyone can call is a live risk even at rehearsal size.
@@ -211,20 +231,19 @@ contract DeployMicroRehearsal is Script {
             IERC20(usdc).approve(address(factory), m.usdcSeed);
 
             vm.broadcast(keyA);
-            factory.deploy{value: m.ethSeed}(TokenFactory.DeployParams({
-                name:           m.name,
-                symbol:         m.symbol,
-                ipfsHash:       keccak256(bytes(m.symbol)),
-                ownerWallet:    B,
-                teamWallet:     B,
-                operator:       B,
+            factory.fundAndMintLP{value: m.ethSeed}(StagedTokenFactory.FundParams({
+                token:          token,
                 usdcFeeTier:    3000,
                 ethFeeTier:     3000,
                 usdcPairAmount: m.usdcSeed,
-                ethPairAmount:  m.ethSeed,
-                perTxFloor:     1e6,
-                perTxMax:       20_000 * 1e6
+                ethPairAmount:  m.ethSeed
             }));
+
+            vm.broadcast(keyA);
+            factory.activateMerchant(token);
+
+            console2.log("merchant", m.symbol);
+            console2.log("  token ", token);
         }
 
         // ── say plainly what was just created ─────────────────────────────────
@@ -234,14 +253,14 @@ contract DeployMicroRehearsal is Script {
         console2.log("and no real merchant may ever be deployed against this factory.");
         console2.log("");
         console2.log("windDownController  ", address(wdc));
-        console2.log("tokenFactoryBeta    ", address(factory));
+        console2.log("stagedTokenFactoryBeta ", address(factory));
         console2.log("punchCardRouter     ", address(router));
         console2.log("suiteDeployer       ", address(suite));
         console2.log("lockerDeployerBeta  ", address(locker));
         console2.log("walletA (deployer)  ", A);
         console2.log("walletB (merchant)  ", B);
         console2.log("");
-        console2.log("Read the merchant addresses from the MerchantDeployed events.");
+        console2.log("Merchant tokens are printed above, and in the MerchantActivated events.");
         console2.log("When finished: evacuateLP() from wallet B recovers the seed and bricks each locker.");
         console2.log("If you forget, the hatch closes by itself 30 days from deploy and the seed stays in.");
     }

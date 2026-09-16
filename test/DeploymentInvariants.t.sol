@@ -22,12 +22,24 @@ contract DeploymentInvariantsTest is Test {
     ///      covering whatever is added next, and the check it stops applying is the one
     ///      that keeps a second controller — a second network — from being deployed by
     ///      accident. DeployMicroRehearsal.s.sol was added in exactly that gap.
-    string[5] scripts = [
+    string[7] scripts = [
         "script/DeployNetwork.s.sol",
         "script/DeployNetworkBeta.s.sol",
         "script/DeployProductionFactory.s.sol",
         "script/DeployMerchant.s.sol",
-        "script/DeployMicroRehearsal.s.sol"
+        "script/DeployMicroRehearsal.s.sol",
+        "script/DeployNetworkStaged.s.sol",
+        "script/StageMerchant.s.sol"
+    ];
+
+    /// Scripts that build or drive the ATOMIC lineage. deploy() costs 17,325,962 against
+    /// Base's 16,777,216 cap, so each of these must refuse to run on Base rather than
+    /// deploying a network that can never onboard anyone.
+    string[4] atomicScripts = [
+        "script/DeployNetwork.s.sol",
+        "script/DeployNetworkBeta.s.sol",
+        "script/DeployProductionFactory.s.sol",
+        "script/DeployMerchant.s.sol"
     ];
 
     /// Any script that constructs a WindDownController must demand explicit
@@ -124,8 +136,51 @@ contract DeploymentInvariantsTest is Test {
             "the micro rehearsal must not deploy the pilot factory");
         assertFalse(_contains(src, "new LockerDeployerPilot"),
             "the micro rehearsal must not deploy the pilot locker deployer");
-        assertTrue(_contains(src, "new TokenFactoryBeta"),
-            "the micro rehearsal must deploy the beta factory");
+        assertTrue(_contains(src, "new StagedTokenFactoryBeta"),
+            "the micro rehearsal must deploy the STAGED beta factory - beta for the self-closing hatch, staged because the atomic one cannot deploy a merchant on Base");
+    }
+
+    /// The blocker, enforced rather than documented. A warning in a doc is a warning
+    /// somebody has to have read; a chainid guard is one the RPC cannot ignore.
+    function test_atomicScriptsRefuseToRunOnBase() public view {
+        for (uint256 i = 0; i < atomicScripts.length; i++) {
+            string memory src = vm.readFile(atomicScripts[i]);
+            assertTrue(
+                _contains(src, "block.chainid != 8453"),
+                string.concat(atomicScripts[i], " builds or drives the atomic lineage and must refuse to run on Base")
+            );
+        }
+    }
+
+    /// The staged path must NOT carry that guard — it is the one that works on Base, and a
+    /// guard copied into it by habit would block the only usable deployment path.
+    function test_theStagedScriptsRunOnBase() public view {
+        string[2] memory staged = ["script/DeployNetworkStaged.s.sol", "script/StageMerchant.s.sol"];
+        for (uint256 i = 0; i < staged.length; i++) {
+            string memory src = vm.readFile(staged[i]);
+            assertFalse(
+                _contains(src, "block.chainid != 8453"),
+                string.concat(staged[i], " is the Base deployment path and must not refuse Base")
+            );
+        }
+    }
+
+    /// The live micro rehearsal exists to exercise Base. It must use the lineage that runs
+    /// there — it originally did not, and that is how the ceiling was discovered.
+    function test_microRehearsalUsesTheStagedFactory() public view {
+        string memory src = vm.readFile("script/DeployMicroRehearsal.s.sol");
+        assertTrue(_contains(src, "new StagedTokenFactoryBeta"),
+            "the micro rehearsal must deploy the staged beta factory - the atomic one cannot deploy a merchant on Base");
+        assertFalse(_contains(src, "new TokenFactoryBeta("),
+            "the micro rehearsal must not deploy the atomic beta factory");
+    }
+
+    /// Anyone opening TokenFactory.sol must learn it cannot run on Base before they learn
+    /// anything else about it.
+    function test_theAtomicFactorySaysItCannotRunOnBase() public view {
+        string memory src = vm.readFile("contracts/TokenFactory.sol");
+        assertTrue(_contains(src, "THIS CANNOT DEPLOY A MERCHANT ON BASE"),
+            "TokenFactory must carry an unmissable notice that it is reference-only on Base");
     }
 
     function _contains(string memory haystack, string memory needle) private pure returns (bool) {

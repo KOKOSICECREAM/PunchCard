@@ -2,7 +2,7 @@
 # Read-only access to the deploy scripts, so DeploymentInvariants.t.sol can assert things
 # about them that no Solidity test could otherwise reach — chiefly that every script
 # creating a WindDownController demands explicit acknowledgement first.
-fs_permissions = [{ access = "read", path = "./script" }]
+fs_permissions = [{ access = "read", path = "./script" }, { access = "read", path = "./contracts" }]
 src = "contracts"
 out = "out"
 libs = ["lib"]

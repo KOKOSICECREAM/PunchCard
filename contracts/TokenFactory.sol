@@ -14,6 +14,18 @@ import "./libraries/LaunchPricing.sol";
 import "./Activatable.sol";
 
 /// @title TokenFactory
+///
+/// @notice **REFERENCE ONLY. THIS CANNOT DEPLOY A MERCHANT ON BASE.**
+///
+///         `deploy()` costs 17,325,962 gas and Base refuses any transaction above
+///         16,777,216 — a chain-level per-transaction cap, identical across every RPC and
+///         exactly 2^24. The most aggressive compiler settings save 38k of the 549k needed,
+///         so this is not a tuning problem. Use `StagedTokenFactory`.
+///
+///         Kept because it is the readable version of what the three stages do, and
+///         because it is the oracle the staged tests compare against. No script and no
+///         runbook may present it as a Base deployment path.
+///
 /// @notice Deploys full PunchCard merchant suite in a single transaction.
 /// @dev Deployer hot wallet executes after off-chain PunchCard review.
 ///      Multisig updates deployer if compromised.

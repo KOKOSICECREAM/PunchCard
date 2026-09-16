@@ -124,10 +124,12 @@ contract MicroRehearsalScriptTest is Test {
         uint256 deployed;
         for (uint256 i = 0; i < logs.length; i++) {
             if (logs[i].topics[0] == keccak256("SuiteRegistered(address,address,address,address,address,uint256)")) registered++;
-            if (logs[i].topics[0] == keccak256("MerchantDeployed(address,address,address,address,address,address,address,address,bytes32,uint256)")) deployed++;
+            // The staged factory emits MerchantActivated, not MerchantDeployed — a merchant
+            // now exists only once stage 3 has run, which is the whole point of staging.
+            if (logs[i].topics[0] == keccak256("MerchantActivated(address,uint256)")) deployed++;
         }
 
-        assertEq(deployed,   2, "two merchants deployed");
+        assertEq(deployed,   2, "two merchants activated");
         assertEq(registered, 2, "both registered into the throwaway controller this run created");
         assertLt(A.balance, aBefore, "wallet A spent ETH on seeds and gas");
         assertLt(IERC20(USDC).balanceOf(B), bUsdcBefore, "wallet B's USDC went into the pools");
