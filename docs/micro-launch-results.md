@@ -22,7 +22,7 @@ Run 1 deployed a network and then could not deploy a single merchant into it.
 `TokenFactory.deploy()` costs 17,325,962 gas and Base refuses any transaction above
 **16,777,216** — a chain-level per-transaction cap, identical across every RPC and exactly
 2^24. Compiler settings recover 38k of the 549k needed. That finding is what produced
-`StagedTokenFactory`, and seventeen cents is what it cost to find before pSKOOP existed.
+`StagedTokenFactory`, and seventeen cents is what it cost to find before SKOOP existed.
 
 ## Deployed — disposable, never reuse
 
@@ -49,7 +49,7 @@ wallet B (merchant owner/team/operator)    0x7Fe79Bc539d3e8a1B4b14e6788A8D80f3B0
 anywhere clears it. Anything registered here is stuck here. It stays dead:
 
 - never in `deploy/network/base-mainnet.json`
-- never reused for pSKOOP or any merchant
+- never reused for SKOOP or any merchant
 - never a `proposeFactory` target
 
 There is also an earlier dead controller at `0x54BeC817f99f1a477944e84688bCeBEAF92175E7`
@@ -144,7 +144,7 @@ EVM. Gitignored for that reason; `deploy/network/*.json` remains the authoritati
 **`getPoolFeeTiers` gave a bare revert for unregistered tokens**, which the dapp calls
 *before* quoting. Fixed before this run — it now gives `"Token not on network"`, matching the
 swap path. Staging makes the unregistered-but-real state ordinary rather than exotic, so
-this would have surfaced during every pSKOOP inspection window.
+this would have surfaced during every SKOOP inspection window.
 
 ## Conclusion
 
@@ -153,8 +153,8 @@ abstract turned out to be manageable in practice: four transactions per merchant
 field, one enum, and a script that takes `PC_STAGE=1|2|3`. The only friction in the whole run
 was nonce sequencing, which is a paste habit rather than an architecture problem.
 
-**Decision, 2026-09-15: keep the staged path for pSKOOP.** The clean-launchpad idea remains
-valid as a future simplified product, but there is no case for pivoting before pSKOOP when
+**Decision, 2026-09-15: keep the staged path for SKOOP.** The clean-launchpad idea remains
+valid as a future simplified product, but there is no case for pivoting before SKOOP when
 the staged path has just proven itself on mainnet.
 
 It is also worth stating plainly that Base removed the alternative. Any design that deploys

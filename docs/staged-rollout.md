@@ -55,7 +55,7 @@ Added 2026-09-15. A third lineage sits beside beta and production, for **one dep
 | Factory | `StagedTokenFactory` | `StagedTokenFactoryBeta` | `StagedTokenFactoryPilot` |
 | Locker | `LPLocker` | `LPLockerBeta` | `LPLockerPilot` |
 | LP recovery | none, ever | 30 days from activation, self-closing | **open until closed by hand** |
-| Who | any merchant | beta merchants | **pSKOOP only** |
+| Who | any merchant | beta merchants | **SKOOP only** |
 
 > **The atomic `TokenFactory` / `TokenFactoryBeta` / `TokenFactoryPilot` lineage is
 > reference-only on Base.** `deploy()` is 17,325,962 gas against a 16,777,216 cap. The three
@@ -212,7 +212,7 @@ a weaker one, and saying the first about a token that earned the second is the s
 this gets misrepresented.
 
 **Unused for now:** `StagedTokenFactoryPilot` and `DeployNetworkStagedPilot.s.sol` were built
-for a pSKOOP that launched through a factory. It does not. Both carry a notice saying so.
+for a SKOOP that launched through a factory. It does not. Both carry a notice saying so.
 `LPLockerPilot` is separate and is live — it is the never-closing hatch the hand-assembled
 suite uses.
 

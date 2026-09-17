@@ -32,10 +32,10 @@ necessary.
    that found the gas ceiling. It has no merchants, it is not the network, and it stays
    dead. Registration is permanent, so anything registered into it would be stuck there.
 
-5. **Do not deploy a second controller once pSKOOP exists.** A controller *is* the network.
+5. **Do not deploy a second controller once SKOOP exists.** A controller *is* the network.
    The router binds to one, so merchants under a second could never swap against the
    first's — unfixable afterwards and invisible until a cross-merchant swap fails. After
-   pSKOOP, every new deployment path is added to its controller, never alongside it.
+   SKOOP, every new deployment path is added to its controller, never alongside it.
 
 6. **The later production factory is added, not deployed beside.**
    `proposeFactory(stagedProductionFactory, true)`, wait 48 hours, `executeFactory`.
@@ -248,30 +248,30 @@ WindDownController, and emit `MerchantDeployed`.
 
 ---
 
-# Part 3 — The pSKOOP pilot (once, and never again)
+# Part 3 — The SKOOP launch (once, and never again)
 
-pSKOOP uses **`LPLockerPilot`** — an LP hatch that **never closes by itself** — and is
+SKOOP uses **`LPLockerPilot`** — an LP hatch that **never closes by itself** — and is
 **hand-assembled, not factory-deployed**. See `docs/staged-rollout.md`.
 
 > **`StagedTokenFactoryPilot` and `DeployNetworkStagedPilot.s.sol` now have no user.** They
-> were built when pSKOOP was going to launch through a factory. It launches by hand instead,
+> were built when SKOOP was going to launch through a factory. It launches by hand instead,
 > so the pilot *locker* is still needed and the pilot *factory* is not. They are kept for
 > now rather than deleted, because a pilot factory is the obvious tool if a second
-> first-party token ever needs one — but nothing in the pSKOOP path touches them, and
+> first-party token ever needs one — but nothing in the SKOOP path touches them, and
 > anything that does should be treated as a mistake.
 
 ## No authorisation step for the first network
 
 `DeployNetworkStaged` constructs the `WindDownController` with the staged factory already
-authorised, so the pSKOOP pilot network needs **no** `proposeFactory` / `executeFactory` at
+authorised, so the SKOOP network needs **no** `proposeFactory` / `executeFactory` at
 all. That removes two 48-hour waits from the critical path.
 
 The timelocked pair below applies only when adding a **later** factory to the controller
-pSKOOP created — a production factory at Stage 2, for instance. Keep it for that.
+SKOOP created — a production factory at Stage 2, for instance. Keep it for that.
 
 Two things that do not change:
 
-- **Do not deploy a second controller** once pSKOOP exists. A controller is the network.
+- **Do not deploy a second controller** once SKOOP exists. A controller is the network.
 - **Do not reuse the micro rehearsal controller** at
   `0x54BeC817f99f1a477944e84688bCeBEAF92175E7`. Registration is permanent; anything put
   there is stuck there.
@@ -284,7 +284,7 @@ the first staged network — see above — but it is exactly what a later factor
 directions. Plan the calendar before the day.
 
 ```
-later, for a Stage 2 production factory added to the pSKOOP controller:
+later, for a Stage 2 production factory added to the SKOOP controller:
 
 day 0   multisig: proposeFactory(stagedProductionFactory, true)
 day 2   multisig: executeFactory(stagedProductionFactory)     ← path opens
@@ -296,7 +296,7 @@ day 2   multisig: executeFactory(stagedProductionFactory)     ← path opens
 - [ ] **Neither direction touches an existing merchant's LP.** Only `lockLP()` locks a
       pilot hatch, and only when you decide.
 
-## The pSKOOP launch sequence
+## The SKOOP launch sequence
 
 **SKOOP does not use the factory.** It is hand-assembled and admitted through the manual
 registrar path — see `docs/staged-rollout.md`. Bending the factory to suit it meant soft
@@ -320,7 +320,7 @@ whose entire value is having none.
  9  registrar admits it                registerManual(token, escrow, vesting, treasury, locker)
 10  confirm the router serves it       getPoolFeeTiers(token) stops reverting
 11  fill the skoop config        controller, router, token, escrow, pools
-12  confirm the page reads             "pSKOOP liquidity is not permanently locked."
+12  confirm the page reads             "SKOOP liquidity is not permanently locked."
 13  point the POS at the new escrow    when you are ready, not before
  -  lockLP()                           NOT for SKOOP. See above.
 ```
@@ -351,7 +351,7 @@ Neither is the other. Do not describe a manually-admitted merchant as factory-st
 
 ## The token is `SKOOP PunchCard`, symbol `SKOOP`
 
-Decided 2026-09-16, superseding the 2026-09-15 choice of `pSKOOP`. That earlier decision was
+Decided 2026-09-16, superseding the 2026-09-15 choice of `SKOOP`. That earlier decision was
 right for a **pilot running alongside a live token**; this is the official launch and the
 2023 token is being retired, so the new one takes the name.
 
@@ -479,7 +479,7 @@ forge script script/DeployNetworkStagedPilot.s.sol \
 # Basescan — add --etherscan-api-key $BASESCAN_API_KEY, or rerun verify-contract later
 ```
 
-That covers the network contracts a deploy script creates. For the hand-assembled pSKOOP
+That covers the network contracts a deploy script creates. For the hand-assembled SKOOP
 suite there is no deploy script, so each contract is verified individually — and that
 verification is step 5 of the launch sequence, not an afterthought.
 
@@ -553,7 +553,7 @@ as possible.
 
 ## While the hatch is open
 
-- [ ] The dapp shows *"pSKOOP liquidity is not permanently locked"* on the Swap screen.
+- [ ] The dapp shows *"SKOOP liquidity is not permanently locked"* on the Swap screen.
       No "yet" — the pilot hatch has no expiry and may never be closed.
       Confirm it renders **before** announcing the pilot — `lpLockState()` reads the locker
       directly, so a misconfigured `windDownController` shows "status unavailable" rather
@@ -574,7 +574,7 @@ as possible.
 - [ ] **Do not call it for SKOOP unless you are giving up migration forever.** Decided
       2026-09-15: SKOOP keeps permanent recoverability as the first-party network merchant.
       Future merchants get beta's self-closing window, then production's absence of one.
-- [ ] Confirm the dapp flips to *"pSKOOP liquidity is permanently locked."* That sentence is
+- [ ] Confirm the dapp flips to *"SKOOP liquidity is permanently locked."* That sentence is
       a claim; it may only appear once the contract says so.
 - [ ] Only then may the strong liquidity language be used anywhere else.
 
@@ -594,5 +594,5 @@ as possible.
 - [ ] Merchant JSON committed to `deploy/merchants/`
 - [ ] Factory is the intended lineage — `HAS_UNLIMITED_LP_RECOVERY()` must **revert** for
       any merchant deployment. A merchant gets the beta lineage's self-closing window or
-      production's absence of one; a hatch that never expires belongs to pSKOOP, which does
+      production's absence of one; a hatch that never expires belongs to SKOOP, which does
       not come through a factory at all.

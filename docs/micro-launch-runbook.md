@@ -76,7 +76,8 @@ network, for good. Not removable, not hideable, quotable by anyone who finds it.
 - [ ] The rehearsal deploys its **own** `WindDownController`, and the real network never
       sees it. `DeployNetworkBeta.s.sol` demands `PC_CREATE_NEW_NETWORK` before it will
       create one, and `DeploymentInvariants.t.sol` enforces that it keeps demanding it.
-- [ ] The rehearsal token gets a **throwaway symbol**. Not `pSKOOP`, not `SKOOP` — a second
+- [ ] The rehearsal token gets a **throwaway symbol**. Not `SKOOP`, and not `SKOOP`
+      (reserved while it was the intended symbol) — a second
       token bearing the pilot's symbol reintroduces exactly the ambiguity the pilot symbol
       was chosen to remove.
 - [ ] Record rehearsal addresses in their own file, **never** in `base-mainnet.json`.
