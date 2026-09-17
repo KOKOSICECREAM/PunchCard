@@ -14,7 +14,7 @@ lineage       hand-assembled suite with LPLockerPilot
 admission     manual registrar path, not the factory
 LP            recoverable by the owner wallet, indefinitely
 team vesting  30-day cliff, nothing at the cliff, then 730 days -> day 760
-treasury      10M behind a 90-day delay
+treasury      10M behind a 7-day delay  (merchants get 90 — see below)
 rewards       45M emitting over 1825 days, ~24,657/day
 ```
 
@@ -65,6 +65,62 @@ That is the cost of the name, and it is paid entirely in **sequencing**:
 
 > **Hard rule: do not promote, tweet, or publish the new token address until the old SKOOP
 > pools are drained.** Assemble quietly, cut over in one session, announce afterwards.
+
+## Where SKOOP differs from the merchant standard
+
+Deliberate, and short. Every difference is a **deploy parameter**, not a loosened rule — the
+factory and the constants it enforces are untouched, and a merchant launching tomorrow gets
+exactly what the README describes.
+
+| | merchant standard | SKOOP | why |
+|---|---|---|---|
+| LP recovery | none, or 30 days self-closing | **indefinite, owner-only** | unaudited code must stay movable |
+| Treasury delay | 90 days | **7 days** | see below |
+| Admission | factory, automatic | **registrar, reviewed** | hand-assembled |
+| Allocations at admission | exact, enforced | **targets, reported** | funded by hand, must not strand |
+| Allocation split | 45/30/15/10 | **same** | |
+| Team vesting | 30-day cliff, 730 days | **same** | |
+| Emission | 45M over 1825 days | **same** | |
+| Supply | 100M, no mint | **same** | |
+
+### Why the treasury delay differs
+
+Not convenience. **SKOOP's LP is evacuable instantly, with no deadline, forever.** That is a
+larger and faster lever than the treasury, held by the same wallet, and disclosed on the
+page. A 90-day gate on 10% of supply while that hatch stands open is theatre.
+
+For a merchant the reasoning inverts. Their hatch self-closes at 30 days or never existed,
+so the treasury delay is their holders' only protection against a sudden 10% move. Same
+constant, opposite justification — which is why it tracks the lineage rather than being one
+number for everyone.
+
+Seven rather than zero: the constructor rejects zero, and a week keeps `ReleaseSubmitted` as
+a visible on-chain signal before 10% of supply moves, at no operational cost. It also makes
+the one-pending-release-at-a-time limit irrelevant, which at 90 days is a real constraint —
+four releases a year, no queue.
+
+### Marketing tokens come from the escrow, not the treasury
+
+In a loyalty programme marketing *is* rewards, and `distributeReward` sends to any address —
+a giveaway, a promotion, an influencer drop. No delay, and the operator key is rotatable.
+
+```
+per day      24,657 tokens
+banked 30d  739,726 tokens
+max per tx  345,205 tokens
+```
+
+The treasury is for infrequent, larger moves: converting to cash, paying a bill, funding
+something that is not a reward. If the escrow's rate turns out too thin for real marketing,
+that is an **economics** finding about the emission schedule — not a reason to open the
+treasury. See `docs/economics-review.md`, which is right to call the rate unvalidated.
+
+### This must be stated, not inherited
+
+The marketing site describes what a *factory* merchant gets, including the 90-day delay.
+SKOOP does not get that, and nothing on SKOOP's own page may imply it does. The vocabulary
+rules in `docs/staged-rollout.md` apply: **PunchCard-registered**, **bytecode-reviewed**,
+**network-admitted** — never *factory-standard*.
 
 ## Before the day
 

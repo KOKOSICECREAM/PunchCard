@@ -196,6 +196,27 @@ every token registered before it would fail it afterwards — and the model is s
 Room to change the convention is worth more than making it structural today. Revisit once
 several merchants exist and the shape has stopped moving.
 
+### Constraints track the lineage, not one number for everyone
+
+A merchant's constants are a promise to their holders, and the factory enforces them
+identically for all of them. SKOOP is hand-assembled, so its parameters are chosen at
+deploy — and where they differ it is for a reason rather than for convenience.
+
+The clearest case is the treasury delay. **SKOOP's LP is evacuable instantly, with no
+deadline, forever**, which is a larger and faster lever than the treasury held by the same
+wallet and disclosed on the page. A 90-day gate on 10% of supply while that hatch stands
+open protects nobody. So SKOOP deploys with 7 days.
+
+For a merchant the reasoning inverts: their hatch self-closes at 30 days or never existed,
+so the treasury delay is their holders' only protection against a sudden 10% move. Same
+constant, opposite justification.
+
+**Nothing about this loosens the standard.** The factory and its constants are untouched; a
+merchant launching tomorrow gets exactly what the README describes. SKOOP differs by deploy
+parameter, which is the whole reason the manual path exists and why the factory stopped
+being bent to accommodate it. The full list of differences is in
+`docs/skoop-launch-plan.md`.
+
 ### What a manually-admitted merchant may be called
 
 The two claims are not interchangeable and the difference is easy to lose in a sentence.
