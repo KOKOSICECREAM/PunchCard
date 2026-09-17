@@ -75,9 +75,34 @@ continuous with no jump at the end. Worth stating precisely, because "30-day cli
 there is no update function**, so getting it right at deploy time matters more than any
 other parameter.
 
-### TreasuryTimelock — 10%, merchant working capital
+### TreasuryTimelock — 10%, the merchant's discretionary budget
 The merchant submits a release, waits 90 days, then executes. They can cancel their own
 pending release. The delay is autonomous — nobody approves it.
+
+**This is where marketing comes from.** It is the only allocation not already committed:
+rewards belong to customers, liquidity to the pools, vesting to the team. A campaign, a
+partnership, a giveaway that is not a customer reward, converting to cash to pay a bill —
+all of it is a treasury release.
+
+Worth stating because the allocation stopped saying so. SKOOP v1 had five buckets including
+a dedicated 10% `PunchcardMarketingVault`; PunchCard has four and no marketing line, having
+moved that 10% and half the old treasury into rewards and liquidity:
+
+| SKOOP v1 | | PunchCard | |
+|---|---|---|---|
+| Rewards | 35% | Rewards | **45%** |
+| Liquidity | 20% | Liquidity | **30%** |
+| Treasury Reserve | 20% | Treasury | **10%** |
+| Team | 15% | Team | 15% |
+| Marketing / Community | 10% | — | — |
+
+Deeper pools and a larger reward budget are both real improvements, but the consequence is
+that a merchant's only discretionary tokens are these. Only one release may be pending at a
+time, so the practical cadence at 90 days is four a year.
+
+**Not the reward escrow.** Distributing rewards to a marketing recipient is mechanically
+possible — `distributeReward` takes any address — and it spends the customers' budget to do
+it. The two are different commitments and should stay different.
 
 ### LPLocker — 30%, liquidity
 Holds two Uniswap v3 NFT positions, one against USDC and one against ETH. 3M tokens seed the pools at launch; the remaining **27M reserve** stays locked for

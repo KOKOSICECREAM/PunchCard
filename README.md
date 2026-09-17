@@ -88,7 +88,7 @@ transactions of 6.7M / 10.5M / 0.6M.
 │   ├── MerchantToken.sol             the merchant's ERC-20 (one per merchant)
 │   ├── RewardEscrow.sol               45% — 5yr emission + per-kiosk drawers
 │   ├── VestingWallet.sol              15% — team, 30d cliff / 730d linear
-│   ├── TreasuryTimelock.sol           10% — merchant capital, 90d delay
+│   ├── TreasuryTimelock.sol           10% — discretionary budget, 90d delay
 │   ├── LPLocker.sol                   30% — dual Uniswap positions + fee collection
 │   ├── TokenFactory.sol               orchestrates a merchant deployment
 │   ├── WindDownController.sol         the one privileged contract

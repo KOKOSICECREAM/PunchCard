@@ -99,21 +99,38 @@ a visible on-chain signal before 10% of supply moves, at no operational cost. It
 the one-pending-release-at-a-time limit irrelevant, which at 90 days is a real constraint —
 four releases a year, no queue.
 
-### Marketing tokens come from the escrow, not the treasury
+### Marketing comes from the treasury
 
-In a loyalty programme marketing *is* rewards, and `distributeReward` sends to any address —
-a giveaway, a promotion, an influencer drop. No delay, and the operator key is rotatable.
+Settled 2026-09-16. The treasury's 10% is the **discretionary budget** — it is the only
+allocation not already committed, since rewards belong to customers, liquidity to the pools
+and vesting to the team. A campaign, a partnership, a giveaway that is not a customer
+reward, or converting to cash all come from there.
 
-```
-per day      24,657 tokens
-banked 30d  739,726 tokens
-max per tx  345,205 tokens
-```
+An earlier draft of this plan said marketing comes from the reward escrow. That was wrong,
+and wrong in a way worth recording: `distributeReward` does take any address, so it is
+mechanically possible — and it spends the customers' budget to do it. The two are different
+commitments.
 
-The treasury is for infrequent, larger moves: converting to cash, paying a bill, funding
-something that is not a reward. If the escrow's rate turns out too thin for real marketing,
-that is an **economics** finding about the emission schedule — not a reason to open the
-treasury. See `docs/economics-review.md`, which is right to call the rate unvalidated.
+The question surfaced a gap nobody had written down. SKOOP v1 had **five** allocations
+including a dedicated 10% `PunchcardMarketingVault`. PunchCard has four and no marketing
+line, having moved that 10% and half the old treasury into rewards and liquidity:
+
+| SKOOP v1 | | PunchCard | |
+|---|---|---|---|
+| Rewards | 35% | Rewards | **45%** |
+| Liquidity | 20% | Liquidity | **30%** |
+| Treasury Reserve | 20% | Treasury | **10%** |
+| Team | 15% | Team | 15% |
+| Marketing / Community | 10% | — | — |
+
+Deeper pools and a bigger reward budget are both real improvements. The consequence is that
+discretionary tokens all come from one place now, which is worth knowing before the constants
+are committed rather than after.
+
+SKOOP's 7-day delay makes that workable — one release a week rather than four a year. For
+merchants at 90 days with one pending release at a time, treasury spend is a quarterly
+decision, and that is a genuine constraint on a merchant's marketing rather than an
+oversight.
 
 ### This must be stated, not inherited
 

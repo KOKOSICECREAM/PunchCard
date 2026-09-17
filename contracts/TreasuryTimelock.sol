@@ -9,7 +9,14 @@ import "./interfaces/ITreasuryTimelock.sol";
 import "./Activatable.sol";
 
 /// @title TreasuryTimelock
-/// @notice Merchant treasury with 90-day autonomous release timelock.
+/// @notice The merchant's discretionary budget, behind an autonomous release timelock.
+/// @dev **This is where marketing comes from.** It is the only allocation not already
+///      committed — rewards belong to customers, liquidity to the pools, vesting to the
+///      team — so a campaign, a partnership, a giveaway that is not a customer reward, or
+///      converting to cash all come from here.
+///
+///      Distributing from `RewardEscrow` to a marketing recipient is mechanically possible
+///      and spends the customers' budget to do it. The two are different commitments.
 /// @dev Deployed per merchant by factory. All addresses immutable after deploy.
 ///      Merchant-initiated, fully autonomous — PunchCard has no custody or veto.
 ///      Wind-down freezes treasury and cancels any pending release silently.
