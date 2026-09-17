@@ -1,0 +1,50 @@
+{
+  "merchant": "SKOOP",
+  "status": "token-deployed",
+  "_status_values": "token-deployed | suite-deployed | funded | verified | registered",
+  "_path_note": "Hand-assembled and admitted through WindDownController.registerManual, NOT through a factory. See docs/skoop-launch-plan.md and docs/staged-rollout.md.",
+  "token": {
+    "address": "0x38bdc0f357455C49486cb3871a3AA218aAd10D2B",
+    "name": "SKOOP PunchCard",
+    "symbol": "SKOOP",
+    "decimals": 6,
+    "totalSupply": "100000000000000",
+    "ipfsHash": "0x31308a8763f929446f17aaca38cc9538ff0380a5d36fe6c5cffa5e1f7787c6bb",
+    "metadataCid": "QmPhJXCg7snZNMCzgSLME8eujLZ6KvcJT3nwJnLMftwv8k",
+    "logoCid": "QmNoS9wwGj3zb2rz1Z2AMbZMBfh6VMjijSAon5xUt6mXfV",
+    "deployTx": "0x3af6fbf1ed5fcd6714ad969d55566973e287c050fdc9c44e366fd610dc3444c1",
+    "block": 51430716,
+    "deployedAt": "2026-09-17"
+  },
+  "wallets": {
+    "owner": "0x5426E59b783cd3b5083Ccc8cB571AA36e9f4a3be",
+    "_owner_note": "Holds the entire supply. Becomes ownerWallet on the escrow, treasury and locker - immutable in all three - and is the only address that can ever call evacuateLP(). Highest-stakes key in the system.",
+    "team": null,
+    "operator": null,
+    "multisig": null,
+    "registrar": null,
+    "feeRecipient": null
+  },
+  "verifiedOnChain": {
+    "supply": "100,000,000.000000 to the owner, nothing elsewhere",
+    "noMintFunction": true,
+    "noOwner": true,
+    "noPause": true,
+    "poolsAtDeploy": "all eight clear - USDC and WETH across 100/500/3000/10000"
+  },
+  "notDoneYet": [
+    "network: controller + router + the factory FUTURE merchants use",
+    "suite: escrow, vesting, treasury, LPLockerPilot - each needs the controller address, immutably",
+    "funding: 45M escrow, 15M vesting, 10M treasury, by hand, testing each",
+    "pools: positions TO THE LOCKER, then the 27M reserve, THEN initializeLP - that order",
+    "activate() on all four, or emission never starts",
+    "publish source, then multisig approves the five codehashes - that order",
+    "VerifyManualSuite PC_MODE=pilot",
+    "registrar calls registerManual  <-- the only step with no undo"
+  ],
+  "doNot": [
+    "Publish the token address until the pools are seeded. Anyone can open a pool at a price they choose.",
+    "Call lockLP(). SKOOP keeps permanent LP recoverability - decided 2026-09-16.",
+    "Describe it as factory-standard. PunchCard-registered, bytecode-reviewed, network-admitted."
+  ]
+}
