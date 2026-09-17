@@ -317,7 +317,7 @@ whose entire value is having none.
  8  fix whatever it reports            then run 7 again
  9  registrar admits it                registerManual(token, escrow, vesting, treasury, locker)
 10  confirm the router serves it       getPoolFeeTiers(token) stops reverting
-11  fill the pilot-skoop config        controller, router, token, escrow, pools
+11  fill the skoop config        controller, router, token, escrow, pools
 12  confirm the page reads             "pSKOOP liquidity is not permanently locked."
 13  point the POS at the new escrow    when you are ready, not before
  -  lockLP()                           NOT for SKOOP. See above.

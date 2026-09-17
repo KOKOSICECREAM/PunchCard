@@ -180,6 +180,22 @@ A merchant uses the factory unless the multisig has explicitly decided otherwise
 path is an exception that should stay rare, and the registrar list is the lever: a registrar
 is a person, and people change.
 
+### Naming: a convention, not a rule
+
+Official network tokens are named `<SYMBOL> PunchCard` — `SKOOP PunchCard`,
+`FROTH PunchCard`. The symbol stays short and unqualified.
+
+`PunchCard` rather than `PunchCard Network` because it is a word a customer already
+understands, so the name explains itself in a wallet. "Network" describes the plumbing, and
+an acronym like `PCN` carries no information until the full name is known.
+
+**Deliberately not enforced on-chain.** The registry could require the suffix in both
+`register()` and `registerManual()`, which would make network membership and the naming
+convention one verifiable fact. It is not done, because that check cannot be retrofitted —
+every token registered before it would fail it afterwards — and the model is still settling.
+Room to change the convention is worth more than making it structural today. Revisit once
+several merchants exist and the shape has stopped moving.
+
 ### What a manually-admitted merchant may be called
 
 The two claims are not interchangeable and the difference is easy to lose in a sentence.

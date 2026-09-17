@@ -7,7 +7,7 @@ with either, they are the source of truth and this is stale.
 ## What is being launched
 
 ```
-name          SKOOP
+name          SKOOP PunchCard
 symbol        SKOOP
 supply        100,000,000 at 6dp
 lineage       hand-assembled suite with LPLockerPilot
@@ -20,7 +20,29 @@ rewards       45M emitting over 1825 days, ~24,657/day
 
 ## The naming decision, and the one thing it forces
 
-Decided 2026-09-16: **just `SKOOP`.** Not `pSKOOP`, not `KOKOS SKOOPS`.
+Decided 2026-09-16: **name `SKOOP PunchCard`, symbol `SKOOP`.** Not `pSKOOP`, not
+`KOKOS SKOOPS`.
+
+`PunchCard` in the name because it is a word a customer already understands — a card you
+punch at a shop — so the name explains itself in a wallet to someone who has never heard of
+any of this. `PunchCard Network` and `SKOOP PCN` were both considered and both describe the
+plumbing rather than the thing: "Network" turns it into infrastructure, and an acronym
+carries no information until the full name is known.
+
+The intended family, for later merchants:
+
+```
+SKOOP PunchCard
+FROTH PunchCard
+SLICE PunchCard
+```
+
+**A convention, not a rule.** It is deliberately not enforced on-chain. The registry could
+require the suffix and make network membership and the naming convention one verifiable
+fact, but that is a check which cannot be retrofitted — every token registered before it
+would fail it afterwards — and the model is still settling. Leaving room to change the
+convention is worth more right now than making it structural. Revisit once several merchants
+exist and the shape has stopped moving.
 
 An earlier decision chose `pSKOOP` precisely to avoid a symbol collision, and that reasoning
 was correct *for a pilot running alongside a live token*. This is not that. This is the

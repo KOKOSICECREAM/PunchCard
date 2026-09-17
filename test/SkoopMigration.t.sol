@@ -93,18 +93,22 @@ contract SkoopMigrationTest is Test {
     uint256 constant DEFAULT_SEED_ETH  = 0.415 ether;     // ~$1,001 at ~$2,412/ETH
 
     // ── THE PILOT TOKEN ──────────────────────────────────────────────────────
-    /// @dev Decided 2026-09-15: a DISTINCT symbol from the live 2023 SKOOP.
+    /// @dev Decided 2026-09-16: name `SKOOP PunchCard`, symbol `SKOOP`.
     ///
-    ///      Both tokens exist on Base at the same time, and the LP-lock disclosure reads
-    ///      "<symbol> pilot liquidity is not permanently locked yet." With one symbol
-    ///      shared between them that sentence does not say which token it means — on the
-    ///      one screen whose entire job is being unmistakable at a glance.
+    ///      An earlier decision chose `pSKOOP` to avoid colliding with the live 2023 token,
+    ///      which was right for a pilot running alongside it. This is the official launch
+    ///      and the old token is being retired, so the new one takes the name.
+    ///
+    ///      The SYMBOL still collides while both are tradable, and the name does not fix
+    ///      that — DEX interfaces key on symbol. That is handled by sequencing instead:
+    ///      nothing is promoted until the old pools are drained. See
+    ///      docs/skoop-launch-plan.md.
     ///
     ///      Deployed here rather than only in the launchpad config so the rehearsal mints
     ///      what the deploy mints. The factory-lineage mismatch fixed in 644e8b8 was the
     ///      same shape of error: rehearsing something adjacent to the plan.
-    string constant PILOT_TOKEN_NAME   = "KOKOS SKOOPS Pilot";
-    string constant PILOT_TOKEN_SYMBOL = "pSKOOP";
+    string constant PILOT_TOKEN_NAME   = "SKOOP PunchCard";
+    string constant PILOT_TOKEN_SYMBOL = "SKOOP";
 
     // ── MAINNET POLICY FLOORS ────────────────────────────────────────────────
     uint256 constant MAINNET_USDC_FLOOR = 2_000 * 1e8;
