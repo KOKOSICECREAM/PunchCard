@@ -22,7 +22,7 @@ contract DeploymentInvariantsTest is Test {
     ///      covering whatever is added next, and the check it stops applying is the one
     ///      that keeps a second controller — a second network — from being deployed by
     ///      accident. DeployMicroRehearsal.s.sol was added in exactly that gap.
-    string[10] scripts = [
+    string[11] scripts = [
         "script/DeployNetwork.s.sol",
         "script/DeployNetworkBeta.s.sol",
         "script/DeployProductionFactory.s.sol",
@@ -32,7 +32,8 @@ contract DeploymentInvariantsTest is Test {
         "script/DeployNetworkStagedPilot.s.sol",
         "script/StageMerchant.s.sol",
         "script/VerifyMerchant.s.sol",
-        "script/VerifyManualSuite.s.sol"
+        "script/VerifyManualSuite.s.sol",
+        "script/DeploySkoopToken.s.sol"
     ];
 
     /// Scripts that build or drive the ATOMIC lineage. deploy() costs 17,325,962 against
@@ -223,6 +224,31 @@ contract DeploymentInvariantsTest is Test {
     /// because it is a first-party launch that must not be stranded by one transfer landing
     /// wrong — and the cost is a claim it can no longer make. Anything else relaxing it
     /// would take that cost without the reason.
+    /// The token script deploys the token and stops. That is its entire value: it commits
+    /// five immutable values and nothing else, leaving every later decision open while each
+    /// remaining contract is proven one at a time.
+    ///
+    /// Anything else creeping into it — a suite contract for convenience, a pool to save a
+    /// step — would couple the one irreversible-but-harmless move to a decision that is
+    /// neither.
+    function test_theTokenScriptDeploysOnlyTheToken() public view {
+        string memory src = vm.readFile("script/DeploySkoopToken.s.sol");
+        assertTrue(_contains(src, "new MerchantToken"), "it must deploy the token");
+
+        string[6] memory mustNotDeploy = [
+            "new RewardEscrow", "new VestingWallet", "new TreasuryTimelock",
+            "new LPLocker", "new WindDownController", "new PunchCardRouter"
+        ];
+        for (uint256 i = 0; i < mustNotDeploy.length; i++) {
+            assertFalse(
+                _contains(src, mustNotDeploy[i]),
+                string.concat("DeploySkoopToken must not deploy anything but the token - found ", mustNotDeploy[i])
+            );
+        }
+        assertFalse(_contains(src, "registerManual"), "and must not register anything");
+        assertFalse(_contains(src, "createAndInitializePool"), "and must not create a pool");
+    }
+
     function _contains(string memory haystack, string memory needle) private pure returns (bool) {
         bytes memory h = bytes(haystack);
         bytes memory n = bytes(needle);

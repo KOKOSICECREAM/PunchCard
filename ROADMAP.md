@@ -384,6 +384,33 @@ Decide deliberately, do not inherit it:
 The second is more code and makes the suite contracts take an argument they currently
 derive. The first is free and needs enforcing, or it is just a hope.
 
+## PunchCard Terminal — the payment surface, deliberately out of scope
+
+The protocol has no payment contract, and that is a boundary rather than an omission. It
+handles the token, its economics, its liquidity and its membership of the network. It does
+not handle the till.
+
+**PunchCard Terminal** is the future point-of-sale and payment surface: one blueprint per
+merchant, with only the accepted merchant-token address swapped between deployments — the
+same relationship the suite contracts already have to the factory. The SKOOP dapp talks to
+the Terminal rather than the Terminal being merchant-specific software.
+
+Not being built during the token and network launch, on purpose. A contract that holds
+customer funds is the most security-sensitive piece in the system and the one with no test
+coverage, because it does not exist. Rushing it alongside a token launch is how both go
+wrong.
+
+Until it exists, KOKOS keeps taking payments through `KOKOSPaymentEscrowV3`, whose
+`skoopToken` is immutable and points at the 2023 token. So during the overlap customers earn
+the new SKOOP and pay with the old one. Awkward, honest, and better than a hurried contract
+holding their money.
+
+**Rewards are unaffected.** The existing POS pays customers with a plain ERC-20 transfer from
+its own float — it never called the reward vault — so pointing it at the new token is a
+one-line config change. Top-ups become `distributeReward(posWallet, amount)` on the new
+escrow, and the daily limit stops being enforced in JavaScript and starts being enforced by
+the operator drawer on-chain.
+
 ## Economics — UNVALIDATED
 
 See `docs/economics-review.md`. There is no usage evidence. KOKOS is in beta and barely

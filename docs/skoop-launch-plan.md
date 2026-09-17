@@ -149,7 +149,7 @@ rules in `docs/staged-rollout.md` apply: **PunchCard-registered**, **bytecode-re
 - [ ] **Capital**: $2,000 USDC + $1,000 of ETH in the owner wallet, plus gas. Re-check the
       ETH figure on the day — the floor is USD-denominated against Chainlink and the wei
       that clears $1,000 moves with the price.
-- [ ] **A Sourcify (and ideally Basescan) verification path**, tested. Step 5 below is
+- [ ] **A Sourcify (and ideally Basescan) verification path**, tested. Step 6 below is
       load-bearing, not cosmetic.
 - [ ] **Announcement drafted**, so the cutover is not waiting on writing.
 - [ ] **Old SKOOP snapshot taken at a block already in the past.** Announcing a future block
@@ -157,35 +157,51 @@ rules in `docs/staged-rollout.md` apply: **PunchCard-registered**, **bytecode-re
 
 ## The sequence
 
-Everything up to step 8 is reversible. Step 9 is not.
+Everything up to step 10 is reversible. Step 11 is not.
 
 ```
- 1  deploy the network            DeployNetworkStaged.s.sol
+ 0  pin the metadata             name, logo, description. The hash is immutable.
+ 1  deploy ONLY the token         DeploySkoopToken.s.sol
+                                  100M to the owner wallet. No pools, no suite, not on the
+                                  network. The only piece with no dependencies.
+ 2  deploy the network            DeployNetworkStaged.s.sol
                                   controller + router + the factory FUTURE merchants use.
                                   SKOOP joins it, it does not come through it.
- 2  hand-assemble the suite       token, escrow, vesting, treasury, LPLockerPilot
- 3  fund each contract, in turn   45M escrow · 15M vesting · 10M treasury.
+ 3  deploy the suite, one at a    escrow, vesting, treasury, LPLockerPilot — each takes the
+    time, proving each            controller address as an IMMUTABLE, so step 2 must precede
+                                  them and the choice can never be undone
+ 4  fund each contract, in turn   45M escrow · 15M vesting · 10M treasury.
                                   Exercise each one with a small amount first.
- 4  seed both pools               $2,000 USDC + $1,000 ETH, at one price.
+ 5  seed both pools               $2,000 USDC + $1,000 ETH, at one price.
                                   Mint both positions TO THE LOCKER, send the 27M reserve,
                                   and only THEN call initializeLP. Order matters — see below.
- 5  publish the source            all five contracts. Do this BEFORE step 6.
- 6  multisig approves 5 codehashes  setApprovedCode(role, codehash, true)
- 7  VerifyManualSuite             PC_MODE=pilot. Read-only. Fix what it reports, run again.
- 8  -- announce --                the cutover is starting
- 9  pull the old SKOOP LP         old token stops being tradeable
-10  registrar admits SKOOP        registerManual(...)   <-- no undo after this
-11  confirm the router serves it  getPoolFeeTiers stops reverting
-12  fill the launchpad config     controller · router · token · escrow · pools
-13  confirm the page copy         "SKOOP liquidity is not permanently locked."
-14  distribute to old holders     13 wallets, ~$338, from the treasury allocation
-15  point the POS at the escrow   when ready, not before
+ 6  publish the source            all five contracts. Do this BEFORE step 7.
+ 7  multisig approves 5 codehashes  setApprovedCode(role, codehash, true)
+ 8  VerifyManualSuite             PC_MODE=pilot. Read-only. Fix what it reports, run again.
+ 9  -- announce --                the cutover is starting
+10  pull the old SKOOP LP         old token stops being tradeable
+11  registrar admits SKOOP        registerManual(...)   <-- no undo after this
+12  confirm the router serves it  getPoolFeeTiers stops reverting
+13  fill the launchpad config     controller · router · token · escrow · pools
+14  confirm the page copy         "SKOOP liquidity is not permanently locked."
+15  distribute to old holders     13 wallets, ~$338, from the treasury allocation
+16  point the POS at the escrow   when ready, not before
 ```
 
-**Steps 5 and 6 are in that order deliberately.** Codehash approval is per deployment —
+**Steps 6 and 7 are in that order deliberately.** Codehash approval is per deployment —
 Solidity writes immutables into runtime bytecode, so the multisig cannot approve
 implementations in advance. Approving the hash of a contract nobody has verified is a rubber
 stamp; approving one whose published source matches is an attestation.
+
+**Step 1 commits five values and nothing else**, four of them permanently: name, symbol,
+supply and the metadata hash. Everything after it is still a decision. That is the whole
+reason to deploy the token alone — it lets SKOOP exist while each remaining contract is
+proven one at a time, with the irreversible step at the very end.
+
+**Do not publish the token address until your own pools are seeded.** Anyone who knows it
+can create a Uniswap pool at a price of their choosing, and the factory's create-or-revert
+protection does not exist on a hand-assembled launch. Check `getPool` immediately before
+seeding; if one exists at that tier, stop and use another.
 
 ### Two things the factory was doing silently
 
@@ -205,27 +221,27 @@ locker's balance at that instant. Initialise first and it records zero permanent
 27M arrives afterwards and is never counted, so `addLiquidity` cannot deploy what the locker
 does not believe it has. The verifier flags a zero reserve against a non-zero balance.
 
-So step 4's order is: **mint positions to the locker → send the reserve → initializeLP**.
+So step 5's order is: **mint positions to the locker → send the reserve → initializeLP**.
 
-**Step 7 is the only step with no transaction in it**, and the reason the manual path is
+**Step 8 is the only step with no transaction in it**, and the reason the manual path is
 defensible rather than merely flexible.
 
-**Step 10 is the point of no return.** `register()` sets a flag nothing clears; the only
+**Step 11 is the point of no return.** `register()` sets a flag nothing clears; the only
 exit is a 365-day wind-down. Before it, every problem is fixable by redeploying a contract
-and re-running step 7.
+and re-running step 8.
 
 ## If something goes wrong
 
 | where | what it costs | what to do |
 |---|---|---|
-| steps 1–4 | gas | redeploy the offending contract, carry on |
-| step 5 | nothing | verify again; settings must match the deployment |
-| step 6 | nothing | approve the corrected hash |
-| step 7 | nothing | it is telling you something is wrong. Fix it, do not override it |
-| step 9 | old SKOOP untradeable | expected; this is the cutover |
-| after step 10 | **SKOOP is on the network for a year minimum** | LP is still recoverable via `evacuateLP()`; allocations can still be topped up |
+| steps 1–5 | gas | redeploy the offending contract, carry on |
+| step 6 | nothing | verify again; settings must match the deployment |
+| step 7 | nothing | approve the corrected hash |
+| step 8 | nothing | it is telling you something is wrong. Fix it, do not override it |
+| step 10 | old SKOOP untradeable | expected; this is the cutover |
+| after step 11 | **SKOOP is on the network for a year minimum** | LP is still recoverable via `evacuateLP()`; allocations can still be topped up |
 
-The LP hatch is the backstop for everything after step 10: `evacuateLP()` from the owner
+The LP hatch is the backstop for everything after step 11: `evacuateLP()` from the owner
 wallet returns the seed and the reserve, at any time, with no deadline. It does not undo
 registration.
 
