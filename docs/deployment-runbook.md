@@ -347,21 +347,29 @@ Manual path    reviewed and attested        the multisig looked at this exact by
 
 Neither is the other. Do not describe a manually-admitted merchant as factory-standard.
 
-## The pilot token is `pSKOOP`, not `SKOOP`
+## The token is `SKOOP PunchCard`, symbol `SKOOP`
 
-Decided 2026-09-15. The live 2023 SKOOP keeps running, so both exist on Base at once and
-every surface has to say which one it means. `SKOOP2` reads as a migration token; `pSKOOP`
-reads as a pilot, which is what it is.
+Decided 2026-09-16, superseding the 2026-09-15 choice of `pSKOOP`. That earlier decision was
+right for a **pilot running alongside a live token**; this is the official launch and the
+2023 token is being retired, so the new one takes the name.
 
-- [ ] Deploy with name `KOKOS SKOOPS Pilot`, symbol `pSKOOP`
-- [ ] Launchpad slug `pilot-skoop`, `brand.shortName` = `pSKOOP`
-- [ ] **The two pages still share artwork.** `merchants/pilot-skoop/assets/` is a copy of
-      KOKOS's icon and logo, so an installed PWA looks the same on a home screen. The symbol
-      and app title differ; the images do not. Supply pilot artwork before announcing, or
-      accept that the two are told apart by text alone.
-- [ ] Graduation is a later decision — keep `pSKOOP`, or redeploy as `SKOOP` once the live
-      one is retired. Do not decide it now; ambiguity during testing is the thing being
-      avoided.
+`PunchCard` in the name because a customer already knows what a punch card is — the name
+explains itself in a wallet to someone who has never heard of the network. `PunchCard
+Network` and `SKOOP PCN` were both considered and both name the plumbing instead. The family
+for later merchants is `SKOOP PunchCard`, `FROTH PunchCard`, `SLICE PunchCard`, and it is a
+convention rather than an on-chain rule — see `docs/staged-rollout.md` for why it is not
+enforced yet.
+
+- [ ] Deploy with name `SKOOP PunchCard`, symbol `SKOOP`
+- [ ] Launchpad slug `skoop`, `brand.shortName` = `SKOOP`
+- [ ] **The symbol collides with the live 2023 token while both are tradable**, and the name
+      does not fix it — DEX interfaces key on symbol. Handled by sequencing:
+      **nothing is promoted until the old pools are drained.** See
+      `docs/skoop-launch-plan.md`.
+- [ ] **The two pages still share artwork.** `merchants/skoop/assets/` is a copy of KOKOS's
+      icon and logo, so an installed PWA looks the same on a home screen. Names and app
+      titles differ; the images do not. Supply distinct artwork before announcing, or accept
+      that the two are told apart by text alone.
 
 ## Admitting a hand-assembled merchant
 
