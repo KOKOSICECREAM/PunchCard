@@ -1,0 +1,18 @@
+{
+  "name": "SKOOP PunchCard",
+  "symbol": "SKOOP",
+  "decimals": 6,
+  "description": "The loyalty token of KOKOS Ice Cream in Nashville, and the first token on the PunchCard network. Earn SKOOP at the register, hold it, or trade it for the token of any other business on the network.",
+  "merchant": {
+    "name": "KOKOS Ice Cream",
+    "location": "Nashville, TN",
+    "website": "https://kokosicecream.com"
+  },
+  "network": {
+    "name": "PunchCard",
+    "website": "https://punchcard.club"
+  },
+  "logo": "ipfs://REPLACE_WITH_PINNED_LOGO_CID",
+  "_logo_note": "Pin the image first, put its CID here, then pin THIS file. The CID of this file is what goes on-chain.",
+  "_immutable_note": "keccak256 of this file's CID is stored on MerchantToken.ipfsHash and can never be changed. Pin it somewhere that stays pinned."
+}

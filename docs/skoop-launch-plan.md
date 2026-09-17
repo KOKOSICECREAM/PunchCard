@@ -141,7 +141,22 @@ rules in `docs/staged-rollout.md` apply: **PunchCard-registered**, **bytecode-re
 
 ## Before the day
 
-- [ ] **Wallets**, all fresh, none reused from the rehearsals:
+- [ ] **Owner wallet** — `0x5426E59b783cd3b5083Ccc8cB571AA36e9f4a3be`
+      Designated 2026-09-16. Verified on Base: EOA, nonce 0, no balance, distinct from both
+      rehearsal wallets and from anything in the KOKOS deployment.
+
+      It receives the entire supply at mint, and goes in as `ownerWallet` on the escrow,
+      treasury and locker — **immutable in all three**. It is also the only address that can
+      ever call `evacuateLP()`, with no deadline and no second signature. It is the
+      highest-stakes key in the system.
+
+      - [ ] Confirm it is the hardware wallet, not a hot wallet standing in
+      - [ ] Prove the key signs before it holds anything: send it a trivial amount of ETH
+            and send some back. Costs cents, and it is the only cheap moment to find out
+      - [ ] Fund it with gas before step 4 — it funds each contract by hand, approves the LP
+            share and seeds the pools
+
+- [ ] **The other wallets**, all fresh, none reused from the rehearsals:
       multisig · deployer · registrar · fee recipient · owner *(hardware)* · team
       *(hardware)* · operator
       The **owner wallet** is the highest-stakes key in the system: it alone can evacuate the
@@ -149,6 +164,14 @@ rules in `docs/staged-rollout.md` apply: **PunchCard-registered**, **bytecode-re
 - [ ] **Capital**: $2,000 USDC + $1,000 of ETH in the owner wallet, plus gas. Re-check the
       ETH figure on the day — the floor is USD-denominated against Chainlink and the wei
       that clears $1,000 moves with the price.
+- [ ] **Metadata pinned.** `deploy/merchants/skoop-metadata.json` is the file to pin —
+      pin the logo image first, put its CID in the `logo` field, then pin the file itself.
+      The CID of the file is what the deploy script hashes.
+
+      `MerchantToken.ipfsHash` stores `keccak256(CID)` and has no setter. Pin it somewhere
+      that stays pinned: a service that garbage-collects unpaid content will leave a token
+      pointing at a hash nobody can resolve, forever.
+
 - [ ] **A Sourcify (and ideally Basescan) verification path**, tested. Step 6 below is
       load-bearing, not cosmetic.
 - [ ] **Announcement drafted**, so the cutover is not waiting on writing.
