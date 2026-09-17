@@ -20,10 +20,12 @@ necessary.
 2. **Base merchant launches use `StagedTokenFactory*`**, through
    `DeployNetworkStaged.s.sol` and `StageMerchant.s.sol`.
 
-3. **pSKOOP starts a fresh staged network.** `DeployNetworkStaged` creates its own
-   `WindDownController` with the staged factory already authorised, so there is **no
-   authorisation step** for the first network. `proposeFactory` / `executeFactory` exist
-   for adding *later* factories to that same controller.
+3. **SKOOP starts a fresh network, and joins it rather than coming through it.**
+   `DeployNetworkStaged` creates its own `WindDownController` with the staged factory
+   already authorised, so there is **no authorisation step** for the first network — and
+   that factory is for FUTURE merchants. SKOOP itself is hand-assembled and admitted through
+   the manual registrar path. `proposeFactory` / `executeFactory` exist for adding *later*
+   factories to the same controller.
 
 4. **Never reuse the micro rehearsal controller.** The one at
    `0x54BeC817f99f1a477944e84688bCeBEAF92175E7` is a disposable artifact of the rehearsal
