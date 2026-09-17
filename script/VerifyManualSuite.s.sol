@@ -27,6 +27,11 @@ interface IV_Pool {
 }
 interface IV_Locker {
     function isInitialized() external view returns (bool);
+    function getPositions() external view returns (
+        uint256 usdcTokenId, uint24 usdcFee, uint128 usdcLiq, bool usdcIsToken0, bool usdcInit, bool usdcRel,
+        uint256 ethTokenId,  uint24 ethFee,  uint128 ethLiq,  bool ethIsToken0,  bool ethInit,  bool ethRel,
+        uint256 reserveTokens
+    );
     function reserveTokens() external view returns (uint256);
     function usdcFeeTier() external view returns (uint24);
     function ethFeeTier() external view returns (uint24);
@@ -41,6 +46,7 @@ interface IV_Vesting  { function teamWallet() external view returns (address); }
 interface IV_Treasury { function ownerWallet() external view returns (address); }
 interface IV_Oracle   { function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80); function decimals() external view returns (uint8); }
 interface IV_Router   { function getPoolFeeTiers(address) external view returns (uint24, uint24); }
+interface IV_ERC721   { function ownerOf(uint256) external view returns (address); }
 
 /// @title VerifyManualSuite — inspect a hand-assembled merchant before admitting it
 ///
@@ -88,6 +94,7 @@ contract VerifyManualSuite is Script {
     struct Inputs {
         address wdc; address router; address oracle;
         address token; address escrow; address vesting; address treasury; address locker;
+        address pm;
         address owner; address team; address operator;
         address usdcPool; address ethPool;
         address usdc; address weth;
@@ -177,8 +184,49 @@ contract VerifyManualSuite is Script {
             _fail("locker is NOT initialised - it holds no LP positions, so the token cannot trade");
         } else {
             console2.log("    locker initialised: yes");
+            _checkPositionsAreOwnedByTheLocker(i);
         }
         console2.log("");
+    }
+
+    /// @dev The check the factory made unnecessary and hand-assembly makes essential.
+    ///
+    ///      `initializeLP` reads both positions from Uniswap and records their liquidity. It
+    ///      does NOT check that the locker owns them, because in the factory path it cannot
+    ///      fail to: the factory transfers both NFTs and then initialises, in one
+    ///      transaction it controls.
+    ///
+    ///      Assembled by hand there is no such guarantee. Paste the wrong token IDs, or
+    ///      forget to move the NFTs, and the locker reports `isInitialized: true` while the
+    ///      liquidity sits in somebody's wallet. Everything downstream then believes a
+    ///      thing that is not true — "the LP is in the locker" is the claim the whole
+    ///      product rests on, `collectFees` operates on positions it cannot touch, and
+    ///      wind-down cannot release them.
+    function _checkPositionsAreOwnedByTheLocker(Inputs memory i) private {
+        (uint256 usdcId,,,,,, uint256 ethId,,,,,, uint256 reserve) = IV_Locker(i.locker).getPositions();
+
+        address usdcOwner = IV_ERC721(i.pm).ownerOf(usdcId);
+        address ethOwner  = IV_ERC721(i.pm).ownerOf(ethId);
+
+        if (usdcOwner == i.locker) console2.log("    usdc position owned by the locker: yes");
+        else _fail(string.concat("the USDC position is owned by ", vm.toString(usdcOwner),
+            ", not the locker - the liquidity is not where the locker says it is"));
+
+        if (ethOwner == i.locker) console2.log("    eth position owned by the locker: yes");
+        else _fail(string.concat("the ETH position is owned by ", vm.toString(ethOwner),
+            ", not the locker - the liquidity is not where the locker says it is"));
+
+        // `_reserveTokens` is snapshotted by initializeLP from the balance at that instant.
+        // Initialise before sending the reserve and it records zero, permanently — the
+        // tokens arrive but the locker never counts them, and addLiquidity cannot deploy
+        // what it does not believe it has.
+        uint256 held = IV_ERC20(i.token).balanceOf(i.locker);
+        if (reserve == 0 && held > 0) {
+            _fail(string.concat("locker records a zero reserve while holding ", _amt(held),
+                " - initializeLP ran BEFORE the reserve was sent"));
+        } else {
+            console2.log(string.concat("    recorded reserve: ", _amt(reserve)));
+        }
     }
 
     // ── 12. where the rest of the supply sat ─────────────────────────────────
@@ -276,6 +324,7 @@ contract VerifyManualSuite is Script {
         i.usdc     = vm.envAddress("PC_USDC");
         i.weth     = vm.envAddress("PC_WETH");
         i.oracle   = vm.envAddress("PC_ETH_USD_FEED");
+        i.pm       = vm.envAddress("PC_POSITION_MANAGER");
         i.router   = vm.envOr("PC_ROUTER", address(0));
         i.strict   = keccak256(bytes(vm.envOr("PC_MODE", string("pilot")))) == keccak256("strict");
     }

@@ -10,6 +10,8 @@ import "../contracts/pilot/LockerDeployerPilot.sol";
 import "../contracts/MerchantToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+interface IERC721Min721 { function transferFrom(address, address, uint256) external; }
+
 contract MintableToken is MerchantToken {
     constructor(address to) MerchantToken("Fake", "FAKE", 100_000_000 * 1e6, to, keccak256("f")) {}
     function mintMore(address to, uint256 a) external { _mint(to, a); }
@@ -128,6 +130,7 @@ contract ManualVerificationTest is Test {
         vm.setEnv("PC_USDC",            vm.toString(USDC));
         vm.setEnv("PC_WETH",            vm.toString(WETH));
         vm.setEnv("PC_ETH_USD_FEED",    vm.toString(ETH_USD_FEED));
+        vm.setEnv("PC_POSITION_MANAGER", vm.toString(POSITION_MANAGER));
         vm.setEnv("PC_MODE",            "pilot");
     }
 
@@ -173,6 +176,29 @@ contract ManualVerificationTest is Test {
         v.run();
 
         emit log("verification script passes a correct suite and fails every broken one");
+    }
+
+    /// The hole hand-assembly opens, and the factory closes by construction.
+    ///
+    /// initializeLP reads both positions from Uniswap and never checks the locker owns
+    /// them — it cannot fail to in the factory path, which transfers the NFTs and then
+    /// initialises in one transaction. Assembled by hand, the locker can report
+    /// `isInitialized: true` while the liquidity sits in somebody's wallet, and everything
+    /// downstream believes a claim the whole product rests on.
+    function test_positionsNotOwnedByTheLockerAreCaught() public {
+        if (!forked) { vm.skip(true); }
+
+        // Move one position out from under the locker, as a wrong token ID or a forgotten
+        // transfer would leave it.
+        (uint256 usdcId,,,,,,,,,,,,) = IV_Locker(locker).getPositions();
+        vm.prank(locker);
+        IERC721Min721(POSITION_MANAGER).transferFrom(locker, address(0xBEEF), usdcId);
+
+        _env();
+        vm.expectRevert("Verification failed - see the report above");
+        v.run();
+
+        emit log("a position the locker does not own fails verification");
     }
 
     /// The mode difference, isolated: a shortfall warns in pilot and fails in strict.
