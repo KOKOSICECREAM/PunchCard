@@ -12,7 +12,7 @@
     "name": "PunchCard",
     "website": "https://punchcard.club"
   },
-  "logo": "ipfs://REPLACE_WITH_PINNED_LOGO_CID",
-  "_logo_note": "Pin the image first, put its CID here, then pin THIS file. The CID of this file is what goes on-chain.",
-  "_immutable_note": "keccak256 of this file's CID is stored on MerchantToken.ipfsHash and can never be changed. Pin it somewhere that stays pinned."
+  "logo": "ipfs://QmNoS9wwGj3zb2rz1Z2AMbZMBfh6VMjijSAon5xUt6mXfV",
+  "_immutable_note": "keccak256 of this file's CID is stored on MerchantToken.ipfsHash and can never be changed. Pin it somewhere that stays pinned.",
+  "_logo_note": "Pinned 2026-09-17, verified resolving through ipfs.io and byte-identical to deploy/merchants/skoop-logo.png. 512x512 PNG, transparent background, 137,489 bytes."
 }
