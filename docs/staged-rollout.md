@@ -46,6 +46,197 @@ executeFactory(addr)              multisig, after the timelock
   `register()` refuses a token that is already registered, so a newly blessed factory
   cannot reach an existing merchant's terms, liquidity or tokens.
 
+## The pilot lineage — SKOOP only
+
+Added 2026-09-15. A third lineage sits beside beta and production, for **one deployment**.
+
+| | Production | Beta | **Pilot** |
+|---|---|---|---|
+| Factory | `StagedTokenFactory` | `StagedTokenFactoryBeta` | `StagedTokenFactoryPilot` |
+| Locker | `LPLocker` | `LPLockerBeta` | `LPLockerPilot` |
+| LP recovery | none, ever | 30 days from activation, self-closing | **open until closed by hand** |
+| Who | any merchant | beta merchants | **SKOOP only** |
+
+> **The atomic `TokenFactory` / `TokenFactoryBeta` / `TokenFactoryPilot` lineage is
+> reference-only on Base.** `deploy()` is 17,325,962 gas against a 16,777,216 cap. The three
+> lineages above are the staged equivalents and carry the same marker constants —
+> `HAS_LP_RECOVERY` on beta and pilot, `HAS_UNLIMITED_LP_RECOVERY` on pilot alone.
+>
+> Note "30 days **from activation**": every clock in a suite — emission, team cliff,
+> treasury, and the recovery hatch — starts when the merchant goes live, not when the
+> contracts were built. Staging means those are no longer the same instant.
+
+`LPLockerBeta`'s first guardrail says a hatch that must be closed by hand can be left open
+forever through neglect or intent, and that `EVACUATION_WINDOW` closes it regardless of
+whether anyone acts. **The pilot deletes that guardrail on purpose.** The reasoning is not
+refuted, it is accepted: KOKOS's pilot is PunchCard testing its own machine with its own
+money, on a schedule set by the work rather than by a constant. A 30-day fuse there fails in
+the worst direction — the window shuts mid-test and real capital is committed for a year
+because nobody watched a calendar.
+
+**That reasoning does not transfer to a merchant.** A merchant is owed a liquidity guarantee
+that does not depend on PunchCard remembering to honour it, which is exactly what a
+self-closing window provides and an open-ended one does not. Merchants get beta or
+production. Nothing else.
+
+**Enforced structurally, not by policy.** The pilot is a separate contract, separate
+deployer and separate factory, so "SKOOP only" is enforced by which factory the controller
+has authorised. For the first pilot network there is nothing to authorise:
+`DeployNetworkStaged` creates the controller with `StagedTokenFactoryPilot` already wired
+in. `proposeFactory` / `executeFactory` are for adding a **later** factory — a production
+one at Stage 2 — to that same controller, and disabling one leaves merchants it already
+registered working, which is what that path was built for.
+
+```
+cast call $FACTORY 'HAS_LP_RECOVERY()(bool)'            → true on beta and pilot
+cast call $FACTORY 'HAS_UNLIMITED_LP_RECOVERY()(bool)'  → true on pilot only
+```
+
+At the locker level there is no marker constant on `LPLockerBeta`, so which calls *answer*
+is the discriminator: `evacuationOpen()` reverts on production; `evacuationExpiresAt()`
+answers only on the pilot, returning `type(uint256).max`. The inherited `evacuationDeadline`
+on a pilot locker still reads deploy + 30 days and **does not apply** — read
+`evacuationExpiresAt()`.
+
+**While the hatch is open, SKOOP's liquidity is not locked, and no PunchCard surface may say
+that it is.** This is the same rule as beta, for a longer and open-ended period. Closing it
+is a deliberate act (`lockLP()`), one-way, and after it the contract behaves exactly as
+production does.
+
+Covered by `test/PilotRecovery.t.sol` (10 tests, including that beta still self-closes and
+production still has no hatch at all) and `test_phase4_pilotHatchSurvivesBeyondThirtyDays`
+against live Base.
+
+## Two ways onto the network
+
+Settled 2026-09-16, after an attempt to make the factory serve both went badly.
+
+| | Factory path | Manual registrar path |
+|---|---|---|
+| Who | every merchant | SKOOP, and approved migrations |
+| Assembly | `StagedTokenFactory*`, three transactions | by hand, in any order |
+| Guarantee | the suite was **created** by known code | the suite **is** known code, checked at admission |
+| Allocations | exact, enforced before registration | the registrar's job, off-chain |
+| Admission | `register()`, `onlyFactory` | `registerManual()`, `onlyRegistrar` |
+| Who approves | multisig authorises factories, 48h timelock | multisig approves registrars and code hashes |
+
+Both write the same registry record through the same private function, so the router cannot
+tell them apart and does not try. A merchant is a merchant.
+
+### Why the manual path exists
+
+SKOOP has to stay movable while unaudited code is proven — liquidity recoverable,
+allocations fixable, nothing stranded by a transfer that landed wrong. Making the factory
+allow that meant soft allocation gates, permissive registration and overridable stage
+checks, each needing its own invariant to stop it leaking into merchant launches.
+
+**That put exceptions inside the thing whose entire value is having none.** A factory whose
+main job is having exceptions carved out of it is not a standard. So the factory stayed
+strict and SKOOP stopped using it.
+
+### What the manual path does and does not prove
+
+It cannot prove how a suite was built — a registrar admits contracts that already exist.
+What it proves is narrower than it first looks, and worth stating exactly:
+
+> **The registrar can admit only contracts the multisig has already looked at and approved
+> by hash.** Two keys, one reviewing and one admitting, and no way for the second to act
+> alone.
+
+`registerManual` compares the runtime `codehash` of the token, escrow, vesting wallet,
+treasury and locker against `approvedCode[role]`, reverting with the role that failed.
+`test/ManualRegistration.t.sol` proves a token that can mint more of itself is refused even
+though it has code, the right interface and the right supply.
+
+**Approval is per deployment, not per implementation.** Solidity writes immutables into
+runtime bytecode, so two escrows compiled from identical source with different owner wallets
+have different codehashes — measured, not assumed. There is no way to approve "the
+RewardEscrow" once and cover every merchant; the multisig approves the exact contracts of
+one suite.
+
+Which makes publishing source **load-bearing rather than cosmetic**, and fixes the order:
+
+```
+deploy the suite -> verify the source -> multisig approves the hashes -> registrar admits
+```
+
+Approving the codehash of a contract nobody has verified is a rubber stamp. Approving one
+whose published source matches its bytecode is an attestation. Skip the middle step and the
+check still passes and stops meaning anything.
+
+What it deliberately does **not** check is balances, pools or liquidity. Those are the
+registrar's job, done off-chain with a verification script, because encoding them here would
+rebuild the factory inside the controller — which is the thing this path exists to avoid.
+
+### The rule
+
+```
+Normal merchants   staged factory -> automatic registration
+SKOOP and approved migrations   manual launch -> bytecode-verified registrar admission
+Both               same WindDownController, same router, same network
+```
+
+A merchant uses the factory unless the multisig has explicitly decided otherwise. The manual
+path is an exception that should stay rare, and the registrar list is the lever: a registrar
+is a person, and people change.
+
+### Naming: a convention, not a rule
+
+Official network tokens are named `<SYMBOL> PunchCard` — `SKOOP PunchCard`,
+`FROTH PunchCard`. The symbol stays short and unqualified.
+
+`PunchCard` rather than `PunchCard Network` because it is a word a customer already
+understands, so the name explains itself in a wallet. "Network" describes the plumbing, and
+an acronym like `PCN` carries no information until the full name is known.
+
+**Deliberately not enforced on-chain.** The registry could require the suffix in both
+`register()` and `registerManual()`, which would make network membership and the naming
+convention one verifiable fact. It is not done, because that check cannot be retrofitted —
+every token registered before it would fail it afterwards — and the model is still settling.
+Room to change the convention is worth more than making it structural today. Revisit once
+several merchants exist and the shape has stopped moving.
+
+### Constraints track the lineage, not one number for everyone
+
+A merchant's constants are a promise to their holders, and the factory enforces them
+identically for all of them. SKOOP is hand-assembled, so its parameters are chosen at
+deploy — and where they differ it is for a reason rather than for convenience.
+
+The clearest case is the treasury delay. **SKOOP's LP is evacuable instantly, with no
+deadline, forever**, which is a larger and faster lever than the treasury held by the same
+wallet and disclosed on the page. A 90-day gate on 10% of supply while that hatch stands
+open protects nobody. So SKOOP deploys with 7 days.
+
+For a merchant the reasoning inverts: their hatch self-closes at 30 days or never existed,
+so the treasury delay is their holders' only protection against a sudden 10% move. Same
+constant, opposite justification.
+
+**Nothing about this loosens the standard.** The factory and its constants are untouched; a
+merchant launching tomorrow gets exactly what the README describes. SKOOP differs by deploy
+parameter, which is the whole reason the manual path exists and why the factory stopped
+being bent to accommodate it. The full list of differences is in
+`docs/skoop-launch-plan.md`.
+
+### What a manually-admitted merchant may be called
+
+The two claims are not interchangeable and the difference is easy to lose in a sentence.
+
+| accurate for SKOOP | not accurate for SKOOP |
+|---|---|
+| PunchCard-registered | factory-standard |
+| bytecode-reviewed | factory-deployed |
+| network-admitted | built from identical contracts to every merchant |
+
+The factory's claim is *this could not have been built wrong*. The manual path's is *the
+multisig looked at this exact bytecode and approved it*. The second is a real assurance and
+a weaker one, and saying the first about a token that earned the second is the specific way
+this gets misrepresented.
+
+**Unused for now:** `StagedTokenFactoryPilot` and `DeployNetworkStagedPilot.s.sol` were built
+for a SKOOP that launched through a factory. It does not. Both carry a notice saying so.
+`LPLockerPilot` is separate and is live — it is the never-closing hatch the hand-assembled
+suite uses.
+
 ## What is guaranteed, and by what
 
 The distinction merchants and customers are owed, stated exactly.
@@ -57,7 +248,7 @@ All merchants use the same economic terms by PunchCard POLICY and deployment che
 LP is recoverable by the merchant for up to 30 days after launch, then permanently locked.
 ```
 
-- The 45/30/15/10 split, 180-day cliff, 90-day treasury delay and daily cap **are**
+- The 45/30/15/10 split, 30-day cliff, 90-day treasury delay and daily cap **are**
   contractual — they are `constant` in the factory and cannot be negotiated.
 - What is *not* contractual in beta is the LP lock. It becomes contractual when the window
   closes, either by `lockLP()` or by expiry.

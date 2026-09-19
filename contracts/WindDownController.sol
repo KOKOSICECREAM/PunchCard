@@ -47,6 +47,55 @@ contract WindDownController is IWindDownController {
     mapping(address => uint256) public factoryProposedAt;
     mapping(address => bool)    public factoryProposalIsAuthorize;
 
+    // ── MANUAL ADMISSION ──────────────────────────────────────────────────────
+
+    /// @notice Addresses permitted to admit a hand-assembled merchant.
+    /// @dev The factory path is the standard and this is the exception. It exists because a
+    ///      merchant may be assembled outside a factory — the network's own first token,
+    ///      launched by hand so its liquidity and allocations stay movable while unaudited
+    ///      code is proven — and because bending the factory to allow that would put
+    ///      exceptions inside the thing whose whole value is having none.
+    ///
+    ///      **This is weaker than the factory path and must stay rarer.** A factory
+    ///      guarantees a suite was CREATED by known code. This guarantees only that the
+    ///      code is known NOW, which `registerManual` enforces by comparing every
+    ///      contract's `codehash` against an implementation the multisig has approved.
+    ///      Without that comparison it would be a signature saying "trust me", which is not
+    ///      a guarantee at all.
+    mapping(address => bool) public registrars;
+
+    /// @notice Runtime code hashes the multisig accepts for each suite role.
+    /// @dev `keccak256(role) => codehash => allowed`. Several may be allowed per role: a
+    ///      locker lineage differs between production, beta and pilot, and all three are
+    ///      legitimate for different merchants.
+    ///
+    ///      **Approval is per DEPLOYMENT, not per implementation.** Solidity writes
+    ///      immutables into runtime bytecode, so two escrows compiled from identical source
+    ///      with different owner wallets have different codehashes. There is no way to
+    ///      approve "the RewardEscrow" once and cover every merchant.
+    ///
+    ///      That makes the guarantee narrower than it first looks, and worth stating
+    ///      exactly. It is **not** "this suite is built from known-good code" proven
+    ///      automatically. It is: *the registrar can admit only contracts the multisig has
+    ///      already looked at and approved by hash.* Two different keys, one reviewing and
+    ///      one admitting, and no way for the second to act alone.
+    ///
+    ///      Which is why publishing source is load-bearing rather than cosmetic. Approving
+    ///      the codehash of a contract nobody has verified is a rubber stamp. Approving one
+    ///      whose source is published and matches its bytecode is an attestation, and the
+    ///      order matters: **verify the source, then approve the hash.**
+    mapping(bytes32 => mapping(bytes32 => bool)) public approvedCode;
+
+    bytes32 public constant ROLE_TOKEN    = keccak256("MERCHANT_TOKEN");
+    bytes32 public constant ROLE_ESCROW   = keccak256("REWARD_ESCROW");
+    bytes32 public constant ROLE_VESTING  = keccak256("VESTING_WALLET");
+    bytes32 public constant ROLE_TREASURY = keccak256("TREASURY_TIMELOCK");
+    bytes32 public constant ROLE_LOCKER   = keccak256("LP_LOCKER");
+
+    event RegistrarSet(address indexed registrar, bool allowed, uint256 timestamp);
+    event CodeApproved(bytes32 indexed role, bytes32 indexed codehash, bool allowed, uint256 timestamp);
+    event ManualSuiteRegistered(address indexed merchantToken, address indexed registrar, uint256 timestamp);
+
     mapping(address => WindDownSuite) private _suites;
     mapping(address => bool) private _registered;
 
@@ -98,6 +147,58 @@ contract WindDownController is IWindDownController {
         _;
     }
 
+    // ── MANUAL ADMISSION ──────────────────────────────────────────────────────
+
+    function setRegistrar(address who, bool allowed) external onlyMultisig {
+        require(who != address(0), "Invalid registrar");
+        registrars[who] = allowed;
+        emit RegistrarSet(who, allowed, block.timestamp);
+    }
+
+    /// @notice Approve a runtime code hash for one suite role. Multisig only.
+    /// @dev Approving code is the whole security of the manual path. A registrar can admit
+    ///      any suite built from approved code and nothing else, so this is the list that
+    ///      decides what "a PunchCard merchant" can be made of.
+    function setApprovedCode(bytes32 role, bytes32 codehash, bool allowed) external onlyMultisig {
+        require(codehash != bytes32(0), "Invalid codehash");
+        approvedCode[role][codehash] = allowed;
+        emit CodeApproved(role, codehash, allowed, block.timestamp);
+    }
+
+    /// @notice Admit a hand-assembled merchant whose contracts are all approved code.
+    /// @dev Deliberately does NOT check balances, pools or liquidity. Those are the
+    ///      registrar's job, done off-chain with a verification script, and encoding them
+    ///      here would rebuild the factory inside the controller — which is the thing this
+    ///      path exists to avoid. What it does check is the one thing a human review cannot
+    ///      do reliably by eye: that every contract is bytecode nobody has altered.
+    function registerManual(
+        address merchantToken,
+        address rewardEscrow,
+        address vestingWallet,
+        address treasuryTimelock,
+        address lpLocker
+    ) external {
+        require(registrars[msg.sender], "Not registrar");
+        require(!_registered[merchantToken], "Already registered");
+
+        _requireApproved(ROLE_TOKEN,    merchantToken,    "token");
+        _requireApproved(ROLE_ESCROW,   rewardEscrow,     "escrow");
+        _requireApproved(ROLE_VESTING,  vestingWallet,    "vesting");
+        _requireApproved(ROLE_TREASURY, treasuryTimelock, "treasury");
+        _requireApproved(ROLE_LOCKER,   lpLocker,         "locker");
+
+        _record(merchantToken, rewardEscrow, vestingWallet, treasuryTimelock, lpLocker);
+        emit ManualSuiteRegistered(merchantToken, msg.sender, block.timestamp);
+    }
+
+    /// @dev Reverts naming the role, because "not approved code" on its own would leave an
+    ///      operator diffing five addresses to find which one.
+    function _requireApproved(bytes32 role, address target, string memory what) private view {
+        require(target != address(0), string.concat("Invalid ", what));
+        require(target.code.length > 0, string.concat("No code at ", what));
+        require(approvedCode[role][target.codehash], string.concat("Unapproved ", what, " code"));
+    }
+
     modifier onlyFactory() {
         require(authorizedFactories[msg.sender], "Not factory");
         _;
@@ -122,6 +223,21 @@ contract WindDownController is IWindDownController {
         require(treasuryTimelock != address(0), "Invalid treasury");
         require(lpLocker         != address(0), "Invalid locker");
 
+        _record(merchantToken, rewardEscrow, vestingWallet, treasuryTimelock, lpLocker);
+    }
+
+    /// @dev The registry write itself, shared by both admission paths so they cannot come to
+    ///      mean different things. Everything above it differs — a factory proves how a
+    ///      suite was built, a registrar proves what its code is now — but what lands in the
+    ///      registry is identical, and the router cannot tell the two apart. That is
+    ///      deliberate: a merchant is a merchant.
+    function _record(
+        address merchantToken,
+        address rewardEscrow,
+        address vestingWallet,
+        address treasuryTimelock,
+        address lpLocker
+    ) private {
         _registered[merchantToken] = true;
         _suites[merchantToken] = WindDownSuite({
             rewardEscrow:     rewardEscrow,

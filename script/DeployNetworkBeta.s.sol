@@ -23,6 +23,15 @@ import "../contracts/beta/LockerDeployerBeta.sol";
 ///      their window closes, so the site must not claim it of them until then.
 contract DeployNetworkBeta is Script {
     function run() external {
+        // Base refuses any transaction above 16,777,216 gas and the atomic lineage's
+        // deploy() costs 17,325,962, so a network built here could be deployed and could
+        // never onboard anyone. Mechanical, because a warning in a doc is a warning
+        // somebody has to have read. Use DeployNetworkStaged.s.sol on Base.
+        require(
+            block.chainid != 8453,
+            "The atomic TokenFactory lineage cannot deploy merchants on Base - deploy() exceeds the 16,777,216 per-transaction gas cap. Use DeployNetworkStaged.s.sol and StageMerchant.s.sol."
+        );
+
         address multisig   = vm.envAddress("PC_MULTISIG");
         address deployerHot= vm.envAddress("PC_DEPLOYER");
         address feeRecip   = vm.envAddress("PC_FEE_RECIPIENT");

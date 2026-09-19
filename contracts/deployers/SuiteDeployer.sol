@@ -41,18 +41,20 @@ contract SuiteDeployer {
         address teamWallet,
         address windDownController,
         uint256 cliffDuration,
-        uint256 vestDuration
+        uint256 vestDuration,
+        address activator
     ) external returns (address) {
-        return address(new VestingWallet(token, teamWallet, windDownController, cliffDuration, vestDuration));
+        return address(new VestingWallet(token, teamWallet, windDownController, cliffDuration, vestDuration, activator));
     }
 
     function deployTreasury(
         address token,
         address ownerWallet,
         address windDownController,
-        uint256 timelockDuration
+        uint256 timelockDuration,
+        address activator
     ) external returns (address) {
-        return address(new TreasuryTimelock(token, ownerWallet, windDownController, timelockDuration));
+        return address(new TreasuryTimelock(token, ownerWallet, windDownController, timelockDuration, activator));
     }
 
     function deployEscrow(
@@ -62,8 +64,9 @@ contract SuiteDeployer {
         address windDownController,
         uint256 rewardsAllocation,
         uint256 perTxFloor,
-        uint256 perTxMax
+        uint256 perTxMax,
+        address activator
     ) external returns (address) {
-        return address(new RewardEscrow(token, operator, ownerWallet, windDownController, rewardsAllocation, perTxFloor, perTxMax));
+        return address(new RewardEscrow(token, operator, ownerWallet, windDownController, rewardsAllocation, perTxFloor, perTxMax, activator));
     }
 }

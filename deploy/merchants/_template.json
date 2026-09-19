@@ -22,7 +22,7 @@
     "_comment": "Enforced by require() in TokenFactory.deploy() \u2014 check before spending gas.",
     "name": "non-empty",
     "symbol": "non-empty",
-    "ipfsHash": "non-zero bytes32",
+    "ipfsHash": "non-zero bytes32; keccak256 of the pinned metadata CID. IMMUTABLE. See skoop-metadata.json for the shape.",
     "ownerWallet": "non-zero; IMMUTABLE after deploy",
     "teamWallet": "non-zero; IMMUTABLE FOREVER \u2014 no update function exists",
     "operator": "non-zero; POS signer; IMMUTABLE after deploy",

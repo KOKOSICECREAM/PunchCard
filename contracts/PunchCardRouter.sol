@@ -370,7 +370,23 @@ contract PunchCardRouter is ReentrancyGuard {
     /// @dev Reads USDC pool fee tier from merchant's LPLocker
     /// @notice Both pools' fee tiers for a merchant token, so an interface can quote the
     ///         USDC and WETH routes off-chain and pass the better one as `midToken`.
+    /// @dev Checks registration first, so an unregistered token fails with the same message
+    ///      the swap path gives instead of a bare revert.
+    ///
+    ///      It used to read `getSuite(token).lpLocker` straight — which is the zero address
+    ///      for anything unregistered — and then call `usdcFeeTier()` on it. That reverts
+    ///      with no data at all, and the interface calls this BEFORE quoting a swap
+    ///      (`quoteCrossMerchant` awaits two of these in a Promise.all), so a token that is
+    ///      merely not on the network produced an unexplained failure in the quote flow.
+    ///      Staging makes that state ordinary rather than exotic: between stageSuite() and
+    ///      activateMerchant() a real token exists, with real pools, and is not registered.
+    ///
+    ///      Reverting rather than returning zeros is deliberate. Zero is not a valid fee
+    ///      tier — they are 100, 500, 3000 and 10000 — so `(0, 0)` would be carried into
+    ///      routing and fail somewhere further away, which is the confusion this is fixing
+    ///      rather than a cure for it.
     function getPoolFeeTiers(address token) external view returns (uint24 usdcFee, uint24 ethFee) {
+        _validateMerchantToken(token);
         IWindDownController.WindDownSuite memory suite =
             IWindDownController(windDownController).getSuite(token);
         return (ILPLocker(suite.lpLocker).usdcFeeTier(), ILPLocker(suite.lpLocker).ethFeeTier());

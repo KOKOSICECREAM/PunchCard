@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/ILPLocker.sol";
+import "./Activatable.sol";
 import "./interfaces/INonfungiblePositionManager.sol";
 
 /// @title LPLocker
@@ -18,7 +19,7 @@ import "./interfaces/INonfungiblePositionManager.sol";
 ///      Merchant token portions always burned. USDC + WETH to ownerWallet.
 ///      Reserve tokens burned at wind-down — no longer deployable.
 ///      addLiquidity() frozen at wind-down initiation.
-contract LPLocker is ILPLocker, ReentrancyGuard {
+contract LPLocker is ILPLocker, Activatable, ReentrancyGuard {
 
     using SafeERC20 for IERC20;
 
@@ -28,7 +29,10 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     address public immutable override ownerWallet;
     address public immutable windDownController;
     address public immutable override positionManager;
-    address public immutable factory;
+
+    /// @dev The factory that built this locker is also its activator — one address, one
+    ///      concept. `Activatable.activator` is that address; there is no separate
+    ///      `factory` field, because two names for the same authority is how they drift.
 
     /// @notice Receives PunchCard's network fee from collected trading fees
     address public immutable punchcardFeeRecipient;
@@ -91,12 +95,11 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
         address _usdc,
         address _weth,
         address _punchcardFeeRecipient
-    ) {
+    ) Activatable(_factory) {
         require(_merchantToken      != address(0), "Invalid token");
         require(_ownerWallet        != address(0), "Invalid owner");
         require(_windDownController != address(0), "Invalid controller");
         require(_positionManager    != address(0), "Invalid position manager");
-        require(_factory            != address(0), "Invalid factory");
         require(_usdc               != address(0), "Invalid USDC");
         require(_weth               != address(0), "Invalid WETH");
         require(_punchcardFeeRecipient != address(0), "Invalid fee recipient");
@@ -105,7 +108,6 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
         ownerWallet        = _ownerWallet;
         windDownController = _windDownController;
         positionManager    = _positionManager;
-        factory            = _factory;
         usdcAddress        = _usdc;
         wethAddress        = _weth;
         punchcardFeeRecipient = _punchcardFeeRecipient;
@@ -114,7 +116,7 @@ contract LPLocker is ILPLocker, ReentrancyGuard {
     // ── MODIFIERS ─────────────────────────────────────────────────────────────
 
     modifier onlyFactory() {
-        require(msg.sender == factory, "Not factory");
+        require(msg.sender == activator, "Not factory");
         _;
     }
 

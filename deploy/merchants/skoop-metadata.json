@@ -1,0 +1,19 @@
+{
+  "name": "SKOOP PunchCard",
+  "symbol": "SKOOP",
+  "decimals": 6,
+  "description": "A loyalty token on the PunchCard network. Earn SKOOP when you shop, hold it, or trade it for the token of any other business on the network.",
+  "network": {
+    "name": "PunchCard",
+    "website": "https://punchcard.club"
+  },
+  "logo": "ipfs://QmNoS9wwGj3zb2rz1Z2AMbZMBfh6VMjijSAon5xUt6mXfV",
+  "_immutable_note": "keccak256 of this file's CID is stored on MerchantToken.ipfsHash and can never be changed, so it names only things that cannot change. No city, no business name and no merchant domain: a shop relocates, renames or opens a second location and this file cannot follow. No deep link either \u2014 punchcard.club serves the marketing site from the PunchCard repo, while the dapp builds to dist/ in the private launchpad repo with no deployment target chosen yet, so a path like /skoop would be a permanent bet on a hosting decision nobody has made. The root domain resolves today and can link onward to wherever the token page lands.",
+  "_logo_note": "Pinned 2026-09-17, verified resolving through ipfs.io and byte-identical to deploy/merchants/skoop-logo.png. 512x512 PNG, transparent background.",
+  "_pinned": {
+    "metadataCid": "QmPhJXCg7snZNMCzgSLME8eujLZ6KvcJT3nwJnLMftwv8k",
+    "pinnedAt": "2026-09-17",
+    "verified": "resolves via gateway.pinata.cloud, byte-identical to this file",
+    "note": "This CID is the PC_TOKEN_IPFS input. The token stores keccak256 of the CID string."
+  }
+}

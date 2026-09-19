@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IVestingWallet.sol";
+import "./Activatable.sol";
 
 /// @title VestingWallet
 /// @notice Linear vesting for team allocation with cliff.
@@ -15,7 +16,7 @@ import "./interfaces/IVestingWallet.sol";
 ///      totalAllocation derived as balanceOf(this) + released — never stored,
 ///      more accurate than a constant if any unexpected token movement occurred.
 ///      CEI pattern enforced on all fund movements.
-contract VestingWallet is IVestingWallet, ReentrancyGuard {
+contract VestingWallet is IVestingWallet, Activatable, ReentrancyGuard {
 
     using SafeERC20 for IERC20;
 
@@ -34,9 +35,6 @@ contract VestingWallet is IVestingWallet, ReentrancyGuard {
 
     uint256 public immutable override CLIFF_DURATION;
     uint256 public immutable override VEST_DURATION;
-    uint256 public immutable override vestingStart;
-    uint256 public immutable override cliffTime;
-    uint256 public immutable override vestingEnd;
 
     // ── STATE ─────────────────────────────────────────────────────────────────
 
@@ -50,8 +48,9 @@ contract VestingWallet is IVestingWallet, ReentrancyGuard {
         address _teamWallet,
         address _windDownController,
         uint256 _cliffDuration,
-        uint256 _vestDuration
-    ) {
+        uint256 _vestDuration,
+        address _activator
+    ) Activatable(_activator) {
         require(_token              != address(0), "Invalid token");
         require(_teamWallet         != address(0), "Invalid team wallet");
         require(_windDownController != address(0), "Invalid controller");
@@ -63,9 +62,27 @@ contract VestingWallet is IVestingWallet, ReentrancyGuard {
         windDownController = _windDownController;
         CLIFF_DURATION     = _cliffDuration;
         VEST_DURATION      = _vestDuration;
-        vestingStart       = block.timestamp;
-        cliffTime          = block.timestamp + _cliffDuration;
-        vestingEnd         = block.timestamp + _cliffDuration + _vestDuration;
+        // No clock here. The schedule starts at activate(), not at construction — see
+        // Activatable. Before that, vestingStart/cliffTime/vestingEnd all read 0 and
+        // totalVested() is 0, which is what "staged but not live" has to mean.
+    }
+
+    // ── SCHEDULE ──────────────────────────────────────────────────────────────
+    // Derived from activatedAt rather than stored, so a staged suite carries no elapsed
+    // time. All three return 0 while inert.
+
+    function vestingStart() public view override returns (uint256) {
+        return activatedAt;
+    }
+
+    function cliffTime() public view override returns (uint256) {
+        if (activatedAt == 0) return 0;
+        return activatedAt + CLIFF_DURATION;
+    }
+
+    function vestingEnd() public view override returns (uint256) {
+        if (activatedAt == 0) return 0;
+        return activatedAt + CLIFF_DURATION + VEST_DURATION;
     }
 
     // ── MODIFIERS ─────────────────────────────────────────────────────────────
@@ -82,7 +99,8 @@ contract VestingWallet is IVestingWallet, ReentrancyGuard {
     ///      Zero emissions suppressed — event only emits on meaningful transfer.
     ///      CEI: released updated before transfer.
     function release() external nonReentrant {
-        if (block.timestamp < cliffTime) return;
+        if (activatedAt == 0) return;
+        if (block.timestamp < cliffTime()) return;
 
         uint256 vested = totalVested();
         uint256 amount = vested - released;
@@ -130,13 +148,14 @@ contract VestingWallet is IVestingWallet, ReentrancyGuard {
     /// @dev totalAllocation derived as balanceOf(this) + released — never stored.
     ///      Returns 0 before cliff. Linear from cliff to vestingEnd. Caps at total allocation.
     function totalVested() public view override returns (uint256) {
-        if (block.timestamp < cliffTime) return 0;
+        if (activatedAt == 0) return 0;
+        if (block.timestamp < cliffTime()) return 0;
 
         uint256 totalAllocation = token.balanceOf(address(this)) + released;
 
-        if (block.timestamp >= vestingEnd) return totalAllocation;
+        if (block.timestamp >= vestingEnd()) return totalAllocation;
 
-        uint256 elapsed = block.timestamp - cliffTime;
+        uint256 elapsed = block.timestamp - cliffTime();
         return (totalAllocation * elapsed) / VEST_DURATION;
     }
 
@@ -150,6 +169,6 @@ contract VestingWallet is IVestingWallet, ReentrancyGuard {
     }
 
     function cliffReached() external view override returns (bool) {
-        return block.timestamp >= cliffTime;
+        return activatedAt != 0 && block.timestamp >= cliffTime();
     }
 }
