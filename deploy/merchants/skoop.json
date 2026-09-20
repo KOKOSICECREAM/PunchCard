@@ -4,7 +4,7 @@
   "_status_values": "token-deployed | suite-deployed | funded | verified | registered",
   "_path_note": "Hand-assembled and admitted through WindDownController.registerManual, NOT through a factory. See docs/skoop-launch-plan.md and docs/staged-rollout.md.",
   "token": {
-    "address": "0x38bdc0f357455C49486cb3871a3AA218aAd10D2B",
+    "address": "0xBa147713adF122A8Fc224e52Cb431D7919831939",
     "name": "SKOOP PunchCard",
     "symbol": "SKOOP",
     "decimals": 6,
@@ -12,9 +12,27 @@
     "ipfsHash": "0x31308a8763f929446f17aaca38cc9538ff0380a5d36fe6c5cffa5e1f7787c6bb",
     "metadataCid": "QmPhJXCg7snZNMCzgSLME8eujLZ6KvcJT3nwJnLMftwv8k",
     "logoCid": "QmNoS9wwGj3zb2rz1Z2AMbZMBfh6VMjijSAon5xUt6mXfV",
-    "deployTx": "0x3af6fbf1ed5fcd6714ad969d55566973e287c050fdc9c44e366fd610dc3444c1",
-    "block": 51430716,
-    "deployedAt": "2026-09-17"
+    "deployTx": "0xe8a7c4068ed227bfbc6e2803bb8c088629a87acd6ab0b63786ce29e7f3f0e020",
+    "block": 51432107,
+    "deployedAt": "2026-09-17",
+    "basescanVerified": true,
+    "_redeploy_note": "Redeployed with cleaned verified source comments and constructor naming. This is the SKOOP address to use going forward."
+  },
+  "supersededTokens": [
+    {
+      "address": "0x38bdc0f357455C49486cb3871a3AA218aAd10D2B",
+      "deployTx": "0x3af6fbf1ed5fcd6714ad969d55566973e287c050fdc9c44e366fd610dc3444c1",
+      "block": 51430716,
+      "reason": "First SKOOP PunchCard deploy used correct bytecode behavior but stale/misleading verified-source comments inherited from the factory path.",
+      "disposalTx": "0xe1acba279c2ab35d1ad11d164e2446a734ac9b5fa87b007ce5baab5768827bc1",
+      "disposal": "sent-to-dead-address",
+      "_disposal_note": "NOT burned. The disposal tx is transfer(0x000...dEaD, 100000000e6), selector 0xa9059cbb \u2014 verified on-chain 2026-09-19. totalSupply() on the superseded token still reads 100,000,000.000000 and always will, so Basescan shows it as a live token with one holder. The supply is unrecoverable because nobody holds the dead address's key, but it was never destroyed. MerchantToken is ERC20Burnable and burn() would have set supply to zero; it is no longer callable because the owner wallet no longer holds the tokens."
+    }
+  ],
+  "basescanProfile": {
+    "status": "source-verified",
+    "_status_values": "source-verified | token-info-submitted | token-info-approved",
+    "_note": "Logo/profile update must be submitted through the logged-in BaseScan Token Update flow after claiming contract ownership."
   },
   "wallets": {
     "owner": "0x5426E59b783cd3b5083Ccc8cB571AA36e9f4a3be",
