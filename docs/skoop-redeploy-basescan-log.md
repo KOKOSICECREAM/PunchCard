@@ -105,6 +105,52 @@ Notes:
 - Local file now exists at `deploy/merchants/skoop-logo.svg`.
 - The same path was updated on GitHub through the GitHub API in commit `bdc759b6790468531cd6059238c865e0243f1e0a`.
 
+## Independent Re-check, 2026-09-19
+
+BaseScan reporting `Pass - Verified` is BaseScan's claim. This section is the same
+claim checked from the repo, without the explorer and without an API key, so it can be
+re-run by anyone at any time.
+
+Runtime bytecode, compiled from this repo against what Base actually serves:
+
+```
+forge build
+cast code 0xBa147713adF122A8Fc224e52Cb431D7919831939 --rpc-url https://mainnet.base.org
+```
+
+- Both are **2,622 bytes**.
+- With the single immutable (`ipfsHash`, 32 bytes at offset 285) blanked on both sides,
+  the bytecode is **byte-identical**.
+- The trailing solc metadata hash is identical too:
+  `a264697066735822 1220c117e621… 64736f6c6343 0008 18 0033`. That is the stronger half of
+  the result — the metadata hash covers the compiler version, the optimizer settings and
+  the source text, so it only matches if `foundry.toml` still describes the compile that
+  produced this deployment. Change `optimizer_runs`, `via_ir` or `solc_version` and this
+  check fails even though the contract would still work.
+
+The immutable embedded on chain is `0x31308a87…c6bb`, and
+`cast keccak QmPhJXCg7snZNMCzgSLME8eujLZ6KvcJT3nwJnLMftwv8k` returns exactly that. So the
+chain from `deploy/merchants/skoop-metadata.json` to the CID to the on-chain word is
+closed at both ends.
+
+Pinned content, fetched live:
+
+- Metadata CID resolves and matches `deploy/merchants/skoop-metadata.json` **with the
+  `_pinned` block removed**. That block was added after pinning, so re-pinning the file
+  as it now stands produces a different CID. `_pinned._reproducing` in the file says so.
+  The earlier claim of plain byte-identity was corrected on 2026-09-19.
+- Logo CID resolves, `http 200`, 137,489 bytes, sha256 `3c4e0607…3218`, byte-identical to
+  `deploy/merchants/skoop-logo.png`. 512x512, 8-bit colormap, transparent.
+
+What this does **not** establish, and what still needs a key or a human:
+
+- Whether BaseScan currently *displays* the source. That needs
+  `https://api.etherscan.io/v2/api?chainid=8453&module=contract&action=getsourcecode&address=0xBa147713adF122A8Fc224e52Cb431D7919831939&apikey=…`.
+  One Etherscan V2 key covers Base at `chainid=8453`; `BASESCAN_API_KEY` in `.env` is
+  empty. Keyless requests return `Missing/Invalid API Key`.
+- Whether the token profile (logo, name, links) has been approved. That queue is manual
+  review with no API. Do not resubmit — see the note above.
+
 ## Current State
 
 `deploy/merchants/skoop.json` has been updated for the current token and the superseded one's disposal.

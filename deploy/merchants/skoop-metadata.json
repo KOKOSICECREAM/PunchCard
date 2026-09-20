@@ -13,7 +13,8 @@
   "_pinned": {
     "metadataCid": "QmPhJXCg7snZNMCzgSLME8eujLZ6KvcJT3nwJnLMftwv8k",
     "pinnedAt": "2026-09-17",
-    "verified": "resolves via gateway.pinata.cloud, byte-identical to this file",
-    "note": "This CID is the PC_TOKEN_IPFS input. The token stores keccak256 of the CID string."
+    "verified": "resolves via gateway.pinata.cloud; content confirmed 2026-09-19 to match this file with the _pinned block removed",
+    "note": "This CID is the PC_TOKEN_IPFS input. The token stores keccak256 of the CID string, confirmed on-chain: keccak256(\"QmPhJXCg7snZNMCzgSLME8eujLZ6KvcJT3nwJnLMftwv8k\") equals the ipfsHash immutable on 0xBa147713adF122A8Fc224e52Cb431D7919831939.",
+    "_reproducing": "This _pinned block was added AFTER pinning, so re-pinning this file as it now stands yields a DIFFERENT CID and would not match the token. To reproduce the pinned bytes, delete _pinned and pin what remains."
   }
 }
