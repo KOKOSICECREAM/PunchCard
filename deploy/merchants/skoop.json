@@ -62,7 +62,7 @@
   ],
   "doNot": [
     "Publish the token address until the pools are seeded. Anyone can open a pool at a price they choose.",
-    "Call lockLP(). SKOOP keeps permanent LP recoverability - decided 2026-09-16.",
+    "Call lockLP() yet. SKOOP keeps LP recoverability with no deadline while the network is in beta - decided 2026-09-16. Closing it is the intent once the system has proven itself, not a decision against ever closing it. lockLP() is one-way; after it the pilot locker behaves identically to production. evacuationOpen() is the on-chain source of truth and every surface must read it rather than assert a state.",
     "Describe it as factory-standard. PunchCard-registered, bytecode-reviewed, network-admitted."
   ]
 }

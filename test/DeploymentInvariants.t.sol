@@ -22,7 +22,7 @@ contract DeploymentInvariantsTest is Test {
     ///      covering whatever is added next, and the check it stops applying is the one
     ///      that keeps a second controller — a second network — from being deployed by
     ///      accident. DeployMicroRehearsal.s.sol was added in exactly that gap.
-    string[11] scripts = [
+    string[12] scripts = [
         "script/DeployNetwork.s.sol",
         "script/DeployNetworkBeta.s.sol",
         "script/DeployProductionFactory.s.sol",
@@ -33,6 +33,7 @@ contract DeploymentInvariantsTest is Test {
         "script/StageMerchant.s.sol",
         "script/VerifyMerchant.s.sol",
         "script/VerifyManualSuite.s.sol",
+        "script/DeploySkoopSuite.s.sol",
         "script/DeploySkoopToken.s.sol"
     ];
 
