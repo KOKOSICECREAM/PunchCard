@@ -296,6 +296,69 @@ day 2   multisig: executeFactory(stagedProductionFactory)     ← path opens
 - [ ] **Neither direction touches an existing merchant's LP.** Only `lockLP()` locks a
       pilot hatch, and only when you decide.
 
+## Moving governance to a Safe, later
+
+`multisig` on `WindDownController` and `PunchCardRouter` is the most important key in the
+protocol: it sets registrars, approves the codehashes that admit a merchant, authorises
+factories and initiates a wind-down. It used to be `immutable`, which meant whatever signed
+on deploy day governed the network forever. It is now transferable, deliberately, because
+the beta launches from an EOA and should not have to stay there.
+
+**Why this matters enough to be in the runbook.** The old escape from a bad admin key was
+redeploying the controller — and a new controller is a new network. The router binds to one
+registry, so every merchant already registered under the old controller is orphaned by the
+move. This flow is the alternative, and it is the only one.
+
+### The flow, in plain English
+
+```
+day 0   current multisig:  proposeMultisig(safeAddress)
+                           nothing has changed yet. The EOA still governs.
+
+day 0-2 anyone:            watch for MultisigProposed
+                           this is the window. If you did not make this proposal,
+                           cancelMultisigTransfer() ends it.
+
+day 2   the SAFE itself:   acceptMultisig()
+                           power moves here, in this call, and not before.
+
+after   the EOA:           every gated call now reverts "Not multisig"
+```
+
+Three things people get wrong:
+
+- [ ] **The proposal does nothing.** Between `proposeMultisig` and `acceptMultisig`, the old
+      multisig holds every power it had. Do not treat the proposal as the handover, and do
+      not stop guarding the old key until the transfer is accepted.
+- [ ] **The new address must call `acceptMultisig()` itself.** This is the guard against
+      transferring to a typo, or to a Safe that has not been deployed yet. If the new
+      address cannot make that call, the transfer cannot complete — which is the point.
+      **Test the Safe can send a transaction on Base before proposing it.**
+- [ ] **Two contracts, two transfers.** The controller and the router each hold their own
+      `multisig`. Transfer both, or governance ends up split across two holders. Nothing
+      enforces that they match.
+
+### Why it waits 48 hours
+
+Not ceremony. While the address was immutable, a compromised key was *shared* — the attacker
+had it and so did you, and you could still act. Make it instantly transferable and a
+compromised key becomes *exclusive* in one transaction: the attacker proposes themselves,
+accepts, and the real holder is locked out permanently. The delay and the
+`MultisigProposed` event are the window in which that gets noticed and cancelled.
+
+So `cancelMultisigTransfer()` is not a convenience. **It is the response to seeing a
+proposal you did not make**, and it is the reason to watch the event rather than only the
+calendar.
+
+### What does not move
+
+- [ ] A pending router parameter change **survives the handover** and becomes the incoming
+      multisig's to execute or cancel. Check `pendingChange` after accepting — inheriting an
+      unexecuted fee change without noticing is the quiet failure here.
+- [ ] Nothing about merchants, registrations, LP or the pilot hatch is affected.
+      `evacuateLP` is `ownerWallet`, never the multisig.
+- [ ] Re-proposing replaces the pending target and restarts the 48 hours.
+
 ## The SKOOP launch sequence
 
 **SKOOP does not use the factory.** It is hand-assembled and admitted through the manual
