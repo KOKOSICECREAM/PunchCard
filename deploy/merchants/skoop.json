@@ -87,13 +87,14 @@
   ],
   "escrowParams": {
     "_comment": "RewardEscrow bounds on a single reward. NOT immutable - setPerTxBounds(floor, max) is onlyOwner and works until wind-down freezes the escrow. An earlier note here called them immutable; that was wrong. The contract says why they are adjustable: both are denominated in tokens, and a fixed floor set at launch becomes a $1 minimum reward if the token appreciates a hundredfold.",
-    "perTxFloor": null,
+    "perTxFloor": "1",
     "_perTxFloor_note": "Smallest reward a kiosk may issue, in base units (6dp). Must be > 0. A floor of 1 is 0.000001 SKOOP - effectively no floor, which is a reasonable default.",
-    "perTxMax": null,
+    "perTxMax": "50000000000",
     "_perTxMax_note": "Largest single reward, in base units (6dp). Must be >= perTxFloor and <= 345205479444. Adjustable later via setPerTxBounds.",
     "rewardsAllocation": "45000000000000",
     "emissionDays": 1825,
     "_ceiling_note": "The real constraint is NOT a 500,000 dailyCap. That figure appears in deploy/network/base-mainnet.json and deploy/merchants/_template.json and corresponds to no constant in any contract - grep DAILY_CAP returns nothing. The actual check is require(_perTxMax <= perDay * MAX_DRAWER_DAYS). With a 45,000,000 allocation over EMISSION_PERIOD = 1825 days, perDay = 24,657,534,246 base units (24,657.53 SKOOP) and MAX_DRAWER_DAYS = 14, so the ceiling is 345,205,479,444 base units = 345,205.48 SKOOP. A perTxMax of 500,000 SKOOP reverts at construction with 'Max above drawer ceiling'.",
-    "perTxCeilingBaseUnits": "345205479444"
+    "perTxCeilingBaseUnits": "345205479444",
+    "_settled_note": "Settled 2026-09-21. perTxFloor 1 = 0.000001 SKOOP, effectively no floor. perTxMax 50000000000 = 50,000 SKOOP, well clear of the 345,205.48 ceiling. Both adjustable via setPerTxBounds until wind-down, so these are starting values rather than commitments - unlike teamWallet and the suite addresses, which are permanent."
   }
 }

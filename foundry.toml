@@ -5,6 +5,10 @@
 fs_permissions = [
     { access = "read",       path = "./script" },
     { access = "read",       path = "./contracts" },
+    # Config figures are asserted against the constants they claim to mirror — see
+    # test/ConfigMatchesContracts.t.sol. A dailyCap that bounded nothing, and a team
+    # schedule 150 days out of date, both sat in here unnoticed.
+    { access = "read",       path = "./deploy" },
     # StageMerchant writes stage 1's addresses here and reads them back in stages 2 and 3,
     # so an operator does not retype a token address between transactions.
     { access = "read-write", path = "./deploy/staged" },
