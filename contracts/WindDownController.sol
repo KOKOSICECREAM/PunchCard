@@ -24,7 +24,42 @@ contract WindDownController is IWindDownController {
     /// @notice How long a proposed factory change must wait before it can be executed.
     uint256 public constant FACTORY_TIMELOCK = 48 hours;
 
-    address public immutable multisig;
+    /// @notice Governs admission to the network: registrars, approved codehashes, factory
+    ///         authorisation and wind-down initiation.
+    ///
+    /// @dev **Mutable, deliberately, and only through propose → wait → accept.**
+    ///
+    ///      It was `immutable`, which meant the address chosen on deploy day governed the
+    ///      network forever — a beta launched from an EOA could never move to a Safe
+    ///      without redeploying the whole network and orphaning every merchant already
+    ///      registered under the old controller.
+    ///
+    ///      The transfer is deliberately not a single call. Two properties are load-bearing:
+    ///
+    ///      1. **The new multisig must accept.** A one-way `transferMultisig(addr)` to a
+    ///         typo, or to a Safe that has not been deployed yet, permanently ends the
+    ///         network's ability to approve a codehash or set a registrar. That is the
+    ///         exact failure this change exists to prevent, so it must not be reintroduced
+    ///         by the fix. `acceptMultisig()` proves the key exists and is controlled
+    ///         before any power moves.
+    ///
+    ///      2. **It waits.** While this was immutable, a compromised key was *shared* — the
+    ///         attacker had it and so did you, and you could still act. Mutable and
+    ///         instant, a compromised key becomes *exclusive* in one transaction. The
+    ///         48-hour delay and the loud `MultisigProposed` event are the window in which
+    ///         that gets noticed and cancelled. Same reasoning, same constant, as
+    ///         `FACTORY_TIMELOCK` above.
+    address public multisig;
+
+    /// @notice Proposed next multisig. Holds no power until it calls `acceptMultisig()`.
+    address public pendingMultisig;
+
+    /// @notice When the pending multisig becomes able to accept. Zero when none is pending.
+    uint256 public multisigAcceptableAt;
+
+    event MultisigProposed(address indexed current, address indexed proposed, uint256 acceptableAt, uint256 timestamp);
+    event MultisigTransferCancelled(address indexed cancelledBy, address indexed wasProposed, uint256 timestamp);
+    event MultisigTransferred(address indexed from, address indexed to, uint256 timestamp);
 
     /// @notice The factory set at construction. Kept for provenance; authorisation is read
     ///         from `authorizedFactories`, which this address starts out in.
@@ -140,6 +175,42 @@ contract WindDownController is IWindDownController {
 
         if (authorize) emit FactoryAuthorized(newFactory, block.timestamp);
         else           emit FactoryDisabled(newFactory, block.timestamp);
+    }
+
+    // ── MULTISIG TRANSFER ─────────────────────────────────────────────────────
+
+    /// @notice Propose a new multisig. Current multisig only. Nothing changes yet.
+    /// @dev Re-proposing overwrites any pending proposal and restarts the clock.
+    function proposeMultisig(address newMultisig) external onlyMultisig {
+        require(newMultisig != address(0), "Invalid multisig");
+        require(newMultisig != multisig,    "Already the multisig");
+        pendingMultisig      = newMultisig;
+        multisigAcceptableAt = block.timestamp + FACTORY_TIMELOCK;
+        emit MultisigProposed(multisig, newMultisig, multisigAcceptableAt, block.timestamp);
+    }
+
+    /// @notice Abandon a pending transfer. Current multisig only.
+    /// @dev The response to noticing a proposal you did not make.
+    function cancelMultisigTransfer() external onlyMultisig {
+        require(pendingMultisig != address(0), "No pending transfer");
+        address was = pendingMultisig;
+        pendingMultisig      = address(0);
+        multisigAcceptableAt = 0;
+        emit MultisigTransferCancelled(msg.sender, was, block.timestamp);
+    }
+
+    /// @notice Take over as multisig. Callable only by the proposed address, only after the
+    ///         timelock, and the only way the role ever moves.
+    function acceptMultisig() external {
+        require(msg.sender == pendingMultisig,            "Not pending multisig");
+        require(multisigAcceptableAt != 0,                "No pending transfer");
+        require(block.timestamp >= multisigAcceptableAt,  "Timelock active");
+
+        address old          = multisig;
+        multisig             = pendingMultisig;
+        pendingMultisig      = address(0);
+        multisigAcceptableAt = 0;
+        emit MultisigTransferred(old, multisig, block.timestamp);
     }
 
     modifier onlyMultisig() {

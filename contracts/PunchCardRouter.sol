@@ -40,7 +40,17 @@ contract PunchCardRouter is ReentrancyGuard {
 
     // ── IMMUTABLES ────────────────────────────────────────────────────────────
 
-    address public immutable multisig;
+    /// @notice Governs router parameter changes. Mutable only through propose → wait →
+    ///         accept; see WindDownController.multisig for why it is not a single call and
+    ///         why it waits. Kept in step with the controller so one transfer moves both.
+    address public multisig;
+
+    /// @notice Proposed next multisig. Holds no power until it calls `acceptMultisig()`.
+    address public pendingMultisig;
+
+    /// @notice When the pending multisig becomes able to accept. Zero when none is pending.
+    uint256 public multisigAcceptableAt;
+
     address public immutable windDownController;
 
     /// @notice Uniswap v3 SwapRouter02 on Base
@@ -403,6 +413,48 @@ contract PunchCardRouter is ReentrancyGuard {
         IWindDownController.WindDownSuite memory suite =
             IWindDownController(windDownController).getSuite(token);
         return ILPLocker(suite.lpLocker).ethFeeTier();
+    }
+
+    // ── MULTISIG TRANSFER ─────────────────────────────────────────────────────
+
+    event MultisigProposed(address indexed current, address indexed proposed, uint256 acceptableAt, uint256 timestamp);
+    event MultisigTransferCancelled(address indexed cancelledBy, address indexed wasProposed, uint256 timestamp);
+    event MultisigTransferred(address indexed from, address indexed to, uint256 timestamp);
+
+    /// @notice Propose a new multisig. Current multisig only. Nothing changes yet.
+    function proposeMultisig(address newMultisig) external {
+        require(msg.sender == multisig,     "Not multisig");
+        require(newMultisig != address(0),  "Invalid multisig");
+        require(newMultisig != multisig,    "Already the multisig");
+        pendingMultisig      = newMultisig;
+        multisigAcceptableAt = block.timestamp + PARAM_TIMELOCK;
+        emit MultisigProposed(multisig, newMultisig, multisigAcceptableAt, block.timestamp);
+    }
+
+    /// @notice Abandon a pending transfer. Current multisig only.
+    function cancelMultisigTransfer() external {
+        require(msg.sender == multisig,        "Not multisig");
+        require(pendingMultisig != address(0), "No pending transfer");
+        address was = pendingMultisig;
+        pendingMultisig      = address(0);
+        multisigAcceptableAt = 0;
+        emit MultisigTransferCancelled(msg.sender, was, block.timestamp);
+    }
+
+    /// @notice Take over as multisig. Proposed address only, after the timelock.
+    /// @dev Does NOT touch `pendingChange`. A parameter proposal made by the outgoing
+    ///      multisig survives the handover and is the incoming one's to execute or cancel —
+    ///      which is why `cancelChange` exists and why this is worth saying out loud.
+    function acceptMultisig() external {
+        require(msg.sender == pendingMultisig,           "Not pending multisig");
+        require(multisigAcceptableAt != 0,               "No pending transfer");
+        require(block.timestamp >= multisigAcceptableAt, "Timelock active");
+
+        address old          = multisig;
+        multisig             = pendingMultisig;
+        pendingMultisig      = address(0);
+        multisigAcceptableAt = 0;
+        emit MultisigTransferred(old, multisig, block.timestamp);
     }
 
     // ── PARAMETER UPGRADES ────────────────────────────────────────────────────
