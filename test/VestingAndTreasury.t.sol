@@ -20,14 +20,15 @@ contract VestingWalletTest is Test {
     address constant RAND = address(0x4A4D);
 
     uint256 constant ALLOC = 15_000_000 * 1e6;
-    uint256 constant CLIFF = 180 days;
+    uint256 constant CLIFF = 30 days;
     uint256 constant VEST  = 1080 days;
 
     uint256 start;
 
     function setUp() public {
         token = new Tok();
-        v = new VestingWallet(address(token), TEAM, WDC, CLIFF, VEST);
+        v = new VestingWallet(address(token), TEAM, WDC, CLIFF, VEST, address(this));
+        v.activate();
         token.mint(address(v), ALLOC);
         start = block.timestamp;
     }
@@ -112,7 +113,8 @@ contract TreasuryTimelockTest is Test {
 
     function setUp() public {
         token = new Tok();
-        t = new TreasuryTimelock(address(token), OWNER, WDC, DELAY);
+        t = new TreasuryTimelock(address(token), OWNER, WDC, DELAY, address(this));
+        t.activate();
         token.mint(address(t), ALLOC);
     }
 

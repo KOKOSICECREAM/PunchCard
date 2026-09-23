@@ -1,14 +1,38 @@
 # PunchCard Network
 
-A launchpad for merchant loyalty tokens on Base. One factory call deploys a complete,
-self-contained suite for a business: its own ERC-20, a metered reward escrow, team vesting,
-a timelocked treasury, and locked dual-pool liquidity. A shared router lets customers swap
-between any two merchant tokens.
+A launchpad for merchant loyalty tokens on Base. Deploys a complete, self-contained suite
+for a business: its own ERC-20, a metered reward escrow, team vesting, a timelocked
+treasury, and locked dual-pool liquidity. A shared router lets customers swap between any
+two merchant tokens.
 
 **Site:** [punchcard.club](https://punchcard.club)
 
+## Why this exists
+
+KOKOS Ice Cream in Nashville has run a loyalty token called SKOOP since 2025. It works. Real
+customers earn it at the register, hold it, and spend it. The reward vault, the point of
+sale, the team vesting — all of it has been running in a real shop taking real money, and
+the mechanics are sound.
+
+What it could never prove is the part that needs more than one shop.
+
+A loyalty token at a single business is a closed loop. The points are worth something at
+exactly one counter, which is what makes every loyalty scheme forgettable — customers cannot
+do anything with them anywhere else, so they stop thinking about them. SKOOP had no
+neighbours, because there was no network to have them in.
+
+**This repository is that network.** Not a replacement for what KOKOS built, and not a
+migration of it — the same lessons rebuilt on something that can have neighbours. A customer
+who earns at the coffee shop can trade for the token they want at the pizza place, with
+neither business arranging anything. Every merchant that joins is somewhere every existing
+customer can now spend.
+
+The uniformity below is what makes that possible. Tokens can only be treated as
+interchangeable by a router, and as comparable by a customer, if they are genuinely the
+same thing underneath.
+
 **The premise is uniformity.** Every merchant gets byte-identical contracts and identical
-terms — the same 45/30/15/10 split, the same 180-day cliff, the same 90-day treasury delay,
+terms — the same 45/30/15/10 split, the same 30-day cliff, the same 90-day treasury delay,
 the same five-year emission schedule. All of it is `constant` in the contracts, not a
 parameter, so terms
 cannot be negotiated even if someone wanted to. That is what makes the customer promise
@@ -24,20 +48,34 @@ hash, the pool seed sizes, and the per-transaction reward bounds.
 
 | Piece | State |
 |---|---|
-| Contracts | **Compile and fit EIP-170. Never deployed, never run against live Uniswap.** |
-| Tests | 80 — 79 offline plus a fork test that reports SKIP without `--fork-url`. Includes 5 invariants over 16,384 randomised calls each + 1 fork test against Base mainnet — pricing maths, fee-split invariants, drawer/emission/pause, against mocks |
+| Contracts | **Deployed and exercised on Base mainnet.** The full loop — stage, fund, activate, reward, cross-merchant swap, fee collection, capital recovery — ran live on 2026-09-15. See `docs/micro-launch-results.md` |
+| Tests | 138 passing, 26 fork-only. Includes 5 invariants over 16,384 randomised calls each, and fork tests that drive the real deploy scripts against live Base |
 | Marketing site | Live at punchcard.club, GitHub Pages from the repo root |
-| Customer dapp (`dapp/`) | **Prototype** — hardcoded mock balances, no web3 |
+| Customer dapp (`dapp/`) | **Prototype** — hardcoded mock balances, no web3. The real one lives in the private `punchcard-launchpad` repo |
 | `website/` | **Stale duplicate** of the root site, candidate for deletion |
 
-Honest read: **ready for a testnet deployment, not a mainnet one.** Nothing here has ever
-executed against real Uniswap contracts. The mocks prove the arithmetic, not the
-integration.
+Honest read: **the machine is proven to work; the economics are not.** A live micro-launch
+proved deployability, routing, fee flow and recovery for about a dollar of gas. It proves
+nothing about emission rate, reward size, drawer limits or merchant demand — there were no
+customers. See `docs/economics-review.md`, which is correct to call those unvalidated.
 
 **On KOKOS.** KOKOS Ice Cream in Nashville runs a live loyalty token (SKOOP) taking real
 payments, and it is the model this protocol generalises. It is *not* a deployment of this
-factory — it runs on its own earlier contracts. **No merchant has been deployed through
-`TokenFactory` yet.**
+factory — it runs on its own earlier contracts, and nothing in this repo has ever touched
+them. **No real merchant has been deployed through the factory yet.** The merchants that
+have been are two throwaways on a disposable network, recorded and retired in
+`docs/micro-launch-results.md`.
+
+### Base refuses the one-transaction version
+
+`TokenFactory.deploy()` costs **17,325,962 gas**. Base caps a single transaction at
+**16,777,216** — a chain-level limit, identical across every RPC, exactly 2^24. Compiler
+settings recover 38k of the 549k needed.
+
+So the atomic factory cannot deploy a merchant on Base at all. It is kept as the readable
+reference and as the oracle the staged tests compare against, and every script that builds
+it refuses to run on chainid 8453. **`StagedTokenFactory` is the deployment path**, in three
+transactions of 6.7M / 10.5M / 0.6M.
 
 ---
 
@@ -49,8 +87,8 @@ factory — it runs on its own earlier contracts. **No merchant has been deploye
 ├── contracts/
 │   ├── MerchantToken.sol             the merchant's ERC-20 (one per merchant)
 │   ├── RewardEscrow.sol               45% — 5yr emission + per-kiosk drawers
-│   ├── VestingWallet.sol              15% — team, 180d cliff / 1080d linear
-│   ├── TreasuryTimelock.sol           10% — merchant capital, 90d delay
+│   ├── VestingWallet.sol              15% — team, 30d cliff / 730d linear
+│   ├── TreasuryTimelock.sol           10% — discretionary budget, 90d delay
 │   ├── LPLocker.sol                   30% — dual Uniswap positions + fee collection
 │   ├── TokenFactory.sol               orchestrates a merchant deployment
 │   ├── WindDownController.sol         the one privileged contract
@@ -71,23 +109,40 @@ factory — it runs on its own earlier contracts. **No merchant has been deploye
 
 ## What actually happens when a merchant is deployed
 
-`TokenFactory.deploy()` is `onlyDeployer` — PunchCard's hot wallet, after off-chain review.
-The merchant never calls it. In one transaction:
+Three transactions, each `onlyApprovedDeployer` — PunchCard's hot wallet, after off-chain
+review. The merchant never calls them, and **nothing is a PunchCard merchant until the
+third**.
 
-1. Pull `usdcPairAmount` from `ownerWallet`; wrap `msg.value` to WETH
-2. Read Chainlink ETH/USD; value both seeds; **enforce the $2,000 / $1,000 minimums**
-3. Derive the launch token split from the seeded USD value *(see Economics below)*
-4. Deploy token, vesting, treasury, escrow via `SuiteDeployer`; LP locker via `LockerDeployer`
-5. Distribute 15M / 10M / 45M to vesting, treasury, escrow — factory retains exactly 30M
-6. Create and initialise both Uniswap pools at the derived price, mint both positions into
-   the locker, return unused **pair-token** dust to `ownerWallet` (merchant-token dust
-   stays behind and is swept into the locker as reserve at step 7)
-7. Move the 27M LP reserve into the locker
-8. Register the suite with `WindDownController`; emit `MerchantDeployed`
+**1. `stageSuite`** — deploy token, vesting, treasury, escrow via `SuiteDeployer`; LP locker
+via `LockerDeployer`. Distribute 15M / 10M / 45M; the factory retains exactly 30M. The suite
+is **inert**: not registered, no clocks running, locker empty, router refuses it.
 
-The escrow's five-year emission clock starts at deployment, and the `operator` from
-`DeployParams` is registered as the merchant's first kiosk drawer — so onboarding stays a
-single transaction and the merchant can issue rewards immediately.
+**2. `fundAndMintLP`** — pull `usdcPairAmount` from `ownerWallet`, wrap `msg.value` to WETH,
+read Chainlink ETH/USD and enforce the seed minimums, derive the launch split from the
+seeded USD value *(see Economics)*, **create both Uniswap pools and revert if either already
+exists**, mint both positions. Unused pair-token dust returns to `ownerWallet`;
+merchant-token dust stays and is swept into the locker at step 3.
+
+Positions are held by the **factory**, not the locker. Production `LPLocker` has no
+withdrawal path — that is the guarantee — so a locker holding LP for a suite that was funded
+and then abandoned would strand the seed forever.
+
+**3. `activateMerchant`** — check every allocation, hand both positions and the 27M reserve
+to the locker, start every clock, register with `WindDownController`.
+
+Before that third call, `abortStaging` returns the seed to the merchant and marks the suite
+terminally dead. Either PunchCard or the merchant can call it: if PunchCard goes quiet the
+merchant must not have capital stuck, and if the merchant goes quiet PunchCard must be able
+to close the record.
+
+### Clocks start at activation, not construction
+
+The escrow's five-year emission, the 30-day team cliff, the treasury clock and the beta LP
+recovery window all begin when the merchant **goes live**. Under the atomic factory those
+were the same instant as construction, so nobody had to decide it. Staged, they are not: a
+suite built on Monday and activated on Friday would otherwise open with four days of
+emission already accrued — and `bufferCap` is 30 days of emission, so a month-long staging
+window would have opened the escrow at its full spendable ceiling on day one.
 
 Merchant status on the network is exactly this: a `MerchantDeployed` event plus
 `WindDownController` registration. Nothing else confers it.
@@ -143,7 +198,7 @@ Two consequences worth holding in view:
 |---|---|---|
 | Rewards | 45,000,000 | `RewardEscrow`, emitted over 5 years, spent through per-kiosk drawers |
 | Liquidity | 30,000,000 | `LPLocker` — 3M seeds the pools, 27M reserve |
-| Team | 15,000,000 | `VestingWallet`, 180d cliff then linear — fully vested day 1,260 |
+| Team | 15,000,000 | `VestingWallet`, 30d cliff then linear — fully vested day 760 |
 | Treasury | 10,000,000 | `TreasuryTimelock`, 90d delay per release |
 
 100,000,000 fixed supply, 6 decimals, no mint function.
@@ -343,7 +398,7 @@ forge build --sizes
 forge test
 ```
 
-`via_ir = true` with the optimizer is **required**, not a preference — `TokenFactory.deploy()`
+`via_ir = true` with the optimizer is **required**, not a preference — `deploy()`
 fails with "stack too deep" otherwise. The same settings must be used for Basescan
 verification or the bytecode will not match. See [`docs/building.md`](docs/building.md).
 

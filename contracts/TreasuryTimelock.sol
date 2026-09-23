@@ -6,16 +6,24 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/ITreasuryTimelock.sol";
+import "./Activatable.sol";
 
 /// @title TreasuryTimelock
-/// @notice Merchant treasury with 90-day autonomous release timelock.
+/// @notice The merchant's discretionary budget, behind an autonomous release timelock.
+/// @dev **This is where marketing comes from.** It is the only allocation not already
+///      committed — rewards belong to customers, liquidity to the pools, vesting to the
+///      team — so a campaign, a partnership, a giveaway that is not a customer reward, or
+///      converting to cash all come from here.
+///
+///      Distributing from `RewardEscrow` to a marketing recipient is mechanically possible
+///      and spends the customers' budget to do it. The two are different commitments.
 /// @dev Deployed per merchant by factory. All addresses immutable after deploy.
 ///      Merchant-initiated, fully autonomous — PunchCard has no custody or veto.
 ///      Wind-down freezes treasury and cancels any pending release silently.
 ///      executeRelease() transfers to ownerWallet — not msg.sender.
 ///      Sequencing guarantee: freeze() always fires before burnUnclaimed(),
 ///      so no pending release can survive to executeRelease() with insufficient balance.
-contract TreasuryTimelock is ITreasuryTimelock, ReentrancyGuard {
+contract TreasuryTimelock is ITreasuryTimelock, Activatable, ReentrancyGuard {
 
     using SafeERC20 for IERC20;
 
@@ -43,8 +51,9 @@ contract TreasuryTimelock is ITreasuryTimelock, ReentrancyGuard {
         address _token,
         address _ownerWallet,
         address _windDownController,
-        uint256 _timelockDuration
-    ) {
+        uint256 _timelockDuration,
+        address _activator
+    ) Activatable(_activator) {
         require(_token              != address(0), "Invalid token");
         require(_ownerWallet        != address(0), "Invalid owner");
         require(_windDownController != address(0), "Invalid controller");
@@ -76,10 +85,13 @@ contract TreasuryTimelock is ITreasuryTimelock, ReentrancyGuard {
     // ── OPERATIONAL ───────────────────────────────────────────────────────────
 
     /// @inheritdoc ITreasuryTimelock
+    /// @dev whenActivated: the treasury clock is per-release rather than global, but a
+    ///      staged suite is not a live merchant and must not be able to start one.
     function submitRelease(uint256 amount)
         external
         onlyOwner
         notFrozen
+        whenActivated
     {
         require(amount > 0,                                    "Zero amount");
         require(_pending.amount == 0,                          "Release pending");

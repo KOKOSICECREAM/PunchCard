@@ -167,6 +167,250 @@ rehearsed until there is an https origin to serve a punchcard-mode build from.
 
 ---
 
+## BLOCKER — `deploy()` does not fit in a Base transaction
+
+Found 2026-09-15 by the $25 micro rehearsal, on its first live run. The rehearsal paid for
+itself in seventeen cents of gas.
+
+```
+TokenFactory.deploy()   17,011,396 gas
+Base per-tx ceiling     16,777,216 gas   (2^24)
+                        ------------
+over by                    234,180 gas   (1.4%)
+```
+
+**No merchant can be deployed on Base today.** Not beta, not pilot, not production — all
+three lineages share `TokenFactory.deploy()` and the number above is that function.
+
+### It is the chain's ceiling, not a provider's
+
+`mainnet.base.org`, `base-rpc.publicnode.com` and `1rpc.io/base` all answer
+`gas required exceeds: 16777216`, identically, while the block gas limit is 400,000,000. It
+is exactly 2^24. No paid endpoint, gas override or `--gas-limit` flag makes the transaction
+includable.
+
+### Compiler settings do not close it
+
+| optimizer_runs | deploy() gas | over by |
+|---|---|---|
+| 1 | 16,972,887 | 195,671 |
+| 50 | 16,973,993 | 196,777 |
+| 200 (current) | 17,011,396 | 234,180 |
+
+The most aggressive setting saves 38k of the 234k needed. **The fix is structural.**
+
+### Where the gas goes
+
+Measured on a Base fork:
+
+| step | gas |
+|---|---|
+| deployToken | 654,622 |
+| deployVesting | 662,297 |
+| deployTreasury | 759,607 |
+| deployEscrow | 1,458,571 |
+| deployLocker | 2,539,822 |
+| **suite subtotal** | **6,074,919** |
+| pools, transfers, registration | ~10,936,477 |
+
+### Status as of 2026-09-15
+
+```
+Contracts            145 passing, fork-exercised
+Base deployability   PROVEN LIVE — see docs/micro-launch-results.md
+Full network loop    PROVEN LIVE — rewards, cross-merchant routing, fees, recovery
+Atomic TokenFactory  dead on Base; kept for reference and existing tests
+pSKOOP pilot         ready to re-plan against the staged path
+micro rehearsal      halted after the network deployed; no merchants exist
+```
+
+Measured against a live Base fork:
+
+| stage | gas | vs 16,777,216 |
+|---|---|---|
+| `stageSuite` | 6,657,752 | 40% |
+| `fundAndMintLP` | 10,643,851 | 63% |
+| `activateMerchant` | 527,034 | 3% |
+| atomic `deploy()` | 17,325,962 | **103% — refused** |
+
+Stage 2 is the tightest at 6.1M of headroom, so this is not living at the edge the way a
+234k shave would have been.
+
+Everything else in this document that depends on deploying a merchant is downstream of
+this. The pilot slug, the wallets, the seed capital and the disclosure work all remain
+valid and all wait.
+
+### The fix is the thing this document opened by arguing against
+
+Splitting `deploy()` in two is the obvious remedy, and the natural seam is exactly where the
+gas divides:
+
+```
+stage 1   deploy the five suite contracts, distribute allocations    ~6.3M
+stage 2   create and mint both pools, initialise locker, register   ~10.7M
+```
+
+Both fit with room. But this is the **assemble, then verify, then register** model that was
+considered and set aside — see the modular-launchpad discussion. The argument against it was
+that atomicity is the cheapest possible verifier: every invariant holds by construction,
+with nothing to check because nothing can be observed half-built.
+
+That argument was sound and is now moot. **The chain does not permit the atomic version.**
+So the half-assembled window has to exist, which means the things atomicity was giving for
+free now have to be enforced:
+
+- what stops a stage-1 suite being abandoned, or stage 2 being run twice
+- what stops anyone creating the token's Uniswap pool between the two transactions and
+  setting the launch price — today impossible only because the token is minted and pooled in
+  one transaction, which the factory's own comment relies on
+- whether registration happens at stage 2, and what an unregistered half-suite can do
+
+Do not design this in a hurry. Nothing can launch on Base until it is done, so it is now the
+critical path, but it is also the decision with the longest shadow.
+
+**The split fits, with room.** From the measured table above: stage 1 is the 6,074,919 of
+suite deployment plus four allocation transfers, call it ~6.3M. Stage 2 is the remaining
+~10.94M plus a new transaction's base cost and the SLOADs to re-read what stage 1 wrote —
+call it ~11.1M. Both are comfortably under 16,777,216, and neither is close enough to the
+ceiling to be fragile the way a 234k shave would be.
+
+### Staged shape, decided 2026-09-15
+
+```
+1. create suite
+2. fund allocations / seed capital
+3. create pools + LP
+4. verify exact invariants
+5. register / activate merchant
+```
+
+**Nothing is a PunchCard merchant until step 5.** Before that it is staged, inspectable and
+abortable. `register()` remains the activation gate and the router keeps refusing anything
+unregistered, so this changes what happens *before* activation and nothing about what
+activation means.
+
+What atomicity used to give for free, and now has to be checked explicitly at step 4:
+
+- [ ] token allocation totals — 45/30/15/10 of exactly 100,000,000e6
+- [ ] suite contract addresses are the ones this staging produced
+- [ ] owner / team / operator match what was staged, and are immutable
+- [ ] USDC and ETH seed amounts are what was funded
+- [ ] both pool prices agree
+- [ ] LP positions exist and are owned by the locker
+- [ ] 27M reserve sits in the locker
+- [ ] owner wallet received no merchant tokens
+- [ ] router and controller accept the token only after activation
+
+### Settled 2026-09-15 — stage 1 issues a claim that stage 2 must present
+
+```
+stageSuite(params)                        -> suiteId
+fundAndMintLP(suiteId, seeds, slippage)   -> pools, LP, reserve
+activateMerchant(suiteId)                 -> final invariant check + register()
+```
+
+The `suiteId` is consumed exactly once, which buys three properties the atomic version had
+implicitly:
+
+- an abandoned staged suite cannot be completed by a random actor
+- stage 2 cannot be replayed
+- activation proves it is completing **the exact staged suite that was inspected**, not a
+  different one assembled in between
+
+The id must bind the parameters, not just name the suite. If `suiteId` is a bare counter,
+stage 2 or 3 can present a valid claim while supplying a different owner, team or operator
+than the one staged — and "the suite that was inspected" stops meaning anything. Hash the
+params into it.
+
+### Pools: create-or-revert on the first pass
+
+Stage 2 must not silently join a pool someone else created. Three options exist —
+
+```
+create the pool at the expected price
+or verify an existing pool's price and liquidity are exactly acceptable
+or revert
+```
+
+— and the first pass takes **create-or-revert**. If the pool already exists, stop. Verifying
+someone else's pool is a second mechanism with its own failure modes, and it can be added
+later against a working split rather than designed alongside one.
+
+### The front-run that atomicity was silently preventing
+
+`TokenFactory.deploy()` carries this comment, twice:
+
+> The merchant token was created moments ago in this same transaction, so its pool cannot
+> exist yet. `mint()` reverts against an uninitialised pool, and `sqrtPriceX96` is what
+> actually sets the launch price.
+
+Split steps 1 and 3 into separate transactions and that stops being true. Between them,
+anyone watching the mempool can call `createAndInitializePoolIfNecessary` on the new token
+at a price of their choosing, and the launch mint lands into a pre-poisoned pool.
+
+**Checking for this at step 4 is too late** — the seed is already in the bad pool by then,
+and the remedy is an abort rather than a deploy. Step 3 must instead *create* the pool and
+revert if one already exists, so a poisoned pool stops the staging rather than being
+discovered after it. That is a stricter call than
+`createAndInitializePoolIfNecessary`, which is deliberately tolerant of an existing pool.
+
+### The suite clocks start at stage 1, not at activation
+
+Not on anyone's checklist yet, and it is not an invariant — it is a behaviour change that
+staging introduces by existing.
+
+```
+VestingWallet.sol:66   vestingStart = block.timestamp
+VestingWallet.sol:67   cliffTime    = block.timestamp + _cliffDuration
+RewardEscrow.sol:111   emissionStart = block.timestamp
+```
+
+All three are set in the constructors, which run in **stage 1**. Under atomic deploy, stage
+1 and activation were the same instant, so "the clock starts when the merchant goes live"
+was true without anyone deciding it. Split them and it stops being true: a suite staged on
+Monday and activated on Friday opens with four days of emission already accrued and four
+days already served against the 180-day team cliff.
+
+At minutes between stages this is noise. At days it is a merchant quietly starting with
+rewards unlocked that nobody issued, and `bufferCap` is 30 days of emission, so a month-long
+staging window would open the escrow at its full spendable ceiling on day one.
+
+Decide deliberately, do not inherit it:
+
+- **accept it**, and require stages to complete within some short window
+- **or pass the timestamps in**, so the constructors take a start time that stage 3 sets to
+  the activation block
+
+The second is more code and makes the suite contracts take an argument they currently
+derive. The first is free and needs enforcing, or it is just a hope.
+
+## PunchCard Terminal — the payment surface, deliberately out of scope
+
+The protocol has no payment contract, and that is a boundary rather than an omission. It
+handles the token, its economics, its liquidity and its membership of the network. It does
+not handle the till.
+
+**PunchCard Terminal** is the future point-of-sale and payment surface: one blueprint per
+merchant, with only the accepted merchant-token address swapped between deployments — the
+same relationship the suite contracts already have to the factory. The SKOOP dapp talks to
+the Terminal rather than the Terminal being merchant-specific software.
+
+Not being built during the token and network launch, on purpose. A contract that holds
+customer funds is the most security-sensitive piece in the system and the one with no test
+coverage, because it does not exist. Rushing it alongside a token launch is how both go
+wrong.
+
+Until it exists, KOKOS keeps taking payments through `KOKOSPaymentEscrowV3`, whose
+`skoopToken` is immutable and points at the 2023 token. So during the overlap customers earn
+the new SKOOP and pay with the old one. Awkward, honest, and better than a hurried contract
+holding their money.
+
+**Rewards are unaffected.** The existing POS pays customers with a plain ERC-20 transfer from
+its own float — it never called the reward vault — so pointing it at the new token is a
+one-line config change. Top-ups become `distributeReward(posWallet, amount)` on the new
+escrow, and the daily limit stops being enforced in JavaScript and starts being enforced by
+the operator drawer on-chain.
+
 ## Economics — UNVALIDATED
 
 See `docs/economics-review.md`. There is no usage evidence. KOKOS is in beta and barely
@@ -222,10 +466,28 @@ else.
 ```
 verify the real holder count (basescan token holders page — do not guess)
   → pick a snapshot block that has ALREADY PASSED, then announce
-  → pull the old SKOOP LP, recovering the capital
-  → deploy the new token through TokenFactory with that capital
+  → rehearse the cutover on a Base fork with the real seed amounts
+  → fund fresh wallets with $2,000 USDC + $1,000 of ETH
+  → deploy the new token through TokenFactoryPilot from those wallets
+  → move the old SKOOP LP out BY HAND, on your own schedule
+  → verify, then lockLP() when the pilot is proven
   → distribute to holders over the following months
 ```
+
+**Nothing automated touches KOKOS's existing deployment.** Decided 2026-09-15. The pilot
+launches from fresh wallets with fresh capital, and the old LP is moved manually rather than
+drained by a script that has to be handed the keys to live positions. That removes a whole
+class of risk — no automated path has authority over anything KOKOS already has — at the
+cost of the cutover step being unrehearsed by construction. Accepted: the mechanical risk in
+`decreaseLiquidity` + `collect` through the Uniswap UI is low and well-trodden. The risk that
+remains is **sequencing**, which no test was ever going to cover (see below).
+
+**Pilot factory, mainnet floors.** These are two separate dials and conflating them is the
+mistake this document keeps warning about. Clearing the $2,000 / $1,000 floors does *not*
+mean launching through the production factory — `TokenFactoryPilot` takes its floors as
+constructor arguments, so the fresh pilot gets the real liquidity depth AND the open-ended
+recovery hatch. The micro floors exist for the $20 mechanical rehearsal, where nobody
+trades. A live pilot with real customers uses real floors.
 
 **Snapshot retroactively.** Announcing a future block lets anyone buy SKOOP cheaply to farm
 the airdrop, and with a $720 pool a large share of circulating supply costs a few hundred
@@ -257,16 +519,95 @@ intent, so announce first and keep the gap between pulling and deploying short.
   Caveat: SKOOP's total supply is **886,355,705**, not the factory's 100,000,000. Any
   relaunch has to pick an exchange ratio and defend it. With $338 of public value at stake,
   generosity is cheaper than argument.
-- **The recovered capital is close, but the wrong shape.** The old pools hold **$720 USDC
-  + 0.76 WETH ≈ $2,598** against the $2,000 USDC / $1,000 ETH floors. The ETH side clears
-  with ~$878 to spare; the USDC side is short by $1,280. Rebalancing the ETH surplus into
-  USDC leaves roughly **$402 to top up** — a real number, not a blocker.
+- ~~**The recovered capital is close, but the wrong shape.**~~ **Moot as of 2026-09-15** —
+  the pilot is funded with fresh capital, not with the old pools. Recorded because the
+  measurement stands and explains why: the live pools hold **$720 USDC + 0.76 WETH**, so the
+  ETH side cleared its floor with ~$826 to spare while the USDC side was short $1,280.
+  Recycling that would have meant a top-up *and* handing a script authority over live
+  positions, to save roughly $1,290. Not worth it.
+
+  The pilot seeds **$2,000 USDC + $1,000 of ETH** — the floors exactly. Verified against a
+  live Base fork: $2,000.00 + $1,010.28 = **$3,010.28**, clears both.
+
+  The old LP still comes out eventually; it is now a manual step on its own schedule rather
+  than a dependency of the launch.
 - **This is what set the floors.** KOKOS being unable to meet its own minimum was the
   evidence that $5,000 was wrong, and it drove the move to $3,000 total weighted toward
   USDC (settled 2026-09-14, below). The minimums are **factory-level policy**, not
   per-merchant — they cannot be bent for one shop without bending for all.
 - **Distribution source.** Rewards escrow (fast, consumes reward budget) or treasury
   (90-day timelock, uses the merchant's own allocation). See below.
+
+### Gates before mainnet — both must clear
+
+Settled 2026-09-15 after the fork rehearsal. Everything downstream of these two is proven;
+these two are not.
+
+**Gate 1 — sequencing, not a test run.** ~~Run phase 1 against the real positions.~~
+Superseded 2026-09-15: the LP is moved by hand from fresh wallets, so there is no automated
+drain to rehearse. What that step still carries is unchanged and no test ever covered it —
+
+- **Announce before pulling.** Pulling the LP makes old SKOOP untradeable. A holder who
+  finds a drained pool with no prior announcement assumes the worst regardless of intent.
+- **Keep the gap short.** Between pulling and the new token being tradeable, there is
+  nothing for a holder to do and nothing for them to read except silence.
+- **Snapshot retroactively**, on a block already in the past. See above.
+
+`test_phase1_liveSkoopLiquidityIsRecoverable` is kept and still runs with
+`PC_SKOOP_LP_OWNER` set. It is now a **dry run for a human**, not a gate: whoever pulls those
+positions by hand can watch exactly what `decreaseLiquidity` + `collect` do on a fork first.
+
+**Gate 2 — real launch capital.** $2,000 USDC + $1,000 of ETH into fresh wallets. Rehearse
+the real numbers before the day:
+
+```
+PC_MIGRATION_USDC=2000000000 PC_MIGRATION_ETH=415000000000000000 \
+  forge test --match-path test/SkoopMigration.t.sol --fork-url https://mainnet.base.org -vv
+```
+
+The ETH side is sized in **wei**, not dollars, because the floor is USD-denominated against
+Chainlink and the wei that clears $1,000 moves with the price. Re-run this close to the day
+and read what phase 2 prints; a seed sized in dollars months earlier is how a deploy reverts
+on the morning it matters.
+
+**What the rehearsal already proves** (`test/SkoopMigration.t.sol`, 6 passing against a live
+Base fork):
+
+- the migrated suite deploys with allocations landing exactly — 45/30/15/10, factory drained
+- day zero pays no rewards and that is correct: `emitted()` accrues from deploy, so the POS
+  reverts with `"Emission limit"` for the first few minutes. **Brief the operator.** It will
+  look like a bricked kiosk on launch morning.
+- a real trade through live Uniswap generates collectable fees and the network fee reaches
+  PunchCard
+- `evacuateLP()` returns the seed and the full 27M reserve from a suite that had already
+  issued rewards and been traded against, then bricks the locker
+- **wind-down completes end to end — the first time it has ever been executed.** Freezes
+  land on `initiate`, the terminal gate refuses until the other three legs settle, 94.3M
+  burns. It is not on the operating path (every suite contract gates it behind
+  `onlyWindDown`, and their `notFrozen` checks read a local bool rather than calling out),
+  so a bug there could never have bricked day-to-day SKOOP — but it is a promise made to
+  merchants, and it now has evidence behind it.
+
+**What it does not prove.** Mechanism, not economics. It says nothing about whether 45M over
+1825 days is the right emission rate, what a reward should be worth, or whether drawer sizes
+match real kiosk traffic. See `docs/economics-review.md`, which is correct to call those
+unvalidated.
+
+### Vesting does not behave like KOKOS's — check before quoting a date
+
+Pinned by `test_phase3_vestingAndTreasuryOnTheLongClock`, because the live deployment is the
+obvious thing to reason from and it will mislead you:
+
+| | KOKOS `TeamVesting` (live) | PunchCard `VestingWallet` |
+|---|---|---|
+| accrues from | `startTimestamp` | `cliffTime` |
+| at the cliff | ~17% immediately claimable | **zero** |
+| fully vested | start + duration | start + cliff + duration — **day 1260, not 1080** |
+
+Same three words in the docs, different money. KOKOS's live contracts are a good
+*differential oracle* for the new ones, but they are different code — 295 lines against 332
+for the vault, 103 against 155 for vesting — so "KOKOS works" is not evidence about this
+bytecode.
 
 ### Migrating holders — use the rewards escrow, not an exception
 

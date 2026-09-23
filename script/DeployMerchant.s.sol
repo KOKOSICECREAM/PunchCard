@@ -12,6 +12,15 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 ///      able to call it could consume a lingering allowance with their own parameters.
 contract DeployMerchant is Script {
     function run() external {
+        // Base refuses any transaction above 16,777,216 gas and the atomic lineage's
+        // deploy() costs 17,325,962, so a network built here could be deployed and could
+        // never onboard anyone. Mechanical, because a warning in a doc is a warning
+        // somebody has to have read. Use DeployNetworkStaged.s.sol on Base.
+        require(
+            block.chainid != 8453,
+            "The atomic TokenFactory lineage cannot deploy merchants on Base - deploy() exceeds the 16,777,216 per-transaction gas cap. Use DeployNetworkStaged.s.sol and StageMerchant.s.sol."
+        );
+
         address factoryAddr = vm.envAddress("PC_FACTORY");
         address usdc        = vm.envAddress("PC_USDC");
 

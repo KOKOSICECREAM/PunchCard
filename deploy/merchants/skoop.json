@@ -1,0 +1,100 @@
+{
+  "merchant": "SKOOP",
+  "status": "token-deployed",
+  "_status_values": "token-deployed | suite-deployed | funded | verified | registered",
+  "_path_note": "Hand-assembled and admitted through WindDownController.registerManual, NOT through a factory. See docs/skoop-launch-plan.md and docs/staged-rollout.md.",
+  "token": {
+    "address": "0xBa147713adF122A8Fc224e52Cb431D7919831939",
+    "name": "SKOOP PunchCard",
+    "symbol": "SKOOP",
+    "decimals": 6,
+    "totalSupply": "100000000000000",
+    "ipfsHash": "0x31308a8763f929446f17aaca38cc9538ff0380a5d36fe6c5cffa5e1f7787c6bb",
+    "metadataCid": "QmPhJXCg7snZNMCzgSLME8eujLZ6KvcJT3nwJnLMftwv8k",
+    "logoCid": "QmNoS9wwGj3zb2rz1Z2AMbZMBfh6VMjijSAon5xUt6mXfV",
+    "deployTx": "0xe8a7c4068ed227bfbc6e2803bb8c088629a87acd6ab0b63786ce29e7f3f0e020",
+    "block": 51432107,
+    "deployedAt": "2026-09-17",
+    "basescanVerified": true,
+    "_redeploy_note": "Redeployed with cleaned verified source comments and constructor naming. This is the SKOOP address to use going forward."
+  },
+  "supersededTokens": [
+    {
+      "address": "0x38bdc0f357455C49486cb3871a3AA218aAd10D2B",
+      "deployTx": "0x3af6fbf1ed5fcd6714ad969d55566973e287c050fdc9c44e366fd610dc3444c1",
+      "block": 51430716,
+      "reason": "First SKOOP PunchCard deploy used correct bytecode behavior but stale/misleading verified-source comments inherited from the factory path.",
+      "disposalTx": "0xe1acba279c2ab35d1ad11d164e2446a734ac9b5fa87b007ce5baab5768827bc1",
+      "disposal": "sent-to-dead-address",
+      "_disposal_note": "NOT burned. The disposal tx is transfer(0x000...dEaD, 100000000e6), selector 0xa9059cbb — verified on-chain 2026-09-19. totalSupply() on the superseded token still reads 100,000,000.000000 and always will, so Basescan shows it as a live token with one holder. The supply is unrecoverable because nobody holds the dead address's key, but it was never destroyed. MerchantToken is ERC20Burnable and burn() would have set supply to zero; it is no longer callable because the owner wallet no longer holds the tokens."
+    }
+  ],
+  "basescanProfile": {
+    "status": "source-verified",
+    "_status_values": "source-verified | token-info-submitted | token-info-approved",
+    "_note": "Logo/profile update must be submitted through the logged-in BaseScan Token Update flow after claiming contract ownership."
+  },
+  "wallets": {
+    "_fill_note": "Every value below is required before step 2 or step 3 can run. The permanence column is the point: several of these can never be changed after the contract that takes them is deployed, and the suite is deployed one contract at a time precisely so each can be checked before the next.",
+    "owner": "0x5426E59b783cd3b5083Ccc8cB571AA36e9f4a3be",
+    "_owner_note": "Holds the entire supply. Becomes ownerWallet on the escrow, treasury and locker - immutable in all three - and is the only address that can ever call evacuateLP(). Highest-stakes key in the system.",
+    "team": null,
+    "_team_note": "IMMUTABLE FOREVER on VestingWallet - no update function exists anywhere. Receives the 15M team allocation over 730 days after a 30-day cliff. Wrong value here is only fixable by abandoning the vesting contract and redeploying, which is free before step 11 and impossible after.",
+    "operator": null,
+    "_operator_note": "The first POS kiosk signer on RewardEscrow. NOT immutable - addOperator / removeOperator / setDrawerAllowance are all onlyOwner, which is the un-rotatable-key problem PunchCard fixed relative to live SKOOP. Safe to set provisionally.",
+    "multisig": "0x25CB3b3c06fD821136d66b03A2cF02CfC754ADDb",
+    "_multisig_note": "PunchCard Admin, provided 2026-09-21. WARNING, verified on-chain the same day: this address is an EOA (zero code) with nonce 0, not a multisig contract. The constructor parameter is named multisig and it is IMMUTABLE on BOTH WindDownController and PunchCardRouter. It controls proposeFactory/executeFactory, setRegistrar, setApprovedCode and wind-down initiation - i.e. admission to the network. Lost key = no codehash can ever be approved and no registrar ever set again. Compromised key = an attacker controls who joins the network. Changing it means redeploying the whole network, which is free until step 11 and impossible after. Consider a Safe before registration.",
+    "registrar": null,
+    "_registrar_note": "The only address that can call registerManual at step 11. Set on the controller via setRegistrar, so it is changeable right up until it is used. Not needed until step 11.",
+    "feeRecipient": "0x6588A99071e0e988071dA4252e9499ddFc752dd1",
+    "_feeRecipient_note": "PunchCard fees, provided 2026-09-21, checksummed from 0x6588a99071e0e988071da4252e9499ddfc752dd1. EOA, nonce 0. Receives the network fee. IMMUTABLE on LPLockerPilot - cannot be redirected after step 3. Mutable on PunchCardRouter via setRouterParams.",
+    "deployerActivator": null,
+    "_deployerActivator_note": "STILL NEEDED. A fresh launch-only wallet, decided 2026-09-20 - explicitly NOT the factory deployer above, not the owner wallet, not the multisig. Gas only, not reused after launch. It becomes Activatable.activator IMMUTABLY on all four suite contracts at step 3. Generate with cast wallet new in a separate terminal, hold it in an encrypted foundry keystore, pass it as --account. Not needed until step 3.",
+    "factoryDeployer": "0xEfafE621247fe74B269c6177665eB36C91f6C48b",
+    "_factoryDeployer_note": "PunchCard deploy wallet - the PC_DEPLOYER argument at step 2, which is a DIFFERENT role from SKOOP's activator. It is written into approvedDeployers on StagedTokenFactoryBeta and authorises staging FUTURE merchants; approval is grantable and revocable by the multisig afterwards, so this one is not a permanent commitment. Same wallet that deployed the token. Fine here precisely because it is revocable."
+  },
+  "verifiedOnChain": {
+    "supply": "100,000,000.000000 to the owner, nothing elsewhere",
+    "noMintFunction": true,
+    "noOwner": true,
+    "noPause": true,
+    "poolsAtDeploy": "all eight clear - USDC and WETH across 100/500/3000/10000"
+  },
+  "lpPositions": {
+    "_comment": "Settled by the fork rehearsal in test/SkoopLaunchSimulation.t.sol, 2026-09-20.",
+    "adoptsExistingPositions": true,
+    "_adopts_note": "LPLockerPilot.initializeLP does NOT mint. It only reads positions(tokenId) and records tokenId, feeTier, initialLiquidity and merchantIsToken0. So the pools can be seeded from a wallet and the two NFTs transferred into the locker afterwards - which is exactly what the manual path needs. No contract change is required.",
+    "initializeLpIsOnceOnly": true,
+    "_once_note": "require(!_usdcPosition.initialized) - a locker is permanently bound to the first two token IDs it is given. A locker tested to destruction by evacuateLP cannot be reused, and a locker initialised with small test positions can never adopt the real ones.",
+    "ownershipIsNotCheckedOnChain": true,
+    "_ownership_note": "initializeLP does not verify the locker owns the NFTs. In the factory path it cannot fail to, because the factory transfers and initialises in one transaction it controls. By hand, paste the wrong token IDs or forget to transfer and the locker reports isInitialized true while the liquidity sits in a wallet. VerifyManualSuite MUST confirm ownerOf(tokenId) == locker for BOTH positions before registerManual is called. 'The LP is in the locker' is the claim the whole product rests on.",
+    "orderMatters": "mint positions -> transfer NFTs to locker -> send the full reserve -> initializeLP -> activate. initializeLP snapshots _reserveTokens from the locker's balance at that instant; initialise first and it records zero permanently."
+  },
+  "notDoneYet": [
+    "network: controller + router + the factory FUTURE merchants use",
+    "suite: escrow, vesting, treasury, LPLockerPilot - each needs the controller address, immutably",
+    "funding: 45M escrow, 15M vesting, 10M treasury, by hand, testing each",
+    "pools: positions TO THE LOCKER, then the 27M reserve, THEN initializeLP - that order",
+    "activate() on all four, or emission never starts",
+    "publish source, then multisig approves the five codehashes - that order",
+    "VerifyManualSuite PC_MODE=pilot",
+    "registrar calls registerManual  <-- the only step with no undo"
+  ],
+  "doNot": [
+    "Publish the token address until the pools are seeded. Anyone can open a pool at a price they choose.",
+    "Call lockLP() yet. SKOOP keeps LP recoverability with no deadline while the network is in beta - decided 2026-09-16. Closing it is the intent once the system has proven itself, not a decision against ever closing it. lockLP() is one-way; after it the pilot locker behaves identically to production. evacuationOpen() is the on-chain source of truth and every surface must read it rather than assert a state.",
+    "Describe it as factory-standard. PunchCard-registered, bytecode-reviewed, network-admitted."
+  ],
+  "escrowParams": {
+    "_comment": "RewardEscrow bounds on a single reward. NOT immutable - setPerTxBounds(floor, max) is onlyOwner and works until wind-down freezes the escrow. An earlier note here called them immutable; that was wrong. The contract says why they are adjustable: both are denominated in tokens, and a fixed floor set at launch becomes a $1 minimum reward if the token appreciates a hundredfold.",
+    "perTxFloor": "1",
+    "_perTxFloor_note": "Smallest reward a kiosk may issue, in base units (6dp). Must be > 0. A floor of 1 is 0.000001 SKOOP - effectively no floor, which is a reasonable default.",
+    "perTxMax": "50000000000",
+    "_perTxMax_note": "Largest single reward, in base units (6dp). Must be >= perTxFloor and <= 345205479444. Adjustable later via setPerTxBounds.",
+    "rewardsAllocation": "45000000000000",
+    "emissionDays": 1825,
+    "_ceiling_note": "The real constraint is NOT a 500,000 dailyCap. That figure appears in deploy/network/base-mainnet.json and deploy/merchants/_template.json and corresponds to no constant in any contract - grep DAILY_CAP returns nothing. The actual check is require(_perTxMax <= perDay * MAX_DRAWER_DAYS). With a 45,000,000 allocation over EMISSION_PERIOD = 1825 days, perDay = 24,657,534,246 base units (24,657.53 SKOOP) and MAX_DRAWER_DAYS = 14, so the ceiling is 345,205,479,444 base units = 345,205.48 SKOOP. A perTxMax of 500,000 SKOOP reverts at construction with 'Max above drawer ceiling'.",
+    "perTxCeilingBaseUnits": "345205479444",
+    "_settled_note": "Settled 2026-09-21. perTxFloor 1 = 0.000001 SKOOP, effectively no floor. perTxMax 50000000000 = 50,000 SKOOP, well clear of the 345,205.48 ceiling. Both adjustable via setPerTxBounds until wind-down, so these are starting values rather than commitments - unlike teamWallet and the suite addresses, which are permanent."
+  }
+}
