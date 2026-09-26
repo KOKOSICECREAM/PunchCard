@@ -18,8 +18,8 @@ cd "$(dirname "$0")/../.."
 PHASE=${1:-}
 
 RPC=${LOCKER_TEST_RPC:-https://mainnet.base.org}
-KEYSTORE=pc-locker-test
-TESTER=0x7Fe79Bc539d3e8a1B4b14e6788A8D80f3B0510Fd
+KEYSTORE=${LOCKER_TEST_KEYSTORE:-pc-locker-test}
+TESTER=${LOCKER_TEST_TESTER:-0x7Fe79Bc539d3e8a1B4b14e6788A8D80f3B0510Fd}
 SKOOP=0xBa147713adF122A8Fc224e52Cb431D7919831939
 USDC=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
 WETH=0x4200000000000000000000000000000000000006
@@ -38,10 +38,13 @@ liq(){ cast call --rpc-url "$RPC" $NPM 'positions(uint256)(uint96,address,addres
 if [ "${LOCKER_TEST_UNLOCKED:-0}" = 1 ]; then SIGN=(--unlocked --from $TESTER)   # fork rehearsal only
 else
   [ -f "$HOME/.foundry/keystores/$KEYSTORE" ] || { echo "No '$KEYSTORE' keystore. In a separate terminal (not through Claude):"; echo "    cast wallet import $KEYSTORE --interactive"; echo "paste 0x7Fe7...'s private key from Rabby, choose a password, then rerun."; exit 1; }
-  read -r -s -p "Password for the $KEYSTORE keystore: " ETH_PASSWORD; echo; export ETH_PASSWORD
-  GOT=$(cast wallet address --account "$KEYSTORE")
+  # The password goes to cast through a private temp file (mode 600, deleted on exit):
+  # cast has no password env var, and a prompt inside $( ) cannot be answered.
+  PWFILE=$(mktemp); chmod 600 "$PWFILE"; trap 'rm -f "$PWFILE"' EXIT
+  read -r -s -p "Password for the $KEYSTORE keystore: " PW; echo; printf '%s' "$PW" > "$PWFILE"; unset PW
+  GOT=$(cast wallet address --account "$KEYSTORE" --password-file "$PWFILE") || { echo "STOP: wrong password for $KEYSTORE"; exit 1; }
   [ "$(echo "$GOT" | tr A-F a-f)" = "$(echo "$TESTER" | tr A-F a-f)" ] || { echo "STOP: keystore is $GOT, expected $TESTER"; exit 1; }
-  SIGN=(--account "$KEYSTORE")
+  SIGN=(--account "$KEYSTORE" --password-file "$PWFILE")
 fi
 tx(){ local what=$1; shift
   local out st; out=$(cast send --rpc-url "$RPC" "${SIGN[@]}" "$@" --json)
