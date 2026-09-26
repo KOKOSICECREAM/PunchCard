@@ -32,7 +32,8 @@
       "0xa0e31399d42d9d8c554ebb77d32cd1c851c5568cbd971eb4f2a908f29e186ebc"
     ],
     "deployBlockFirst": 51831320,
-    "deployBlockLast": 51831320
+    "deployBlockLast": 51831320,
+    "_sourcify": "All five verified on Sourcify 2026-09-26: exact_match (creation and runtime). https://repo.sourcify.dev/8453/<address>"
   },
   "constants": {
     "_comment": "Hardcoded in TokenFactory. Listed here for tooling, not configurable.",
