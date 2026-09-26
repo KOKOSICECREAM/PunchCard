@@ -72,6 +72,10 @@ contract StagedNetworkRehearsalTest is Test {
         vm.setEnv("PC_MIN_ETH_SEED_USD",    "500000000");    // $5 floor, micro
         vm.setEnv("PC_ROUTER_FEE_BPS",      "30");
         vm.setEnv("PC_CREATE_NEW_NETWORK",  "true");
+        // vm.setEnv writes the process environment and forge never resets it, so another
+        // suite's PC_TOKEN (ManualVerification sets one) would override the staged handoff
+        // file here and point stages 2-3 at the wrong token. Zero means "read the file".
+        vm.setEnv("PC_TOKEN",               vm.toString(address(0)));
         vm.setEnv("PC_FACTORY",             vm.toString(factory));
         vm.setEnv("MERCHANT_NAME",          "PunchCard Pilot Rehearsal");
         vm.setEnv("MERCHANT_SYMBOL",        "pRHRSL");

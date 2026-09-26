@@ -321,30 +321,35 @@ contract SkoopMigrationTest is Test {
         uint256 cliff   = VestingWallet(s.vesting).cliffTime();
         uint256 vestEnd = VestingWallet(s.vesting).vestingEnd();
 
-        assertEq(cliff - VestingWallet(s.vesting).vestingStart(), 180 days, "180-day cliff");
-        assertEq(vestEnd - cliff, 1080 days, "1080-day ramp AFTER the cliff, not from launch");
+        // The schedule is read from the factory's own constants, not typed here: this test
+        // said 180 + 1080 days long after the contracts moved to 30 + 730, and only a fork
+        // run noticed. A figure copied beside the code drifts from it.
+        uint256 CLIFF = s.factory.CLIFF_DURATION();
+        uint256 RAMP  = s.factory.VEST_DURATION();
+        assertEq(cliff - VestingWallet(s.vesting).vestingStart(), CLIFF, "cliff = factory CLIFF_DURATION");
+        assertEq(vestEnd - cliff, RAMP, "ramp AFTER the cliff = factory VEST_DURATION, not from launch");
 
         // ── nothing before the cliff, and release() is a silent no-op, not a revert ──
         vm.warp(cliff - 1 days);
         VestingWallet(s.vesting).release();
-        assertEq(IERC20(s.token).balanceOf(TEAM), 0, "no team tokens before the 180-day cliff");
+        assertEq(IERC20(s.token).balanceOf(TEAM), 0, "no team tokens before the cliff");
 
         // ── at the cliff itself, still zero. This is the KOKOS divergence. ──
         // KOKOS's live TeamVesting accrues from its start timestamp and only GATES claiming
         // at the cliff, so ~17% of the team allocation is claimable the instant the cliff
         // passes. PunchCard restarts the clock at the cliff: zero here, then linear over
-        // the following 1080 days. Same three words in the docs, different money.
+        // the following VEST_DURATION. Same three words in the docs, different money.
         vm.warp(cliff);
         assertEq(VestingWallet(s.vesting).totalVested(), 0, "vesting RESTARTS at the cliff, it does not unlock a chunk");
         VestingWallet(s.vesting).release();
         assertEq(IERC20(s.token).balanceOf(TEAM), 0, "still nothing at the cliff instant");
 
         // ── half way through the post-cliff ramp ──
-        vm.warp(cliff + 540 days);
+        vm.warp(cliff + RAMP / 2);
         VestingWallet(s.vesting).release();
         assertApproxEqRel(IERC20(s.token).balanceOf(TEAM), 7_500_000 * 1e6, 0.001e18, "half of 15M at the midpoint");
 
-        // ── fully vested at launch + 1260 days, not launch + 1080 ──
+        // ── fully vested at launch + cliff + ramp, not launch + ramp ──
         vm.warp(vestEnd);
         VestingWallet(s.vesting).release();
         assertEq(IERC20(s.token).balanceOf(TEAM), 15_000_000 * 1e6, "fully vested at start + cliff + duration");

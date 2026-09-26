@@ -64,8 +64,9 @@ contract SkoopLaunchSimulationTest is Test {
     LPLockerPilot      locker;
 
     function test_simulateStepsTwoAndThree() public {
-        // The token must already exist. This is the one thing the simulation does not create.
-        assertGt(SKOOP.code.length, 0, "SKOOP has no code - are you forked to Base?");
+        // The token must already exist — this simulation needs a Base fork. Without one,
+        // skip like the other fork tests rather than fail the whole suite.
+        if (SKOOP.code.length == 0) { vm.skip(true); return; }
         console2.log("== TOKEN (already deployed, untouched) ==");
         console2.log("  address    ", SKOOP);
         console2.log("  name       ", ISkoopMeta(SKOOP).name());
