@@ -46,7 +46,16 @@ REGISTRAR=0x00000000000000000000000000000000000BE617
 CUSTOMER=0x00000000000000000000000000000000000C0571
 
 say(){ printf '\n\033[1m== %s ==\033[0m\n' "$*"; }
-tx(){ local from=$1; shift; cast send --unlocked --from "$from" --rpc-url "$RPC" "$@" >/dev/null; }
+# cast send exits 0 even when the transaction REVERTS on-chain, so check the receipt:
+# a failed step must stop the rehearsal, not be read past. Calls that nest into Uniswap
+# (initializeLP, addLiquidity, collectFees, evacuateLP, swaps) pass --gas-limit: cast
+# sends the bare estimate, which is the minimum that just succeeds, and the 63/64 rule
+# on the nested calls can then run it out of gas — seen once here on evacuateLP
+# (estimate 514,751; used 410,040 on success; failed at the limit on the first try).
+tx(){ local from=$1; shift
+  local st; st=$(cast send --unlocked --from "$from" --rpc-url "$RPC" "$@" --json | python3 -c "import sys,json;print(int(json.load(sys.stdin)['status'],16))")
+  [ "$st" = 1 ] || { echo "  ✗ transaction FAILED on-chain: $*"; exit 1; }; }
+NESTED=(--gas-limit 1000000)
 call(){ cast call --rpc-url "$RPC" "$@"; }
 num(){ awk '{print $1}'; }
 skoop(){ python3 -c "print(f'{int(\"$1\")/1e6:,.6f}')"; }
@@ -107,12 +116,12 @@ echo "treasury funded with $(skoop $TSY_AMT) (target 10,000,000 — short by $(s
 # ── step 5: the live pools go into the locker, then the reserve, then initializeLP ──
 say "Step 5 — move the seeded positions and the reserve into the locker"
 for id in $USDC_NFT $ETH_NFT; do        # uncollected fees first: they belong to the LP wallet, not the locker
-  tx $LP_WALLET $NPM "collect((uint256,address,uint128,uint128))" "($id,$LP_WALLET,340282366920938463463374607431768211455,340282366920938463463374607431768211455)"
+  tx $LP_WALLET $NPM "collect((uint256,address,uint128,uint128))" "($id,$LP_WALLET,340282366920938463463374607431768211455,340282366920938463463374607431768211455)" "${NESTED[@]}"
   tx $LP_WALLET $NPM "transferFrom(address,address,uint256)" $LP_WALLET $LOCKER $id
 done
 # The reserve is what the LP wallet held BEFORE collecting — the collected fees are its own.
 tx $LP_WALLET $SKOOP "transfer(address,uint256)" $LOCKER $LP_BAL
-tx $ACTIVATOR $LOCKER "initializeLP(uint256,uint256,uint24,uint24)" $USDC_NFT $ETH_NFT 10000 10000
+tx $ACTIVATOR $LOCKER "initializeLP(uint256,uint256,uint24,uint24)" $USDC_NFT $ETH_NFT 10000 10000 "${NESTED[@]}"
 echo "locker owns #$USDC_NFT: $(call $NPM 'ownerOf(uint256)(address)' $USDC_NFT)"
 echo "locker reserve: $(skoop "$(call $SKOOP 'balanceOf(address)(uint256)' $LOCKER | num)")"
 
@@ -152,7 +161,7 @@ echo "customer SKOOP after a 1,000 reward: $(skoop "$(call $SKOOP 'balanceOf(add
 tx $CUSTOMER $SKOOP "approve(address,uint256)" $ROUTER 1000000000
 DEADLINE=$(( $(cast block --rpc-url "$RPC" -f timestamp) + 600 ))
 tx $CUSTOMER $ROUTER "swap((address,address,uint256,uint256,uint256,address,address,uint256))" \
-  "($SKOOP,$USDC,1000000000,0,0,0x0000000000000000000000000000000000000000,$CUSTOMER,$DEADLINE)"
+  "($SKOOP,$USDC,1000000000,0,0,0x0000000000000000000000000000000000000000,$CUSTOMER,$DEADLINE)" "${NESTED[@]}"
 echo "customer USDC after selling 1,000 SKOOP through the router: $(python3 -c "print($(call $USDC 'balanceOf(address)(uint256)' $CUSTOMER | num)/1e6)")"
 echo "fee recipient USDC: $(python3 -c "print($(call $USDC 'balanceOf(address)(uint256)' $FEE_RECIPIENT | num)/1e6)")"
 say "Rehearsal complete — nothing was sent to Base"
