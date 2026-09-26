@@ -46,8 +46,17 @@ else
   [ "$(echo "$GOT" | tr A-F a-f)" = "$(echo "$TESTER" | tr A-F a-f)" ] || { echo "STOP: keystore is $GOT, expected $TESTER"; exit 1; }
   SIGN=(--account "$KEYSTORE" --password-file "$PWFILE")
 fi
+# Nonces are tracked here, not asked of the RPC per transaction: mainnet.base.org sits
+# behind a load balancer, and a node that has not yet seen the previous transaction hands
+# back its nonce again ("replacement transaction underpriced" — what stopped the first live
+# setup, right after the deploy). Before each send we also wait until the RPC shows the
+# previous one mined, so gas estimates see current state (initializeLP must see the NFTs).
+NONCE=$(cast nonce "$TESTER" --block pending --rpc-url "$RPC")
+wait_mined(){ local want=$1 i; for i in $(seq 1 60); do [ "$(cast nonce "$TESTER" --rpc-url "$RPC")" -ge "$want" ] && return 0; sleep 2; done; echo "  ✗ RPC never showed nonce $want"; exit 1; }
 tx(){ local what=$1; shift
-  local out st; out=$(cast send --rpc-url "$RPC" "${SIGN[@]}" "$@" --json)
+  wait_mined "$NONCE"
+  local out st; out=$(cast send --rpc-url "$RPC" "${SIGN[@]}" --nonce "$NONCE" "$@" --json)
+  NONCE=$((NONCE+1))
   st=$(echo "$out" | python3 -c "import sys,json;r=json.load(sys.stdin);print(int(r['status'],16),r['transactionHash'])")
   [ "${st%% *}" = 1 ] || { echo "  ✗ $what FAILED on-chain: tx ${st#* }"; exit 1; }
   echo "  ✓ $what  tx ${st#* }"; }
@@ -55,21 +64,40 @@ locker(){ python3 -c "import json;print(json.load(open('$STATE'))['locker'])"; }
 
 case "$PHASE" in
 setup)
-  [ -f "$STATE" ] && { echo "STOP: $STATE exists - setup already ran (locker $(locker))."; exit 1; }
-  [ "$(call $NPM 'ownerOf(uint256)(address)' $USDC_NFT | tr A-F a-f)" = "$(echo $TESTER | tr A-F a-f)" ] || { echo "STOP: #$USDC_NFT is not in the test wallet"; exit 1; }
-  [ "$(call $NPM 'ownerOf(uint256)(address)' $ETH_NFT  | tr A-F a-f)" = "$(echo $TESTER | tr A-F a-f)" ] || { echo "STOP: #$ETH_NFT is not in the test wallet"; exit 1; }
-  echo "== deploy LPLockerPilot (owner and activator: the test wallet) =="
-  LOCKER=$(forge create contracts/pilot/LPLockerPilot.sol:LPLockerPilot --rpc-url "$RPC" "${SIGN[@]}" --broadcast \
-    --constructor-args $SKOOP $TESTER $WDC $NPM $TESTER $USDC $WETH $FEE_RECIPIENT | awk '/Deployed to:/{print $3}')
-  [ -n "$LOCKER" ] || { echo "  ✗ deploy failed"; exit 1; }
-  printf '{\n  "_note": "Throwaway LPLockerPilot for the live locker test. Never SKOOP'"'"'s real locker.",\n  "locker": "%s",\n  "owner": "%s",\n  "usdcNft": %s,\n  "ethNft": %s\n}\n' $LOCKER $TESTER $USDC_NFT $ETH_NFT > "$STATE"
-  echo "  ✓ locker $LOCKER  (saved to $STATE)"
+  # Resumable: every step checks the chain first and is skipped if already done, so a
+  # setup that stopped half way is finished by running it again — never a second locker.
+  lc(){ echo "$1" | tr A-F a-f; }
+  if [ -f "$STATE" ]; then
+    LOCKER=$(locker)
+    [ "$(( ($(cast code $LOCKER --rpc-url "$RPC" | wc -c)-3)/2 ))" -gt 0 ] || { echo "STOP: $STATE names $LOCKER but it has no code"; exit 1; }
+    [ "$(lc "$(call $LOCKER 'ownerWallet()(address)')")" = "$(lc $TESTER)" ] || { echo "STOP: $LOCKER is not owned by the test wallet"; exit 1; }
+    echo "== resuming with the deployed locker $LOCKER =="
+  else
+    echo "== deploy LPLockerPilot (owner and activator: the test wallet) =="
+    wait_mined "$NONCE"
+    LOCKER=$(forge create contracts/pilot/LPLockerPilot.sol:LPLockerPilot --rpc-url "$RPC" "${SIGN[@]}" --broadcast \
+      --constructor-args $SKOOP $TESTER $WDC $NPM $TESTER $USDC $WETH $FEE_RECIPIENT | awk '/Deployed to:/{print $3}')
+    [ -n "$LOCKER" ] || { echo "  ✗ deploy failed"; exit 1; }
+    NONCE=$((NONCE+1))
+    printf '{\n  "_note": "Throwaway LPLockerPilot for the live locker test. Never SKOOP'"'"'s real locker.",\n  "locker": "%s",\n  "owner": "%s",\n  "usdcNft": %s,\n  "ethNft": %s\n}\n' $LOCKER $TESTER $USDC_NFT $ETH_NFT > "$STATE"
+    echo "  ✓ locker $LOCKER  (saved to $STATE)"
+  fi
   echo "== NFTs in, then the reserve, then initializeLP (that order) =="
-  tx "transfer #$USDC_NFT to the locker" $NPM "transferFrom(address,address,uint256)" $TESTER $LOCKER $USDC_NFT
-  tx "transfer #$ETH_NFT to the locker"  $NPM "transferFrom(address,address,uint256)" $TESTER $LOCKER $ETH_NFT
-  tx "send the 50 SKOOP reserve" $SKOOP "transfer(address,uint256)" $LOCKER $RESERVE
-  tx "initializeLP" $LOCKER "initializeLP(uint256,uint256,uint24,uint24)" $USDC_NFT $ETH_NFT 10000 10000 "${GAS[@]}"
-  tx "activate" $LOCKER "activate()"
+  for id in $USDC_NFT $ETH_NFT; do
+    o=$(lc "$(call $NPM 'ownerOf(uint256)(address)' $id)")
+    if   [ "$o" = "$(lc $LOCKER)" ]; then echo "  - #$id already in the locker"
+    elif [ "$o" = "$(lc $TESTER)" ]; then tx "transfer #$id to the locker" $NPM "transferFrom(address,address,uint256)" $TESTER $LOCKER $id
+    else echo "STOP: #$id is owned by $o"; exit 1; fi
+  done
+  if [ "$(call $LOCKER 'isInitialized()(bool)')" = true ]; then echo "  - already initialized"
+  else
+    have=$(bal $SKOOP $LOCKER)
+    if [ "$have" -ge "$RESERVE" ]; then echo "  - reserve already in the locker ($have)"
+    else tx "send the 50 SKOOP reserve" $SKOOP "transfer(address,uint256)" $LOCKER $(( RESERVE - have )); fi
+    tx "initializeLP" $LOCKER "initializeLP(uint256,uint256,uint24,uint24)" $USDC_NFT $ETH_NFT 10000 10000 "${GAS[@]}"
+  fi
+  if [ "$(call $LOCKER 'activatedAt()(uint256)')" != 0 ]; then echo "  - already activated"
+  else tx "activate" $LOCKER "activate()"; fi
   echo "== check =="
   echo "  initialized $(call $LOCKER 'isInitialized()(bool)') · reserve $(call $LOCKER 'reserveTokens()(uint256)') (expect $RESERVE) · evacuationOpen $(call $LOCKER 'evacuationOpen()(bool)')"
   echo "  #$USDC_NFT owner $(call $NPM 'ownerOf(uint256)(address)' $USDC_NFT) · #$ETH_NFT owner $(call $NPM 'ownerOf(uint256)(address)' $ETH_NFT)"
