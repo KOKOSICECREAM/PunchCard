@@ -25,7 +25,7 @@ TESTER=0x7Fe79Bc539d3e8a1B4b14e6788A8D80f3B0510Fd       # owner, activator and N
 USDC_NFT=6101973; ETH_NFT=6101969
 RESERVE=50000000                                         # 50 SKOOP reserve
 STRANGER=0x000000000000000000000000000000000000dEaD
-TRADER=0x00000000000000000000000000000000000C0571
+TRADER=0x00000000000000000000000000000000000c0571
 
 say(){ printf '\n\033[1m== %s ==\033[0m\n' "$*"; }
 # cast send exits 0 even when the transaction REVERTS on-chain, so check the receipt:

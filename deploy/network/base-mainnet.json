@@ -21,7 +21,7 @@
     "suiteDeployer": "0x560ef6f74AF77bcc5a3CfF3a6fE4CfF5c0B71688",
     "lockerDeployer": "0x37C878a5687cB466e1008b326e71C4A02F6489fa",
     "tokenFactory": "0x41CF0F51bd70510f069c5ea3D2a60135d02E55a2",
-    "punchCardRouter": "0xb64a96F69be171Fe2D81f03b6d3c4029367D4F08",
+    "punchCardRouter": "0xB64A96f69bE171FE2d81F03b6D3c4029367d4f08",
     "_tokenFactory_note": "StagedTokenFactoryBeta - the path for FUTURE merchants. SKOOP joins by registerManual, not through it.",
     "routerFeeBps": 30,
     "deployTxs": [
