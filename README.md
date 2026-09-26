@@ -343,11 +343,26 @@ start an orderly wind-down and recover their LP. Consider letting `ownerWallet` 
 too — it does not weaken any customer guarantee, since the 365-day timer and the
 "earned tokens are untouchable" property are unchanged.
 
-### 6. The 10% permanent LP goes nowhere
+### ~~6. The 10% permanent LP goes nowhere~~ — ✅ DECIDED: it is the floor
 
-At wind-down, 90% of liquidity returns to the merchant and the remaining 10% is left in the
-position forever — not to PunchCard, not burned, just abandoned. That is probably not a
-deliberate choice. Decide where it should go.
+At wind-down `release()` withdraws `WIND_DOWN_RELEASE_PCT` (90%) of each position and
+leaves `PERMANENT_LP_PCT` (10%) in the pools for good, owned by the locker, withdrawable by
+no one. **Decided 2026-09-26 that this is deliberate: a permanent liquidity floor.** A
+wound-down merchant's token stays tradeable forever, so a customer still holding it can
+always sell, however long after the programme ended. Not to PunchCard, not burned — left
+as liquidity, on purpose.
+
+### 6b. Accrued LP fees go to the merchant during wind-down — open, decide before production
+
+`collectFees()` is refused once the locker is frozen, so from `initiate()` onward fees
+accumulate in the positions for the full 365 days, and `release()` sends all of the
+USDC/WETH side — principal and a year of fees together — to `ownerWallet`. PunchCard can
+still collect everything accrued up to the moment it initiates (`collectFees` is
+permissionless); what it gives up is up to a year of network fees. Nothing in the repo
+records whether that is intended. Plausible either way: it is the merchant's exit, and
+`collect` after `decreaseLiquidity` returns principal and fees as one number. Decide
+before a production locker is deployed — the code is fixed per locker at deploy. Irrelevant
+to SKOOP's pilot locker while its evacuation hatch is open.
 
 ### ~~7. LP dust leaks to the merchant~~ — ✅ FIXED
 
