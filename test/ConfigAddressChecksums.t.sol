@@ -20,6 +20,7 @@ contract ConfigAddressChecksumsTest is Test {
         files.push("deploy/network/base-mainnet.json");
         files.push("deploy/network/locker-test.json");
         files.push("deploy/merchants/skoop.json");
+        files.push("index.html");          // punchcard.club - the addresses the public reads
     }
 
     function test_everyMixedCaseAddressHasAValidChecksum() public view {
