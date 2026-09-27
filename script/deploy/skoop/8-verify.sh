@@ -19,4 +19,5 @@ echo "$REPORT"
 # the SIGPIPE upstream could make a passing report look like a failure.
 if ! echo "$REPORT" | grep -q "PASSED" || echo "$REPORT" | grep -q "DO NOT REGISTER"; then die "verification did not pass — do not register"; fi
 st_set progress.verified yes
-echo "Next: bash script/deploy/skoop/11-register.sh  (registrar) — the only irreversible step"
+if ge 0 "$(bal $SKOOP $OWNER)"; then echo "Next: bash script/deploy/skoop/11-register.sh  (registrar, Ledger #43) — the only irreversible step"
+else echo "Next: bash script/deploy/skoop/4-fund.sh  (owner, Ledger #40) — the owner still holds $(fmt6 "$(bal $SKOOP $OWNER)"); fund before registering"; fi

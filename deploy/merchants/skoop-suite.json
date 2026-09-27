@@ -16,7 +16,9 @@
   },
   "progress": {
     "sourcify": "yes",
-    "activated": "yes"
+    "activated": "yes",
+    "approved": "yes",
+    "verified": "yes"
   },
   "starter": {
     "usdc": 6102819,
@@ -32,5 +34,14 @@
       "locker": 1790483025
     },
     "_note": "2026-09-26 23:23 CT. Vesting cliff 2026-10-26, fully vested 2028-10-25. Escrow emission running (~24,657/day) but unfunded until step 4; spendable is 0 until then. Locker initialised with the starter positions and reserve 26,997,938.699785, evacuation open."
+  },
+  "approvals": {
+    "_note": "2026-09-26: governance (Ledger #41) approved the five live codehashes and appointed registrar #43; all six txs status 1; governance nonce 0 -> 6. Verifier (pre-funding) PASSED with the expected warnings: escrow/vesting/treasury empty, owner still holding 69,544,083, reserve short 2,061.30.",
+    "MERCHANT_TOKEN": "0x4a357882aa4f82a333e31a3ae8bc06358adf2b7d4ce9a8e275f0f0a4f1078ce5",
+    "REWARD_ESCROW": "0xa752e1dc47f4d5b282e559de4e5753083d313f990e3ac18a011bc3e851bab07c",
+    "VESTING_WALLET": "0xe6617865ea49d2e2538410e9b2ab6d56f8013c7fa8fe4df47ef0a447e962a955",
+    "TREASURY_TIMELOCK": "0xaf3277b609a86c399e86be3a6158748d3df8d2bc97f2176ab230f2b09e156dbd",
+    "LP_LOCKER": "0xa576300f0e8c4edf227099e1425d6255e98dda19e16ac2c38105eb12f9a0578d",
+    "registrar": "0x3B44CF955Db742aEbCDC3260cb2599eE209E90dC"
   }
 }
