@@ -1,0 +1,52 @@
+{
+  "_about": "PunchCard merchant registry: the one place a merchant's public details live. The PunchCard app, each merchant page and each POS read it. Trust still comes from the chain: a merchant here must also be registered on the PunchCard Network (WindDownController.isRegistered), which pages check before showing it as verified. The app keeps an embedded copy for its synchronous start-up; test/site/merchants.py checks the two match.",
+  "version": 1,
+  "network": {
+    "chainId": 8453,
+    "windDownController": "0x7dbd9CA01fa60aB480f3A4AE7892970C97EF0cac",
+    "router": "0xB64A96f69bE171FE2d81F03b6D3c4029367d4f08",
+    "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "weth": "0x4200000000000000000000000000000000000006",
+    "uniswapSwapRouter": "0x2626664c2603336E57B271c5C0b26F421741e481"
+  },
+  "merchants": [
+    {
+      "slug": "kokos-skoop",
+      "name": "KOKOS Ice Cream",
+      "shortName": "KOKOS",
+      "city": "Nashville, TN",
+      "tagline": "Nashville's original plant-based scoop shop",
+      "website": "https://kokosicecream.com",
+      "accent": "#e8876a",
+      "token": {
+        "symbol": "SKOOP",
+        "address": "0xBa147713adF122A8Fc224e52Cb431D7919831939",
+        "decimals": 6,
+        "logo": "/kokos-skoop/skoop.png",
+        "totalSupply": 100000000
+      },
+      "pools": {
+        "usdc": "0x5185bef315Dee41727865AC26243bD62008d11b1",
+        "eth": "0x116d0a851632958AFD3B1a0B751089392bcb4e6A",
+        "fee": 10000
+      },
+      "payments": {
+        "escrow": "0x46D5520Ef1DeACd6cA332A9510141b28dC6141a1",
+        "treasury": "0xc35397cBDbcdb24705bc09917f9DdF9E6970C904",
+        "owner": "0x001b3fB36FE7E3a741A15Ed8bE68610442E3a50b",
+        "storeId": "KOKOS_NASHVILLE_01",
+        "terminals": { "POS_1": "0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B" },
+        "refundWindowHours": 24
+      },
+      "rewards": {
+        "vault": "0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2",
+        "sources": ["0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B", "0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2"],
+        "rateToken": 0.10,
+        "rateUsdc": 0.05,
+        "rateCashCard": 0.05
+      },
+      "pos": "/kokos-skoop/pos/",
+      "page": "/kokos-skoop/"
+    }
+  ]
+}
