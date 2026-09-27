@@ -3,175 +3,271 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="robots" content="noindex, nofollow">
-<title>PunchCard Admin</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>PunchCard Console</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e0714f'/%3E%3Ccircle cx='11' cy='12' r='3' fill='%23fff'/%3E%3Ccircle cx='21' cy='12' r='3' fill='%23fff'/%3E%3Ccircle cx='11' cy='21' r='3' fill='%23fff' opacity='.45'/%3E%3Ccircle cx='21' cy='21' r='3' fill='%23fff' opacity='.45'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;500;600&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Special+Elite&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 <style>
   :root {
-    --paper: #f8f4ec; --card: #fffdf8; --ink: #1c1812; --muted: #6f665a; --terra: #a83a20;
-    --ok: #2f6b3a; --warn: #9a6a00; --bad: #a3261a; --border: rgba(28,24,18,0.12);
-    --soft: rgba(28,24,18,0.04); color-scheme: light;
+    --bg: #f5f2ec; --panel: #fffefb; --panel-2: #f8f5ef; --line: rgba(24,20,14,.09); --line-2: rgba(24,20,14,.16);
+    --ink: #17140f; --ink-2: #4a443a; --muted: #857c6e; --accent: #b8452a; --accent-ink: #fff; --accent-soft: rgba(184,69,42,.09);
+    --ok: #237a45; --ok-soft: rgba(35,122,69,.1); --warn: #a26a00; --warn-soft: rgba(162,106,0,.1); --bad: #b3261e; --bad-soft: rgba(179,38,30,.08);
+    --shadow: 0 1px 2px rgba(24,20,14,.04), 0 4px 16px rgba(24,20,14,.04);
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --paper: #15130f; --card: #1d1a15; --ink: #f1ebdf; --muted: #a39a8c; --terra: #e0714f;
-    --ok: #6fbf7e; --warn: #e0b04f; --bad: #ef7b6c; --border: rgba(241,235,223,0.12);
-    --soft: rgba(241,235,223,0.04); color-scheme: dark; } }
+    --bg: #0e0d0b; --panel: #161512; --panel-2: #1c1a16; --line: rgba(255,248,235,.07); --line-2: rgba(255,248,235,.14);
+    --ink: #f3eee4; --ink-2: #c9c1b3; --muted: #8b8375; --accent: #e8744f; --accent-ink: #1a0f0a; --accent-soft: rgba(232,116,79,.12);
+    --ok: #5cc98a; --ok-soft: rgba(92,201,138,.12); --warn: #e6b450; --warn-soft: rgba(230,180,80,.12); --bad: #f07167; --bad-soft: rgba(240,113,103,.1);
+    --shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 8px 24px rgba(0,0,0,.25); color-scheme: dark; } }
   :root[data-theme="dark"] {
-    --paper: #15130f; --card: #1d1a15; --ink: #f1ebdf; --muted: #a39a8c; --terra: #e0714f;
-    --ok: #6fbf7e; --warn: #e0b04f; --bad: #ef7b6c; --border: rgba(241,235,223,0.12);
-    --soft: rgba(241,235,223,0.04); color-scheme: dark; }
+    --bg: #0e0d0b; --panel: #161512; --panel-2: #1c1a16; --line: rgba(255,248,235,.07); --line-2: rgba(255,248,235,.14);
+    --ink: #f3eee4; --ink-2: #c9c1b3; --muted: #8b8375; --accent: #e8744f; --accent-ink: #1a0f0a; --accent-soft: rgba(232,116,79,.12);
+    --ok: #5cc98a; --ok-soft: rgba(92,201,138,.12); --warn: #e6b450; --warn-soft: rgba(230,180,80,.12); --bad: #f07167; --bad-soft: rgba(240,113,103,.1);
+    --shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 8px 24px rgba(0,0,0,.25); color-scheme: dark; }
+
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.5 Inter, system-ui, sans-serif; }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px 80px; }
-  header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); border-bottom: 1px solid var(--border); }
-  .bar { max-width: 1080px; margin: 0 auto; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-  .brand { font-family: 'Special Elite', cursive; font-size: 1.35rem; color: var(--terra); margin-right: auto; }
-  .brand small { font-family: Inter, sans-serif; font-size: .75rem; color: var(--muted); margin-left: 6px; }
-  nav { max-width: 1080px; margin: 0 auto; padding: 0 16px 8px; display: flex; gap: 4px; overflow-x: auto; }
-  nav a { color: var(--muted); text-decoration: none; padding: 4px 10px; border-radius: 999px; white-space: nowrap; font-size: .85rem; }
-  nav a:hover { background: var(--soft); color: var(--ink); }
-  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--ink); padding: 7px 12px; }
-  button.primary { background: var(--terra); border-color: var(--terra); color: #fff; }
-  button.danger { border-color: var(--bad); color: var(--bad); }
-  button.danger.armed { background: var(--bad); color: #fff; }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  input { font: 13px 'Courier Prime', monospace; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--ink); min-width: 0; }
-  input.addr { width: 100%; max-width: 420px; }
-  section { margin-top: 28px; scroll-margin-top: 110px; }
-  h2 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: 1.3rem; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 12px; font-size: .88rem; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-  .card + .card { margin-top: 12px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-  .stat { background: var(--soft); border-radius: 10px; padding: 10px 12px; }
-  .stat .k { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
-  .stat .v { font: 700 1.02rem 'Courier Prime', monospace; word-break: break-all; }
-  .stat .h { color: var(--muted); font-size: .78rem; }
-  .mono { font-family: 'Courier Prime', monospace; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-  .row label { color: var(--muted); font-size: .82rem; }
-  .who { font-size: .78rem; color: var(--muted); }
-  .pill { display: inline-block; font-size: .72rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); margin: 2px 4px 2px 0; }
-  .pill.ok { color: var(--ok); border-color: currentColor; } .pill.bad { color: var(--bad); border-color: currentColor; } .pill.warn { color: var(--warn); border-color: currentColor; }
-  .action { border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 14px; }
-  .action h3 { font-size: .95rem; margin: 0; } .action p { margin: 2px 0 0; color: var(--muted); font-size: .84rem; }
-  .danger-zone { border-color: var(--bad); }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+  .mono { font-family: var(--mono); font-size: .92em; }
+
+  /* ── shell ── */
+  .app { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+  aside { position: sticky; top: 0; height: 100vh; padding: calc(22px + env(safe-area-inset-top, 0px)) 16px 18px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 22px; background: var(--panel); }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+  .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 7px; flex-shrink: 0; }
+  .mark i { background: #fff; border-radius: 50%; } .mark i:nth-child(n+3) { opacity: .45; }
+  .brand b { font-family: 'Special Elite', var(--sans); font-weight: 400; font-size: 1.12rem; letter-spacing: .01em; display: block; line-height: 1.1; }
+  .brand span { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+  nav { display: flex; flex-direction: column; gap: 2px; }
+  nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--ink-2); font-weight: 500; font-size: .9rem; }
+  nav a:hover { background: var(--panel-2); color: var(--ink); text-decoration: none; }
+  nav a.on { background: var(--accent-soft); color: var(--accent); }
+  nav svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .85; }
+  .aside-foot { margin-top: auto; padding: 12px 10px 0; border-top: 1px solid var(--line); font-size: .76rem; color: var(--muted); display: grid; gap: 4px; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin-right: 6px; box-shadow: 0 0 0 3px var(--ok-soft); vertical-align: 1px; }
+
+  main { padding: calc(22px + env(safe-area-inset-top, 0px)) 32px 96px; max-width: 1180px; width: 100%; }
+  .top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tok { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+  .tok-badge { width: 40px; height: 40px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line-2); display: grid; place-items: center; font: 600 .78rem var(--mono); color: var(--accent); flex-shrink: 0; }
+  .tok h1 { font-size: 1.28rem; font-weight: 700; margin: 0; letter-spacing: -.01em; line-height: 1.2; }
+  .tok small { color: var(--muted); font: .78rem var(--mono); }
+  .tok-switch { display: flex; gap: 6px; }
+  .tok-switch input { width: 300px; max-width: 46vw; }
+
+  /* ── controls ── */
+  button { font: 500 .86rem var(--sans); cursor: pointer; border-radius: 9px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); padding: 8px 14px; transition: background .15s, border-color .15s, opacity .15s; white-space: nowrap; }
+  button:hover { background: var(--panel-2); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  button.primary:hover { filter: brightness(1.06); }
+  button.danger { border-color: color-mix(in srgb, var(--bad) 45%, transparent); color: var(--bad); background: transparent; }
+  button.danger:hover { background: var(--bad-soft); }
+  button.ghost { background: transparent; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button[data-gated="1"] { opacity: .5; }
+  input { font: 13px var(--mono); padding: 8px 11px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); min-width: 0; outline: none; transition: border-color .15s, box-shadow .15s; }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  input::placeholder { color: var(--muted); }
+  .grow { flex: 1 1 220px; }
+  .w-sm { width: 110px; } .w-md { width: 150px; }
+
+  /* ── account ── */
+  .acct { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; box-shadow: var(--shadow); }
+  .acct .who { color: var(--ink-2); font-size: .88rem; } .acct .addr { font: .82rem var(--mono); color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font: 600 .7rem var(--sans); letter-spacing: .03em; padding: 3px 9px; border-radius: 999px; background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); white-space: nowrap; }
+  .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .8; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+  .banner { margin-top: 12px; padding: 11px 16px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-weight: 500; font-size: .88rem; }
+
+  /* ── sections ── */
+  section { margin-top: 34px; scroll-margin-top: 20px; }
+  .sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  h2 { font-size: 1.06rem; font-weight: 650; margin: 0; letter-spacing: -.005em; }
+  .sub { color: var(--muted); margin: 3px 0 0; font-size: .86rem; max-width: 70ch; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+  .panel + .panel { margin-top: 12px; }
+  .panel-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .panel-h h3 { margin: 0; font-size: .9rem; font-weight: 600; }
+  .panel-b { padding: 16px 18px; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); background: var(--panel); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .stat { padding: 14px 16px; min-width: 0; box-shadow: 1px 0 0 var(--line), 0 1px 0 var(--line); }
+  .stat .k { color: var(--muted); font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+  .stat .v { font: 600 1.06rem var(--mono); margin-top: 4px; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .stat .v .who { font: 500 .78rem var(--sans); color: var(--muted); margin-left: 4px; }
+  .stat .h { color: var(--muted); font-size: .76rem; margin-top: 2px; overflow-wrap: anywhere; }
+  .kpis .stat .v { font-size: 1.2rem; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .tile h3 { margin: 0; font-size: .92rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .tile p { margin: 0; color: var(--muted); font-size: .83rem; }
+  .tile .row { margin-top: auto; }
+  .tile.wide { grid-column: 1 / -1; }
+  .tile.danger { border-color: color-mix(in srgb, var(--bad) 30%, transparent); background: linear-gradient(var(--bad-soft), var(--bad-soft)), var(--panel); }
+  .tile.danger h3 { color: var(--bad); }
+  .role { font: 600 .66rem var(--sans); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 6px; margin-left: auto; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row label { color: var(--muted); font-size: .78rem; font-weight: 500; }
+  kbd { font: 600 .78rem var(--mono); background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 5px; padding: 0 5px; color: var(--ink); }
+
   .tablewrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; font-size: .85rem; }
-  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  th { color: var(--muted); font-weight: 500; font-size: .75rem; text-transform: uppercase; }
-  a { color: var(--terra); }
-  #log { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(420px, calc(100vw - 32px)); z-index: 10; display: flex; flex-direction: column; gap: 8px; }
-  .toast { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--muted); border-radius: 10px; padding: 10px 12px; font-size: .84rem; box-shadow: 0 6px 24px rgba(0,0,0,.12); word-break: break-word; }
-  .toast.ok { border-left-color: var(--ok); } .toast.bad { border-left-color: var(--bad); } .toast.run { border-left-color: var(--warn); }
-  .toast .x { float: right; border: 0; padding: 0 4px; background: none; color: var(--muted); }
-  .banner { margin-top: 16px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--warn); color: var(--warn); }
-  .preview { font: 12.5px 'Courier Prime', monospace; background: var(--soft); border-radius: 8px; padding: 8px 10px; margin-top: 8px; white-space: pre-wrap; }
+  table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+  th, td { text-align: left; padding: 11px 18px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  th { color: var(--muted); font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; background: var(--panel-2); }
+  td.num { font-family: var(--mono); }
+  .empty { color: var(--muted); text-align: center; padding: 22px; }
+  .preview { font: 12.5px/1.7 var(--mono); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; white-space: pre-wrap; color: var(--ink-2); }
+  .foot { margin-top: 40px; color: var(--muted); font-size: .78rem; display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  /* ── toasts ── */
+  #log { position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); width: min(400px, calc(100vw - 32px)); z-index: 20; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 14px 12px 16px; font-size: .85rem; box-shadow: 0 12px 32px rgba(0,0,0,.18); overflow-wrap: anywhere; position: relative; animation: rise .2s ease-out; }
+  .toast::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: var(--muted); }
+  .toast.ok::before { background: var(--ok); } .toast.bad::before { background: var(--bad); } .toast.run::before { background: var(--warn); }
+  .toast .x { float: right; border: 0; padding: 0 2px 0 8px; background: none; color: var(--muted); font-size: 1rem; line-height: 1; }
+  @keyframes rise { from { transform: translateY(6px); opacity: 0; } }
+  .skeleton .v { color: transparent; background: var(--panel-2); border-radius: 6px; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: sticky; top: 0; z-index: 10; height: auto; flex-direction: row; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; gap: 12px; border-right: 0; border-bottom: 1px solid var(--line); overflow: hidden; }
+    .brand span, .aside-foot { display: none; }
+    nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; } nav::-webkit-scrollbar { display: none; }
+    nav a { padding: 6px 10px; white-space: nowrap; } nav svg { display: none; }
+    main { padding: 18px 16px 96px; }
+    .tok-switch { width: 100%; } .tok-switch input { flex: 1; width: auto; max-width: none; }
+    .tiles { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <div class="bar">
-    <div class="brand">PunchCard Admin <small id="tokLabel">loading…</small></div>
-    <input id="tokenInput" class="addr" placeholder="merchant token address" spellcheck="false">
-    <button id="loadBtn">Load</button>
-    <button id="connectBtn" class="primary">Connect wallet</button>
-  </div>
-  <nav>
-    <a href="#overview">Overview</a><a href="#rewards">Rewards</a><a href="#liquidity">Liquidity</a>
-    <a href="#treasury">Treasury</a><a href="#vesting">Vesting</a><a href="#network">Network</a><a href="#winddown">Wind-down</a>
-  </nav>
-</header>
-<div class="wrap">
-  <div id="acct" class="card" style="margin-top:16px">Not connected. Reading is open to anyone; every action is checked by the contracts themselves, so connect the wallet that holds the role (Rabby, with the matching Ledger account selected).</div>
-  <div id="banners"></div>
+<div class="app">
+  <aside>
+    <div class="brand"><div class="mark"><i></i><i></i><i></i><i></i></div><div><b>PunchCard</b><span>Console</span></div></div>
+    <nav id="nav">
+      <a href="#overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
+      <a href="#rewards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v9H4v-9"/><rect x="2" y="7" width="20" height="5" rx="1"/><path d="M12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg>Rewards</a>
+      <a href="#liquidity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7 6.3 8.6a8 8 0 1 0 11.4 0z"/></svg>Liquidity</a>
+      <a href="#treasury"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10M19 21V10M9 21v-7M15 21v-7M2 10l10-7 10 7z"/></svg>Treasury</a>
+      <a href="#vesting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>Vesting</a>
+      <a href="#network"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5 6.5 17M12 11.5l5.5 5.5"/></svg>Network</a>
+      <a href="#winddown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Wind-down</a>
+    </nav>
+    <div class="aside-foot"><div><span class="dot"></span>Base mainnet</div><div id="lastRead">connecting…</div></div>
+  </aside>
 
-  <section id="overview"><h2>Overview</h2><p class="sub">Registration, supply, price, and where the tokens are.</p><div class="card"><div class="grid" id="ovGrid"></div></div></section>
+  <main>
+    <div class="top">
+      <div class="tok"><div class="tok-badge" id="tokBadge">—</div><div><h1 id="tokName">Loading…</h1><small id="tokLabel">reading the chain</small></div></div>
+      <div class="tok-switch"><input id="tokenInput" placeholder="Merchant token address" spellcheck="false" autocomplete="off"><button id="loadBtn" class="ghost">Load</button></div>
+      <button id="connectBtn" class="primary">Connect wallet</button>
+    </div>
 
-  <section id="rewards"><h2>Rewards — RewardEscrow</h2>
-    <p class="sub">Customer rewards paid by POS operators. Owner controls only limit or pause — none of them can move a token out.</p>
-    <div class="card"><div class="grid" id="rwGrid"></div></div>
-    <div class="card"><h3 style="margin:0 0 6px;font-size:.95rem">Operators (POS signers)</h3>
-      <div class="tablewrap"><table><thead><tr><th>Operator</th><th>Daily allowance</th><th>Available now</th><th></th></tr></thead><tbody id="opRows"><tr><td colspan="4" class="who">scanning…</td></tr></tbody></table></div>
-      <div class="who" id="opScan"></div>
-      <div class="action"><h3>Add an operator</h3><p>A new POS signer key. Allowance is how many tokens it may pay out per day (refills continuously); max <span id="maxDrawerTxt"></span>.</p>
-        <div class="row"><input id="opAddr" class="addr" placeholder="0x… operator address"><input id="opAllow" placeholder="daily allowance" size="14"><button data-act="addOperator" data-role="owner">Add</button></div></div>
-      <div class="action"><h3>Change an operator's allowance</h3><p>Raising it does not refill a till that is already drawn down.</p>
-        <div class="row"><input id="opAddr2" class="addr" placeholder="0x… operator address"><input id="opAllow2" placeholder="new daily allowance" size="14"><button data-act="setDrawerAllowance" data-role="owner">Set</button></div></div>
-    </div>
-    <div class="card"><h3 style="margin:0;font-size:.95rem">Limits &amp; pause</h3>
-      <div class="action"><h3>Per-payment bounds</h3><p>Smallest and largest single reward, in tokens. Adjust as the token's price moves.</p>
-        <div class="row"><label>floor</label><input id="bFloor" size="12"><label>max</label><input id="bMax" size="14"><button data-act="setPerTxBounds" data-role="owner">Set bounds</button></div></div>
-      <div class="action"><h3>Pause rewards</h3><p>Stops every payout for up to 7 days (lapses by itself). Use it if a POS key may be leaked; then remove that operator.</p>
-        <div class="row"><button data-act="pause" data-role="owner">Pause 7 days</button><button data-act="unpause" data-role="owner">Unpause</button></div></div>
-      <div class="action"><h3>Low-balance alert level</h3><p>Emits RewardPoolLow once the undistributed balance falls to this.</p>
-        <div class="row"><input id="lowThr" size="14"><button data-act="setLowThreshold" data-role="owner">Set</button></div></div>
-    </div>
-  </section>
+    <div id="acct" class="acct"><span class="who">View only. Connect the wallet that holds a role to make changes — every action is enforced by the contracts themselves.</span></div>
+    <div id="banners"></div>
 
-  <section id="liquidity"><h2>Liquidity — LP locker</h2>
-    <p class="sub">The locker's own two positions and its token reserve. Your LP wallet's positions are separate and not shown here.</p>
-    <div class="card"><div class="grid" id="lpGrid"></div></div>
-    <div class="card"><div class="action" style="border:0;margin:0;padding:0"><h3>Add liquidity from the reserve</h3>
-      <p>Pairs USDC and/or ETH from the owner wallet with reserve tokens at the live pool price (1% slippage). ETH is wrapped first if needed. Unused USDC/WETH comes back; unused tokens stay in the reserve. It cannot be withdrawn later piece by piece, and its fees burn the token side and go to PunchCard on the pair side.</p>
-      <div class="row"><label>USDC</label><input id="addUsdc" placeholder="0" size="10"><label>ETH</label><input id="addEth" placeholder="0" size="10"><button id="addPreviewBtn">Preview</button><button data-act="addLiquidity" data-role="owner" class="primary">Add liquidity</button></div>
-      <div id="addPreview" class="preview" hidden></div></div>
-      <div class="action"><h3>Collect fees</h3><p>Anyone may call. Token side is burned; USDC/WETH side goes to the PunchCard fee recipient.</p>
-        <div class="row"><button data-act="collectFees" data-role="any">Collect fees</button></div></div>
-    </div>
-    <div class="card danger-zone"><h3 style="margin:0;font-size:.95rem;color:var(--bad)">Danger zone — permanent</h3>
-      <div class="action"><h3>Lock the LP for good</h3><p>Closes the evacuation hatch forever. After this the liquidity can never come out early. Type <b class="mono">LOCK</b> to arm.</p>
-        <div class="row"><input id="cfLock" placeholder="LOCK" size="10"><button data-act="lockLP" data-role="owner" data-confirm="cfLock:LOCK" class="danger">Lock LP permanently</button></div></div>
-      <div class="action"><h3>Evacuate everything</h3><p>Pulls all liquidity from both positions plus the whole reserve back to the owner wallet and disables the locker for good. All or nothing. Type <b class="mono">EVACUATE</b> to arm.</p>
-        <div class="row"><input id="cfEvac" placeholder="EVACUATE" size="10"><button data-act="evacuateLP" data-role="owner" data-confirm="cfEvac:EVACUATE" class="danger">Evacuate LP</button></div></div>
-    </div>
-  </section>
+    <section id="overview">
+      <div class="sec-head"><div><h2>Overview</h2><p class="sub">Price, supply and where the merchant's tokens are held.</p></div><div id="ovStatus"></div></div>
+      <div class="stats kpis skeleton" id="ovGrid"></div>
+    </section>
 
-  <section id="treasury"><h2>Treasury — timelock</h2>
-    <p class="sub">Releases go to the owner wallet only, after the waiting period. One release pending at a time.</p>
-    <div class="card"><div class="grid" id="trGrid"></div>
-      <div class="action"><h3>Request a release</h3><p>Starts the clock; anyone can execute it once the wait is over. You can cancel any time before.</p>
-        <div class="row"><input id="trAmt" placeholder="amount" size="14"><button data-act="submitRelease" data-role="owner">Request release</button><button data-act="cancelRelease" data-role="owner">Cancel pending</button><button data-act="executeRelease" data-role="any" class="primary">Execute release</button></div></div>
-    </div>
-  </section>
+    <section id="rewards">
+      <div class="sec-head"><div><h2>Rewards</h2><p class="sub">Customer rewards paid out by point-of-sale operators on a fixed daily emission. Owner controls can limit or pause payouts; none of them can move tokens out.</p></div></div>
+      <div class="stats" id="rwGrid"></div>
+      <div class="panel" style="margin-top:12px">
+        <div class="panel-h"><h3>Operators</h3><span class="pill" id="opCount">—</span></div>
+        <div class="tablewrap"><table><thead><tr><th>Operator</th><th>Daily allowance</th><th>Available now</th><th></th></tr></thead><tbody id="opRows"><tr><td colspan="4" class="empty">Loading operators…</td></tr></tbody></table></div>
+        <div id="opScan" class="sub" style="padding:0 18px 12px"></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><h3>Add operator <span class="role">Owner</span></h3><p>Authorise a new point-of-sale key. The allowance refills continuously over a day; maximum <span id="maxDrawerTxt">—</span>.</p>
+          <div class="row"><input id="opAddr" class="grow" placeholder="0x… operator address"></div>
+          <div class="row"><input id="opAllow" class="w-md" placeholder="Daily allowance"><button data-act="addOperator" data-role="owner" class="primary">Add operator</button></div></div>
+        <div class="tile"><h3>Change allowance <span class="role">Owner</span></h3><p>Set a new daily allowance. Raising it does not refill a till already drawn down.</p>
+          <div class="row"><input id="opAddr2" class="grow" placeholder="0x… operator address"></div>
+          <div class="row"><input id="opAllow2" class="w-md" placeholder="New allowance"><button data-act="setDrawerAllowance" data-role="owner">Update</button></div></div>
+        <div class="tile"><h3>Per-payment limits <span class="role">Owner</span></h3><p>Smallest and largest single reward, in tokens. Adjust as the token's price moves.</p>
+          <div class="row"><label>Min</label><input id="bFloor" class="w-sm"><label>Max</label><input id="bMax" class="w-sm"><button data-act="setPerTxBounds" data-role="owner">Save</button></div></div>
+        <div class="tile"><h3>Pause payouts <span class="role">Owner</span></h3><p>Halts every payout for up to seven days, then lapses on its own. Use it if an operator key may be compromised, then remove that operator.</p>
+          <div class="row"><button data-act="pause" data-role="owner">Pause 7 days</button><button data-act="unpause" data-role="owner" class="ghost">Resume</button></div></div>
+        <div class="tile"><h3>Low-balance alert <span class="role">Owner</span></h3><p>Signals on-chain once the undistributed balance falls to this level.</p>
+          <div class="row"><input id="lowThr" class="w-md"><button data-act="setLowThreshold" data-role="owner">Save</button></div></div>
+      </div>
+    </section>
 
-  <section id="vesting"><h2>Vesting — team</h2>
-    <p class="sub">Cliff, then linear. Anyone may trigger a release; it always pays the fixed team wallet.</p>
-    <div class="card"><div class="grid" id="vsGrid"></div>
-      <div class="row"><button data-act="vestRelease" data-role="any" class="primary">Release vested tokens</button></div></div>
-  </section>
+    <section id="liquidity">
+      <div class="sec-head"><div><h2>Liquidity</h2><p class="sub">The LP locker's two full-range positions and its token reserve. Positions held outside the locker are not shown.</p></div></div>
+      <div class="stats" id="lpGrid"></div>
+      <div class="tiles">
+        <div class="tile wide"><h3>Add liquidity from the reserve <span class="role">Owner</span></h3>
+          <p>Pairs USDC and/or ETH from the owner wallet with reserve tokens at the live pool price, within 1% slippage. ETH is wrapped first if needed; unused USDC/WETH is returned and unused tokens stay in the reserve. Added liquidity stays in the locker and its fees follow the locker's rules.</p>
+          <div class="row"><label>USDC</label><input id="addUsdc" class="w-sm" placeholder="0.00"><label>ETH</label><input id="addEth" class="w-sm" placeholder="0.000"><button id="addPreviewBtn" class="ghost">Preview</button><button data-act="addLiquidity" data-role="owner" class="primary">Add liquidity</button></div>
+          <div id="addPreview" class="preview" hidden></div></div>
+        <div class="tile"><h3>Collect fees <span class="role">Anyone</span></h3><p>Collects trading fees on both positions. The token side is burned; the USDC/WETH side goes to the network fee recipient.</p>
+          <div class="row"><button data-act="collectFees" data-role="any">Collect fees</button></div></div>
+        <div class="tile danger"><h3>Lock permanently <span class="role">Owner</span></h3><p>Closes the recovery hatch for good. Liquidity can then never be withdrawn early. Type <kbd>LOCK</kbd> to confirm.</p>
+          <div class="row"><input id="cfLock" class="w-md" placeholder="LOCK"><button data-act="lockLP" data-role="owner" data-confirm="cfLock:LOCK" class="danger">Lock liquidity</button></div></div>
+        <div class="tile danger"><h3>Evacuate <span class="role">Owner</span></h3><p>Withdraws both positions and the entire reserve to the owner wallet and permanently disables the locker. All or nothing. Type <kbd>EVACUATE</kbd> to confirm.</p>
+          <div class="row"><input id="cfEvac" class="w-md" placeholder="EVACUATE"><button data-act="evacuateLP" data-role="owner" data-confirm="cfEvac:EVACUATE" class="danger">Evacuate</button></div></div>
+      </div>
+    </section>
 
-  <section id="network"><h2>Network — governance</h2>
-    <p class="sub">PunchCard-wide settings held by the governance key. These affect every merchant, not only this one.</p>
-    <div class="card"><div class="grid" id="nwGrid"></div></div>
-    <div class="card">
-      <div class="action" style="border:0;margin:0;padding:0"><h3>Registrars</h3><p>Keys allowed to admit a reviewed suite. Check or change one.</p>
-        <div class="row"><input id="regAddr" class="addr" placeholder="0x… address"><button id="regCheck">Check</button><button data-act="setRegistrar:true" data-role="gov">Appoint</button><button data-act="setRegistrar:false" data-role="gov">Remove</button><span id="regOut" class="who"></span></div></div>
-      <div class="action"><h3>Router fee</h3><p>Proposing starts a 48h wait; after that anyone executes with the same values. Max 1% (100 bps).</p>
-        <div class="row"><label>fee bps</label><input id="rFee" size="6"><label>recipient</label><input id="rRcpt" class="addr" placeholder="0x…"></div>
-        <div class="row"><button data-act="proposeChange" data-role="routerGov">Propose</button><button data-act="executeChange" data-role="any">Execute</button><button data-act="cancelChange" data-role="routerGov">Cancel pending</button><span id="rMatch" class="who"></span></div></div>
-    </div>
-    <div class="card"><h3 style="margin:0;font-size:.95rem">Governance key handover</h3><p class="who">Moving governance to a new key (e.g. a Safe). Propose from the current key, then accept from the new one after the wait. Controller and router are separate.</p>
-      <div class="row"><input id="msAddr" class="addr" placeholder="0x… new governance address"></div>
-      <div class="row"><button data-act="wdcPropose" data-role="gov">Propose (controller)</button><button data-act="wdcCancel" data-role="gov">Cancel</button><button data-act="wdcAccept" data-role="wdcPending">Accept (controller)</button></div>
-      <div class="row"><button data-act="rtPropose" data-role="routerGov">Propose (router)</button><button data-act="rtCancel" data-role="routerGov">Cancel</button><button data-act="rtAccept" data-role="rtPending">Accept (router)</button></div>
-    </div>
-  </section>
+    <section id="treasury">
+      <div class="sec-head"><div><h2>Treasury</h2><p class="sub">Time-locked. Releases pay the owner wallet only, after the waiting period, one at a time.</p></div></div>
+      <div class="stats" id="trGrid"></div>
+      <div class="tiles">
+        <div class="tile wide"><h3>Release <span class="role">Owner · execute: anyone</span></h3><p>Requesting starts the clock; once it has run, anyone can execute and the tokens go to the owner wallet. A pending request can be cancelled at any time.</p>
+          <div class="row"><input id="trAmt" class="w-md" placeholder="Amount"><button data-act="submitRelease" data-role="owner">Request release</button><button data-act="cancelRelease" data-role="owner" class="ghost">Cancel pending</button><button data-act="executeRelease" data-role="any" class="primary">Execute release</button></div></div>
+      </div>
+    </section>
 
-  <section id="winddown"><h2>Wind-down</h2>
-    <p class="sub">Starting it freezes rewards, the treasury and new liquidity for this merchant, then after 365 days burns what's left and releases the LP (90% out, 10% stays as the floor). It cannot be undone.</p>
-    <div class="card"><div class="grid" id="wdGrid"></div>
+    <section id="vesting">
+      <div class="sec-head"><div><h2>Vesting</h2><p class="sub">Team allocation: a cliff, then linear vesting. Anyone may trigger a release; it always pays the fixed team wallet.</p></div><button data-act="vestRelease" data-role="any">Release vested</button></div>
+      <div class="stats" id="vsGrid"></div>
+    </section>
+
+    <section id="network">
+      <div class="sec-head"><div><h2>Network</h2><p class="sub">PunchCard-wide settings held by governance. Changes here apply to every merchant.</p></div></div>
+      <div class="stats" id="nwGrid"></div>
+      <div class="tiles">
+        <div class="tile"><h3>Registrars <span class="role">Governance</span></h3><p>Keys permitted to admit a reviewed merchant suite to the network.</p>
+          <div class="row"><input id="regAddr" class="grow" placeholder="0x… address"></div>
+          <div class="row"><button id="regCheck" class="ghost">Check</button><button data-act="setRegistrar:true" data-role="gov">Appoint</button><button data-act="setRegistrar:false" data-role="gov" class="danger">Remove</button><span id="regOut"></span></div></div>
+        <div class="tile"><h3>Router fee <span class="role">Governance</span></h3><p>A proposal waits 48 hours, then anyone can execute it with the same values. Ceiling 100 bps (1%).</p>
+          <div class="row"><label>bps</label><input id="rFee" class="w-sm" placeholder="30"><input id="rRcpt" class="grow" placeholder="0x… fee recipient"></div>
+          <div class="row"><button data-act="proposeChange" data-role="routerGov">Propose</button><button data-act="executeChange" data-role="any">Execute</button><button data-act="cancelChange" data-role="routerGov" class="ghost">Cancel</button><span id="rMatch"></span></div></div>
+        <div class="tile wide"><h3>Governance handover <span class="role">Governance</span></h3><p>Move governance to a new key or multisig. Propose from the current key, then accept from the new one once the waiting period has passed. The controller and the router transfer separately.</p>
+          <div class="row"><input id="msAddr" class="grow" placeholder="0x… new governance address"></div>
+          <div class="row"><label style="width:70px">Controller</label><button data-act="wdcPropose" data-role="gov">Propose</button><button data-act="wdcCancel" data-role="gov" class="ghost">Cancel</button><button data-act="wdcAccept" data-role="wdcPending">Accept</button></div>
+          <div class="row"><label style="width:70px">Router</label><button data-act="rtPropose" data-role="routerGov">Propose</button><button data-act="rtCancel" data-role="routerGov" class="ghost">Cancel</button><button data-act="rtAccept" data-role="rtPending">Accept</button></div></div>
+      </div>
+    </section>
+
+    <section id="winddown">
+      <div class="sec-head"><div><h2>Wind-down</h2><p class="sub">Freezes rewards, treasury and new liquidity for this merchant. After 365 days the remaining allocations are burned and the LP is released, with 10% kept permanently as a floor. Irreversible.</p></div></div>
+      <div class="stats" id="wdGrid"></div>
       <div id="wdSteps"></div>
-    </div>
-    <div class="card danger-zone"><div class="action" style="border:0;margin:0;padding:0"><h3 style="color:var(--bad)">Start wind-down</h3><p>Governance only. Type <b class="mono" id="wdPhrase">WIND DOWN</b> to arm.</p>
-      <div class="row"><input id="cfWd" size="18"><button data-act="initiate" data-role="gov" data-confirm="cfWd:@wd" class="danger">Start wind-down</button></div></div></div>
-  </section>
+      <div class="tiles">
+        <div class="tile danger wide"><h3>Start wind-down <span class="role">Governance</span></h3><p>Type <kbd id="wdPhrase">WIND DOWN</kbd> to confirm.</p>
+          <div class="row"><input id="cfWd" class="w-md" style="width:200px"><button data-act="initiate" data-role="gov" data-confirm="cfWd:@wd" class="danger">Start wind-down</button></div></div>
+      </div>
+    </section>
 
-  <p class="who" style="margin-top:32px">Reads come from mainnet.base.org; writes go through your wallet on Base. Every action is simulated first and is not sent if it would revert. <span id="lastRead"></span></p>
+    <div class="foot"><span>PunchCard Network · Console</span><span>Every action is simulated before signing and is not sent if it would fail.</span></div>
+  </main>
 </div>
-<div id="log"></div>
+<div id="log" aria-live="polite"></div>
 
 <script>
 const { ethers } = window;
@@ -184,16 +280,6 @@ const A = {
 const DEFAULT_TOKEN = '0xBa147713adF122A8Fc224e52Cb431D7919831939';   // SKOOP
 // Where the operator scan starts, per escrow. Unknown suites fall back to the last ~30 days.
 const DEPLOY_BLOCK = { '0xefe813aab7421534f0f59678e9ef390cab9086d2': 51846210 };
-// Friendly names for known wallets (display only — roles are always read on-chain).
-const NAMES = {
-  '0x5426e59b783cd3b5083ccc8cb571aa36e9f4a3be': 'Owner · Ledger #40',
-  '0x5478bab8986eb652d3083db6bbb34fa3188ab9cb': 'Governance · Ledger #41',
-  '0xa40a4893051ebc62718579c23e7ed0f4044cda0f': 'Team · Ledger #42',
-  '0x3b44cf955db742aebcdc3260cb2599ee209e90dc': 'Registrar · Ledger #43',
-  '0x6a9ad1ce8d6256acd28fd8c50a6c72e0043c221f': 'LP wallet · Ledger #25',
-  '0x4ecc3f03c018208ae5932eab91bbd82f37f56d9b': 'POS signer',
-  '0x6588a99071e0e988071da4252e9499ddfc752dd1': 'PunchCard fee recipient',
-};
 const ABI = {
   erc20: ['function balanceOf(address) view returns (uint256)', 'function totalSupply() view returns (uint256)', 'function decimals() view returns (uint8)',
           'function symbol() view returns (string)', 'function allowance(address,address) view returns (uint256)', 'function approve(address,uint256) returns (bool)', 'function deposit() payable'],
@@ -248,7 +334,12 @@ function fmt(raw, dec, dp = 2) { const s = ethers.formatUnits(raw, dec); const [
   const fi = BigInt(i).toLocaleString('en-US'); const ff = f.replace(/0+$/, '').slice(0, dp); return ff ? `${fi}.${ff}` : fi; }
 const T = (raw, dp = 2) => fmt(raw, S.dec, dp);
 const short = a => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '—';
-const name = a => NAMES[lc(a)] ? `${short(a)} <span class="who">${NAMES[lc(a)]}</span>` : short(a);
+// A role label for an address, from what was read on-chain — never from a local list.
+function roleOf(a) { if (!S || !a) return ''; const l = [];
+  if (same(a, S.owner)) l.push('Owner'); if (same(a, S.gov) || same(a, S.rGov)) l.push('Governance');
+  if (same(a, S.team)) l.push('Team'); if (same(a, S.feeRcpt)) l.push('Fee recipient'); if (S.ops?.has(lc(a))) l.push('Operator');
+  return l.join(' · '); }
+const name = a => { const r = roleOf(a); return `<a class="mono" href="https://basescan.org/address/${a}" target="_blank" rel="noopener">${short(a)}</a>${r ? `<span class="who">${r}</span>` : ''}`; };
 const link = a => `<a class="mono" href="https://basescan.org/address/${a}" target="_blank" rel="noopener">${short(a)}</a>`;
 const date = t => t && Number(t) ? new Date(Number(t) * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 function dur(s) { s = Number(s); if (s <= 0) return 'now'; const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
@@ -319,17 +410,20 @@ async function load(token) {
 
 // ── render ────────────────────────────────────────────────────────────────
 function render() {
-  const s = S; $('tokLabel').textContent = `${s.sym} · ${short(s.token)}`; $('tokenInput').value = s.token;
+  const s = S; $('tokName').textContent = s.sym; $('tokBadge').textContent = s.sym.slice(0, 2);
+  $('tokLabel').innerHTML = `<a href="https://basescan.org/token/${s.token}" target="_blank" rel="noopener">${short(s.token)}</a> · merchant token`;
+  if (document.activeElement !== $('tokenInput')) $('tokenInput').value = ''; document.title = `${s.sym} · PunchCard Console`;
+  $('ovGrid').classList.remove('skeleton');
+  $('ovStatus').innerHTML = s.suite.initiatedAt > 0n ? pill('Winding down', 'bad') : pill('Registered on PunchCard', 'ok');
   const TOTAL = 100_000_000n * 10n ** BigInt(s.dec); const burned = s.supply < TOTAL ? TOTAL - s.supply : 0n;
   $('ovGrid').innerHTML = [
-    stat('Registered', pill('on the network', 'ok'), s.suite.initiatedAt > 0n ? pill('winding down', 'bad') : ''),
-    stat('Price', `$${s.pU.pairPerTok.toPrecision(4)}`, s.ethUsd ? `USDC pool · ETH pool $${(s.pE.pairPerTok * s.ethUsd).toPrecision(4)} (ETH $${Math.round(s.ethUsd).toLocaleString()})` : 'USDC pool'),
+    stat('Price', `$${s.pU.pairPerTok.toPrecision(4)}`, s.ethUsd ? `ETH pool $${(s.pE.pairPerTok * s.ethUsd).toPrecision(4)} · ETH $${Math.round(s.ethUsd).toLocaleString()}` : 'USDC pool'),
     stat('Supply', T(s.supply, 0), `burned ${T(burned, 2)}`),
     stat('Rewards escrow', T(s.escBal, 0), link(s.suite.rewardEscrow)),
     stat('Vesting', T(s.vBal, 0), link(s.suite.vestingWallet)),
     stat('Treasury', T(s.trBal, 0), link(s.suite.treasuryTimelock)),
     stat('LP reserve', T(s.reserve, 0), link(s.suite.lpLocker)),
-    stat('Owner wallet', name(s.owner), 'rewards, treasury, liquidity'),
+    stat('Owner', name(s.owner).replace(/<span class="who">.*<\/span>/, ''), 'rewards · treasury · liquidity'),
   ].join('');
 
   const paused = s.pausedUntil > s.now;
@@ -355,8 +449,8 @@ function render() {
     stat('Reserve', T(s.reserve, 0), `held ${T(s.lkBal, 0)}`),
     stat('USDC position', `#${s.positions.usdc.tokenId}`, `liquidity ${s.liqU.toLocaleString()} · 1% fee tier`),
     stat('ETH position', `#${s.positions.eth.tokenId}`, `liquidity ${s.liqE.toLocaleString()} · 1% fee tier`),
-    stat('Uncollected (USDC pos.)', feeTxt(s.feeU, 6, 'USDC', s.positions.usdc)),
-    stat('Uncollected (ETH pos.)', feeTxt(s.feeE, 18, 'WETH', s.positions.eth)),
+    stat('Fees owed · USDC pos.', feeTxt(s.feeU, 6, 'USDC', s.positions.usdc)),
+    stat('Fees owed · ETH pos.', feeTxt(s.feeE, 18, 'WETH', s.positions.eth)),
   ].join('');
 
   const p = s.pending, hasP = p.amount > 0n, ready = hasP && s.now >= p.availableAt;
@@ -389,12 +483,12 @@ function render() {
     stat('Expires', init ? date(sd.expiryTime) : '—', init && s.now < sd.expiryTime ? `in ${dur(sd.expiryTime - s.now)}` : ''),
   ].join('');
   const expired = init && s.now >= sd.expiryTime;
-  $('wdSteps').innerHTML = !init ? '' : `<div class="action"><h3>After expiry — anyone may run these, in order</h3><p>Escrow, treasury and vesting settle first; the LP release comes last.</p>
+  $('wdSteps').innerHTML = !init ? '' : `<div class="tiles"><div class="tile wide"><h3>Settlement <span class="role">Anyone</span></h3><p>After expiry, run these in order: escrow, treasury and vesting settle first; the LP release comes last.</p>
     <div class="row">
       <button data-act="wdEscrow" data-role="any" ${!expired || sd.escrowSettled ? 'disabled' : ''}>Burn escrow ${sd.escrowSettled ? '✓' : ''}</button>
       <button data-act="wdTreasury" data-role="any" ${!expired || sd.treasurySettled ? 'disabled' : ''}>Burn treasury ${sd.treasurySettled ? '✓' : ''}</button>
       <button data-act="wdVesting" data-role="any" ${!expired || sd.vestingSettled ? 'disabled' : ''}>Settle vesting ${sd.vestingSettled ? '✓' : ''}</button>
-      <button data-act="wdLP" data-role="any" ${!expired || sd.complete ? 'disabled' : ''}>Release LP ${sd.complete ? '✓' : ''}</button></div></div>`;
+      <button data-act="wdLP" data-role="any" ${!expired || sd.complete ? 'disabled' : ''}>Release LP ${sd.complete ? '✓' : ''}</button></div></div></div>`;
   $('wdPhrase').textContent = `WIND DOWN ${s.sym}`; $('cfWd').placeholder = `WIND DOWN ${s.sym}`;
 
   $('banners').innerHTML = [
@@ -402,7 +496,7 @@ function render() {
     init ? `<div class="banner">Wind-down started ${date(sd.initiatedAt)}.</div>` : '',
     hasP && ready ? `<div class="banner">A treasury release of ${T(p.amount, 0)} ${s.sym} is ready to execute.</div>` : '',
   ].join('');
-  $('lastRead').textContent = `Last read: block ${s.blockNumber.toLocaleString()}.`;
+  $('lastRead').textContent = `Block ${s.blockNumber.toLocaleString()} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   renderAccount(); gateButtons();
 }
 
@@ -425,15 +519,17 @@ async function scanOperators() {
   const ops = [...set], spec = {}; ops.forEach((a, i) => { spec[`d${i}`] = [esc, 'getDrawer', [a]]; spec[`v${i}`] = [esc, 'drawerAvailable', [a]]; });
   const got = ops.length ? await mc(spec) : {}, rows = ops.map((a, i) => ({ a, d: got[`d${i}`], av: got[`v${i}`] ?? 0n }));
   const live = rows.filter(r => r.d?.active);
-  $('opRows').innerHTML = live.length ? live.map(r => `<tr><td>${name(ethers.getAddress(r.a))}</td><td class="mono">${T(r.d.dailyAllowance, 0)}/day</td><td class="mono">${T(r.av, 0)}</td>
-    <td><button data-act="removeOperator" data-arg="${ethers.getAddress(r.a)}" data-role="owner" class="danger">Remove</button></td></tr>`).join('')
-    : `<tr><td colspan="4" class="who">No active operators.</td></tr>`;
+  S.ops = new Set(live.map(r => lc(r.a)));
+  $('opCount').textContent = `${live.length} active`;
+  $('opRows').innerHTML = live.length ? live.map(r => `<tr><td><a class="mono" href="https://basescan.org/address/${ethers.getAddress(r.a)}" target="_blank" rel="noopener">${ethers.getAddress(r.a)}</a></td><td class="num">${T(r.d.dailyAllowance, 0)} / day</td><td class="num">${T(r.av, 0)}</td>
+    <td style="text-align:right"><button data-act="removeOperator" data-arg="${ethers.getAddress(r.a)}" data-role="owner" class="danger">Remove</button></td></tr>`).join('')
+    : `<tr><td colspan="4" class="empty">No active operators.</td></tr>`;
   gateButtons();
 }
 
 // ── wallet ────────────────────────────────────────────────────────────────
 async function connect() {
-  if (!window.ethereum) { toast('No wallet found in this browser. Open this page where Rabby is installed.', 'bad'); return; }
+  if (!window.ethereum) { toast('No wallet found in this browser.', 'bad'); return; }
   bp = new ethers.BrowserProvider(window.ethereum, 'any');
   const accts = await bp.send('eth_requestAccounts', []); await onAccounts(accts);
   window.ethereum.on?.('accountsChanged', onAccounts);
@@ -448,26 +544,26 @@ function roles(a) { if (!a || !S) return {}; const r = { any: true };
   r.owner = same(a, S.owner); r.gov = same(a, S.gov); r.routerGov = same(a, S.rGov); r.team = same(a, S.team);
   r.wdcPending = same(a, S.govPending); r.rtPending = same(a, S.rPending); return r; }
 async function renderAccount() {
-  if (!account) { $('connectBtn').textContent = 'Connect wallet'; return; }
-  $('connectBtn').textContent = short(account);
+  if (!account) { $('connectBtn').textContent = 'Connect wallet'; $('connectBtn').className = 'primary'; return; }
+  $('connectBtn').textContent = short(account); $('connectBtn').className = '';
   const net = await bp.getNetwork().catch(() => null), wrong = net && Number(net.chainId) !== CHAIN_ID;
   const r = roles(account), tags = [];
-  if (r.owner) tags.push(pill('owner — rewards, liquidity, treasury', 'ok'));
-  if (r.gov) tags.push(pill('governance — controller', 'ok')); if (r.routerGov) tags.push(pill('governance — router', 'ok'));
-  if (r.team) tags.push(pill('team wallet', 'ok'));
-  if (S) { const w = C(A.wdc, 'wdc'); if (await w.registrars(account).catch(() => false)) tags.push(pill('registrar', 'ok'));
-    const d = await C(S.suite.rewardEscrow, 'escrow').getDrawer(account).catch(() => null); if (d?.active) tags.push(pill('reward operator', 'warn')); }
-  $('acct').innerHTML = `<b>Connected:</b> ${name(account)} <span class="mono who">${account}</span><br>${tags.length ? tags.join('') : pill('no admin role for this token — anyone-actions only', 'warn')}
-    ${wrong ? `<div class="row"><span class="pill bad">wrong network</span><button id="switchBtn">Switch to Base</button></div>` : ''}`;
+  if (r.owner) tags.push(pill('Owner', 'ok'));
+  if (r.gov || r.routerGov) tags.push(pill('Governance', 'ok'));
+  if (r.team) tags.push(pill('Team', 'ok'));
+  if (S) { if (await C(A.wdc, 'wdc').registrars(account).catch(() => false)) tags.push(pill('Registrar', 'ok'));
+    const d = await C(S.suite.rewardEscrow, 'escrow').getDrawer(account).catch(() => null); if (d?.active) tags.push(pill('Operator', 'warn')); }
+  $('acct').innerHTML = `<div><div class="who">Connected</div><div class="addr">${account}</div></div>
+    <div class="chips">${tags.length ? tags.join('') : pill('No role for this merchant', '')}</div>
+    ${wrong ? `<div class="row" style="margin-left:auto">${pill('Wrong network', 'bad')}<button id="switchBtn" class="primary">Switch to Base</button></div>` : ''}`;
   $('switchBtn')?.addEventListener('click', () => bp.send('wallet_switchEthereumChain', [{ chainId: CHAIN_HEX }]).catch(e => toast(reason(e), 'bad')));
 }
 function gateButtons() {
   const r = roles(account);
   document.querySelectorAll('button[data-act]').forEach(b => {
     const need = b.dataset.role, ok = !!account && !!S && (need === 'any' || r[need]);
-    b.dataset.gated = ok ? '' : '1';
+    if (ok) delete b.dataset.gated; else b.dataset.gated = '1';
     b.title = !account ? 'Connect a wallet' : ok ? '' : `Needs the ${{ owner: 'owner wallet', gov: 'governance key', routerGov: 'router governance key', wdcPending: 'proposed new governance key', rtPending: 'proposed new router governance key' }[need] || need}`;
-    b.style.opacity = ok ? '' : '.55';
   });
 }
 
@@ -479,7 +575,7 @@ async function send(label, addr, abi, method, args = [], overrides = {}) {
   const c = C(addr, abi, signer);
   try { await c[method].staticCall(...args, { ...overrides, from: account }); }
   catch (e) { toast(`<b>${label}</b> would fail: ${reason(e)}<br><span class="who">Nothing was sent.</span>`, 'bad', true); throw e; }
-  const t = toast(`<b>${label}</b> — confirm in your wallet (check the Ledger screen)…`, 'run', true);
+  const t = toast(`<b>${label}</b> — confirm in your wallet…`, 'run', true);
   let tx; try { tx = await c[method](...args, overrides); }
   catch (e) { t.remove(); toast(`<b>${label}</b> not sent: ${reason(e)}`, 'bad'); throw e; }
   t.innerHTML = `<b>${label}</b> — sent, waiting… <a href="https://basescan.org/tx/${tx.hash}" target="_blank" rel="noopener">view</a>`;
@@ -559,7 +655,7 @@ const ACTIONS = {
 document.addEventListener('click', async ev => {
   const b = ev.target.closest('button[data-act]'); if (!b) return;
   if (!account) { toast('Connect a wallet first.', 'bad'); return; }
-  if (b.dataset.gated) { toast(`${b.title}. Switch account in Rabby (the matching Ledger account) and try again.`, 'bad'); return; }
+  if (b.dataset.gated) { toast(`${b.title}. Switch to that account in your wallet and try again.`, 'bad'); return; }
   if (b.dataset.confirm) { const [id, want0] = b.dataset.confirm.split(':'); const want = want0 === '@wd' ? `WIND DOWN ${S.sym}` : want0;
     if ($(id).value.trim() !== want) { toast(`Type <b class="mono">${want}</b> in the box next to the button to arm it.`, 'bad'); return; } }
   const fn = ACTIONS[b.dataset.act]; b.disabled = true;
@@ -575,12 +671,17 @@ $('addPreviewBtn').onclick = showPreview;
 $('regCheck').onclick = async () => { try { const a = addr('regAddr'); $('regOut').innerHTML = (await C(A.wdc, 'wdc').registrars(a)) ? pill('registrar', 'ok') : pill('not a registrar', 'warn'); } catch (e) { $('regOut').textContent = e.message; } };
 
 async function boot(token) {
-  $('tokLabel').textContent = 'loading…';
+  $('tokLabel').textContent = 'reading the chain…';
   try { const t = token || new URLSearchParams(location.search).get('token') || DEFAULT_TOKEN; await load(t);
     history.replaceState(null, '', `?token=${S.token}${location.hash}`); }
-  catch (e) { $('tokLabel').textContent = 'not loaded'; toast(reason(e), 'bad', true); }
+  catch (e) { $('tokName').textContent = 'Not loaded'; $('tokLabel').textContent = 'check the address'; toast(reason(e), 'bad', true); }
 }
 boot();
+// Highlight the section in view.
+const navLinks = [...document.querySelectorAll('#nav a')];
+const navObs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${e.target.id}`)); }),
+  { rootMargin: '-30% 0px -60% 0px' });
+document.querySelectorAll('main section').forEach(s => navObs.observe(s));
 setInterval(() => { if (S && document.visibilityState === 'visible') load(S.token).catch(() => {}); }, 60_000);
 if (window.ethereum) { bp = new ethers.BrowserProvider(window.ethereum, 'any'); onAccounts(null).catch(() => {}); window.ethereum.on?.('accountsChanged', onAccounts); }
 </script>
