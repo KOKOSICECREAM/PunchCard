@@ -18,6 +18,7 @@ if [ "${SKOOP_UNLOCKED:-0}" != 1 ]; then
   [ "$ok" = REGISTER ] || { echo "Not registered."; exit 1; }
 fi
 tx "registerManual" $WDC "registerManual(address,address,address,address,address)" $SKOOP $ESCROW $VESTING $TREASURY $LOCKER
+settle   # the RPC lagged the registration by a block and this check once read false
 [ "$(call $WDC 'isRegistered(address)(bool)' $SKOOP)" = true ] || die "not registered after the tx"
 echo "  ✓ SKOOP is on the PunchCard Network · router fee tiers: $(cast call --rpc-url "$RPC" $ROUTER 'getPoolFeeTiers(address)(uint24,uint24)' $SKOOP | tr '\n' ' ')"
 st_set progress.registered yes

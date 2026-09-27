@@ -1,6 +1,6 @@
 {
   "merchant": "SKOOP",
-  "status": "token-deployed",
+  "status": "registered",
   "_status_values": "token-deployed | suite-deployed | funded | verified | registered",
   "_path_note": "Hand-assembled and admitted through WindDownController.registerManual, NOT through a factory. See docs/skoop-launch-plan.md and docs/staged-rollout.md.",
   "token": {
@@ -78,14 +78,9 @@
     "_optionB_decision": "Decided 2026-09-26 (option B): SKOOP registers with two small STARTER positions (~$1 each - changed from $10 on 2026-09-26, full range, SKOOP's own 1% pools, minted by the LP wallet) plus the remaining LP-wallet SKOOP as reserve in its LPLockerPilot. The real launch positions #6100109 and #6100112 STAY in the LP wallet: KOKOS keeps their fees and can withdraw any amount. registerManual checks codehashes, not liquidity amounts, and PunchCardRouter reads only the fee tier from the locker and trades against the whole pool - so routed swaps use all SKOOP liquidity (rehearsal: 1,000 SKOOP sold via the router for $0.99, same as with everything in the locker). Their liquidity can move in later through locker.addLiquidity (reserve + the owner's USDC/WETH); the NFTs themselves cannot, as initializeLP binds the first two token ids forever. Verifier warns 'reserve short' by exactly the SKOOP in the starter positions (~2.1k)."
   },
   "notDoneYet": [
-    "network: controller + router + the factory FUTURE merchants use",
-    "suite: escrow, vesting, treasury, LPLockerPilot - each needs the controller address, immutably",
-    "funding: 45M escrow, 15M vesting, 10M treasury, by hand, testing each",
-    "pools: positions TO THE LOCKER, then the 27M reserve, THEN initializeLP - that order",
-    "activate() on all four, or emission never starts",
-    "publish source, then multisig approves the five codehashes - that order",
-    "VerifyManualSuite PC_MODE=pilot",
-    "registrar calls registerManual  <-- the only step with no undo"
+    "point the POS rewards at the RewardEscrow (the POS signer 0x4eCc is its first operator)",
+    "site copy: SKOOP may now be described as PunchCard-registered / network-admitted (never factory-standard)",
+    "the PunchCard Terminal (docs/terminal-design.md)"
   ],
   "doNot": [
     "Publish the token address until the pools are seeded. Anyone can open a pool at a price they choose.",
@@ -216,5 +211,13 @@
     "target": "10000000",
     "short": "455917",
     "_note": "Accepted: the treasury starts at 9,544,083 - what remains after escrow 45M and vesting 15M. The 455,917 gap is exactly the pre-launch spend above (355,917 airdrops + 100,000 POS float), all of it discretionary, treasury-type spending made before the treasury existed. VerifyManualSuite reports it as a pilot-mode warning; topping up from the 27M LP reserve would only move the warning to the locker."
+  },
+  "suite": {
+    "rewardEscrow": "0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2",
+    "vestingWallet": "0xD19FE22eFF97BC574b19E5EB16FD2a9dA3902590",
+    "treasuryTimelock": "0x01933BfBf85905fD780157abee79bebAcFfCB7cB",
+    "lpLockerPilot": "0x74ed636C959e92dF6c779F0EdcB759077cFBd908",
+    "registeredAt": "2026-09-26, block 51847179, tx 0xf8083e18d2fb56a0ce5a6200c8fcae2585ab17d0afef80f4bf5aefb0c6368a8d",
+    "_details": "deploy/merchants/skoop-suite.json"
   }
 }
