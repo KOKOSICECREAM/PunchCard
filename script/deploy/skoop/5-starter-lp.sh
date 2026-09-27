@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Step 5 — option B liquidity. Signer: the LP wallet, Ledger #25.
-#   mint a ~$10 full-range USDC/SKOOP position and a ~$10 ETH/SKOOP position in SKOOP's own
+#   mint a ~$1 full-range USDC/SKOOP position and a ~$1 ETH/SKOOP position in SKOOP's own
 #   1% pools, move both NFTs to the locker, then send every SKOOP the LP wallet has left as the
 #   reserve. The real launch positions #6100109 / #6100112 are NOT touched.
 # initializeLP and activate() follow in 5b (activator) — the reserve must be in before init.
@@ -28,14 +28,14 @@ print(next(int(l['topics'][3],16) for l in r['logs'] if l['address'].lower()=='$
 
 if [ -z "$(st_get starter.usdc)" ] || [ -z "$(st_get starter.eth)" ]; then
   [ "$(bal $USDC $LP_WALLET)" -ge $STARTER_USDC ] || die "LP wallet needs $STARTER_USDC raw USDC"
-  [ "$(call $SKOOP 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" -ge 30000000000 ] || tx "approve SKOOP" $SKOOP "approve(address,uint256)" $NPM 30000000000
+  [ "$(call $SKOOP 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" -ge 2700000000 ] || tx "approve SKOOP" $SKOOP "approve(address,uint256)" $NPM 2700000000
   [ "$(call $USDC 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" -ge $STARTER_USDC ] || tx "approve USDC" $USDC "approve(address,uint256)" $NPM $STARTER_USDC
   [ "$(bal $WETH $LP_WALLET)" -ge $STARTER_WETH ] || tx "wrap ETH" $WETH "deposit()" --value $STARTER_WETH
   [ "$(call $WETH 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" -ge $STARTER_WETH ] || tx "approve WETH" $WETH "approve(address,uint256)" $NPM $STARTER_WETH
 fi
 # The pair side is the limit; SKOOP desired is set high and the unused part stays in the wallet.
-mint usdc $USDC $STARTER_USDC 11000000000 9500000 9000000000
-mint eth  $WETH $STARTER_WETH 12500000000 3800000000000000 9000000000
+mint usdc $USDC $STARTER_USDC 1300000000 950000 900000000
+mint eth  $WETH $STARTER_WETH 1400000000 380000000000000 900000000
 for key in usdc eth; do id=$(st_get starter.$key)
   if [ "$(lc "$(call $NPM 'ownerOf(uint256)(address)' $id)")" = "$(lc $LOCKER)" ]; then echo "  - #$id already in the locker"
   else tx "move #$id into the locker" $NPM "transferFrom(address,address,uint256)" $LP_WALLET $LOCKER $id; fi

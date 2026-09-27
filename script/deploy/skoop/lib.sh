@@ -53,8 +53,8 @@ ESCROW_FUND=45000000000000                  # 45M
 VESTING_FUND=15000000000000                 # 15M
 # treasury: whatever the owner holds after those two - 9,544,083 (decided 2026-09-26)
 PER_TX_FLOOR=1; PER_TX_MAX=50000000000      # 0.000001 and 50,000 SKOOP
-STARTER_USDC=10000000                       # $10 of USDC into the starter USDC position
-STARTER_WETH=4000000000000000               # 0.004 WETH (~$10) into the starter ETH position
+STARTER_USDC=1000000                        # $1 of USDC into the starter USDC position (decided 2026-09-26: $1, not $10)
+STARTER_WETH=400000000000000                # 0.0004 WETH (~$1) into the starter ETH position
 GAS=(--gas-limit 1000000)
 
 # ── helpers ────────────────────────────────────────────────────────────────────
