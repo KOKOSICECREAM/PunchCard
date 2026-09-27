@@ -15,11 +15,22 @@
     "_verified": "2026-09-26: all four status 1; constructor values read back and matching; runtime bytecode identical to a replay of this repo on a fork at block 51846209."
   },
   "progress": {
-    "sourcify": "yes"
+    "sourcify": "yes",
+    "activated": "yes"
   },
   "starter": {
     "usdc": 6102819,
     "eth": 6102820,
     "_verified": "2026-09-26 step 5 live: #6102819 (USDC, liquidity 31528108) and #6102820 (ETH, liquidity 653384896985) owned by the locker; reserve 26,997,938.699785 SKOOP in the locker (tx 0x9247d19d...eef0, block 51846727); real #6100109/#6100112 still in the LP wallet with their original liquidity. The LP wallet's unlimited Uniswap-app approvals were replaced by small ones as a side effect."
+  },
+  "activation": {
+    "initializeLP": "0x16ff1fef6db4842225a184eb8f240aabfbed1ee365b111ffa219f75a77bbfe6e (block 51846820)",
+    "activatedAt": {
+      "escrow": 1790482995,
+      "vesting": 1790483005,
+      "treasury": 1790483015,
+      "locker": 1790483025
+    },
+    "_note": "2026-09-26 23:23 CT. Vesting cliff 2026-10-26, fully vested 2028-10-25. Escrow emission running (~24,657/day) but unfunded until step 4; spendable is 0 until then. Locker initialised with the starter positions and reserve 26,997,938.699785, evacuation open."
   }
 }
