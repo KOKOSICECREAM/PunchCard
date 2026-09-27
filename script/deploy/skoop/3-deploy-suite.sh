@@ -24,7 +24,8 @@ else
     a=$(python3 -c "import json;d=json.load(open('$B'));print(next(t['contractAddress'] for t in d['transactions'] if t['contractName']=='${pair#*:}' and t['transactionType']=='CREATE'))")
     st_set suite.${pair%%:*} "$(cast to-check-sum-address "$a")"
   done
-  st_set suite.deployBlock "$(cast block-number --rpc-url "$RPC")"
+  # From the receipts, not "latest": the load-balanced RPC can lag the last deploy by a block.
+  st_set suite.deployBlock "$(python3 -c "import json;print(min(int(r['blockNumber'],16) for r in json.load(open('$B'))['receipts']))")"
 fi
 ESCROW=$(st_get suite.escrow); VESTING=$(st_get suite.vesting); TREASURY=$(st_get suite.treasury); LOCKER=$(st_get suite.locker)
 echo "  escrow $ESCROW · vesting $VESTING · treasury $TREASURY · locker $LOCKER"

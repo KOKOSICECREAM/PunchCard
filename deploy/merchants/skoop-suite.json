@@ -1,0 +1,17 @@
+{
+  "_note": "Progress of the SKOOP suite launch (option B). Written by script/deploy/skoop/*.sh.",
+  "suite": {
+    "escrow": "0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2",
+    "vesting": "0xD19FE22eFF97BC574b19E5EB16FD2a9dA3902590",
+    "treasury": "0x01933BfBf85905fD780157abee79bebAcFfCB7cB",
+    "locker": "0x74ed636C959e92dF6c779F0EdcB759077cFBd908",
+    "deployBlock": 51846210,
+    "deployTxs": [
+      "0xf5def43ab582cf7bb289a3784cc4e5f9ac109a90d76edc7de89ddb06e446fc23",
+      "0xefd842de97ebc6bd20ada43ff3727e888a70726481951d1e6a37ac97d9a35ecc",
+      "0x3e5c178d9c349ec4badca869120bc03ba79fdd5938d189cc22d9cfc64bb8a2f2",
+      "0xd0763ae3dfac7c8427ece0ff876e217ff67afc783a35a535e3802368e39ff6ff"
+    ],
+    "_verified": "2026-09-26: all four status 1; constructor values read back and matching; runtime bytecode identical to a replay of this repo on a fork at block 51846209."
+  }
+}
