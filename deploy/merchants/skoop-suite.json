@@ -13,5 +13,8 @@
       "0xd0763ae3dfac7c8427ece0ff876e217ff67afc783a35a535e3802368e39ff6ff"
     ],
     "_verified": "2026-09-26: all four status 1; constructor values read back and matching; runtime bytecode identical to a replay of this repo on a fork at block 51846209."
+  },
+  "progress": {
+    "sourcify": "yes"
   }
 }
