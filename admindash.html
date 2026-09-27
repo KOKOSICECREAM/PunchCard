@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>PunchCard Console</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e0714f'/%3E%3Ccircle cx='11' cy='12' r='3' fill='%23fff'/%3E%3Ccircle cx='21' cy='12' r='3' fill='%23fff'/%3E%3Ccircle cx='11' cy='21' r='3' fill='%23fff' opacity='.45'/%3E%3Ccircle cx='21' cy='21' r='3' fill='%23fff' opacity='.45'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Special+Elite&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f2ec; --panel: #fffefb; --panel-2: #f8f5ef; --line: rgba(24,20,14,.09); --line-2: rgba(24,20,14,.16);
+    --ink: #17140f; --ink-2: #4a443a; --muted: #857c6e; --accent: #b8452a; --accent-ink: #fff; --accent-soft: rgba(184,69,42,.09);
+    --ok: #237a45; --ok-soft: rgba(35,122,69,.1); --warn: #a26a00; --warn-soft: rgba(162,106,0,.1); --bad: #b3261e; --bad-soft: rgba(179,38,30,.08);
+    --shadow: 0 1px 2px rgba(24,20,14,.04), 0 4px 16px rgba(24,20,14,.04);
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #0e0d0b; --panel: #161512; --panel-2: #1c1a16; --line: rgba(255,248,235,.07); --line-2: rgba(255,248,235,.14);
+    --ink: #f3eee4; --ink-2: #c9c1b3; --muted: #8b8375; --accent: #e8744f; --accent-ink: #1a0f0a; --accent-soft: rgba(232,116,79,.12);
+    --ok: #5cc98a; --ok-soft: rgba(92,201,138,.12); --warn: #e6b450; --warn-soft: rgba(230,180,80,.12); --bad: #f07167; --bad-soft: rgba(240,113,103,.1);
+    --shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 8px 24px rgba(0,0,0,.25); color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg: #0e0d0b; --panel: #161512; --panel-2: #1c1a16; --line: rgba(255,248,235,.07); --line-2: rgba(255,248,235,.14);
+    --ink: #f3eee4; --ink-2: #c9c1b3; --muted: #8b8375; --accent: #e8744f; --accent-ink: #1a0f0a; --accent-soft: rgba(232,116,79,.12);
+    --ok: #5cc98a; --ok-soft: rgba(92,201,138,.12); --warn: #e6b450; --warn-soft: rgba(230,180,80,.12); --bad: #f07167; --bad-soft: rgba(240,113,103,.1);
+    --shadow: 0 1px 0 rgba(255,255,255,.02) inset, 0 8px 24px rgba(0,0,0,.25); color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+  .mono { font-family: var(--mono); font-size: .92em; }
+
+  /* ── shell ── */
+  .app { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+  aside { position: sticky; top: 0; height: 100vh; padding: calc(22px + env(safe-area-inset-top, 0px)) 16px 18px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 22px; background: var(--panel); }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+  .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 7px; flex-shrink: 0; }
+  .mark i { background: #fff; border-radius: 50%; } .mark i:nth-child(n+3) { opacity: .45; }
+  .brand b { font-family: 'Special Elite', var(--sans); font-weight: 400; font-size: 1.12rem; letter-spacing: .01em; display: block; line-height: 1.1; }
+  .brand span { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+  nav { display: flex; flex-direction: column; gap: 2px; }
+  nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--ink-2); font-weight: 500; font-size: .9rem; }
+  nav a:hover { background: var(--panel-2); color: var(--ink); text-decoration: none; }
+  nav a.on { background: var(--accent-soft); color: var(--accent); }
+  nav svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .85; }
+  .aside-foot { margin-top: auto; padding: 12px 10px 0; border-top: 1px solid var(--line); font-size: .76rem; color: var(--muted); display: grid; gap: 4px; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin-right: 6px; box-shadow: 0 0 0 3px var(--ok-soft); vertical-align: 1px; }
+
+  main { padding: calc(22px + env(safe-area-inset-top, 0px)) 32px 96px; max-width: 1180px; width: 100%; }
+  .top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tok { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+  .tok-badge { width: 40px; height: 40px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line-2); display: grid; place-items: center; font: 600 .78rem var(--mono); color: var(--accent); flex-shrink: 0; }
+  .tok h1 { font-size: 1.28rem; font-weight: 700; margin: 0; letter-spacing: -.01em; line-height: 1.2; }
+  .tok small { color: var(--muted); font: .78rem var(--mono); }
+  .tok-switch { display: flex; gap: 6px; }
+  .tok-switch input { width: 300px; max-width: 46vw; }
+
+  /* ── controls ── */
+  button { font: 500 .86rem var(--sans); cursor: pointer; border-radius: 9px; border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); padding: 8px 14px; transition: background .15s, border-color .15s, opacity .15s; white-space: nowrap; }
+  button:hover { background: var(--panel-2); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  button.primary:hover { filter: brightness(1.06); }
+  button.danger { border-color: color-mix(in srgb, var(--bad) 45%, transparent); color: var(--bad); background: transparent; }
+  button.danger:hover { background: var(--bad-soft); }
+  button.ghost { background: transparent; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button[data-gated="1"] { opacity: .5; }
+  input { font: 13px var(--mono); padding: 8px 11px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); min-width: 0; outline: none; transition: border-color .15s, box-shadow .15s; }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  input::placeholder { color: var(--muted); }
+  .grow { flex: 1 1 220px; }
+  .w-sm { width: 110px; } .w-md { width: 150px; }
+
+  /* ── account ── */
+  .acct { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; box-shadow: var(--shadow); }
+  .acct .who { color: var(--ink-2); font-size: .88rem; } .acct .addr { font: .82rem var(--mono); color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font: 600 .7rem var(--sans); letter-spacing: .03em; padding: 3px 9px; border-radius: 999px; background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); white-space: nowrap; }
+  .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .8; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+  .banner { margin-top: 12px; padding: 11px 16px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-weight: 500; font-size: .88rem; }
+
+  /* ── sections ── */
+  section { margin-top: 34px; scroll-margin-top: 20px; }
+  .sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  h2 { font-size: 1.06rem; font-weight: 650; margin: 0; letter-spacing: -.005em; }
+  .sub { color: var(--muted); margin: 3px 0 0; font-size: .86rem; max-width: 70ch; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+  .panel + .panel { margin-top: 12px; }
+  .panel-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .panel-h h3 { margin: 0; font-size: .9rem; font-weight: 600; }
+  .panel-b { padding: 16px 18px; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); background: var(--panel); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .stat { padding: 14px 16px; min-width: 0; box-shadow: 1px 0 0 var(--line), 0 1px 0 var(--line); }
+  .stat .k { color: var(--muted); font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+  .stat .v { font: 600 1.06rem var(--mono); margin-top: 4px; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .stat .v .who { font: 500 .78rem var(--sans); color: var(--muted); margin-left: 4px; }
+  .stat .h { color: var(--muted); font-size: .76rem; margin-top: 2px; overflow-wrap: anywhere; }
+  .kpis .stat .v { font-size: 1.2rem; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .tile h3 { margin: 0; font-size: .92rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .tile p { margin: 0; color: var(--muted); font-size: .83rem; }
+  .tile .row { margin-top: auto; }
+  .tile.wide { grid-column: 1 / -1; }
+  .tile.danger { border-color: color-mix(in srgb, var(--bad) 30%, transparent); background: linear-gradient(var(--bad-soft), var(--bad-soft)), var(--panel); }
+  .tile.danger h3 { color: var(--bad); }
+  .role { font: 600 .66rem var(--sans); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 6px; margin-left: auto; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row label { color: var(--muted); font-size: .78rem; font-weight: 500; }
+  kbd { font: 600 .78rem var(--mono); background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 5px; padding: 0 5px; color: var(--ink); }
+
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+  th, td { text-align: left; padding: 11px 18px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  th { color: var(--muted); font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; background: var(--panel-2); }
+  td.num { font-family: var(--mono); }
+  .empty { color: var(--muted); text-align: center; padding: 22px; }
+  .preview { font: 12.5px/1.7 var(--mono); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; white-space: pre-wrap; color: var(--ink-2); }
+  .foot { margin-top: 40px; color: var(--muted); font-size: .78rem; display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  /* ── toasts ── */
+  #log { position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); width: min(400px, calc(100vw - 32px)); z-index: 20; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 14px 12px 16px; font-size: .85rem; box-shadow: 0 12px 32px rgba(0,0,0,.18); overflow-wrap: anywhere; position: relative; animation: rise .2s ease-out; }
+  .toast::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: var(--muted); }
+  .toast.ok::before { background: var(--ok); } .toast.bad::before { background: var(--bad); } .toast.run::before { background: var(--warn); }
+  .toast .x { float: right; border: 0; padding: 0 2px 0 8px; background: none; color: var(--muted); font-size: 1rem; line-height: 1; }
+  @keyframes rise { from { transform: translateY(6px); opacity: 0; } }
+  .skeleton .v { color: transparent; background: var(--panel-2); border-radius: 6px; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: sticky; top: 0; z-index: 10; height: auto; flex-direction: row; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; gap: 12px; border-right: 0; border-bottom: 1px solid var(--line); overflow: hidden; }
+    .brand span, .aside-foot { display: none; }
+    nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; } nav::-webkit-scrollbar { display: none; }
+    nav a { padding: 6px 10px; white-space: nowrap; } nav svg { display: none; }
+    main { padding: 18px 16px 96px; }
+    .tok-switch { width: 100%; } .tok-switch input { flex: 1; width: auto; max-width: none; }
+    .tiles { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><div class="mark"><i></i><i></i><i></i><i></i></div><div><b>PunchCard</b><span>Console</span></div></div>
+    <nav id="nav">
+      <a href="#overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
+      <a href="#rewards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v9H4v-9"/><rect x="2" y="7" width="20" height="5" rx="1"/><path d="M12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg>Rewards</a>
+      <a href="#liquidity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.7 6.3 8.6a8 8 0 1 0 11.4 0z"/></svg>Liquidity</a>
+      <a href="#treasury"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10M19 21V10M9 21v-7M15 21v-7M2 10l10-7 10 7z"/></svg>Treasury</a>
+      <a href="#vesting"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>Vesting</a>
+      <a href="#network"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5 6.5 17M12 11.5l5.5 5.5"/></svg>Network</a>
+      <a href="#winddown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Wind-down</a>
+    </nav>
+    <div class="aside-foot"><div><span class="dot"></span>Base mainnet</div><div id="lastRead">connecting…</div></div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div class="tok"><div class="tok-badge" id="tokBadge">—</div><div><h1 id="tokName">Loading…</h1><small id="tokLabel">reading the chain</small></div></div>
+      <div class="tok-switch"><input id="tokenInput" placeholder="Merchant token address" spellcheck="false" autocomplete="off"><button id="loadBtn" class="ghost">Load</button></div>
+      <button id="connectBtn" class="primary">Connect wallet</button>
+    </div>
+
+    <div id="acct" class="acct"><span class="who">View only. Connect the wallet that holds a role to make changes — every action is enforced by the contracts themselves.</span></div>
+    <div id="banners"></div>
+
+    <section id="overview">
+      <div class="sec-head"><div><h2>Overview</h2><p class="sub">Price, supply and where the merchant's tokens are held.</p></div><div id="ovStatus"></div></div>
+      <div class="stats kpis skeleton" id="ovGrid"></div>
+    </section>
+
+    <section id="rewards">
+      <div class="sec-head"><div><h2>Rewards</h2><p class="sub">Customer rewards paid out by point-of-sale operators on a fixed daily emission. Owner controls can limit or pause payouts; none of them can move tokens out.</p></div></div>
+      <div class="stats" id="rwGrid"></div>
+      <div class="panel" style="margin-top:12px">
+        <div class="panel-h"><h3>Operators</h3><span class="pill" id="opCount">—</span></div>
+        <div class="tablewrap"><table><thead><tr><th>Operator</th><th>Daily allowance</th><th>Available now</th><th></th></tr></thead><tbody id="opRows"><tr><td colspan="4" class="empty">Loading operators…</td></tr></tbody></table></div>
+        <div id="opScan" class="sub" style="padding:0 18px 12px"></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><h3>Add operator <span class="role">Owner</span></h3><p>Authorise a new point-of-sale key. The allowance refills continuously over a day; maximum <span id="maxDrawerTxt">—</span>.</p>
+          <div class="row"><input id="opAddr" class="grow" placeholder="0x… operator address"></div>
+          <div class="row"><input id="opAllow" class="w-md" placeholder="Daily allowance"><button data-act="addOperator" data-role="owner" class="primary">Add operator</button></div></div>
+        <div class="tile"><h3>Change allowance <span class="role">Owner</span></h3><p>Set a new daily allowance. Raising it does not refill a till already drawn down.</p>
+          <div class="row"><input id="opAddr2" class="grow" placeholder="0x… operator address"></div>
+          <div class="row"><input id="opAllow2" class="w-md" placeholder="New allowance"><button data-act="setDrawerAllowance" data-role="owner">Update</button></div></div>
+        <div class="tile"><h3>Per-payment limits <span class="role">Owner</span></h3><p>Smallest and largest single reward, in tokens. Adjust as the token's price moves.</p>
+          <div class="row"><label>Min</label><input id="bFloor" class="w-sm"><label>Max</label><input id="bMax" class="w-sm"><button data-act="setPerTxBounds" data-role="owner">Save</button></div></div>
+        <div class="tile"><h3>Pause payouts <span class="role">Owner</span></h3><p>Halts every payout for up to seven days, then lapses on its own. Use it if an operator key may be compromised, then remove that operator.</p>
+          <div class="row"><button data-act="pause" data-role="owner">Pause 7 days</button><button data-act="unpause" data-role="owner" class="ghost">Resume</button></div></div>
+        <div class="tile"><h3>Low-balance alert <span class="role">Owner</span></h3><p>Signals on-chain once the undistributed balance falls to this level.</p>
+          <div class="row"><input id="lowThr" class="w-md"><button data-act="setLowThreshold" data-role="owner">Save</button></div></div>
+      </div>
+    </section>
+
+    <section id="liquidity">
+      <div class="sec-head"><div><h2>Liquidity</h2><p class="sub">The LP locker's two full-range positions and its token reserve. Positions held outside the locker are not shown.</p></div></div>
+      <div class="stats" id="lpGrid"></div>
+      <div class="tiles">
+        <div class="tile wide"><h3>Add liquidity from the reserve <span class="role">Owner</span></h3>
+          <p>Pairs USDC and/or ETH from the owner wallet with reserve tokens at the live pool price, within 1% slippage. ETH is wrapped first if needed; unused USDC/WETH is returned and unused tokens stay in the reserve. Added liquidity stays in the locker and its fees follow the locker's rules.</p>
+          <div class="row"><label>USDC</label><input id="addUsdc" class="w-sm" placeholder="0.00"><label>ETH</label><input id="addEth" class="w-sm" placeholder="0.000"><button id="addPreviewBtn" class="ghost">Preview</button><button data-act="addLiquidity" data-role="owner" class="primary">Add liquidity</button></div>
+          <div id="addPreview" class="preview" hidden></div></div>
+        <div class="tile"><h3>Collect fees <span class="role">Anyone</span></h3><p>Collects trading fees on both positions. The token side is burned; the USDC/WETH side goes to the network fee recipient.</p>
+          <div class="row"><button data-act="collectFees" data-role="any">Collect fees</button></div></div>
+        <div class="tile danger"><h3>Lock permanently <span class="role">Owner</span></h3><p>Closes the recovery hatch for good. Liquidity can then never be withdrawn early. Type <kbd>LOCK</kbd> to confirm.</p>
+          <div class="row"><input id="cfLock" class="w-md" placeholder="LOCK"><button data-act="lockLP" data-role="owner" data-confirm="cfLock:LOCK" class="danger">Lock liquidity</button></div></div>
+        <div class="tile danger"><h3>Evacuate <span class="role">Owner</span></h3><p>Withdraws both positions and the entire reserve to the owner wallet and permanently disables the locker. All or nothing. Type <kbd>EVACUATE</kbd> to confirm.</p>
+          <div class="row"><input id="cfEvac" class="w-md" placeholder="EVACUATE"><button data-act="evacuateLP" data-role="owner" data-confirm="cfEvac:EVACUATE" class="danger">Evacuate</button></div></div>
+      </div>
+    </section>
+
+    <section id="treasury">
+      <div class="sec-head"><div><h2>Treasury</h2><p class="sub">Time-locked. Releases pay the owner wallet only, after the waiting period, one at a time.</p></div></div>
+      <div class="stats" id="trGrid"></div>
+      <div class="tiles">
+        <div class="tile wide"><h3>Release <span class="role">Owner · execute: anyone</span></h3><p>Requesting starts the clock; once it has run, anyone can execute and the tokens go to the owner wallet. A pending request can be cancelled at any time.</p>
+          <div class="row"><input id="trAmt" class="w-md" placeholder="Amount"><button data-act="submitRelease" data-role="owner">Request release</button><button data-act="cancelRelease" data-role="owner" class="ghost">Cancel pending</button><button data-act="executeRelease" data-role="any" class="primary">Execute release</button></div></div>
+      </div>
+    </section>
+
+    <section id="vesting">
+      <div class="sec-head"><div><h2>Vesting</h2><p class="sub">Team allocation: a cliff, then linear vesting. Anyone may trigger a release; it always pays the fixed team wallet.</p></div><button data-act="vestRelease" data-role="any">Release vested</button></div>
+      <div class="stats" id="vsGrid"></div>
+    </section>
+
+    <section id="network">
+      <div class="sec-head"><div><h2>Network</h2><p class="sub">PunchCard-wide settings held by governance. Changes here apply to every merchant.</p></div></div>
+      <div class="stats" id="nwGrid"></div>
+      <div class="tiles">
+        <div class="tile"><h3>Registrars <span class="role">Governance</span></h3><p>Keys permitted to admit a reviewed merchant suite to the network.</p>
+          <div class="row"><input id="regAddr" class="grow" placeholder="0x… address"></div>
+          <div class="row"><button id="regCheck" class="ghost">Check</button><button data-act="setRegistrar:true" data-role="gov">Appoint</button><button data-act="setRegistrar:false" data-role="gov" class="danger">Remove</button><span id="regOut"></span></div></div>
+        <div class="tile"><h3>Router fee <span class="role">Governance</span></h3><p>A proposal waits 48 hours, then anyone can execute it with the same values. Ceiling 100 bps (1%).</p>
+          <div class="row"><label>bps</label><input id="rFee" class="w-sm" placeholder="30"><input id="rRcpt" class="grow" placeholder="0x… fee recipient"></div>
+          <div class="row"><button data-act="proposeChange" data-role="routerGov">Propose</button><button data-act="executeChange" data-role="any">Execute</button><button data-act="cancelChange" data-role="routerGov" class="ghost">Cancel</button><span id="rMatch"></span></div></div>
+        <div class="tile wide"><h3>Governance handover <span class="role">Governance</span></h3><p>Move governance to a new key or multisig. Propose from the current key, then accept from the new one once the waiting period has passed. The controller and the router transfer separately.</p>
+          <div class="row"><input id="msAddr" class="grow" placeholder="0x… new governance address"></div>
+          <div class="row"><label style="width:70px">Controller</label><button data-act="wdcPropose" data-role="gov">Propose</button><button data-act="wdcCancel" data-role="gov" class="ghost">Cancel</button><button data-act="wdcAccept" data-role="wdcPending">Accept</button></div>
+          <div class="row"><label style="width:70px">Router</label><button data-act="rtPropose" data-role="routerGov">Propose</button><button data-act="rtCancel" data-role="routerGov" class="ghost">Cancel</button><button data-act="rtAccept" data-role="rtPending">Accept</button></div></div>
+      </div>
+    </section>
+
+    <section id="winddown">
+      <div class="sec-head"><div><h2>Wind-down</h2><p class="sub">Freezes rewards, treasury and new liquidity for this merchant. After 365 days the remaining allocations are burned and the LP is released, with 10% kept permanently as a floor. Irreversible.</p></div></div>
+      <div class="stats" id="wdGrid"></div>
+      <div id="wdSteps"></div>
+      <div class="tiles">
+        <div class="tile danger wide"><h3>Start wind-down <span class="role">Governance</span></h3><p>Type <kbd id="wdPhrase">WIND DOWN</kbd> to confirm.</p>
+          <div class="row"><input id="cfWd" class="w-md" style="width:200px"><button data-act="initiate" data-role="gov" data-confirm="cfWd:@wd" class="danger">Start wind-down</button></div></div>
+      </div>
+    </section>
+
+    <div class="foot"><span>PunchCard Network · Console</span><span>Every action is simulated before signing and is not sent if it would fail.</span></div>
+  </main>
+</div>
+<div id="log" aria-live="polite"></div>
+
+<script>
+const { ethers } = window;
+const CHAIN_ID = 8453, CHAIN_HEX = '0x2105', RPC = 'https://mainnet.base.org';
+const A = {
+  wdc: '0x7dbd9CA01fa60aB480f3A4AE7892970C97EF0cac', router: '0xB64A96f69bE171FE2d81F03b6D3c4029367d4f08',
+  usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', weth: '0x4200000000000000000000000000000000000006',
+  npm: '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1', ethUsd: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70', v3factory: '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
+};
+const DEFAULT_TOKEN = '0xBa147713adF122A8Fc224e52Cb431D7919831939';   // SKOOP
+// Where the operator scan starts, per escrow. Unknown suites fall back to the last ~30 days.
+const DEPLOY_BLOCK = { '0xefe813aab7421534f0f59678e9ef390cab9086d2': 51846210 };
+const ABI = {
+  erc20: ['function balanceOf(address) view returns (uint256)', 'function totalSupply() view returns (uint256)', 'function decimals() view returns (uint8)',
+          'function symbol() view returns (string)', 'function allowance(address,address) view returns (uint256)', 'function approve(address,uint256) returns (bool)', 'function deposit() payable'],
+  wdc: ['function multisig() view returns (address)', 'function pendingMultisig() view returns (address)', 'function multisigAcceptableAt() view returns (uint256)',
+        'function registrars(address) view returns (bool)', 'function approvedCode(bytes32,bytes32) view returns (bool)', 'function isRegistered(address) view returns (bool)',
+        'function getSuite(address) view returns (tuple(address rewardEscrow,address vestingWallet,address treasuryTimelock,address lpLocker,uint256 initiatedAt,uint256 expiryTime,bool escrowSettled,bool treasurySettled,bool vestingSettled,bool complete))',
+        'function setRegistrar(address,bool)', 'function initiate(address)', 'function proposeMultisig(address)', 'function cancelMultisigTransfer()', 'function acceptMultisig()',
+        'function onExpiryBurnEscrow(address)', 'function onExpiryBurnTreasury(address)', 'function onExpirySettleVesting(address)', 'function onExpiryReleaseLP(address)'],
+  router: ['function multisig() view returns (address)', 'function pendingMultisig() view returns (address)', 'function multisigAcceptableAt() view returns (uint256)',
+           'function feeRate() view returns (uint256)', 'function feeRecipient() view returns (address)', 'function pendingChange() view returns (bytes32 paramsHash, uint256 executableAt)',
+           'function getPoolFeeTiers(address) view returns (uint24,uint24)',
+           'function proposeChange((uint256 feeRate,address feeRecipient))', 'function executeChange((uint256 feeRate,address feeRecipient))', 'function cancelChange()',
+           'function proposeMultisig(address)', 'function cancelMultisigTransfer()', 'function acceptMultisig()'],
+  escrow: ['function ownerWallet() view returns (address)', 'function activatedAt() view returns (uint256)', 'function REWARDS_ALLOCATION() view returns (uint256)',
+           'function emissionPerDay() view returns (uint256)', 'function bufferCap() view returns (uint256)', 'function maxDrawer() view returns (uint256)',
+           'function emitted() view returns (uint256)', 'function spendable() view returns (uint256)', 'function totalDistributed() view returns (uint256)',
+           'function perTxFloor() view returns (uint256)', 'function perTxMax() view returns (uint256)', 'function pausedUntil() view returns (uint256)',
+           'function lowThreshold() view returns (uint256)', 'function isFrozen() view returns (bool)', 'function drawerAvailable(address) view returns (uint256)',
+           'function getDrawer(address) view returns (tuple(uint128 dailyAllowance,uint128 spent,uint64 lastDraw,bool active))',
+           'function addOperator(address,uint256)', 'function removeOperator(address)', 'function setDrawerAllowance(address,uint256)', 'function setPerTxBounds(uint256,uint256)',
+           'function pause()', 'function unpause()', 'function setLowThreshold(uint256)',
+           'event OperatorAdded(address indexed operator, uint256 dailyAllowance, uint256 timestamp)', 'event OperatorRemoved(address indexed operator, uint256 timestamp)',
+           'event DrawerAllowanceSet(address indexed operator, uint256 dailyAllowance, uint256 timestamp)'],
+  locker: ['function ownerWallet() view returns (address)', 'function reserveTokens() view returns (uint256)', 'function isInitialized() view returns (bool)', 'function isFrozen() view returns (bool)',
+           'function isReleased() view returns (bool)', 'function currentUsdcLiquidity() view returns (uint128)', 'function currentEthLiquidity() view returns (uint128)',
+           'function evacuationOpen() view returns (bool)', 'function lpPermanentlyLocked() view returns (bool)',
+           'function getPositions() view returns (tuple(tuple(uint256 tokenId,uint24 feeTier,uint128 initialLiquidity,bool merchantIsToken0,bool initialized,bool released) usdc, tuple(uint256 tokenId,uint24 feeTier,uint128 initialLiquidity,bool merchantIsToken0,bool initialized,bool released) eth, uint256 reserveTokens))',
+           'function addLiquidity(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256)', 'function collectFees() returns (uint256,uint256,uint256)',
+           'function lockLP()', 'function evacuateLP()'],
+  treasury: ['function ownerWallet() view returns (address)', 'function TIMELOCK_DURATION() view returns (uint256)', 'function isFrozen() view returns (bool)', 'function balance() view returns (uint256)',
+             'function getPendingRelease() view returns (tuple(uint256 amount,uint256 submittedAt,uint256 availableAt))',
+             'function submitRelease(uint256)', 'function executeRelease()', 'function cancelRelease()'],
+  vesting: ['function teamWallet() view returns (address)', 'function cliffTime() view returns (uint256)', 'function vestingEnd() view returns (uint256)', 'function vestingStart() view returns (uint256)',
+            'function totalVested() view returns (uint256)', 'function released() view returns (uint256)', 'function release()'],
+  pool: ['function slot0() view returns (uint160 sqrtPriceX96,int24 tick,uint16,uint16,uint16,uint8,bool)', 'function token0() view returns (address)'],
+  feed: ['function latestRoundData() view returns (uint80,int256 answer,uint256,uint256 updatedAt,uint80)'],
+  v3factory: ['function getPool(address,address,uint24) view returns (address)'],
+  npm: ['function collect((uint256 tokenId,address recipient,uint128 amount0Max,uint128 amount1Max)) returns (uint256,uint256)'],
+};
+const rp = new ethers.JsonRpcProvider(RPC, CHAIN_ID, { staticNetwork: true });
+const C = (addr, abi, runner = rp) => new ethers.Contract(addr, ABI[abi], runner);
+const $ = id => document.getElementById(id);
+const lc = a => (a || '').toLowerCase();
+const same = (a, b) => lc(a) === lc(b);
+const MAX128 = (1n << 128n) - 1n;
+
+let S = null;        // everything read for the loaded token
+let account = null, signer = null, bp = null;
+
+// ── formatting ─────────────────────────────────────────────────────────────
+function fmt(raw, dec, dp = 2) { const s = ethers.formatUnits(raw, dec); const [i, f = ''] = s.split('.');
+  const fi = BigInt(i).toLocaleString('en-US'); const ff = f.replace(/0+$/, '').slice(0, dp); return ff ? `${fi}.${ff}` : fi; }
+const T = (raw, dp = 2) => fmt(raw, S.dec, dp);
+const short = a => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '—';
+// A role label for an address, from what was read on-chain — never from a local list.
+function roleOf(a) { if (!S || !a) return ''; const l = [];
+  if (same(a, S.owner)) l.push('Owner'); if (same(a, S.gov) || same(a, S.rGov)) l.push('Governance');
+  if (same(a, S.team)) l.push('Team'); if (same(a, S.feeRcpt)) l.push('Fee recipient'); if (S.ops?.has(lc(a))) l.push('Operator');
+  return l.join(' · '); }
+const name = a => { const r = roleOf(a); return `<a class="mono" href="https://basescan.org/address/${a}" target="_blank" rel="noopener">${short(a)}</a>${r ? `<span class="who">${r}</span>` : ''}`; };
+const link = a => `<a class="mono" href="https://basescan.org/address/${a}" target="_blank" rel="noopener">${short(a)}</a>`;
+const date = t => t && Number(t) ? new Date(Number(t) * 1000).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+function dur(s) { s = Number(s); if (s <= 0) return 'now'; const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`; }
+const stat = (k, v, h = '') => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div>${h ? `<div class="h">${h}</div>` : ''}</div>`;
+const pill = (txt, cls) => `<span class="pill ${cls}">${txt}</span>`;
+function parseAmt(str, dec) { str = (str || '').trim().replace(/,/g, ''); if (!str) return 0n; return ethers.parseUnits(str, dec); }
+
+// ── toasts ─────────────────────────────────────────────────────────────────
+function toast(html, cls = '', sticky = false) { const el = document.createElement('div'); el.className = `toast ${cls}`;
+  el.innerHTML = `<button class="x" aria-label="close">×</button>${html}`; el.querySelector('.x').onclick = () => el.remove();
+  $('log').prepend(el); if (!sticky) setTimeout(() => el.remove(), 9000); return el; }
+function reason(e) { return e?.revert?.args?.[0] || e?.reason || e?.info?.error?.message || e?.shortMessage || e?.message || String(e); }
+
+// ── load everything for a token ────────────────────────────────────────────
+// All reads go through Multicall3 in a few batches: mainnet.base.org rate-limits a burst of
+// ~50 separate calls, which is what one refresh of this page would otherwise be.
+const MC = new ethers.Contract('0xcA11bde05977b3631167028862bE2a173976CA11', [
+  'function aggregate3((address target,bool allowFailure,bytes callData)[]) view returns ((bool success,bytes returnData)[])',
+  'function getCurrentBlockTimestamp() view returns (uint256)', 'function getBlockNumber() view returns (uint256)'], rp);
+// mc({ name: [contract, 'fn', [args]] }) → { name: value }; a failed call reads undefined.
+async function mc(spec) {
+  const keys = Object.keys(spec), calls = keys.map(k => spec[k]);
+  const res = await MC.aggregate3.staticCall(calls.map(([c, f, a = []]) => ({ target: c.target, allowFailure: true, callData: c.interface.encodeFunctionData(f, a) })));
+  const out = {}; res.forEach((r, i) => { const [c, f] = calls[i]; if (!r.success) return;
+    const d = c.interface.decodeFunctionResult(f, r.returnData); out[keys[i]] = d.length === 1 ? d[0] : d; });
+  return out;
+}
+async function load(token) {
+  token = ethers.getAddress(token);
+  const wdc = C(A.wdc, 'wdc'), router = C(A.router, 'router'), tk = C(token, 'erc20');
+  const a = await mc({ registered: [wdc, 'isRegistered', [token]], sym: [tk, 'symbol'], dec: [tk, 'decimals'], supply: [tk, 'totalSupply'],
+    suite: [wdc, 'getSuite', [token]], fees: [router, 'getPoolFeeTiers', [token]], feed: [C(A.ethUsd, 'feed'), 'latestRoundData'],
+    gov: [wdc, 'multisig'], govPending: [wdc, 'pendingMultisig'], govAt: [wdc, 'multisigAcceptableAt'],
+    rGov: [router, 'multisig'], rPending: [router, 'pendingMultisig'], rAt: [router, 'multisigAcceptableAt'],
+    feeRate: [router, 'feeRate'], feeRcpt: [router, 'feeRecipient'], pChange: [router, 'pendingChange'],
+    now: [MC, 'getCurrentBlockTimestamp'], blockNumber: [MC, 'getBlockNumber'] });
+  if (a.sym === undefined) throw new Error(`${short(token)} is not a token`);
+  if (!a.registered) throw new Error(`${a.sym} (${short(token)}) is not registered on the PunchCard Network`);
+  const suite = a.suite, f3 = C(A.v3factory, 'v3factory');
+  const esc = C(suite.rewardEscrow, 'escrow'), lk = C(suite.lpLocker, 'locker'), tr = C(suite.treasuryTimelock, 'treasury'), vs = C(suite.vestingWallet, 'vesting');
+  const b = await mc({ usdcPool: [f3, 'getPool', [token, A.usdc, a.fees[0]]], ethPool: [f3, 'getPool', [token, A.weth, a.fees[1]]],
+    owner: [esc, 'ownerWallet'], escActivated: [esc, 'activatedAt'], alloc: [esc, 'REWARDS_ALLOCATION'], perDay: [esc, 'emissionPerDay'], bufferCap: [esc, 'bufferCap'],
+    maxDrawer: [esc, 'maxDrawer'], emitted: [esc, 'emitted'], spendable: [esc, 'spendable'], distributed: [esc, 'totalDistributed'], floor: [esc, 'perTxFloor'],
+    max: [esc, 'perTxMax'], pausedUntil: [esc, 'pausedUntil'], lowThr: [esc, 'lowThreshold'], escFrozen: [esc, 'isFrozen'], escBal: [tk, 'balanceOf', [suite.rewardEscrow]],
+    reserve: [lk, 'reserveTokens'], lkInit: [lk, 'isInitialized'], lkFrozen: [lk, 'isFrozen'], lkReleased: [lk, 'isReleased'], liqU: [lk, 'currentUsdcLiquidity'],
+    liqE: [lk, 'currentEthLiquidity'], evacOpen: [lk, 'evacuationOpen'], permLocked: [lk, 'lpPermanentlyLocked'], positions: [lk, 'getPositions'],
+    lkBal: [tk, 'balanceOf', [suite.lpLocker]], lkOwner: [lk, 'ownerWallet'],
+    trBal: [tr, 'balance'], trWait: [tr, 'TIMELOCK_DURATION'], trFrozen: [tr, 'isFrozen'], pending: [tr, 'getPendingRelease'], trOwner: [tr, 'ownerWallet'],
+    team: [vs, 'teamWallet'], cliff: [vs, 'cliffTime'], vEnd: [vs, 'vestingEnd'], vStart: [vs, 'vestingStart'], vested: [vs, 'totalVested'], vReleased: [vs, 'released'],
+    vBal: [tk, 'balanceOf', [suite.vestingWallet]] });
+  const pu = C(b.usdcPool, 'pool'), pe = C(b.ethPool, 'pool');
+  const c = await mc({ sU: [pu, 'slot0'], tU: [pu, 'token0'], sE: [pe, 'slot0'], tE: [pe, 'token0'] });
+  const price = (s0, t0, pairDec) => { const r = (Number(s0.sqrtPriceX96) / 2 ** 96) ** 2;   // token1 raw per token0 raw
+    const tokPerPairRaw = same(t0, token) ? 1 / r : r;                                      // raw merchant token per raw pair token
+    return { tokPerPairRaw, pairPerTok: 1 / (tokPerPairRaw * 10 ** (pairDec - Number(a.dec))) }; };
+  // Uncollected fees on the locker's positions: a static collect() sent as the locker itself
+  // (so not through Multicall — the position manager checks the caller).
+  const npm = C(A.npm, 'npm');
+  const feeOf = id => npm.collect.staticCall({ tokenId: id, recipient: suite.lpLocker, amount0Max: MAX128, amount1Max: MAX128 }, { from: suite.lpLocker }).catch(() => null);
+  const feeU = await feeOf(b.positions.usdc.tokenId), feeE = await feeOf(b.positions.eth.tokenId);
+  S = { ...a, ...b, token, dec: Number(a.dec), ethUsd: a.feed ? Number(a.feed.answer) / 1e8 : null, blockNumber: Number(a.blockNumber),
+        evacOpen: b.evacOpen ?? false, permLocked: b.permLocked ?? true,
+        pU: price(c.sU, c.tU, 6), pE: price(c.sE, c.tE, 18), feeU, feeE };
+  render();
+  scanOperators();
+}
+
+// ── render ────────────────────────────────────────────────────────────────
+function render() {
+  const s = S; $('tokName').textContent = s.sym; $('tokBadge').textContent = s.sym.slice(0, 2);
+  $('tokLabel').innerHTML = `<a href="https://basescan.org/token/${s.token}" target="_blank" rel="noopener">${short(s.token)}</a> · merchant token`;
+  if (document.activeElement !== $('tokenInput')) $('tokenInput').value = ''; document.title = `${s.sym} · PunchCard Console`;
+  $('ovGrid').classList.remove('skeleton');
+  $('ovStatus').innerHTML = s.suite.initiatedAt > 0n ? pill('Winding down', 'bad') : pill('Registered on PunchCard', 'ok');
+  const TOTAL = 100_000_000n * 10n ** BigInt(s.dec); const burned = s.supply < TOTAL ? TOTAL - s.supply : 0n;
+  $('ovGrid').innerHTML = [
+    stat('Price', `$${s.pU.pairPerTok.toPrecision(4)}`, s.ethUsd ? `ETH pool $${(s.pE.pairPerTok * s.ethUsd).toPrecision(4)} · ETH $${Math.round(s.ethUsd).toLocaleString()}` : 'USDC pool'),
+    stat('Supply', T(s.supply, 0), `burned ${T(burned, 2)}`),
+    stat('Rewards escrow', T(s.escBal, 0), link(s.suite.rewardEscrow)),
+    stat('Vesting', T(s.vBal, 0), link(s.suite.vestingWallet)),
+    stat('Treasury', T(s.trBal, 0), link(s.suite.treasuryTimelock)),
+    stat('LP reserve', T(s.reserve, 0), link(s.suite.lpLocker)),
+    stat('Owner', name(s.owner).replace(/<span class="who">.*<\/span>/, ''), 'rewards · treasury · liquidity'),
+  ].join('');
+
+  const paused = s.pausedUntil > s.now;
+  $('rwGrid').innerHTML = [
+    stat('Status', s.escFrozen ? pill('frozen', 'bad') : paused ? pill(`paused ${dur(s.pausedUntil - s.now)}`, 'warn') : pill('paying', 'ok')),
+    stat('Balance', T(s.escBal, 0), `of ${T(s.alloc, 0)} allocated`),
+    stat('Emission', `${T(s.perDay, 0)}/day`, `started ${date(s.escActivated)}`),
+    stat('Spendable now', T(s.spendable), `buffer cap ${T(s.bufferCap, 0)}`),
+    stat('Paid out', T(s.distributed), `emitted so far ${T(s.emitted, 0)}`),
+    stat('Per payment', `${T(s.floor, 6)} – ${T(s.max, 0)}`, 'floor – max'),
+    stat('Low alert at', T(s.lowThr, 0)),
+  ].join('');
+  $('maxDrawerTxt').textContent = `${T(s.maxDrawer, 0)} ${s.sym}/day`;
+  if (!$('bFloor').value) $('bFloor').value = ethers.formatUnits(s.floor, s.dec);
+  if (!$('bMax').value) $('bMax').value = ethers.formatUnits(s.max, s.dec);
+  if (!$('lowThr').value) $('lowThr').value = ethers.formatUnits(s.lowThr, s.dec);
+
+  const feeTxt = (f, pairDec, pairSym, pos) => { if (!f) return '—'; const [a0, a1] = f; const tokIs0 = pos.merchantIsToken0;
+    const tok = tokIs0 ? a0 : a1, pair = tokIs0 ? a1 : a0; return `${fmt(pair, pairDec, pairDec === 6 ? 2 : 6)} ${pairSym} + ${T(tok, 0)} ${s.sym}`; };
+  $('lpGrid').innerHTML = [
+    stat('Hatch', s.lkFrozen ? pill('locker disabled', 'bad') : s.permLocked ? pill('locked for good', 'ok') : s.evacOpen ? pill('evacuation open', 'warn') : pill('closed', 'ok'),
+         s.lkFrozen ? 'evacuated or winding down' : s.permLocked ? 'no early exit' : 'owner can still evacuate everything'),
+    stat('Reserve', T(s.reserve, 0), `held ${T(s.lkBal, 0)}`),
+    stat('USDC position', `#${s.positions.usdc.tokenId}`, `liquidity ${s.liqU.toLocaleString()} · 1% fee tier`),
+    stat('ETH position', `#${s.positions.eth.tokenId}`, `liquidity ${s.liqE.toLocaleString()} · 1% fee tier`),
+    stat('Fees owed · USDC pos.', feeTxt(s.feeU, 6, 'USDC', s.positions.usdc)),
+    stat('Fees owed · ETH pos.', feeTxt(s.feeE, 18, 'WETH', s.positions.eth)),
+  ].join('');
+
+  const p = s.pending, hasP = p.amount > 0n, ready = hasP && s.now >= p.availableAt;
+  $('trGrid').innerHTML = [
+    stat('Balance', T(s.trBal, 0)), stat('Wait', dur(s.trWait), 'per release'),
+    stat('Pending', hasP ? T(p.amount, 0) : 'none', hasP ? (ready ? pill('ready to execute', 'ok') : `available ${date(p.availableAt)} (${dur(p.availableAt - s.now)})`) : ''),
+    stat('Pays to', name(s.trOwner)), stat('Status', s.trFrozen ? pill('frozen', 'bad') : pill('active', 'ok')),
+  ].join('');
+
+  const releasable = s.vested - s.vReleased;
+  $('vsGrid').innerHTML = [
+    stat('Held', T(s.vBal, 0)), stat('Cliff', date(s.cliff), s.now < s.cliff ? `in ${dur(s.cliff - s.now)}` : pill('passed', 'ok')),
+    stat('Fully vested', date(s.vEnd)), stat('Vested', T(s.vested, 0), `released ${T(s.vReleased, 0)}`),
+    stat('Releasable now', T(releasable, 2)), stat('Pays to', name(s.team)),
+  ].join('');
+
+  const pc = s.pChange;
+  $('nwGrid').innerHTML = [
+    stat('Governance', name(s.gov), s.govPending !== ethers.ZeroAddress ? `handover to ${short(s.govPending)} from ${date(s.govAt)}` : 'controller'),
+    stat('Router governance', name(s.rGov), s.rPending !== ethers.ZeroAddress ? `handover to ${short(s.rPending)} from ${date(s.rAt)}` : 'router'),
+    stat('Router fee', `${Number(s.feeRate) / 100}%`, `to ${name(s.feeRcpt)}`),
+    stat('Pending fee change', pc.paramsHash === ethers.ZeroHash ? 'none' : (s.now >= pc.executableAt ? pill('executable', 'ok') : `from ${date(pc.executableAt)}`)),
+    stat('Pools', `${Number(s.fees[0]) / 10000}% / ${Number(s.fees[1]) / 10000}%`, `${link(s.usdcPool)} · ${link(s.ethPool)}`),
+  ].join('');
+  checkFeeMatch();
+
+  const sd = s.suite, init = sd.initiatedAt > 0n;
+  $('wdGrid').innerHTML = [
+    stat('State', sd.complete ? pill('complete', 'bad') : init ? pill('winding down', 'bad') : pill('not started', 'ok')),
+    stat('Expires', init ? date(sd.expiryTime) : '—', init && s.now < sd.expiryTime ? `in ${dur(sd.expiryTime - s.now)}` : ''),
+  ].join('');
+  const expired = init && s.now >= sd.expiryTime;
+  $('wdSteps').innerHTML = !init ? '' : `<div class="tiles"><div class="tile wide"><h3>Settlement <span class="role">Anyone</span></h3><p>After expiry, run these in order: escrow, treasury and vesting settle first; the LP release comes last.</p>
+    <div class="row">
+      <button data-act="wdEscrow" data-role="any" ${!expired || sd.escrowSettled ? 'disabled' : ''}>Burn escrow ${sd.escrowSettled ? '✓' : ''}</button>
+      <button data-act="wdTreasury" data-role="any" ${!expired || sd.treasurySettled ? 'disabled' : ''}>Burn treasury ${sd.treasurySettled ? '✓' : ''}</button>
+      <button data-act="wdVesting" data-role="any" ${!expired || sd.vestingSettled ? 'disabled' : ''}>Settle vesting ${sd.vestingSettled ? '✓' : ''}</button>
+      <button data-act="wdLP" data-role="any" ${!expired || sd.complete ? 'disabled' : ''}>Release LP ${sd.complete ? '✓' : ''}</button></div></div></div>`;
+  $('wdPhrase').textContent = `WIND DOWN ${s.sym}`; $('cfWd').placeholder = `WIND DOWN ${s.sym}`;
+
+  $('banners').innerHTML = [
+    paused ? `<div class="banner">Rewards are paused until ${date(s.pausedUntil)}.</div>` : '',
+    init ? `<div class="banner">Wind-down started ${date(sd.initiatedAt)}.</div>` : '',
+    hasP && ready ? `<div class="banner">A treasury release of ${T(p.amount, 0)} ${s.sym} is ready to execute.</div>` : '',
+  ].join('');
+  $('lastRead').textContent = `Block ${s.blockNumber.toLocaleString()} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  renderAccount(); gateButtons();
+}
+
+// ── operators: from the escrow's events, cached per browser ────────────────
+async function scanOperators() {
+  const esc = C(S.suite.rewardEscrow, 'escrow'), key = `pc-admin-ops-${lc(S.suite.rewardEscrow)}`;
+  let cache = { from: DEPLOY_BLOCK[lc(S.suite.rewardEscrow)] ?? Math.max(0, S.blockNumber - 1_300_000), ops: [] };
+  try { const c = JSON.parse(localStorage.getItem(key) || 'null'); if (c) cache = c; } catch {}
+  const set = new Set(cache.ops.map(lc)), head = S.blockNumber, topics = [[esc.interface.getEvent('OperatorAdded').topicHash,
+    esc.interface.getEvent('OperatorRemoved').topicHash, esc.interface.getEvent('DrawerAllowanceSet').topicHash]];
+  for (let b = cache.from; b <= head; b += 2000) {
+    const to = Math.min(b + 1999, head);
+    $('opScan').textContent = head - cache.from > 4000 ? `scanning operator history… ${Math.round((b - cache.from) / (head - cache.from + 1) * 100)}%` : '';
+    try { const logs = await rp.getLogs({ address: S.suite.rewardEscrow, topics, fromBlock: b, toBlock: to });
+      logs.forEach(l => set.add(lc(ethers.getAddress('0x' + l.topics[1].slice(26)))));
+    } catch (e) { $('opScan').textContent = `operator scan paused at block ${b}: ${reason(e)} — reload to resume`; break; }
+    cache = { from: to + 1, ops: [...set] }; try { localStorage.setItem(key, JSON.stringify(cache)); } catch {}
+  }
+  if (!$('opScan').textContent.startsWith('operator scan paused')) $('opScan').textContent = '';
+  const ops = [...set], spec = {}; ops.forEach((a, i) => { spec[`d${i}`] = [esc, 'getDrawer', [a]]; spec[`v${i}`] = [esc, 'drawerAvailable', [a]]; });
+  const got = ops.length ? await mc(spec) : {}, rows = ops.map((a, i) => ({ a, d: got[`d${i}`], av: got[`v${i}`] ?? 0n }));
+  const live = rows.filter(r => r.d?.active);
+  S.ops = new Set(live.map(r => lc(r.a)));
+  $('opCount').textContent = `${live.length} active`;
+  $('opRows').innerHTML = live.length ? live.map(r => `<tr><td><a class="mono" href="https://basescan.org/address/${ethers.getAddress(r.a)}" target="_blank" rel="noopener">${ethers.getAddress(r.a)}</a></td><td class="num">${T(r.d.dailyAllowance, 0)} / day</td><td class="num">${T(r.av, 0)}</td>
+    <td style="text-align:right"><button data-act="removeOperator" data-arg="${ethers.getAddress(r.a)}" data-role="owner" class="danger">Remove</button></td></tr>`).join('')
+    : `<tr><td colspan="4" class="empty">No active operators.</td></tr>`;
+  gateButtons();
+}
+
+// ── wallet ────────────────────────────────────────────────────────────────
+async function connect() {
+  if (!window.ethereum) { toast('No wallet found in this browser.', 'bad'); return; }
+  bp = new ethers.BrowserProvider(window.ethereum, 'any');
+  const accts = await bp.send('eth_requestAccounts', []); await onAccounts(accts);
+  window.ethereum.on?.('accountsChanged', onAccounts);
+  window.ethereum.on?.('chainChanged', () => onAccounts(null));
+}
+async function onAccounts(accts) {
+  if (!bp) return; accts = accts ?? await bp.send('eth_accounts', []);
+  account = accts[0] ? ethers.getAddress(accts[0]) : null; signer = account ? await bp.getSigner(account) : null;
+  renderAccount(); gateButtons(); if (S) scanOperators();
+}
+function roles(a) { if (!a || !S) return {}; const r = { any: true };
+  r.owner = same(a, S.owner); r.gov = same(a, S.gov); r.routerGov = same(a, S.rGov); r.team = same(a, S.team);
+  r.wdcPending = same(a, S.govPending); r.rtPending = same(a, S.rPending); return r; }
+async function renderAccount() {
+  if (!account) { $('connectBtn').textContent = 'Connect wallet'; $('connectBtn').className = 'primary'; return; }
+  $('connectBtn').textContent = short(account); $('connectBtn').className = '';
+  const net = await bp.getNetwork().catch(() => null), wrong = net && Number(net.chainId) !== CHAIN_ID;
+  const r = roles(account), tags = [];
+  if (r.owner) tags.push(pill('Owner', 'ok'));
+  if (r.gov || r.routerGov) tags.push(pill('Governance', 'ok'));
+  if (r.team) tags.push(pill('Team', 'ok'));
+  if (S) { if (await C(A.wdc, 'wdc').registrars(account).catch(() => false)) tags.push(pill('Registrar', 'ok'));
+    const d = await C(S.suite.rewardEscrow, 'escrow').getDrawer(account).catch(() => null); if (d?.active) tags.push(pill('Operator', 'warn')); }
+  $('acct').innerHTML = `<div><div class="who">Connected</div><div class="addr">${account}</div></div>
+    <div class="chips">${tags.length ? tags.join('') : pill('No role for this merchant', '')}</div>
+    ${wrong ? `<div class="row" style="margin-left:auto">${pill('Wrong network', 'bad')}<button id="switchBtn" class="primary">Switch to Base</button></div>` : ''}`;
+  $('switchBtn')?.addEventListener('click', () => bp.send('wallet_switchEthereumChain', [{ chainId: CHAIN_HEX }]).catch(e => toast(reason(e), 'bad')));
+}
+function gateButtons() {
+  const r = roles(account);
+  document.querySelectorAll('button[data-act]').forEach(b => {
+    const need = b.dataset.role, ok = !!account && !!S && (need === 'any' || r[need]);
+    if (ok) delete b.dataset.gated; else b.dataset.gated = '1';
+    b.title = !account ? 'Connect a wallet' : ok ? '' : `Needs the ${{ owner: 'owner wallet', gov: 'governance key', routerGov: 'router governance key', wdcPending: 'proposed new governance key', rtPending: 'proposed new router governance key' }[need] || need}`;
+  });
+}
+
+// ── sending ────────────────────────────────────────────────────────────────
+async function ensureBase() { const net = await bp.getNetwork(); if (Number(net.chainId) !== CHAIN_ID) {
+  await bp.send('wallet_switchEthereumChain', [{ chainId: CHAIN_HEX }]); bp = new ethers.BrowserProvider(window.ethereum, 'any'); signer = await bp.getSigner(account); } }
+// One transaction: simulate, send, wait, then wait for the read RPC to catch up (it is load-balanced and lags).
+async function send(label, addr, abi, method, args = [], overrides = {}) {
+  const c = C(addr, abi, signer);
+  try { await c[method].staticCall(...args, { ...overrides, from: account }); }
+  catch (e) { toast(`<b>${label}</b> would fail: ${reason(e)}<br><span class="who">Nothing was sent.</span>`, 'bad', true); throw e; }
+  const t = toast(`<b>${label}</b> — confirm in your wallet…`, 'run', true);
+  let tx; try { tx = await c[method](...args, overrides); }
+  catch (e) { t.remove(); toast(`<b>${label}</b> not sent: ${reason(e)}`, 'bad'); throw e; }
+  t.innerHTML = `<b>${label}</b> — sent, waiting… <a href="https://basescan.org/tx/${tx.hash}" target="_blank" rel="noopener">view</a>`;
+  const rc = await tx.wait(); t.remove();
+  if (rc.status !== 1) { toast(`<b>${label}</b> FAILED on-chain. <a href="https://basescan.org/tx/${tx.hash}" target="_blank" rel="noopener">tx</a>`, 'bad', true); throw new Error('reverted'); }
+  toast(`✓ <b>${label}</b> <a href="https://basescan.org/tx/${tx.hash}" target="_blank" rel="noopener">tx</a>`, 'ok');
+  for (let i = 0; i < 30 && (await rp.getBlockNumber()) < rc.blockNumber; i++) await new Promise(r => setTimeout(r, 1000));
+  return rc;
+}
+
+// Add-liquidity plan, same maths as script/deploy/skoop/add-lp.sh: pair side binds, token side padded 2%, 1% slippage.
+function planAdd() {
+  const u = parseAmt($('addUsdc').value, 6), w = parseAmt($('addEth').value, 18);
+  if (u === 0n && w === 0n) throw new Error('Enter a USDC and/or ETH amount');
+  const side = (amt, p) => { if (amt === 0n) return { des: 0n, min: 0n, pmin: 0n, need: 0n };
+    const need = BigInt(Math.floor(Number(amt) * p.tokPerPairRaw));
+    return { need, des: need * 10200n / 10000n, min: need * 9900n / 10000n, pmin: amt * 9900n / 10000n }; };
+  const U = side(u, S.pU), E = side(w, S.pE);
+  if (U.des + E.des > S.reserve) throw new Error(`Needs up to ${T(U.des + E.des, 0)} ${S.sym}; the reserve holds ${T(S.reserve, 0)}`);
+  return { u, w, U, E };
+}
+function showPreview() { try { const p = planAdd(); $('addPreview').hidden = false;
+  $('addPreview').textContent = [p.u ? `USDC pool: ${fmt(p.u, 6)} USDC + ~${T(p.U.need, 0)} ${S.sym}` : '', p.w ? `ETH pool:  ${fmt(p.w, 18, 6)} ETH + ~${T(p.E.need, 0)} ${S.sym}` : '',
+    `From reserve: ~${T(p.U.need + p.E.need, 0)} ${S.sym} (reserve after ≈ ${T(S.reserve - p.U.need - p.E.need, 0)})`,
+    `Signatures: ${[p.w ? 'wrap ETH (if needed)' : '', p.u ? 'approve USDC' : '', p.w ? 'approve WETH' : '', 'addLiquidity'].filter(Boolean).join(' → ')}`].filter(Boolean).join('\n');
+} catch (e) { $('addPreview').hidden = false; $('addPreview').textContent = e.message; } }
+
+function checkFeeMatch() { if (!S) return; const pc = S.pChange; if (pc.paramsHash === ethers.ZeroHash) { $('rMatch').textContent = ''; return; }
+  try { const h = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(['uint256', 'address'], [BigInt($('rFee').value || 0), ethers.getAddress($('rRcpt').value)]));
+    $('rMatch').innerHTML = h === pc.paramsHash ? pill('matches the pending proposal', 'ok') : pill('does not match the pending proposal', 'warn'); }
+  catch { $('rMatch').textContent = 'enter the proposed fee and recipient to execute'; } }
+
+const addr = id => { const v = $(id).value.trim(); if (!ethers.isAddress(v)) throw new Error('Enter a valid 0x address'); return ethers.getAddress(v); };
+const ACTIONS = {
+  addOperator: () => send('Add operator', S.suite.rewardEscrow, 'escrow', 'addOperator', [addr('opAddr'), parseAmt($('opAllow').value, S.dec)]),
+  setDrawerAllowance: () => send('Set allowance', S.suite.rewardEscrow, 'escrow', 'setDrawerAllowance', [addr('opAddr2'), parseAmt($('opAllow2').value, S.dec)]),
+  removeOperator: b => send(`Remove operator ${short(b.dataset.arg)}`, S.suite.rewardEscrow, 'escrow', 'removeOperator', [b.dataset.arg]),
+  setPerTxBounds: () => send('Set per-payment bounds', S.suite.rewardEscrow, 'escrow', 'setPerTxBounds', [parseAmt($('bFloor').value, S.dec), parseAmt($('bMax').value, S.dec)]),
+  pause: () => send('Pause rewards', S.suite.rewardEscrow, 'escrow', 'pause'),
+  unpause: () => send('Unpause rewards', S.suite.rewardEscrow, 'escrow', 'unpause'),
+  setLowThreshold: () => send('Set low-balance alert', S.suite.rewardEscrow, 'escrow', 'setLowThreshold', [parseAmt($('lowThr').value, S.dec)]),
+  addLiquidity: async () => {
+    const p = planAdd(), lk = S.suite.lpLocker;
+    if (p.u) { const bal = await C(A.usdc, 'erc20').balanceOf(account); if (bal < p.u) throw new Error(`Owner wallet holds ${fmt(bal, 6)} USDC`); }
+    if (p.w) { const wb = await C(A.weth, 'erc20').balanceOf(account);
+      if (wb < p.w) await send(`Wrap ${fmt(p.w - wb, 18, 6)} ETH`, A.weth, 'erc20', 'deposit', [], { value: p.w - wb }); }
+    if (p.u && (await C(A.usdc, 'erc20').allowance(account, lk)) < p.u) await send('Approve USDC to the locker', A.usdc, 'erc20', 'approve', [lk, p.u]);
+    if (p.w && (await C(A.weth, 'erc20').allowance(account, lk)) < p.w) await send('Approve WETH to the locker', A.weth, 'erc20', 'approve', [lk, p.w]);
+    await send('Add liquidity', lk, 'locker', 'addLiquidity', [p.U.des, p.E.des, p.u, p.w, p.U.min, p.U.pmin, p.E.min, p.E.pmin], { gasLimit: 1_500_000n });
+    $('addUsdc').value = ''; $('addEth').value = ''; $('addPreview').hidden = true;
+  },
+  collectFees: () => send('Collect fees', S.suite.lpLocker, 'locker', 'collectFees', [], { gasLimit: 1_000_000n }),
+  lockLP: () => send('Lock LP permanently', S.suite.lpLocker, 'locker', 'lockLP'),
+  evacuateLP: () => send('Evacuate LP', S.suite.lpLocker, 'locker', 'evacuateLP', [], { gasLimit: 1_000_000n }),
+  submitRelease: () => send('Request treasury release', S.suite.treasuryTimelock, 'treasury', 'submitRelease', [parseAmt($('trAmt').value, S.dec)]),
+  cancelRelease: () => send('Cancel treasury release', S.suite.treasuryTimelock, 'treasury', 'cancelRelease'),
+  executeRelease: () => send('Execute treasury release', S.suite.treasuryTimelock, 'treasury', 'executeRelease'),
+  vestRelease: () => send('Release vested tokens', S.suite.vestingWallet, 'vesting', 'release'),
+  'setRegistrar:true': () => send('Appoint registrar', A.wdc, 'wdc', 'setRegistrar', [addr('regAddr'), true]),
+  'setRegistrar:false': () => send('Remove registrar', A.wdc, 'wdc', 'setRegistrar', [addr('regAddr'), false]),
+  proposeChange: () => send('Propose router fee', A.router, 'router', 'proposeChange', [{ feeRate: BigInt($('rFee').value), feeRecipient: addr('rRcpt') }]),
+  executeChange: () => send('Execute router fee', A.router, 'router', 'executeChange', [{ feeRate: BigInt($('rFee').value), feeRecipient: addr('rRcpt') }]),
+  cancelChange: () => send('Cancel router fee change', A.router, 'router', 'cancelChange'),
+  wdcPropose: () => send('Propose new governance (controller)', A.wdc, 'wdc', 'proposeMultisig', [addr('msAddr')]),
+  wdcCancel: () => send('Cancel governance handover (controller)', A.wdc, 'wdc', 'cancelMultisigTransfer'),
+  wdcAccept: () => send('Accept governance (controller)', A.wdc, 'wdc', 'acceptMultisig'),
+  rtPropose: () => send('Propose new governance (router)', A.router, 'router', 'proposeMultisig', [addr('msAddr')]),
+  rtCancel: () => send('Cancel governance handover (router)', A.router, 'router', 'cancelMultisigTransfer'),
+  rtAccept: () => send('Accept governance (router)', A.router, 'router', 'acceptMultisig'),
+  initiate: () => send(`Start wind-down of ${S.sym}`, A.wdc, 'wdc', 'initiate', [S.token]),
+  wdEscrow: () => send('Burn escrow', A.wdc, 'wdc', 'onExpiryBurnEscrow', [S.token]),
+  wdTreasury: () => send('Burn treasury', A.wdc, 'wdc', 'onExpiryBurnTreasury', [S.token]),
+  wdVesting: () => send('Settle vesting', A.wdc, 'wdc', 'onExpirySettleVesting', [S.token]),
+  wdLP: () => send('Release LP', A.wdc, 'wdc', 'onExpiryReleaseLP', [S.token], { gasLimit: 1_500_000n }),
+};
+
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest('button[data-act]'); if (!b) return;
+  if (!account) { toast('Connect a wallet first.', 'bad'); return; }
+  if (b.dataset.gated) { toast(`${b.title}. Switch to that account in your wallet and try again.`, 'bad'); return; }
+  if (b.dataset.confirm) { const [id, want0] = b.dataset.confirm.split(':'); const want = want0 === '@wd' ? `WIND DOWN ${S.sym}` : want0;
+    if ($(id).value.trim() !== want) { toast(`Type <b class="mono">${want}</b> in the box next to the button to arm it.`, 'bad'); return; } }
+  const fn = ACTIONS[b.dataset.act]; b.disabled = true;
+  try { await ensureBase(); await fn(b); if (b.dataset.confirm) $(b.dataset.confirm.split(':')[0]).value = ''; await load(S.token); }
+  catch (e) { if (!/would fail|not sent|reverted/.test(String(e?.message)) && !e?.code) toast(reason(e), 'bad'); }
+  finally { b.disabled = false; }
+});
+$('connectBtn').onclick = () => connect().catch(e => toast(reason(e), 'bad'));
+$('loadBtn').onclick = () => boot($('tokenInput').value.trim());
+$('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') boot($('tokenInput').value.trim()); });
+$('addPreviewBtn').onclick = showPreview;
+['rFee', 'rRcpt'].forEach(id => $(id).addEventListener('input', checkFeeMatch));
+$('regCheck').onclick = async () => { try { const a = addr('regAddr'); $('regOut').innerHTML = (await C(A.wdc, 'wdc').registrars(a)) ? pill('registrar', 'ok') : pill('not a registrar', 'warn'); } catch (e) { $('regOut').textContent = e.message; } };
+
+async function boot(token) {
+  $('tokLabel').textContent = 'reading the chain…';
+  try { const t = token || new URLSearchParams(location.search).get('token') || DEFAULT_TOKEN; await load(t);
+    history.replaceState(null, '', `?token=${S.token}${location.hash}`); }
+  catch (e) { $('tokName').textContent = 'Not loaded'; $('tokLabel').textContent = 'check the address'; toast(reason(e), 'bad', true); }
+}
+boot();
+// Highlight the section in view.
+const navLinks = [...document.querySelectorAll('#nav a')];
+const navObs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${e.target.id}`)); }),
+  { rootMargin: '-30% 0px -60% 0px' });
+document.querySelectorAll('main section').forEach(s => navObs.observe(s));
+setInterval(() => { if (S && document.visibilityState === 'visible') load(S.token).catch(() => {}); }, 60_000);
+if (window.ethereum) { bp = new ethers.BrowserProvider(window.ethereum, 'any'); onAccounts(null).catch(() => {}); window.ethereum.on?.('accountsChanged', onAccounts); }
+</script>
+</body>
+</html>
