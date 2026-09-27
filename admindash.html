@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <title>PunchCard Console</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e0714f'/%3E%3Ccircle cx='11' cy='12' r='3' fill='%23fff'/%3E%3Ccircle cx='21' cy='12' r='3' fill='%23fff'/%3E%3Ccircle cx='11' cy='21' r='3' fill='%23fff' opacity='.45'/%3E%3Ccircle cx='21' cy='21' r='3' fill='%23fff' opacity='.45'/%3E%3C/svg%3E">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Special+Elite&display=swap" rel="stylesheet">
@@ -40,8 +40,8 @@
   .app { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
   aside { position: sticky; top: 0; height: 100vh; padding: calc(22px + env(safe-area-inset-top, 0px)) 16px 18px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 22px; background: var(--panel); }
   .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
-  .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 7px; flex-shrink: 0; }
-  .mark i { background: #fff; border-radius: 50%; } .mark i:nth-child(n+3) { opacity: .45; }
+  .mark { width: 30px; height: 30px; border-radius: 8px; background: url(/brand/punchcard.svg) center/cover no-repeat; flex-shrink: 0; }
+  .mark i { display: none; }
   .brand b { font-family: 'Special Elite', var(--sans); font-weight: 400; font-size: 1.12rem; letter-spacing: .01em; display: block; line-height: 1.1; }
   .brand span { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
   nav { display: flex; flex-direction: column; gap: 2px; }
@@ -146,7 +146,7 @@
     main { min-width: 0; padding: 16px 16px calc(96px + env(safe-area-inset-bottom, 0px)); }
     aside { position: sticky; top: 0; z-index: 10; height: auto; flex-direction: row; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px 16px; gap: 10px; border-right: 0; border-bottom: 1px solid var(--line); min-width: 0; }
     .brand { padding: 0; flex-shrink: 0; } .brand b, .brand span, .aside-foot { display: none; }
-    .mark { width: 28px; height: 28px; padding: 6px; }
+    .mark { width: 28px; height: 28px; }
     nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 1; gap: 2px; mask-image: linear-gradient(90deg, #000 88%, transparent); }
     nav::-webkit-scrollbar { display: none; }
     nav a { padding: 7px 11px; white-space: nowrap; font-size: .86rem; } nav svg { display: none; }

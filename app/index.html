@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PunchCard</title>
+<meta name="application-name" content="PunchCard">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PunchCard">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffffff">
+<meta name="description" content="PunchCard — buy, earn and pay with local merchant tokens.">
+<meta property="og:title" content="PunchCard">
+<meta property="og:description" content="Buy, earn and pay with local merchant tokens.">
+<meta property="og:image" content="https://punchcard.club/og-image.png">
+<meta property="og:type" content="website">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Special+Elite&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>window.process={env:{NODE_ENV:'production'},version:'v18.0.0',browser:true};</script>
+<script src="https://cdn.jsdelivr.net/npm/@walletconnect/modal@2.6.2/dist/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.10.0/dist/index.umd.js"></script>
+
+<!-- Smart Wallet via Coinbase Wallet deep link — no SDK required -->
+
+<style>
+:root{
+  --coral:#f5f3ef;--coral-mid:#e6e1d8;--coral-deep:#c0492a;
+  --mint:#e4f2e9;--apricot:#f7f4ef;--lavender:#f1eee8;--sand:#fbf2dc;
+  --cream:#fbfaf7;--cream2:#f5f2ec;
+  --ink:#16130e;--ink-mid:#5c5448;--ink-light:#958b7d;
+  --accent-soft:rgba(192,73,42,0.08);
+  --display:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --white:#ffffff;--border:rgba(42,31,26,0.10);--border-mid:rgba(42,31,26,0.16);
+  --border-hard:1.5px solid rgba(42,31,26,0.18);
+  --r:18px;--r-sm:10px;--r-pill:999px;--nav-h:76px;--green:#1e7443;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;height:100dvh;overflow:hidden;background:var(--coral);font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh;min-height:0;max-width:430px;margin:0 auto;position:relative;background:var(--coral);overflow:hidden;}
+.screen{display:none;flex-direction:column;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+/* Nav clearance is a real flex item, not padding. WebKit leaves the bottom padding of
+   an overflow:auto flex container out of the scrollable extent, so on iOS the last row
+   ended flush with the bottom of the scroll area and the nav sat on top of it — the
+   activity row showed about half. A spacer box is laid out like any other child, so the
+   scroll actually reaches past the nav. flex-shrink:0 keeps it from being squeezed away. */
+.screen::after{content:'';display:block;flex:0 0 auto;height:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 8px);}
+.screen.active{display:flex;}
+/* The shell is a column of flex items; without min-height:0 a scrollable child
+   sizes to its content instead of its parent, so overflow-y never engages and the
+   bottom of the list is simply clipped. 100dvh keeps the shell to the *visible*
+   viewport — under an in-app browser's chrome 100% resolves taller than the screen,
+   which pushed the activity list off the bottom with body overflow:hidden blocking
+   any page scroll. That combination is why 'Rewards earned' had no way to be reached. */
+#main-app,#connect-gate{min-height:0;}
+.stripe{display:flex;height:8px;flex-shrink:0;}
+.stripe .s1{flex:1;background:var(--coral)}.stripe .s2{flex:1;background:var(--mint)}
+.stripe .s3{flex:1;background:var(--apricot)}.stripe .s4{flex:1;background:var(--lavender)}
+.stripe .s5{flex:1;background:var(--sand)}.stripe .s6{flex:1;background:var(--coral-mid)}
+.stripe-thin{height:4px;}
+#bottom-nav{position:absolute;bottom:0;left:0;right:0;height:calc(var(--nav-h) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--white);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:8px;z-index:50;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer;background:none;border:none;font-family:var(--sans);transition:all 0.15s;}
+.nav-icon{width:32px;height:32px;border-radius:var(--r-sm);overflow:hidden;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:16px;}
+.nav-item.active .nav-icon{background:var(--coral);}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:0.4px;color:var(--ink-light);transition:color 0.15s;}
+.nav-item.active .nav-label{color:var(--coral-deep);}
+#connect-gate{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--coral);overflow:hidden;}
+.gate-blocks{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;height:240px;flex-shrink:0;position:relative;}
+.gate-block{position:relative;overflow:hidden;}
+.gb-coral{background:var(--coral);}.gb-mint{background:var(--mint);}.gb-lavender{background:var(--lavender);}.gb-sand{background:var(--sand);}
+.gate-logo-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;width:160px;height:160px;border-radius:50%;overflow:hidden;box-shadow:0 8px 48px rgba(42,31,26,0.18);}
+.gate-logo-center img{width:100%;height:100%;object-fit:cover;}
+.gate-bottom{background:var(--white);border-top-left-radius:28px;border-top-right-radius:28px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative;z-index:5;}
+.gate-bottom-inner{padding:28px 24px 48px;}
+.gate-tagline{font-family:var(--display);font-size:22px;font-weight:600;font-style:italic;color:var(--ink);text-align:center;margin-bottom:20px;line-height:1.3;}
+.btn-primary{width:100%;padding:17px;background:var(--coral-deep);color:var(--white);border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary:hover{background:var(--ink);}
+.ca-line{margin-top:14px;text-align:center;font-size:10px;font-weight:500;color:var(--ink-light);letter-spacing:0.3px;word-break:break-all;line-height:1.6;cursor:pointer;}
+.gate-divider{display:flex;align-items:center;gap:12px;margin:28px 0 20px;}
+.gate-divider::before,.gate-divider::after{content:'';flex:1;height:1px;background:var(--border-mid);}
+.gate-divider span{font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--ink-light);white-space:nowrap;}
+.about-kicker{font-size:9px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.about-kicker::before{content:'';width:12px;height:2px;background:var(--green);display:block;}
+.about-heading{font-family:var(--display);font-size:32px;font-weight:600;line-height:1.05;color:var(--ink);margin-bottom:14px;}
+.about-heading em{font-style:italic;color:var(--coral-deep);}
+.about-body{font-size:13px;font-weight:400;color:var(--ink-mid);line-height:1.8;margin-bottom:20px;}
+.stat-strip{display:grid;grid-template-columns:1fr 1fr 1fr;border:var(--border-hard);border-radius:var(--r-sm);overflow:hidden;margin-bottom:24px;}
+.stat-cell{padding:14px 10px;text-align:center;border-right:var(--border-hard);}
+.stat-cell:last-child{border-right:none;}
+.stat-cell:nth-child(1){background:var(--coral);}
+.stat-cell:nth-child(2){background:var(--mint);}
+.stat-cell:nth-child(3){background:var(--sand);}
+.stat-big{font-family:var(--display);font-size:26px;font-weight:600;color:var(--ink);line-height:1;margin-bottom:3px;}
+.stat-lbl{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ink-mid);}
+.token-card{background:var(--apricot);border:var(--border-hard);border-radius:var(--r);padding:18px 18px 14px;margin-bottom:8px;}
+.token-card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.token-badge{background:var(--coral-deep);color:var(--white);font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 12px;border-radius:var(--r-pill);}
+.token-card-title{font-family:var(--display);font-size:18px;font-weight:600;font-style:italic;color:var(--ink);}
+.token-card-body{font-size:12px;color:var(--ink-mid);line-height:1.75;}
+.token-card-body strong{color:var(--ink);font-weight:600;}
+.hiw-heading{font-family:var(--display);font-size:28px;font-weight:600;line-height:1.1;color:var(--ink);margin-bottom:16px;}
+.hiw-heading em{font-style:italic;color:var(--coral-deep);}
+.step-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.step{display:flex;align-items:flex-start;gap:14px;padding:16px;border-radius:var(--r-sm);border:var(--border-hard);}
+.step:nth-child(1){background:var(--mint);}.step:nth-child(2){background:var(--lavender);}
+.step:nth-child(3){background:var(--sand);}.step:nth-child(4){background:var(--coral);}
+.step-num{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:17px;font-weight:600;color:var(--ink);flex-shrink:0;border:1px solid rgba(42,31,26,0.12);}
+.step-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.step-desc{font-size:11px;color:var(--ink-mid);line-height:1.65;font-weight:400;}
+.earn-pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
+.ep-card{border:var(--border-hard);border-radius:var(--r-sm);padding:16px 14px;}
+.ep-card:nth-child(1){background:var(--mint);}.ep-card:nth-child(2){background:var(--lavender);}
+.ep-icon{font-size:22px;margin-bottom:8px;}
+.ep-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.ep-body{font-size:11px;color:var(--ink-mid);line-height:1.6;}
+.gate-footer-cta{background:var(--coral);border:var(--border-hard);border-radius:var(--r);padding:20px 18px;text-align:center;margin-top:8px;}
+.gate-footer-cta p{font-family:var(--display);font-size:18px;font-style:italic;font-weight:600;color:var(--ink);margin-bottom:14px;line-height:1.3;}
+.btn-cta-repeat{width:100%;padding:15px;background:var(--coral-deep);color:var(--white);border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-cta-repeat:hover{background:var(--ink);}
+.hdr{display:flex;align-items:center;padding:0 20px;height:72px;flex-shrink:0;}
+.hdr-logo{width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 2px 12px rgba(42,31,26,0.15);}
+.hdr-logo img{width:100%;height:100%;object-fit:cover;}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.pill{border-radius:var(--r-pill);padding:5px 11px;font-size:11px;font-weight:600;letter-spacing:0.3px;}
+.pill-white{background:rgba(255,255,255,0.7);color:var(--ink);}
+.pill-dark{background:rgba(42,31,26,0.12);color:var(--ink-mid);}
+.pill-danger{background:#b91c1c;color:white;}
+.disconnect-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border-mid);background:rgba(255,255,255,0.5);color:var(--ink-mid);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;}
+.disconnect-btn:hover{background:var(--coral-deep);color:white;border-color:var(--coral-deep);}
+#screen-home{background:var(--coral);}
+.home-balance-block{background:var(--apricot);padding:24px 20px 20px;}
+.bal-eyebrow{font-size:10px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink-mid);margin-bottom:6px;}
+.bal-number{font-family:var(--display);font-size:62px;font-weight:600;color:var(--ink);letter-spacing:-2px;line-height:1;margin-bottom:6px;}
+.bal-sub{font-size:13px;color:var(--ink-mid);font-weight:500;}
+.rewards-chip{display:none;align-items:center;gap:9px;background:var(--mint);border:1.5px solid rgba(42,31,26,0.14);border-radius:var(--r-pill);padding:7px 15px 7px 11px;margin-top:11px;}
+.rewards-chip.show{display:inline-flex;}
+.rc-ic{font-size:17px;line-height:1;flex-shrink:0;}
+.rc-amt{font-size:13px;font-weight:700;color:var(--green);line-height:1.2;}
+.rc-sub{font-size:10.5px;font-weight:500;color:var(--ink-mid);line-height:1.2;margin-top:1px;}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;flex-shrink:0;}
+.action-cell{padding:20px 18px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:filter 0.15s;border:none;font-family:var(--sans);text-align:left;}
+.action-cell:hover{filter:brightness(0.96);}.action-cell:active{filter:brightness(0.92);}
+.ac-mint{background:var(--mint);}.ac-lavender{background:var(--lavender);}.ac-sand{background:var(--sand);}.ac-apricot{background:var(--apricot);}
+.ac-icon{width:40px;height:40px;background:rgba(255,255,255,0.5);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:20px;}
+.ac-label{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px;}
+.ac-sub{font-size:11px;color:var(--ink-mid);font-weight:500;}
+.section-hdr{background:var(--coral-mid);padding:14px 20px;}
+.section-hdr-title{font-family:var(--display);font-size:20px;font-weight:600;font-style:italic;color:var(--ink);}
+.tx-list{background:var(--cream);}
+.tx-row{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border);transition:background 0.1s;}
+.tx-row:hover{background:rgba(42,31,26,0.02);}
+.tx-dot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.td-mint{background:var(--mint);}.td-apricot{background:var(--apricot);}.td-lavender{background:var(--lavender);}
+.tx-info{flex:1;}.tx-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;}.tx-date{font-size:11px;color:var(--ink-light);font-weight:500;}
+.tx-val{text-align:right;}.tx-val .amt{font-family:var(--display);font-size:17px;font-weight:600;}
+.amt-plus{color:var(--coral-deep);}.amt-minus{color:var(--ink-mid);}
+#screen-buy{background:var(--apricot);}
+.swap-block-from{background:var(--sand);padding:20px;border-bottom:2px solid var(--cream);}
+.swap-block-to{background:var(--mint);padding:20px;}
+.swap-block-arrow{background:var(--cream);display:flex;align-items:center;justify-content:center;padding:8px;font-size:16px;color:var(--ink-mid);}
+.sp-eyebrow{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--ink-mid);margin-bottom:12px;}
+.tok-btn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.65);border:1px solid var(--border-mid);border-radius:var(--r-pill);padding:7px 13px 7px 7px;cursor:pointer;transition:all 0.15s;margin-bottom:12px;}
+.tok-btn:hover{background:rgba(255,255,255,0.9);}
+.tok-ic{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;flex-shrink:0;}
+.ti-usdc{background:#2775CA;}.ti-eth{background:#627EEA;}
+.tok-name{font-size:14px;font-weight:600;color:var(--ink);}.tok-chev{font-size:9px;color:var(--ink-light);}
+.amt-input{font-family:var(--display);font-size:48px;font-weight:600;color:var(--ink);background:none;border:none;outline:none;width:100%;letter-spacing:-2px;}
+.amt-input::placeholder{color:rgba(42,31,26,0.2);}
+.bal-hint{font-size:11px;color:var(--ink-mid);font-weight:500;margin-top:8px;display:flex;align-items:center;gap:6px;}
+.max-tag{background:var(--coral-deep);color:var(--white);border:none;border-radius:var(--r-pill);padding:2px 9px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.out-amount{font-family:var(--display);font-size:48px;font-weight:600;color:var(--ink);letter-spacing:-2px;margin-bottom:4px;}
+.out-loading{font-size:12px;color:var(--ink-mid);font-weight:500;display:none;}
+.out-loading.show{display:block;animation:blink 1s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+.skoop-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.55);border-radius:var(--r-pill);padding:5px 12px;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:10px;}
+.slip-row{background:var(--apricot);padding:10px 20px;display:flex;align-items:center;gap:8px;border-top:2px solid var(--cream);}
+.slip-lbl{font-size:11px;color:var(--ink-mid);font-weight:600;letter-spacing:0.5px;}
+.slip-btn{padding:5px 11px;border-radius:var(--r-pill);border:1px solid var(--border-mid);background:transparent;font-family:var(--sans);font-size:11px;font-weight:600;color:var(--ink-mid);cursor:pointer;transition:all 0.1s;}
+.slip-btn.sel{background:var(--coral-deep);color:white;border-color:var(--coral-deep);}
+.swap-dets{background:var(--cream2);margin:0 20px 12px;border-radius:var(--r-sm);padding:12px 14px;display:none;}
+.swap-dets.show{display:block;}
+.det-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;}
+.det-row .dk{color:var(--ink-light);font-weight:500;}.det-row .dv{font-weight:600;color:var(--ink);}
+.btn-swap{margin:12px 20px 0;width:calc(100% - 40px);padding:18px;background:var(--coral-deep);color:var(--white);border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-swap:hover{background:var(--ink);}
+.btn-swap:disabled{background:var(--border);color:var(--ink-light);cursor:not-allowed;}
+.backdrop{display:none;position:absolute;inset:0;background:rgba(42,31,26,0.35);z-index:150;}
+.backdrop.open{display:block;}
+.tok-sheet{display:none;position:absolute;bottom:0;left:0;right:0;background:var(--white);border-top-left-radius:24px;border-top-right-radius:24px;padding:16px 20px calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 16px);z-index:200;box-shadow:0 -4px 40px rgba(0,0,0,0.12);}
+.tok-sheet.open{display:block;}
+.sheet-handle{width:36px;height:4px;background:var(--border-mid);border-radius:2px;margin:0 auto 20px;}
+.sheet-title{font-family:var(--display);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:16px;}
+.tok-opt{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity 0.1s;}
+.tok-opt:last-child{border-bottom:none;}.tok-opt:hover{opacity:0.65;}
+.tok-opt-info h4{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px;}
+.tok-opt-info p{font-size:11px;color:var(--ink-light);}
+.tok-opt-bal{margin-left:auto;font-size:12px;font-weight:600;color:var(--ink-mid);}
+#screen-pay{background:var(--lavender);}
+.pay-state{display:none;flex-direction:column;flex:1;}.pay-state.active{display:flex;}
+.scan-box{margin:8px 10px;background:var(--ink);border-radius:var(--r);overflow:hidden;position:relative;min-height:300px;display:flex;align-items:center;justify-content:center;}
+#qr-reader{width:100%;}
+.scan-ui{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
+.scan-frame{width:220px;height:220px;border-radius:16px;position:relative;margin-bottom:16px;}
+.sf{position:absolute;width:28px;height:28px;border-color:var(--coral);border-style:solid;}
+.sf-tl{top:0;left:0;border-width:3px 0 0 3px;border-radius:6px 0 0 0;}
+.sf-tr{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 6px 0 0;}
+.sf-bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 6px;}
+.sf-br{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 6px 0;}
+.scan-line{position:absolute;left:12px;right:12px;height:2px;background:var(--coral);box-shadow:0 0 8px var(--coral-mid);border-radius:1px;animation:scanAnim 2s ease-in-out infinite;}
+@keyframes scanAnim{0%,100%{top:14px}50%{top:calc(100% - 14px)}}
+.scan-hint{color:rgba(255,255,255,0.5);font-size:13px;font-weight:500;text-align:center;}
+.btn-cam{margin:0 20px 16px;width:calc(100% - 40px);padding:17px;background:var(--coral-mid);color:var(--ink);border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;}
+.btn-cam:hover{background:var(--coral-deep);color:white;}
+.info-block{margin:0 20px 16px;border-radius:var(--r);padding:16px 18px;}
+.ib-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.ib-text{font-size:12px;color:var(--ink-mid);font-weight:500;line-height:1.6;}
+.cc-wrap{padding:0 20px;}
+.confirm-card{background:var(--cream);border:none;border-radius:var(--r);overflow:hidden;box-shadow:0 4px 24px rgba(42,31,26,0.08);}
+.cc-head{background:var(--coral);padding:20px;display:flex;align-items:center;gap:12px;}
+.cc-head-text .store{font-size:11px;color:var(--ink-mid);font-weight:600;margin-bottom:4px;}
+.cc-head-text .total{font-family:var(--display);font-size:32px;font-weight:600;color:var(--ink);letter-spacing:-0.5px;}
+.cc-body{padding:16px 20px;}
+.cc-row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid var(--border);}
+.cc-row:last-child{border-bottom:none;}
+.cc-row .ck{color:var(--ink-light);font-weight:500;}.cc-row .cv{font-weight:600;color:var(--ink);font-size:12px;text-align:right;max-width:60%;}
+.cc-row .cv.big{font-family:var(--display);font-size:18px;color:var(--coral-deep);}
+.btn-confirm{width:100%;padding:17px;background:var(--coral-deep);color:var(--white);border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:12px;}
+.btn-confirm:hover{background:var(--ink);}
+.btn-confirm:disabled{background:var(--border);color:var(--ink-light);cursor:not-allowed;}
+.btn-cancel{width:100%;padding:13px;background:transparent;color:var(--ink-mid);border:1px solid var(--border-mid);border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;}
+#approval-progress{display:none;margin:12px 20px 0;background:var(--white);border:1.5px solid var(--border-mid);border-radius:var(--r);overflow:hidden;}
+#approval-progress.show{display:block;}
+.ap-header{background:var(--sand);padding:12px 16px;display:flex;align-items:center;gap:8px;}
+.ap-header-text{font-size:12px;font-weight:600;color:var(--ink);}
+.ap-header-sub{font-size:10px;color:var(--ink-mid);font-weight:500;margin-top:1px;}
+.ap-steps{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.ap-step{display:flex;align-items:center;gap:12px;}
+.ap-step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;transition:all 0.3s;}
+.ap-step-dot.waiting{background:var(--border);color:var(--ink-light);}
+.ap-step-dot.active{background:var(--sand);color:var(--ink);animation:apPulse 1.2s ease infinite;}
+.ap-step-dot.done{background:var(--mint);color:var(--green);}
+.ap-step-dot.error{background:#fff0ee;color:#c0392b;}
+@keyframes apPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+.ap-step-label{font-size:12px;font-weight:600;color:var(--ink);}
+.ap-step-desc{font-size:10px;color:var(--ink-mid);font-weight:500;margin-top:1px;line-height:1.4;}
+.ap-connector{width:2px;height:10px;background:var(--border);margin-left:13px;}
+#screen-qr{background:var(--sand);}
+.qr-card{background:var(--white);margin:16px 20px;border-radius:var(--r);padding:28px 24px;text-align:center;}
+.qr-eyebrow{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--ink-light);margin-bottom:4px;}
+.qr-italic{font-family:var(--display);font-size:18px;font-weight:600;font-style:italic;color:var(--ink);margin-bottom:20px;}
+#my-qr-div{display:inline-block;}
+.qr-addr{font-size:10px;color:var(--ink-light);font-weight:500;margin-top:14px;word-break:break-all;line-height:1.6;}
+.success-screen{display:none;position:absolute;inset:0;z-index:300;flex-direction:column;overflow:hidden;animation:successFadeIn 0.3s ease;}
+.success-screen.show{display:flex;}
+@keyframes successFadeIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes successPop{from{transform:scale(0.3);opacity:0;}to{transform:scale(1);opacity:1;}}
+.sc-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);}
+.sc-row:last-child{border-bottom:none;}
+.sc-row .sk{color:var(--ink-light);font-weight:500;}.sc-row .sv{font-weight:600;color:var(--ink);font-size:11px;word-break:break-all;text-align:right;max-width:55%;}
+.btn-done{width:100%;padding:17px;background:var(--coral-deep);color:var(--white);border:none;border-radius:var(--r);font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-done:hover{background:var(--ink);}
+@keyframes balPulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.bal-updating{animation:balPulse 1s ease infinite;}
+#toast{position:absolute;top:16px;left:16px;right:16px;background:var(--ink);color:var(--white);border-radius:var(--r);padding:13px 16px;font-size:13px;font-weight:600;z-index:999;display:none;align-items:center;gap:8px;box-shadow:0 4px 24px rgba(0,0,0,0.2);}
+#toast.show{display:flex;}#toast.ok{background:var(--coral-deep);}#toast.err{background:#b91c1c;}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes sheetUp{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+#net-banner{display:none;background:#b91c1c;color:white;padding:9px 20px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;}
+#net-banner.show{display:block;}
+
+/* ── PunchCard frame (app shell) ─────────────────────────────────────────── */
+.stripe{display:none!important;}
+em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-italic{font-style:normal!important;}
+.pc-mark{width:30px;height:30px;border-radius:8px;background:url(/brand/punchcard.svg) center/cover no-repeat;flex-shrink:0;}
+.pc-mark i{display:none;}
+.pc-word{font-family:'Special Elite',var(--sans);font-size:17px;color:var(--ink);letter-spacing:.01em;}
+.hdr{background:var(--white)!important;border-bottom:1px solid var(--border);gap:10px;}
+.hdr-brand{display:flex;align-items:center;gap:10px;min-width:0;}
+.hdr-merchant{display:flex;align-items:center;gap:7px;padding:3px 10px 3px 3px;border-radius:999px;background:var(--cream2);border:1px solid var(--border);min-width:0;}
+.hdr-merchant img{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;}
+.hdr-merchant span{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pill-white{background:var(--cream2);border:1px solid var(--border);}
+.pill-dark{background:var(--cream2);color:var(--ink-mid);}
+#connect-gate,#app,html,body{background:var(--coral);}
+.pc-hero{padding:34px 24px 26px;display:flex;flex-direction:column;align-items:center;gap:18px;background:var(--coral);flex-shrink:0;}
+.pc-hero-brand{display:flex;align-items:center;gap:10px;}
+.pc-hero-brand .pc-mark{width:44px;height:44px;border-radius:11px;}
+.pc-hero-brand .pc-word{font-size:26px;}
+.pc-hero-merchant{display:flex;align-items:center;gap:12px;background:var(--white);border:1px solid var(--border);border-radius:18px;padding:10px 16px 10px 10px;box-shadow:0 6px 24px rgba(22,19,14,.06);}
+.pc-hero-merchant img{width:56px;height:56px;border-radius:50%;object-fit:cover;}
+.pc-hero-merchant b{display:block;font-size:15px;color:var(--ink);}
+.pc-hero-merchant small{display:block;font-size:12px;color:var(--ink-mid);margin-top:2px;}
+.gate-bottom{box-shadow:0 -1px 0 var(--border);}
+.bal-number,.stat-big,#pm-price,#success-total-display,.cv.big,.total{font-family:var(--mono)!important;letter-spacing:-.02em!important;font-weight:600!important;}
+.bal-number{font-size:52px!important;}
+.btn-primary,.btn-cta-repeat,.btn-done{border-radius:14px!important;}
+.nav-item.active .nav-icon{background:var(--accent-soft);}
+.cc-merchant{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--white);}
+.cc-merchant img{width:48px;height:48px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px var(--border);}
+.cc-merchant .who{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-light);}
+.cc-merchant .name{font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;}
+.cc-paywith{margin-left:auto;display:flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--coral-deep);font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px;white-space:nowrap;}
+.cc-paywith img{width:18px;height:18px;border-radius:50%;}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="toast"></div>
+<div id="net-banner" onclick="switchToBase()">&#9888; Wrong network — tap to switch to Base</div>
+
+<!-- SUCCESS SCREEN -->
+<div class="success-screen" id="success-screen">
+  <div style="display:flex;height:6px;flex-shrink:0;">
+    <div style="flex:1;background:var(--coral)"></div><div style="flex:1;background:var(--mint)"></div>
+    <div style="flex:1;background:var(--apricot)"></div><div style="flex:1;background:var(--lavender)"></div>
+    <div style="flex:1;background:var(--sand)"></div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;gap:1.25rem;text-align:center;background:var(--cream);">
+    <div style="width:90px;height:90px;border-radius:50%;background:var(--mint);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(17,72,61,0.18);animation:successPop 0.45s cubic-bezier(0.34,1.56,0.64,1);">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div>
+      <div style="font-family:var(--display);font-size:2.4rem;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-0.5px;margin-bottom:0.4rem;">Payment<br><em style="color:var(--coral-deep);">captured!</em></div>
+      <div style="font-size:0.85rem;color:var(--ink-mid);font-weight:500;" id="success-sub">Held in escrow</div>
+    </div>
+    <div style="width:100%;background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;">
+      <div style="background:var(--coral);padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;">
+        <img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="width:32px;height:32px;border-radius:50%;flex-shrink:0;">
+        <div style="text-align:left;">
+          <div style="font-size:0.65rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-mid);">{{name}} · {{cityShort}}</div>
+          <div style="font-family:var(--display);font-size:1.6rem;font-weight:600;color:var(--ink);line-height:1;" id="success-total-display">—</div>
+        </div>
+      </div>
+      <div style="padding:0.75rem 1rem;" id="success-detail"></div>
+    </div>
+    <div style="background:var(--mint);border-radius:var(--r-sm);padding:0.75rem 1rem;width:100%;display:flex;align-items:center;gap:0.75rem;">
+      <span style="font-size:1.4rem;">🍦</span>
+      <div style="text-align:left;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--green);">Thanks for shopping local!</div>
+        <div style="font-size:0.68rem;color:var(--ink-mid);margin-top:2px;" id="success-reward-line">Your reward is on its way</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:1rem 1.5rem;padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px));background:var(--white);border-top:1px solid var(--border);flex-shrink:0;">
+    <button class="btn-done" onclick="closeSuccess()">Done — Enjoy your rewards</button>
+  </div>
+</div>
+
+<!-- CHANGE 2 of 3: Wallet choice bottom sheet -->
+<div class="backdrop" id="wallet-choice-back" onclick="hideWalletOptions()" style="z-index:250;"></div>
+<div class="tok-sheet" id="wallet-choice-sheet" style="z-index:300;padding-bottom:48px;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Connect your wallet</div>
+
+  <!-- Coinbase Wallet — primary (creates Smart Wallet for new users automatically) -->
+  <div onclick="connectCoinbaseWallet()" style="background:var(--mint);border-radius:var(--r);padding:18px;margin-bottom:12px;cursor:pointer;border:1.5px solid rgba(42,31,26,0.12);transition:filter 0.15s;" onmouseover="this.style.filter='brightness(0.96)'" onmouseout="this.style.filter=''">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+      <img src="https://www.coinbase.com/favicon.ico" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;" onerror="this.style.display='none'">
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:var(--ink);">Coinbase Wallet</div>
+        <div style="font-size:11px;color:var(--ink-mid);font-weight:500;">New to crypto? Start here</div>
+      </div>
+      <div style="background:var(--coral-deep);color:white;font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;flex-shrink:0;">Recommended</div>
+    </div>
+    <div style="font-size:12px;color:var(--ink-mid);line-height:1.6;padding-left:52px;">
+      Opens Coinbase Wallet — creates a secure wallet with Face ID for new users. No seed phrase needed.
+    </div>
+  </div>
+
+  <!-- MetaMask / injected -->
+  <div class="tok-opt" onclick="connectMetaMask()" style="padding:14px 4px;">
+    <div style="width:40px;height:40px;background:var(--apricot);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🦊</div>
+    <div class="tok-opt-info">
+      <h4>MetaMask / Browser Wallet</h4>
+      <p>Already have a wallet installed</p>
+    </div>
+  </div>
+
+  <!-- WalletConnect -->
+  <div class="tok-opt" onclick="connectViaWalletConnect()" style="padding:14px 4px;">
+    <div style="width:40px;height:40px;background:var(--lavender);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📱</div>
+    <div class="tok-opt-info">
+      <h4>WalletConnect</h4>
+      <p>Scan with any mobile wallet</p>
+    </div>
+  </div>
+</div>
+<!-- END CHANGE 2 -->
+
+<!-- CONNECT GATE -->
+<div id="connect-gate" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+  <div class="pc-hero">
+    <div class="pc-hero-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><span class="pc-word">PunchCard</span></div>
+    <div class="pc-hero-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><div><b>{{name}}</b><small>Pay &amp; earn with {{sym}}</small></div></div>
+  </div>
+  <div class="stripe"><div class="s1"></div><div class="s2"></div><div class="s3"></div><div class="s4"></div><div class="s5"></div><div class="s6"></div></div>
+  <div class="gate-bottom">
+    <div class="gate-bottom-inner">
+      <div class="gate-tagline">Buy, earn &amp; pay with {{sym}}<br>at {{name}}</div>
+      <button class="btn-primary" id="gate-connect-btn" onclick="openWalletModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 12h.01"/><path d="M2 10h20"/><path d="M7 3l5-1 5 1"/></svg>
+        Get Started
+      </button>
+      <div class="ca-line" onclick="navigator.clipboard.writeText('{{tokenLower}}').then(()=>showToast('CA copied','ok'))">
+        {{sym}} &middot; <span style="text-decoration:underline dotted;">{{token}}</span> &middot; tap to copy
+      </div>
+      <div class="gate-divider"><span>About {{sym}}</span></div>
+      <div class="about-kicker">The {{short}} Token · PunchCard Network</div>
+      <h2 class="about-heading">Local rewards,<br><em>on-chain.</em></h2>
+      <p class="about-body">PunchCard is one app for local merchant tokens on the <a href="https://punchcard.club" target="_blank" rel="noopener" style="color:inherit;">PunchCard Network</a> — shared rails that let local businesses' loyalty tokens work together.</p>
+      <p class="about-body">{{sym}} is the loyalty and payment token for {{name}} — {{tagline}}. Built on Base, it lets you buy tokens, pay at the register, and earn rewards just for being a regular. No points cards. Just your wallet.</p>
+      <p class="about-body" style="margin-top:-8px;">Every payment at the shop flows through an on-chain escrow and settles transparently — no middlemen, no processing fees eating into your purchase.</p>
+      <div class="stat-strip">
+        <div class="stat-cell"><div class="stat-big">Base</div><div class="stat-lbl">Network</div></div>
+        <div class="stat-cell"><div class="stat-big">$0</div><div class="stat-lbl">Middle&shy;men</div></div>
+        <div class="stat-cell"><div class="stat-big">Local</div><div class="stat-lbl">{{cityShort}}</div></div>
+      </div>
+      <div class="token-card">
+        <div class="token-card-head"><span class="token-badge">${{sym}}</span><span class="token-card-title">Base &middot; ERC-20</span></div>
+        <p class="token-card-body">
+          <strong>Contract:</strong> {{token}}<br>
+          <strong>Buy with:</strong> USDC or ETH via Uniswap V3<br>
+          <strong>Use it:</strong> Scan &amp; pay at the {{short}} register in {{cityShort}}<br>
+          <strong>Earn it:</strong> Card &amp; cash purchases → show your QR; {{sym}} payments → rewards auto-sent
+        </p>
+      </div>
+      <div style="display:flex;gap:8px;margin:12px 0 4px;">
+        <a href="{{page}}" target="_blank" rel="noopener" style="flex:1;text-align:center;background:var(--white);border:1.5px solid var(--border-mid);border-radius:var(--r-sm);padding:10px 8px;font-size:12px;font-weight:600;color:var(--ink);text-decoration:none;">{{short}} on PunchCard &#8599;</a>
+        <a href="{{website}}" target="_blank" rel="noopener" style="flex:1;text-align:center;background:var(--white);border:1.5px solid var(--border-mid);border-radius:var(--r-sm);padding:10px 8px;font-size:12px;font-weight:600;color:var(--ink);text-decoration:none;">{{websiteLabel}} &#8599;</a>
+      </div>
+      <a href="{{page}}#install" class="install-guide-link" style="display:block;text-align:center;margin:8px 0 4px;padding:10px 8px;border-radius:var(--r-sm);background:var(--mint);color:var(--ink);font-size:12px;font-weight:600;text-decoration:none;">&#128242; How to install PunchCard on your phone &rarr;</a>
+      <div class="gate-divider"><span>How It Works</span></div>
+      <h2 class="hiw-heading">Three ways<br>to <em>use {{sym}}</em></h2>
+      <div class="step-list">
+        <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Get {{sym}}</div><div class="step-desc">Connect your wallet and tap Buy. Swap USDC or ETH for {{sym}} directly through Uniswap V3 on Base — no account required, no KYC.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Pay at the shop</div><div class="step-desc">The {{short}} team rings up your order and shows you a checkout QR. Open the Pay tab, scan it, review the total, and confirm — {{sym}} goes to escrow instantly.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Earn rewards</div><div class="step-desc">Paying with Square or cash? Show your wallet QR to the {{short}} team — they'll send {{sym}} to your wallet. Paid with {{sym}}? Rewards are sent to you automatically — no QR needed.</div></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Settlement &amp; burn</div><div class="step-desc">{{sym}} captured in escrow settles on-chain and {{sym}} paid at the shop is burned — removed from the supply for good.</div></div></div>
+      </div>
+      <div class="earn-pay-grid">
+        <div class="ep-card"><div class="ep-icon">🎁</div><div class="ep-title">Earn {{sym}}</div><div class="ep-body">Pay with Square or cash and show your QR. Paid with {{sym}}? Rewards auto-send — no QR needed.</div></div>
+        <div class="ep-card"><div class="ep-icon">📱</div><div class="ep-title">Pay with {{sym}}</div><div class="ep-body">Scan the shop's checkout QR, confirm the total, and your {{sym}} pays for your order on-chain.</div></div>
+      </div>
+      <div class="gate-footer-cta">
+        <p>Ready to {{sym}}?<br><em>Connect your wallet to start.</em></p>
+        <button class="btn-cta-repeat" onclick="openWalletModal()">Get Started &rarr;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="hdr" style="background:var(--coral);">
+      <div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div>
+      <div class="hdr-right">
+        <div class="pill pill-dark" id="net-label">Base</div>
+        <div class="pill pill-white" id="wallet-pill">0x&#8230;</div>
+        <button class="disconnect-btn" onclick="disconnectWallet()" title="Disconnect">&#10005;</button>
+      </div>
+    </div>
+    <div class="stripe stripe-thin"><div class="s1"></div><div class="s2"></div><div class="s3"></div><div class="s4"></div><div class="s5"></div><div class="s6"></div></div>
+    <div class="home-balance-block">
+      <div class="bal-eyebrow">Your balance</div>
+      <div class="bal-number" id="home-bal">&#8212;</div>
+      <div class="bal-sub" id="home-usd">{{sym}}</div>
+      <div style="font-size:12px;color:var(--ink-mid);font-weight:500;margin-bottom:4px;min-height:16px;" id="home-usd-val"></div>
+      <!-- Rewards live above the fold — the activity list at the bottom of the screen
+           was below the fold on a phone, so earned rewards were effectively invisible. -->
+      <div class="rewards-chip" id="home-rewards-chip">
+        <span class="rc-ic">&#127846;</span>
+        <div>
+          <div class="rc-amt" id="rc-amt">&#8212;</div>
+          <div class="rc-sub" id="rc-sub">earned in the last 24 hours</div>
+        </div>
+      </div>
+      <div style="margin-top:6px;font-size:9px;font-weight:500;color:var(--ink-light);letter-spacing:0.3px;word-break:break-all;opacity:0.7;cursor:pointer;" onclick="navigator.clipboard.writeText('{{tokenLower}}').then(()=>showToast('CA copied','ok'))">CA: {{token}}</div>
+    </div>
+    <div class="action-grid">
+      <button class="action-cell ac-mint" onclick="goTo('buy')"><div class="ac-icon">&#x1F4B1;</div><div><div class="ac-label">Buy {{sym}}</div><div class="ac-sub">USDC or ETH</div></div></button>
+      <button class="action-cell ac-lavender" onclick="goTo('pay')"><div class="ac-icon">&#128247;</div><div><div class="ac-label">Pay at shop</div><div class="ac-sub">Scan checkout QR</div></div></button>
+      <button class="action-cell ac-sand" onclick="goTo('qr')"><div class="ac-icon">&#11035;</div><div><div class="ac-label">My wallet QR</div><div class="ac-sub">Card &amp; cash purchases</div></div></button>
+      <button class="action-cell ac-apricot" onclick="openPriceModal()"><div class="ac-icon">&#128200;</div><div><div class="ac-label">{{sym}} price</div><div class="ac-sub" id="home-skoop-price">Live on Base</div></div></button>
+    </div>
+    <div class="stripe stripe-thin"><div class="s2"></div><div class="s4"></div><div class="s1"></div><div class="s5"></div><div class="s3"></div><div class="s6"></div></div>
+    <div class="section-hdr"><div class="section-hdr-title">Recent activity</div></div>
+    <div class="tx-list">
+      <div class="tx-row"><div class="tx-dot td-mint" style="font-size:11px;">&#9203;</div><div class="tx-info"><div class="tx-name">Loading activity&hellip;</div><div class="tx-date">Checking recent rewards</div></div></div>
+    </div>
+  </div>
+
+  <!-- BUY -->
+  <div class="screen" id="screen-buy">
+    <div class="hdr" style="background:var(--sand);"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div><div class="hdr-right"><div class="pill pill-dark" id="buy-pill">0x&#8230;</div></div></div>
+    <div class="stripe stripe-thin"><div class="s5"></div><div class="s3"></div><div class="s2"></div><div class="s1"></div><div class="s4"></div><div class="s6"></div></div>
+    <div class="backdrop" id="tok-back" onclick="closeTokSheet()"></div>
+    <div class="tok-sheet" id="tok-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Select token</div>
+      <div class="tok-opt" onclick="selectToken('ETH')"><div class="tok-ic ti-eth">&#926;</div><div class="tok-opt-info"><h4>ETH</h4><p>Native Ether &middot; Base</p></div><div class="tok-opt-bal" id="bal-eth">&#8212;</div></div>
+      <div class="tok-opt" onclick="selectToken('USDC')"><div class="tok-ic ti-usdc">USDC</div><div class="tok-opt-info"><h4>USDC</h4><p>USD Coin &middot; Base</p></div><div class="tok-opt-bal" id="bal-usdc">&#8212;</div></div>
+    </div>
+    <div class="swap-block-from">
+      <div class="sp-eyebrow">You pay</div>
+      <button class="tok-btn" onclick="openTokSheet()"><div class="tok-ic ti-eth" id="from-icon">&#926;</div><div class="tok-name" id="from-name">ETH</div><div class="tok-chev">&#9660;</div></button>
+      <input class="amt-input" id="from-amt" type="number" placeholder="0" min="0" step="any" oninput="onAmt()">
+      <div id="from-usd" style="font-size:12px;color:var(--ink-mid);font-weight:500;margin-top:2px;min-height:16px;"></div>
+      <div class="bal-hint">Balance: <span id="from-bal">&#8212;</span> <button class="max-tag" onclick="setMax()">MAX</button></div>
+    </div>
+    <div class="swap-block-arrow">&#8595;</div>
+    <div class="swap-block-to">
+      <div class="sp-eyebrow">You receive</div>
+      <div class="skoop-pill"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="{{sym}}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;"> {{sym}}</div>
+      <div class="out-amount" id="out-amt">0</div>
+      <div class="out-loading" id="out-loading">Getting quote&#8230;</div>
+    </div>
+    <div class="slip-row">
+      <span class="slip-lbl">Slippage</span>
+      <button class="slip-btn sel" onclick="setSlip(0.5,this)">0.5%</button>
+      <button class="slip-btn" onclick="setSlip(1,this)">1%</button>
+      <button class="slip-btn" onclick="setSlip(2,this)">2%</button>
+    </div>
+    <div class="swap-dets" id="swap-dets">
+      <div class="det-row"><span class="dk">Route</span><span class="dv" id="det-route">&#8212;</span></div>
+      <div class="det-row"><span class="dk">Price impact</span><span class="dv" id="det-impact">&#8212;</span></div>
+      <div class="det-row"><span class="dk">Min received</span><span class="dv" id="det-min">&#8212;</span></div>
+      <div class="det-row"><span class="dk">Pool fee</span><span class="dv">1.00%</span></div>
+    </div>
+    <button class="btn-swap" id="btn-swap" onclick="execSwap()" disabled>Enter amount</button>
+  </div>
+
+  <!-- PAY -->
+  <div class="screen" id="screen-pay">
+    <div class="hdr" style="background:var(--lavender);"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div><div class="hdr-right"><div class="pill pill-white">Pay at shop</div></div></div>
+    <div class="stripe stripe-thin"><div class="s4"></div><div class="s1"></div><div class="s5"></div><div class="s2"></div><div class="s6"></div><div class="s3"></div></div>
+    <div class="pay-state active" id="pay-scan">
+      <div class="scan-box">
+        <div id="qr-reader"></div>
+        <div class="scan-ui" id="scan-ui">
+          <div class="scan-frame"><div class="sf sf-tl"></div><div class="sf sf-tr"></div><div class="sf sf-bl"></div><div class="sf sf-br"></div><div class="scan-line"></div></div>
+          <div class="scan-hint">Point at the shop checkout QR</div>
+        </div>
+      </div>
+      <button class="btn-cam" id="btn-cam" onclick="startScan()">&#128247; &nbsp;Start Camera</button>
+      <div class="info-block" style="background:var(--lavender);"><div class="ib-title">How it works</div><div class="ib-text">The shop rings up your order and generates a QR. Scan it here, review the total, and confirm. Your wallet will ask to approve the exact amount first, then send the payment — both {{sym}} and USDC settle on-chain through escrow.</div></div>
+    </div>
+    <div class="pay-state" id="pay-confirm">
+      <div class="cc-wrap" style="padding-top:16px;">
+        <div class="confirm-card">
+          <div class="cc-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><div><div class="who">Paying</div><div class="name">{{name}}</div></div><div class="cc-paywith"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="" id="cc-paywith-logo"><span id="cc-paywith">with {{sym}}</span></div></div>
+          <div class="cc-head"><div class="cc-head-text"><div class="store">{{city}}</div><div class="total" id="cc-usd">$0.00</div></div></div>
+          <div class="cc-body">
+            <div class="cc-row"><span class="ck" id="cc-token-label">{{sym}} amount</span><span class="cv big" id="cc-skoop">0</span></div>
+            <div class="cc-row"><span class="ck">Your balance</span><span class="cv" id="cc-balance" style="font-size:13px;">—</span></div>
+            <div class="cc-row"><span class="ck">Items</span><span class="cv" id="cc-items">&#8212;</span></div>
+            <div class="cc-row"><span class="ck">Subtotal</span><span class="cv" id="cc-sub">&#8212;</span></div>
+            <div class="cc-row"><span class="ck">Expires in</span><span class="cv" id="cc-exp">&#8212;</span></div>
+            <div class="cc-row"><span class="ck">Receipt ID</span><span class="cv" id="cc-receipt">&#8212;</span></div>
+          </div>
+        </div>
+        <!-- Reward preview — what this purchase earns back -->
+        <div id="reward-preview" style="display:none;background:var(--mint);border:1.5px solid rgba(42,31,26,0.12);border-radius:var(--r-sm);padding:12px 14px;margin-top:10px;align-items:center;gap:11px;">
+          <span style="font-size:20px;flex-shrink:0;">&#127873;</span>
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:700;color:var(--green);" id="reward-preview-amt">&#8212;</div>
+            <div style="font-size:10.5px;color:var(--ink-mid);line-height:1.5;margin-top:2px;">Sent to your wallet automatically after payment</div>
+          </div>
+        </div>
+        <!-- First-time approval notice — shown before user taps pay -->
+        <div id="first-time-notice" style="display:none;background:var(--sand);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:0;align-items:flex-start;gap:10px;border:1.5px solid rgba(42,31,26,0.12);">
+          <span style="font-size:18px;flex-shrink:0;">🔐</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:3px;">First-time setup — 2 quick steps</div>
+            <div style="font-size:11px;color:var(--ink-mid);line-height:1.6;">Your wallet will ask to <strong>approve the exact amount</strong> for this payment, then confirm the payment — two steps, one purchase. Come back here after approving and tap Confirm.</div>
+          </div>
+        </div>
+        <div id="approval-progress">
+          <div class="ap-header">
+            <span style="font-size:16px;">🔓</span>
+            <div>
+              <div class="ap-header-text">First-time setup required</div>
+              <div class="ap-header-sub">Two wallet confirmations — one time only, ever</div>
+            </div>
+          </div>
+          <div class="ap-steps">
+            <div class="ap-step">
+              <div class="ap-step-dot waiting" id="ap-dot-1">1</div>
+              <div class="ap-step-info">
+                <div class="ap-step-label" id="ap-label-1">Approve token</div>
+                <div class="ap-step-desc" id="ap-desc-1">Allow the {{short}} escrow to accept your payment — tap Confirm in your wallet</div>
+              </div>
+            </div>
+            <div class="ap-connector"></div>
+            <div class="ap-step">
+              <div class="ap-step-dot waiting" id="ap-dot-2">2</div>
+              <div class="ap-step-info">
+                <div class="ap-step-label">Send Payment</div>
+                <div class="ap-step-desc" id="ap-desc-2">Confirm the payment transaction in your wallet</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="btn-confirm" id="btn-confirm" onclick="confirmPay()">Confirm &amp; Pay with {{sym}}</button>
+        <button class="btn-cancel" id="btn-cancel" onclick="cancelPay()">Cancel — scan again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR -->
+  <div class="screen" id="screen-qr">
+    <div class="hdr" style="background:var(--sand);"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div><div class="hdr-right"><div class="pill pill-dark">Card &amp; cash QR</div></div></div>
+    <div class="stripe stripe-thin"><div class="s5"></div><div class="s1"></div><div class="s4"></div><div class="s3"></div><div class="s2"></div><div class="s6"></div></div>
+    <div class="info-block" style="background:var(--apricot);margin:16px 20px 0;"><div class="ib-title">Card &amp; cash reward QR</div><div class="ib-text">Paid with Square or cash? Show this QR to the {{short}} team and they'll send {{sym}} to your wallet. Paid with {{sym}}? Your rewards were sent automatically — no QR needed.</div></div>
+    <div class="qr-card">
+      <div class="qr-eyebrow">Your wallet</div>
+      <div class="qr-italic">Show to {{short}} to receive {{sym}}</div>
+      <div id="my-qr-div"></div>
+      <div class="qr-addr" id="qr-addr">Connect wallet to generate QR</div>
+    </div>
+    <div class="info-block" style="background:var(--lavender);margin:0 20px 16px;"><div class="ib-title">Current balance</div><div class="ib-text"><span id="qr-bal">&#8212;</span> {{sym}} &middot; {{name}}, {{cityShort}} TN</div></div>
+  </div>
+</div>
+
+<div id="bottom-nav" style="display:none;">
+  <button class="nav-item active" id="nav-home" onclick="goTo('home')"><div class="nav-icon">&#127968;</div><div class="nav-label">Home</div></button>
+  <button class="nav-item" id="nav-buy" onclick="goTo('buy')"><div class="nav-icon">&#x1F4B1;</div><div class="nav-label">Buy</div></button>
+  <button class="nav-item" id="nav-pay" onclick="goTo('pay')"><div class="nav-icon">&#128247;</div><div class="nav-label">Pay</div></button>
+  <button class="nav-item" id="nav-qr" onclick="goTo('qr')"><div class="nav-icon">&#11035;</div><div class="nav-label">My QR</div></button>
+</div>
+</div>
+
+<!-- PWA INSTALL BANNER -->
+<div id="pwa-banner" style="display:none;position:absolute;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 8px);left:12px;right:12px;z-index:100;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(42,31,26,0.15);background:var(--white);border:1px solid var(--border);">
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;">
+    <img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="width:44px;height:44px;border-radius:10px;flex-shrink:0;">
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;">Add PunchCard to your home screen</div>
+      <div style="font-size:11px;color:var(--ink-mid);line-height:1.4;">Fast access to buy, pay &amp; earn rewards</div>
+    </div>
+    <button id="pwa-action-btn" style="display:none;background:var(--coral-deep);color:white;border:none;border-radius:999px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:var(--sans);">Install</button>
+    <button onclick="dismissPWABanner()" style="background:none;border:none;color:var(--ink-light);font-size:16px;cursor:pointer;padding:4px;flex-shrink:0;line-height:1;">&#10005;</button>
+  </div>
+  <div id="pwa-ios-steps" style="display:none;background:var(--apricot);border-top:1px solid var(--border);padding:12px 16px;flex-direction:column;gap:8px;">
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-mid);">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--coral);color:var(--ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+      Tap the <strong style="color:var(--ink);margin:0 3px;">Share</strong> button at the bottom of Safari ⎋
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-mid);">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--coral);color:var(--ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+      Scroll and tap <strong style="color:var(--ink);margin:0 3px;">Add to Home Screen</strong>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-mid);">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--coral);color:var(--ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+      Tap <strong style="color:var(--ink);margin:0 3px;">Add</strong> — done!
+    </div>
+  </div>
+  <div id="pwa-ios-notsafari" style="display:none;background:var(--apricot);border-top:1px solid var(--border);padding:12px 16px;flex-direction:column;gap:8px;">
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-mid);">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--coral);color:var(--ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+      Tap the <strong style="color:var(--ink);margin:0 3px;">⋯</strong> or share menu in this browser
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-mid);">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--coral);color:var(--ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+      Choose <strong style="color:var(--ink);margin:0 3px;">Open in Safari</strong>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-mid);">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--coral);color:var(--ink);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+      In Safari, tap <strong style="color:var(--ink);margin:0 3px;">Share</strong> → <strong style="color:var(--ink);margin:0 3px;">Add to Home Screen</strong>
+    </div>
+  </div>
+  <a href="{{page}}#install" style="display:block;text-align:center;padding:8px 12px 12px;font-size:11px;font-weight:600;color:var(--coral-deep);text-decoration:none;">Full install guide &rarr;</a>
+</div>
+
+<!-- WALLET SETUP MODAL -->
+<!-- PRICE MODAL -->
+<div id="price-modal" style="display:none;position:absolute;inset:0;z-index:400;background:rgba(42,31,26,0.5);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;" onclick="if(event.target===this)closePriceModal()">
+  <div style="background:var(--cream);border-top-left-radius:28px;border-top-right-radius:28px;width:100%;max-width:430px;overflow:hidden;box-shadow:0 -8px 48px rgba(42,31,26,0.22);animation:sheetUp 0.28s cubic-bezier(0.34,1.56,0.64,1);" onclick="event.stopPropagation()">
+    <div style="display:flex;height:5px;flex-shrink:0;"><div style="flex:1;background:var(--coral)"></div><div style="flex:1;background:var(--mint)"></div><div style="flex:1;background:var(--apricot)"></div><div style="flex:1;background:var(--lavender)"></div><div style="flex:1;background:var(--sand)"></div></div>
+    <div style="padding:20px 20px 36px;">
+      <div style="width:36px;height:4px;background:var(--border-mid);border-radius:2px;margin:0 auto 20px;"></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
+        <img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="width:52px;height:52px;border-radius:50%;box-shadow:0 4px 16px rgba(42,31,26,0.18);flex-shrink:0;">
+        <div style="flex:1;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--ink-light);margin-bottom:4px;">{{sym}} &middot; Base Network</div>
+          <div style="font-family:var(--display);font-size:32px;font-weight:600;color:var(--ink);letter-spacing:-1px;line-height:1;" id="pm-price">&#8212;</div>
+        </div>
+        <button onclick="closePriceModal()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-mid);background:rgba(255,255,255,0.6);color:var(--ink-mid);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">&#10005;</button>
+      </div>
+      <div style="font-size:12px;color:var(--ink-mid);font-weight:500;margin-bottom:20px;padding-left:66px;" id="pm-eth-price">&#8212;</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div style="background:var(--mint);border-radius:var(--r-sm);padding:14px 10px;text-align:center;"><div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-mid);margin-bottom:6px;">Per ETH</div><div style="font-family:var(--display);font-size:17px;font-weight:600;color:var(--ink);line-height:1;" id="pm-per-eth">&#8212;</div><div style="font-size:8px;color:var(--ink-light);margin-top:3px;">{{sym}}</div></div>
+        <div style="background:var(--apricot);border-radius:var(--r-sm);padding:14px 10px;text-align:center;"><div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-mid);margin-bottom:6px;">Per USDC</div><div style="font-family:var(--display);font-size:17px;font-weight:600;color:var(--ink);line-height:1;" id="pm-per-usdc">&#8212;</div><div style="font-size:8px;color:var(--ink-light);margin-top:3px;">{{sym}}</div></div>
+        <div style="background:var(--lavender);border-radius:var(--r-sm);padding:14px 10px;text-align:center;"><div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-mid);margin-bottom:6px;">Mkt Cap</div><div style="font-family:var(--display);font-size:17px;font-weight:600;color:var(--ink);line-height:1;" id="pm-mcap">&#8212;</div><div style="font-size:8px;color:var(--ink-light);margin-top:3px;">USD</div></div>
+      </div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px;">
+        <div style="background:var(--coral);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-family:var(--display);font-size:15px;font-style:italic;font-weight:400;color:var(--ink);">Price history</div>
+          <div id="pm-chart-status" style="font-size:10px;font-weight:500;color:var(--ink-mid);">Loading&hellip;</div>
+        </div>
+        <canvas id="pm-chart" height="130" style="width:100%;display:block;"></canvas>
+      </div>
+      <a href="https://app.uniswap.org/explore/tokens/base/{{tokenLower}}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--apricot);border:1.5px solid var(--border-mid);border-radius:var(--r);padding:14px;text-decoration:none;color:var(--ink-mid);font-size:12px;font-weight:600;">Trade on Uniswap ↗</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PunchCard merchant context ───────────────────────────────────────────────
+// PC_REGISTRY is an embedded copy of /merchants.json (test/site/merchants.py checks they
+// match) so start-up stays synchronous: every constant below is derived before any code
+// runs. The merchant comes from ?m=<slug>. A payment link with no ?m= is a KOKOS link
+// from before PunchCard hosted the app, so it is KOKOS by definition — never "whichever
+// merchant was used last".
+const PC_REGISTRY={"_about":"PunchCard merchant registry: the one place a merchant's public details live. The PunchCard app, each merchant page and each POS read it. Trust still comes from the chain: a merchant here must also be registered on the PunchCard Network (WindDownController.isRegistered), which pages check before showing it as verified. The app keeps an embedded copy for its synchronous start-up; test/site/merchants.py checks the two match.","version":1,"network":{"chainId":8453,"windDownController":"0x7dbd9CA01fa60aB480f3A4AE7892970C97EF0cac","router":"0xB64A96f69bE171FE2d81F03b6D3c4029367d4f08","usdc":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","weth":"0x4200000000000000000000000000000000000006","uniswapSwapRouter":"0x2626664c2603336E57B271c5C0b26F421741e481"},"merchants":[{"slug":"kokos-skoop","name":"KOKOS Ice Cream","shortName":"KOKOS","city":"Nashville, TN","tagline":"Nashville's original plant-based scoop shop","website":"https://kokosicecream.com","accent":"#e8876a","token":{"symbol":"SKOOP","address":"0xBa147713adF122A8Fc224e52Cb431D7919831939","decimals":6,"logo":"/kokos-skoop/skoop.png","totalSupply":100000000},"pools":{"usdc":"0x5185bef315Dee41727865AC26243bD62008d11b1","eth":"0x116d0a851632958AFD3B1a0B751089392bcb4e6A","fee":10000},"payments":{"escrow":"0x46D5520Ef1DeACd6cA332A9510141b28dC6141a1","treasury":"0xc35397cBDbcdb24705bc09917f9DdF9E6970C904","owner":"0x001b3fB36FE7E3a741A15Ed8bE68610442E3a50b","storeId":"KOKOS_NASHVILLE_01","terminals":{"POS_1":"0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B"},"refundWindowHours":24},"rewards":{"vault":"0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2","sources":["0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B","0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2"],"rateToken":0.1,"rateUsdc":0.05,"rateCashCard":0.05},"pos":"/kokos-skoop/pos/","page":"/kokos-skoop/"}]};
+const PC_M=(()=>{
+  const q=new URLSearchParams(location.search);
+  let slug=q.get('m');
+  if(!slug&&q.get('d'))slug='kokos-skoop';
+  if(!slug){try{slug=localStorage.getItem('pc-merchant');}catch(e){}}
+  const m=PC_REGISTRY.merchants.find(x=>x.slug===slug)||PC_REGISTRY.merchants[0];
+  try{localStorage.setItem('pc-merchant',m.slug);}catch(e){}
+  return m;
+})();
+const PC_TERMINALS=Object.entries(PC_M.payments.terminals);          // [[terminalId, signer], …]
+const SYM=PC_M.token.symbol, MNAME=PC_M.name, MSHORT=PC_M.shortName;
+const PC_LOGO=PC_M.token.logo;
+// Fill {{key}} in text and attributes, and every merchant logo, before anything else runs.
+(function pcTemplate(){
+  const site=(PC_M.website||'').replace(/^https?:\/\//,'').replace(/\/$/,'');
+  const V={name:MNAME,short:MSHORT,sym:SYM,city:PC_M.city,cityShort:(PC_M.city||'').split(',')[0],tagline:PC_M.tagline,
+           token:PC_M.token.address,tokenLower:PC_M.token.address.toLowerCase(),page:PC_M.page,website:PC_M.website,websiteLabel:site};
+  const fill=t=>t.replace(/\{\{(\w+)\}\}/g,(m,k)=>k in V?V[k]:m);
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  for(let n;(n=w.nextNode());)if(n.nodeValue.includes('{{'))n.nodeValue=fill(n.nodeValue);
+  document.querySelectorAll('*').forEach(el=>{for(const a of el.attributes)if(a.value.includes('{{'))a.value=fill(a.value);});
+  document.querySelectorAll('img[data-pc-logo]').forEach(i=>{i.src=PC_LOGO;});
+  document.documentElement.style.setProperty('--merchant',PC_M.accent||'#c0492a');
+})();
+</script>
+<script>
+const CFG={
+  CHAIN_ID:8453,CHAIN_HEX:'0x2105',RPC:'https://mainnet.base.org',
+  // From the merchant registry. The key names are the app's historical ones: ""+SYM+"" means
+  // "this merchant's token" throughout.
+  SKOOP:PC_M.token.address,
+  ESCROW:PC_M.payments.escrow,
+  POS_SIGNER:PC_TERMINALS[0][1],
+  REWARD_VAULT:PC_M.rewards.vault,
+  ROUTER:PC_REGISTRY.network.uniswapSwapRouter,
+  USDC:PC_REGISTRY.network.usdc,
+  WETH:PC_REGISTRY.network.weth,
+  FEE:PC_M.pools.fee,SKOOP_DEC:PC_M.token.decimals,USDC_DEC:6,WETH_DEC:18,
+  SUPPLY:PC_M.token.totalSupply,
+};
+const ABI_ERC20=["function balanceOf(address) view returns (uint256)","function allowance(address,address) view returns (uint256)","function approve(address,uint256) returns (bool)","event Transfer(address indexed from, address indexed to, uint256 value)"];
+const ABI_ROUTER=["function exactInputSingle((address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96)) payable returns (uint256)"];
+const ABI_ESCROW=[{inputs:[{components:[
+  {name:"receiptId",type:"bytes32"},{name:"orderId",type:"bytes32"},
+  {name:"storeIdHash",type:"bytes32"},{name:"terminalIdHash",type:"bytes32"},
+  {name:"paymentToken",type:"address"},
+  {name:"tokenAmount",type:"uint256"},{name:"subtotalCents",type:"uint256"},
+  {name:"taxCents",type:"uint256"},{name:"totalCents",type:"uint256"},
+  {name:"itemCount",type:"uint256"},{name:"cartHash",type:"bytes32"},{name:"deadline",type:"uint256"}
+],name:"intent",type:"tuple"},{name:"signature",type:"bytes"}],name:"capturePayment",outputs:[],stateMutability:"nonpayable",type:"function"}];
+
+const POOL_ETH_SKOOP  = PC_M.pools.eth;
+const POOL_USDC_SKOOP = PC_M.pools.usdc;
+const ABI_POOL_IMM=["function token0() view returns (address)","function token1() view returns (address)","function fee() view returns (uint24)"];
+const poolFees={};
+
+let provider,signer,userAddr,selToken="ETH",slip=0.5,quoteTimer,curQuote,pendingIntent,scannerRunning=false,ethPriceUSD=0,skoopPriceUSD=0;
+let _justDisconnected=false;
+
+// Single shared read-only provider — staticNetwork skips an eth_chainId round-trip per call.
+// Every on-chain read goes through here so we never rebuild a provider mid-flow.
+// batchMaxCount:1 disables JSON-RPC batching. ethers otherwise coalesces calls made in
+// the same tick into one HTTP request, and when Base rate-limits that request it answers
+// without a per-call response array — so ethers fails *every* call in the batch with
+// "missing response for request", and each retry re-batches and fails the same way.
+// Sent one at a time the identical calls all succeed.
+let _readRPC=null;
+function rpc(){
+  if(!_readRPC)_readRPC=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true,batchMaxCount:1});
+  return _readRPC;
+}
+
+// ── ETH PRICE ─────────────────────────────────────────────────────────────────
+async function fetchEthPrice(){
+  try{
+    const r=await fetch('https://api.coinbase.com/v2/exchange-rates?currency=ETH',{mode:'cors'});
+    if(r.ok){const d=await r.json();const p=parseFloat(d?.data?.rates?.USD||0);if(p>100&&p<1000000){ethPriceUSD=p;await fetchSkoopPrice();return;}}
+  }catch(e){}
+  try{
+    const ABI=['function slot0() view returns (uint160 sqrtPriceX96,int24,uint16,uint16,uint16,uint8,bool)','function token0() view returns (address)'];
+    const pub=rpc();
+    const pool=new ethers.Contract('0xd0b53D9277642d899DF5C87A3966A349A798F224',ABI,pub);
+    const [s0,t0]=await Promise.all([pool.slot0(),pool.token0()]);
+    const sqrtPf=Number(s0.sqrtPriceX96)/Number(2n**96n);const raw=sqrtPf*sqrtPf;
+    const wethIsT0=t0.toLowerCase()===CFG.WETH.toLowerCase();
+    const p=wethIsT0?(1/raw)*1e12:raw*1e12;
+    if(p>100&&p<1000000){ethPriceUSD=p;await fetchSkoopPrice();}
+  }catch(e){}
+}
+
+async function fetchSkoopPrice(){
+  try{
+    const ABI=['function slot0() view returns (uint160 sqrtPriceX96,int24,uint16,uint16,uint16,uint8,bool)','function token0() view returns (address)'];
+    const pub=rpc();
+    const pool=new ethers.Contract(POOL_USDC_SKOOP,ABI,pub);
+    const [s0,t0]=await Promise.all([pool.slot0(),pool.token0()]);
+    const sqrtPf=Number(s0.sqrtPriceX96)/Number(2n**96n);const priceRaw=sqrtPf*sqrtPf;
+    const skoopIsT0=t0.toLowerCase()===CFG.SKOOP.toLowerCase();
+    // USDC and SKOOP both have 6 decimals — no 1e12 adjustment needed
+    skoopPriceUSD=skoopIsT0?priceRaw:1/priceRaw;
+    updateSkoopBalanceDisplay();
+  }catch(e){}
+}
+
+function updateSkoopBalanceDisplay(){
+  const valEl=document.getElementById("home-usd-val");
+  if(!valEl||!window._skoopBal||!skoopPriceUSD)return;
+  valEl.textContent=(window._skoopBal*skoopPriceUSD).toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2});
+  const sub=document.getElementById('home-skoop-price');
+  if(sub&&skoopPriceUSD>0)sub.textContent='$'+skoopPriceUSD.toFixed(6);
+}
+
+// ── WALLET CONNECTION ─────────────────────────────────────────────────────────
+function showWalletOptions(){document.getElementById('wallet-choice-sheet').classList.add('open');document.getElementById('wallet-choice-back').classList.add('open');}
+function hideWalletOptions(){document.getElementById('wallet-choice-sheet').classList.remove('open');document.getElementById('wallet-choice-back').classList.remove('open');}
+
+// Where the wallet's in-app browser should reopen us. Carries ?d= through the hand-off:
+// a first-timer who scanned the shop QR in Safari would otherwise lose the payment
+// intent, since localStorage does not cross from Safari into the wallet's browser.
+function dappReopenUrl(){
+  let base='https://punchcard.club/app/';
+  if(location.protocol==='https:')base=location.origin+location.pathname;
+  let d=null;try{d=new URLSearchParams(location.search).get('d');}catch(e){}
+  return base+'?m='+encodeURIComponent(PC_M.slug)+(d?'&d='+encodeURIComponent(d):'');
+}
+
+async function connectCoinbaseWallet(){
+  hideWalletOptions();
+  const btn=document.getElementById('gate-connect-btn');
+  if(window.ethereum&&(window.ethereum.isCoinbaseWallet||window.ethereum.isCoinbaseBrowser)){await connectInjected();return;}
+  const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if(isMobile){
+    if(btn){btn.textContent='Opening\u2026';btn.disabled=true;}
+    showToast('Opening Base App\u2026','');
+    // Universal link ONLY. The cbwallet:// custom scheme still launches the app (now
+    // Base App) but no longer routes into the dapp browser \u2014 you land on the wallet
+    // home screen. And this must fire synchronously inside the click handler: a
+    // setTimeout breaks the user-gesture association and iOS drops the navigation.
+    window.location.href='https://go.cb-w.com/dapp?cb_url='+encodeURIComponent(dappReopenUrl());
+    setTimeout(()=>{if(btn){btn.textContent='Get Started';btn.disabled=false;}},5000);
+    return;
+  }
+  showToast('Scan QR with Base App / Coinbase Wallet','');
+  await connectWalletConnect();
+}
+
+async function connectMetaMask(){
+  hideWalletOptions();
+  const btn=document.getElementById('gate-connect-btn');
+  if(window.ethereum&&window.ethereum.isMetaMask){await connectInjected();return;}
+  const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if(isMobile){
+    if(btn){btn.textContent='Opening\u2026';btn.disabled=true;}
+    showToast('Opening MetaMask\u2026','');
+    // Immediate, not setTimeout \u2014 same gesture rule as the Base App link above.
+    window.location.href='https://metamask.app.link/dapp/'+dappReopenUrl().replace(/^https?:\/\//,'');
+    setTimeout(()=>{if(btn){btn.textContent='Get Started';btn.disabled=false;}},4000);
+    return;
+  }
+  if(window.ethereum){await connectInjected();}
+  else{showToast('MetaMask not detected \u2014 install the extension first','err');window.open('https://metamask.io/download/','_blank');}
+}
+
+async function connectInjected(){
+  if(!window.ethereum){showToast('No wallet detected','err');return;}
+  const btn=document.getElementById('gate-connect-btn');
+  try{
+    if(btn){btn.textContent='Connecting\u2026';btn.disabled=true;}
+    await window.ethereum.request({method:'eth_requestAccounts'});
+    provider=new ethers.BrowserProvider(window.ethereum);
+    signer=await provider.getSigner();userAddr=await signer.getAddress();
+    await onConnected();
+    if(!window._ethListenersAdded){
+      window._ethListenersAdded=true;
+      window.ethereum.on('accountsChanged',a=>{if(a[0]){userAddr=a[0];updatePills();refreshBals();}else disconnectWallet();});
+      window.ethereum.on('chainChanged',()=>location.reload());
+    }
+  }catch(e){
+    if(btn){btn.textContent='Get Started';btn.disabled=false;}
+    if(e.code!==4001)showToast(e?.message?.slice(0,60)||'Connection failed','err');
+  }
+}
+
+async function connectViaWalletConnect(){hideWalletOptions();await connectWalletConnect();}
+
+async function openWalletModal(){
+  if(_justDisconnected)return;
+  if(window.ethereum){
+    if(window.ethereum.isCoinbaseWallet||window.ethereum.isCoinbaseBrowser||window.ethereum.isMetaMask){
+      try{const accounts=await window.ethereum.request({method:'eth_accounts'});if(accounts.length){await connectInjected();return;}await connectInjected();return;}catch(e){}
+    }
+    try{const accounts=await window.ethereum.request({method:'eth_accounts'});if(accounts.length){await connectInjected();return;}}catch(e){}
+  }
+  showWalletOptions();
+}
+
+async function connectWalletConnect(){
+  const WCEthProvider=window["@walletconnect/ethereum-provider"]?.EthereumProvider;
+  if(!WCEthProvider){showToast("WalletConnect not loaded \u2014 refresh","err");return;}
+  try{
+    showToast("Opening wallet...","");
+    const wcp=await WCEthProvider.init({
+      projectId:'c5be163298ba25127afa6b7529e29059',chains:[8453],showQrModal:true,
+      qrModalOptions:{themeMode:'light',themeVariables:{'--wcm-accent-color':'#c0492a','--wcm-background-color':'#ffffff'}},
+      metadata:{name:'PunchCard',description:'Buy, earn and pay with local merchant tokens',url:'https://punchcard.club/app/',icons:['https://punchcard.club/app/icon-512.png']}
+    });
+    window._wcp=wcp;await wcp.enable();
+    provider=new ethers.BrowserProvider(wcp);signer=await provider.getSigner();userAddr=await signer.getAddress();
+    await onConnected();
+    wcp.on('disconnect',()=>{window._wcp=null;disconnectWallet();});
+    wcp.on('accountsChanged',a=>{if(a[0]){userAddr=a[0];updatePills();refreshBals();}});
+  }catch(e){
+    const btn=document.getElementById('gate-connect-btn');if(btn){btn.textContent='Get Started';btn.disabled=false;}
+    const msg=e?.message||'';
+    if(!msg.includes('closed')&&!msg.includes('rejected')&&!msg.includes('Modal'))showToast(msg||"Connection failed","err");
+  }
+}
+
+async function disconnectWallet(){
+  stopScan();stopExpiryCountdown();
+  try{if(window._wcp)await window._wcp.disconnect();}catch(e){}
+  try{if(window._cbProvider)await window._cbProvider.disconnect();}catch(e){}
+  if(window._balancePollTimer){clearInterval(window._balancePollTimer);window._balancePollTimer=null;}
+  window._wcp=null;window._cbProvider=null;provider=null;signer=null;userAddr=null;
+  document.getElementById("main-app").style.display="none";
+  document.getElementById("bottom-nav").style.display="none";
+  const gate=document.getElementById("connect-gate");
+  if(gate){gate.style.display="flex";gate.style.flexDirection="column";gate.style.flex="1";}
+  _justDisconnected=true;setTimeout(()=>{_justDisconnected=false;},1000);
+  const btn=document.getElementById('gate-connect-btn');if(btn){btn.textContent='Get Started';btn.disabled=false;}
+  const setT=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  const setH=(id,v)=>{const el=document.getElementById(id);if(el)el.innerHTML=v;};
+  setT("home-bal","\u2014");setT("home-usd",""+SYM+"");setT("home-usd-val","");
+  setT("wallet-pill","0x\u2026");setT("buy-pill","0x\u2026");
+  setT("qr-addr","Connect wallet to generate QR");setT("qr-bal","\u2014");setH("my-qr-div","");
+}
+
+async function onConnected(){
+  document.getElementById("connect-gate").style.display="none";
+  const m=document.getElementById("main-app");
+  m.style.display="flex";m.style.flexDirection="column";m.style.flex="1";m.style.overflow="hidden";
+  document.getElementById("bottom-nav").style.display="flex";
+  updatePills();await checkNet();await refreshBals();setTimeout(buildMyQR,200);setTimeout(loadActivityFeed,500);
+  loadPoolImmutables();fetchEthPrice();
+  if(window._balancePollTimer)clearInterval(window._balancePollTimer);
+  window._balancePollTimer=setInterval(()=>{if(userAddr){refreshBals().catch(()=>{});}else{clearInterval(window._balancePollTimer);}},30000);
+  // Restore any pending payment intent (e.g. page reloaded after wallet approval on iOS)
+  if(pendingIntent){
+    // Already scanned before connecting — goTo('pay') re-renders the card now that we
+    // have a signer, otherwise the button stays stuck on "Connect wallet to pay".
+    goTo('pay');
+  }else{
+    await maybeRestorePendingIntent();
+  }
+}
+
+function updatePills(){
+  const s=userAddr?userAddr.slice(0,6)+"\u2026"+userAddr.slice(-4):"";
+  document.getElementById("wallet-pill").textContent=s;
+  document.getElementById("buy-pill").textContent=s;
+}
+
+async function checkNet(){
+  try{
+    const net=await provider.getNetwork();
+    if(Number(net.chainId)!==CFG.CHAIN_ID){
+      try{
+        await provider.send("wallet_switchEthereumChain",[{chainId:CFG.CHAIN_HEX}]);
+        signer=await provider.getSigner();userAddr=await signer.getAddress();
+      }catch(e){
+        document.getElementById("net-banner").classList.add("show");
+        document.getElementById("net-label").textContent="Wrong";
+        document.getElementById("net-label").className="pill pill-danger";
+        return false;
+      }
+    }
+    document.getElementById("net-banner").classList.remove("show");
+    const l=document.getElementById("net-label");l.textContent="Base";l.className="pill pill-dark";
+    return true;
+  }catch(e){return false;}
+}
+
+async function switchToBase(){
+  if(!window.ethereum)return;
+  try{await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:CFG.CHAIN_HEX}]});}
+  catch(e){if(e.code===4902)await window.ethereum.request({method:"wallet_addEthereumChain",params:[{chainId:CFG.CHAIN_HEX,chainName:"Base",rpcUrls:["https://mainnet.base.org"],nativeCurrency:{name:"ETH",symbol:"ETH",decimals:18},blockExplorerUrls:["https://basescan.org"]}]});}
+}
+
+async function refreshBals(){
+  if(!userAddr)return;
+  const readProvider=rpc();
+  const balEl=document.getElementById("home-bal");
+  if(balEl)balEl.classList.add("bal-updating");
+  try{
+    const sk=new ethers.Contract(CFG.SKOOP,ABI_ERC20,readProvider);
+    const raw=await sk.balanceOf(userAddr);
+    const skoopBal=parseFloat(ethers.formatUnits(raw,CFG.SKOOP_DEC));
+    window._skoopBal=skoopBal;
+    const fmt=skoopBal.toLocaleString("en-US",{maximumFractionDigits:2});
+    if(balEl){balEl.textContent=fmt;balEl.classList.remove("bal-updating");}
+    document.getElementById("home-usd").textContent=""+SYM+"";
+    document.getElementById("qr-bal").textContent=fmt;
+    updateSkoopBalanceDisplay();
+  }catch(e){if(balEl){balEl.textContent="\u2014";balEl.classList.remove("bal-updating");}}
+  try{const eb=await readProvider.getBalance(userAddr);document.getElementById("bal-eth").textContent=parseFloat(ethers.formatEther(eb)).toFixed(4)+" ETH";}catch(e){}
+  try{const uc=new ethers.Contract(CFG.USDC,ABI_ERC20,readProvider);document.getElementById("bal-usdc").textContent=parseFloat(ethers.formatUnits(await uc.balanceOf(userAddr),6)).toFixed(2)+" USDC";}catch(e){}
+  await updateFromBal();
+  // Activity is a log scan — far heavier than a balance read. Refresh it on its own
+  // slower cadence so the 30s balance poll doesn't reset the list to "Loading…".
+  if(Date.now()-_lastActivityLoad>60000)loadActivityFeed({silent:true});
+}
+
+async function updateFromBal(){
+  if(!userAddr)return;
+  const readProvider=rpc();
+  let b="\u2014";
+  try{
+    if(selToken==="ETH"){
+      const raw=await readProvider.getBalance(userAddr);
+      const eth=parseFloat(ethers.formatEther(raw));
+      const usd=ethPriceUSD>0?" (\u2248$"+(eth*ethPriceUSD).toLocaleString("en-US",{maximumFractionDigits:2})+")":"";
+      b=eth.toFixed(4)+" ETH"+usd;
+    }else{
+      const c=new ethers.Contract(CFG.USDC,ABI_ERC20,readProvider);
+      b=parseFloat(ethers.formatUnits(await c.balanceOf(userAddr),6)).toFixed(2)+" USDC";
+    }
+  }catch(e){}
+  document.getElementById("from-bal").textContent=b;
+}
+
+// ── ACTIVITY FEED ─────────────────────────────────────────────────────────────
+// Base's RPC hard-caps eth_getLogs at a 2,000 block range (error -32614), so a full
+// day (~43,200 blocks at 2s) has to be fetched as chunks. It also rate-limits bursts,
+// so they go out a few at a time rather than all at once, and a chunk that comes back
+// rate-limited is retried — an empty chunk would read as "no rewards", which is worse
+// than showing nothing at all.
+const ACTIVITY_WINDOW_BLOCKS=43200; // ~24h
+const LOG_CHUNK=900;                // Base's cap has gone 10k -> 2k -> 1k; 900 leaves headroom
+const LOG_PAR=6;                    // concurrent chunks before Base starts 429ing
+// A range that is still too wide is split rather than failed. Base has tightened this
+// limit twice already, so the number above is a hint, not a contract — this is what
+// stops the next tightening from silently emptying the rewards feed again.
+const isRangeErr=e=>/-32614|limited to a|Payload Too Large|\b413\b/i.test(
+  JSON.stringify(e&&(e.info||e.error||{message:e.message})||''));
+let _lastActivityLoad=0;
+
+// Mirrors the activity row into the balance block, where it's always on screen.
+function renderRewardsChip(count,amt){
+  const chip=document.getElementById('home-rewards-chip');
+  const a=document.getElementById('rc-amt'),s=document.getElementById('rc-sub');
+  if(!chip||!a||!s)return;
+  if(!count){chip.classList.remove('show');return;}
+  a.textContent='+'+amt.toLocaleString('en-US',{maximumFractionDigits:2})+' '+SYM+'';
+  const usd=skoopPriceUSD>0?' · ≈$'+(amt*skoopPriceUSD).toFixed(2):'';
+  s.textContent=count+' reward'+(count!==1?'s':'')+' in the last 24 hours'+usd;
+  chip.classList.add('show');
+}
+async function loadActivityFeed(opts){
+  if(!userAddr)return;
+  const list=document.querySelector('.tx-list');
+  if(!list)return;
+  _lastActivityLoad=Date.now();
+  // Background refreshes leave the existing rows in place \u2014 no loading flash.
+  if(!opts||!opts.silent)list.innerHTML='<div class="tx-row"><div class="tx-dot td-mint" style="font-size:11px;">\u23f3</div><div class="tx-info"><div class="tx-name">Loading activity\u2026</div></div></div>';
+  try{
+    const readProvider=rpc();
+    const currentBlock=await readProvider.getBlockNumber();
+    const topic0=ethers.id('Transfer(address,address,uint256)');
+    const pad=a=>'0x'+ethers.getAddress(a).slice(2).toLowerCase().padStart(64,'0');
+    // A reward is SKOOP sent by the shop's reward sources — the POS signer (POS V1, and V2's
+    // float) or the PunchCard rewards vault (POS V2) — and nothing else. This used to count
+    // every incoming transfer outside a short blocklist, so a SKOOP buy through any other
+    // route (Uniswap app, an aggregator), a gift or a refund showed as a reward.
+    const REWARD_SOURCES=PC_M.rewards.sources.map(pad);
+    const ranges=[];
+    for(let s=currentBlock-ACTIVITY_WINDOW_BLOCKS;s<=currentBlock;s+=LOG_CHUNK){
+      ranges.push([Math.max(0,s),Math.min(s+LOG_CHUNK-1,currentBlock)]);
+    }
+    const fetchChunk=async(a,b,attempt=0)=>{
+      try{
+        return await readProvider.send('eth_getLogs',[{
+          address:CFG.SKOOP,
+          topics:[topic0,REWARD_SOURCES,pad(userAddr)],
+          fromBlock:'0x'+a.toString(16),
+          toBlock:'0x'+b.toString(16)
+        }]);
+      }catch(err){
+        if(isRangeErr(err)&&b>a){
+          const mid=Math.floor((a+b)/2);
+          const [x,y]=await Promise.all([fetchChunk(a,mid),fetchChunk(mid+1,b)]);
+          return x.concat(y);
+        }
+        if(attempt<4){
+          await new Promise(r=>setTimeout(r,500*(attempt+1)));
+          return fetchChunk(a,b,attempt+1);
+        }
+        throw err; // surfaces as "Could not load activity", not a false "no rewards"
+      }
+    };
+    const logs=[];
+    for(let i=0;i<ranges.length;i+=LOG_PAR){
+      const res=await Promise.all(ranges.slice(i,i+LOG_PAR).map(([a,b])=>fetchChunk(a,b)));
+      for(const r of res)logs.push(...r);
+    }
+    const rewards=logs;   // already only transfers from a reward source (see REWARD_SOURCES)
+    if(!rewards.length){
+      renderRewardsChip(0,0);
+      list.innerHTML='<div class="tx-row"><div class="tx-dot td-apricot">\ud83c\udf66</div><div class="tx-info"><div class="tx-name">No rewards in the last 24 hours</div><div class="tx-date">Pay with '+SYM+' or show your QR to earn</div></div></div>';
+      return;
+    }
+    const fmt=n=>n.toLocaleString('en-US',{maximumFractionDigits:2});
+    const amt=rewards.reduce((s,l)=>s+parseFloat(ethers.formatUnits(BigInt(l.data),CFG.SKOOP_DEC)),0);
+    const usd=skoopPriceUSD>0?' \u00b7 \u2248$'+(amt*skoopPriceUSD).toFixed(2):'';
+    renderRewardsChip(rewards.length,amt);
+    const todayRow=`<div class="tx-row" style="background:var(--mint);"><div class="tx-dot td-mint">\ud83c\udf66</div><div class="tx-info"><div class="tx-name" style="font-weight:700;">Rewards earned</div><div class="tx-date">${rewards.length} reward${rewards.length!==1?'s':''} \u00b7 last 24 hours${usd}</div></div><div class="tx-val"><div class="amt amt-plus" style="font-size:20px;">+${fmt(amt)}</div></div></div>`;
+    list.innerHTML=todayRow;
+  }catch(e){
+    // A background refresh that fails leaves the last good rows on screen.
+    if(opts&&opts.silent)return;
+    list.innerHTML='<div class="tx-row"><div class="tx-dot td-apricot">\u26a0\ufe0f</div><div class="tx-info"><div class="tx-name">Could not load activity</div><div class="tx-date">'+e.message.slice(0,60)+'</div></div></div>';
+  }
+}
+
+// ── SETTLED RECEIPTS ──────────────────────────────────────────────────────────
+// A paid intent must never come back on the confirm card. It can return by three
+// separate routes: the ?d= auto-launch replaying on any page reload (the URL keeps
+// ?d= forever), the localStorage restore, and re-scanning the same QR. Tracking the
+// receiptId is the only thing that closes all three.
+function settledReceipts(){
+  try{return JSON.parse(localStorage.getItem('settledReceipts')||'[]');}catch(e){return [];}
+}
+function isReceiptSettled(id){return !!id&&settledReceipts().indexOf(id)!==-1;}
+function markReceiptSettled(id){
+  if(!id)return;
+  try{
+    const l=settledReceipts();
+    if(l.indexOf(id)===-1)l.push(id);
+    localStorage.setItem('settledReceipts',JSON.stringify(l.slice(-50)));
+  }catch(e){}
+}
+// Drop ?d= once it's been paid so a reload can't replay it.
+function stripPaymentParam(){
+  try{
+    if(new URLSearchParams(location.search).get('d'))history.replaceState(null,'',location.pathname);
+  }catch(e){}
+}
+
+// Clear every trace of the current intent — in memory, in storage, and in the URL.
+function clearPendingIntent(settled){
+  if(settled&&pendingIntent)markReceiptSettled(pendingIntent.receiptId);
+  pendingIntent=null;
+  try{localStorage.removeItem('pendingIntent');}catch(e){}
+  if(settled)stripPaymentParam();
+}
+
+async function maybeRestorePendingIntent(){
+  if(pendingIntent)return;
+  let saved;try{saved=localStorage.getItem('pendingIntent');}catch(e){return;}
+  if(!saved)return;
+  try{
+    const intent=JSON.parse(saved);
+    if(isReceiptSettled(intent.receiptId)){try{localStorage.removeItem('pendingIntent');}catch(e){}stripPaymentParam();return;}
+    if(Date.now()/1000>Number(intent.deadline)){try{localStorage.removeItem('pendingIntent');}catch(e){}return;}
+    pendingIntent=intent;
+    await showConfirm(intent);
+  }catch(e){try{localStorage.removeItem('pendingIntent');}catch(e2){}}
+}
+document.addEventListener('visibilitychange',async function(){
+  if(document.visibilityState!=='visible'){stopScan();return;}
+  setTimeout(maybeAutoStartScan,300);
+  if(!window.ethereum)return;
+  if(provider&&userAddr){try{await refreshBals();}catch(e){}await maybeRestorePendingIntent();return;}
+  try{
+    const a=await window.ethereum.request({method:'eth_accounts'});
+    if(!a.length)return;
+    const gateVisible=document.getElementById('connect-gate').style.display!=='none';
+    provider=new ethers.BrowserProvider(window.ethereum);
+    signer=await provider.getSigner();userAddr=await signer.getAddress();
+    if(gateVisible){await onConnected();}
+    else{updatePills();try{await checkNet();}catch(e){}try{await refreshBals();}catch(e){}}
+    await maybeRestorePendingIntent();
+  }catch(e){}
+});
+
+if(window.ethereum){
+  window.ethereum.request({method:'eth_accounts'}).then(async a=>{if(a.length)await connectInjected();}).catch(()=>{});
+}
+
+fetchEthPrice().catch(()=>{});
+
+// Auto-launch payment if URL contains ?d= (from scanned QR URL)
+(function(){
+  const d=new URLSearchParams(window.location.search).get('d');
+  if(!d)return;
+  // ?d= survives in the address bar after payment, so every reload would replay a
+  // paid intent. Drop it silently rather than reopening a settled confirm card.
+  try{if(isReceiptSettled(decodeK2(d).receiptId)){stripPaymentParam();return;}}catch(e){}
+  // Navigate to Pay screen and parse the K2 payload
+  setTimeout(()=>{goTo('pay');setTimeout(()=>parseQR('K2:'+d),200);},100);
+})();
+
+// ── SWAP ──────────────────────────────────────────────────────────────────────
+function openTokSheet(){document.getElementById("tok-sheet").classList.add("open");document.getElementById("tok-back").classList.add("open");}
+function closeTokSheet(){document.getElementById("tok-sheet").classList.remove("open");document.getElementById("tok-back").classList.remove("open");}
+function selectToken(t){
+  selToken=t;closeTokSheet();
+  const icons={USDC:"USDC",ETH:"\u039e"};const cls={USDC:"ti-usdc",ETH:"ti-eth"};
+  const ic=document.getElementById("from-icon");ic.textContent=icons[t];ic.className="tok-ic "+cls[t];
+  document.getElementById("from-name").textContent=t;
+  updateFromBal();document.getElementById("from-amt").value="";resetOut();
+}
+function setSlip(v,btn){slip=v;document.querySelectorAll(".slip-btn").forEach(b=>b.classList.remove("sel"));btn.classList.add("sel");}
+async function setMax(){
+  if(!provider||!userAddr)return;
+  try{
+    let mx="0";
+    if(selToken==="ETH"){const b=await rpc().getBalance(userAddr);const r=ethers.parseEther("0.005");mx=ethers.formatEther(b>r?b-r:0n);}
+    else{const c=new ethers.Contract(CFG.USDC,ABI_ERC20,rpc());mx=ethers.formatUnits(await c.balanceOf(userAddr),6);}
+    document.getElementById("from-amt").value=parseFloat(mx).toFixed(6);onAmt();
+  }catch(e){showToast("Could not fetch balance","err");}
+}
+function resetOut(){
+  document.getElementById("out-amt").textContent="0";
+  document.getElementById("out-loading").classList.remove("show");
+  document.getElementById("swap-dets").classList.remove("show");
+  document.getElementById("btn-swap").disabled=true;
+  document.getElementById("btn-swap").textContent="Enter amount";
+  document.getElementById("from-usd").textContent="";curQuote=null;
+}
+function onAmt(){
+  clearTimeout(quoteTimer);
+  const v=parseFloat(document.getElementById("from-amt").value);
+  if(!v||v<=0){resetOut();return;}
+  if(selToken==="ETH"&&ethPriceUSD>0){document.getElementById("from-usd").textContent="\u2248 $"+(v*ethPriceUSD).toLocaleString("en-US",{maximumFractionDigits:2});}
+  else{document.getElementById("from-usd").textContent="";}
+  document.getElementById("out-loading").classList.add("show");
+  document.getElementById("out-loading").textContent="Getting quote\u2026";
+  document.getElementById("btn-swap").disabled=true;document.getElementById("btn-swap").textContent="Getting quote\u2026";
+  quoteTimer=setTimeout(()=>fetchQuote(v),600);
+}
+
+// Pool/quoter reads go over the public RPC, not the wallet provider — a WalletConnect
+// relay round-trip per keystroke made quotes feel broken on mobile.
+async function loadPoolFee(poolAddr){
+  if(poolFees[poolAddr]!=null)return poolFees[poolAddr];
+  try{const p=new ethers.Contract(poolAddr,ABI_POOL_IMM,rpc());const fee=await p.fee();poolFees[poolAddr]=Number(fee);return poolFees[poolAddr];}catch(e){return CFG.FEE;}
+}
+async function loadPoolImmutables(){await Promise.all([loadPoolFee(POOL_ETH_SKOOP),loadPoolFee(POOL_USDC_SKOOP)]);}
+
+async function fetchQuote(amt){
+  try{
+    await loadPoolImmutables();
+    const isUSDC=selToken==="USDC";
+    const poolAddr=isUSDC?POOL_USDC_SKOOP:POOL_ETH_SKOOP;
+    const tokenIn=isUSDC?CFG.USDC:CFG.WETH;
+    const decIn=isUSDC?CFG.USDC_DEC:CFG.WETH_DEC;
+    const amtIn=ethers.parseUnits(amt.toString(),decIn);
+    const fee=await loadPoolFee(poolAddr);
+    let amtOut=null,isEstimate=false;
+    try{
+      const ABI_Q2=["function quoteExactInputSingle((address tokenIn,address tokenOut,uint256 amountIn,uint24 fee,uint160 sqrtPriceLimitX96)) returns (uint256 amountOut,uint160 sqrtPriceX96After,uint32 initializedTicksCrossed,uint256 gasEstimate)"];
+      const q=new ethers.Contract('0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',ABI_Q2,rpc());
+      const [out]=await q.quoteExactInputSingle.staticCall({tokenIn,tokenOut:CFG.SKOOP,amountIn:amtIn,fee,sqrtPriceLimitX96:0n});
+      amtOut=out;
+    }catch(e1){
+      try{
+        const ABI_Q1=["function quoteExactInputSingle(address,address,uint24,uint256,uint160) returns (uint256)"];
+        const q=new ethers.Contract('0xb27308f9f90d607463bb33ea1bebb41c27ce5ab6',ABI_Q1,rpc());
+        amtOut=await q.quoteExactInputSingle.staticCall(tokenIn,CFG.SKOOP,fee,amtIn,0n);
+      }catch(e2){
+        try{
+          const ABI_P=["function slot0() view returns (uint160 sqrtPriceX96,int24,uint16,uint16,uint16,uint8,bool)","function token0() view returns (address)"];
+          const pool=new ethers.Contract(poolAddr,ABI_P,rpc());
+          const [s0,t0]=await Promise.all([pool.slot0(),pool.token0()]);
+          const sqrtPf=Number(s0.sqrtPriceX96)/Number(2n**96n);const priceRaw=sqrtPf*sqrtPf;
+          const skoopIsT0=t0.toLowerCase()===CFG.SKOOP.toLowerCase();
+          const inAmt=parseFloat(ethers.formatUnits(amtIn,decIn));
+          const skoopPerIn=skoopIsT0?(isUSDC?1/priceRaw:(1/priceRaw)*1e12):(isUSDC?priceRaw:priceRaw*1e12);
+          amtOut=ethers.parseUnits((inAmt*skoopPerIn*(1-fee/1e6)).toFixed(6),CFG.SKOOP_DEC);
+          isEstimate=true;
+        }catch(e3){document.getElementById("out-loading").textContent="Quote unavailable \u2014 try again";document.getElementById("btn-swap").textContent="Retry";return;}
+      }
+    }
+    curQuote={amtOut,amtIn,tokenIn,fee};
+    const out=parseFloat(ethers.formatUnits(amtOut,CFG.SKOOP_DEC));
+    // Price impact = how far the quote falls short of trading the whole amount at the
+    // current pool price (after the pool fee). The pools are thin, so this is real
+    // money on larger buys and must not be shown as a constant.
+    let impactPct=null;
+    if(!isEstimate){
+      try{
+        const ABI_P=["function slot0() view returns (uint160 sqrtPriceX96,int24,uint16,uint16,uint16,uint8,bool)","function token0() view returns (address)"];
+        const pool=new ethers.Contract(poolAddr,ABI_P,rpc());
+        const [s0,t0]=await Promise.all([pool.slot0(),pool.token0()]);
+        const sq=Number(s0.sqrtPriceX96)/Number(2n**96n);const raw=sq*sq;
+        const skoopIsT0=t0.toLowerCase()===CFG.SKOOP.toLowerCase();
+        const adj=isUSDC?1:1e12;   // WETH 18dp vs SKOOP 6dp
+        const skoopPerIn=skoopIsT0?adj/raw:raw*adj;
+        const spotOut=parseFloat(ethers.formatUnits(amtIn,decIn))*skoopPerIn*(1-fee/1e6);
+        if(spotOut>0)impactPct=Math.max(0,(1-out/spotOut)*100);
+      }catch(e){}
+    }
+    curQuote.impactPct=impactPct;
+    const min=out*(1-slip/100);
+    document.getElementById("out-amt").textContent=(isEstimate?"~":"")+out.toLocaleString("en-US",{maximumFractionDigits:2});
+    document.getElementById("out-loading").classList.remove("show");
+    document.getElementById("det-route").textContent=selToken+" \u2192 "+SYM+" ("+(fee/10000).toFixed(2)+"%)";
+    const impEl=document.getElementById("det-impact");
+    impEl.textContent=isEstimate?"~estimated":impactPct===null?"—":impactPct<0.1?"< 0.1%":impactPct.toFixed(2)+"%";
+    impEl.style.color=impactPct!==null&&impactPct>=3?"#c0392b":"";
+    document.getElementById("det-min").textContent=min.toLocaleString("en-US",{maximumFractionDigits:2})+" "+SYM+"";
+    document.getElementById("swap-dets").classList.add("show");
+    document.getElementById("btn-swap").disabled=false;
+    document.getElementById("btn-swap").textContent=isEstimate?"Swap (estimated)":"Swap for "+SYM+"";
+  }catch(e){document.getElementById("out-loading").textContent="Quote unavailable";document.getElementById("btn-swap").textContent="Pool unavailable";}
+}
+
+async function execSwap(){
+  if(!curQuote||!signer)return;
+  const btn=document.getElementById("btn-swap");
+  const MAX_USD=500;
+  if(ethPriceUSD>0){
+    const spendUSD=selToken==="ETH"?parseFloat(ethers.formatEther(curQuote.amtIn))*ethPriceUSD:parseFloat(ethers.formatUnits(curQuote.amtIn,CFG.USDC_DEC));
+    if(spendUSD>MAX_USD){showToast("Max swap is $"+MAX_USD+" \u2014 reduce your amount",'err');return;}
+  }
+  // The pools are small: a large buy moves the price against the buyer. Refuse rather
+  // than let a customer lose a tenth or more of their money to impact.
+  const MAX_IMPACT=10;
+  if(curQuote.impactPct!=null&&curQuote.impactPct>MAX_IMPACT){showToast("Price impact "+curQuote.impactPct.toFixed(1)+"% \u2014 try a smaller amount",'err');return;}
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Swapping...';
+  try{
+    const router=new ethers.Contract(CFG.ROUTER,ABI_ROUTER,signer);
+    const minOut=curQuote.amtOut*BigInt(Math.floor((1-slip/100)*10000))/10000n;
+    let tx;
+    if(selToken==="ETH"){
+      tx=await router.exactInputSingle({tokenIn:CFG.WETH,tokenOut:CFG.SKOOP,fee:curQuote.fee||CFG.FEE,recipient:userAddr,amountIn:curQuote.amtIn,amountOutMinimum:minOut,sqrtPriceLimitX96:0n},{value:curQuote.amtIn});
+    }else{
+      const tc=new ethers.Contract(curQuote.tokenIn,ABI_ERC20,signer);
+      const tcRead=new ethers.Contract(curQuote.tokenIn,ABI_ERC20,rpc());
+      const al=await tcRead.allowance(userAddr,CFG.ROUTER);
+      if(al<curQuote.amtIn){
+        showToast("Approving\u2026","");
+        btn.innerHTML='<span class="spinner"></span> Step 1 of 2 \u2014 Approving\u2026';
+        await tc.approve(CFG.ROUTER,curQuote.amtIn);
+        // Poll allowance over the public RPC \u2014 approveTx.wait() hangs in the
+        // Coinbase Wallet in-app browser (same fix as the payment flow).
+        let ok=false;
+        for(let i=0;i<30;i++){
+          await new Promise(r=>setTimeout(r,2000));
+          try{if(await tcRead.allowance(userAddr,CFG.ROUTER)>=curQuote.amtIn){ok=true;break;}}catch(e){}
+        }
+        if(!ok){showToast("Approval timed out \u2014 tap Swap to try again","err");btn.disabled=false;btn.textContent="Swap for "+SYM+"";return;}
+        btn.innerHTML='<span class="spinner"></span> Step 2 of 2 \u2014 Swapping\u2026';
+      }
+      tx=await router.exactInputSingle({tokenIn:curQuote.tokenIn,tokenOut:CFG.SKOOP,fee:curQuote.fee||CFG.FEE,recipient:userAddr,amountIn:curQuote.amtIn,amountOutMinimum:minOut,sqrtPriceLimitX96:0n});
+    }
+    showToast("Submitted\u2026","");
+    const rcpt=await waitForReceipt(tx.hash);
+    // tx.wait() used to throw on revert; waitForReceipt does not, so check status here
+    // or a failed swap would report success.
+    if(rcpt&&Number(rcpt.status)===0){showToast("Swap failed on chain \u2014 try a higher slippage","err");btn.disabled=false;btn.textContent="Swap for "+SYM+"";return;}
+    if(!rcpt){showToast("Still pending \u2014 check your wallet","err");btn.disabled=false;btn.textContent="Swap for "+SYM+"";await refreshBals();return;}
+    showToast("Swap complete!","ok");
+    if(navigator.vibrate)navigator.vibrate([60,40,60]);
+    document.getElementById("from-amt").value="";resetOut();await refreshBals();
+    setTimeout(()=>refreshBals().catch(()=>{}),4000);
+  }catch(e){showToast(e?.reason||e?.shortMessage||e?.message||"Swap failed","err");}
+  btn.disabled=false;btn.textContent="Swap for "+SYM+"";
+}
+
+// Poll the public RPC for a receipt instead of tx.wait() \u2014 wallet-provider receipt
+// polling stalls indefinitely in some in-app browsers. Unlike tx.wait() this does NOT
+// throw on a reverted tx, so every caller must check receipt.status itself.
+async function waitForReceipt(hash,tries=45){
+  for(let i=0;i<tries;i++){
+    try{const r=await rpc().getTransactionReceipt(hash);if(r)return r;}catch(e){}
+    await new Promise(r=>setTimeout(r,2000));
+  }
+  return null;
+}
+
+// ── QR SCANNER ────────────────────────────────────────────────────────────────
+function setScanState(state){
+  const ui=document.getElementById("scan-ui");const btn=document.getElementById("btn-cam");const hint=document.querySelector(".scan-hint");
+  if(state==='scanning'){if(ui)ui.style.display="none";if(btn)btn.style.display="none";}
+  else if(state==='retry'){if(ui)ui.style.display="flex";if(hint)hint.textContent="Tap below to try again";if(btn){btn.style.display="flex";btn.innerHTML='&#128247; &nbsp;Retry Camera';}}
+  else{if(ui)ui.style.display="flex";if(hint)hint.textContent="Point at the shop checkout QR";if(btn){btn.style.display="flex";btn.innerHTML='&#128247; &nbsp;Start Camera';}}
+}
+
+let qrScanner=null;
+
+function startScan(){
+  if(scannerRunning)return;
+  if(typeof Html5Qrcode==="undefined"){showToast("Scanner loading \u2014 try again","err");setScanState('retry');return;}
+  if(!qrScanner)qrScanner=new Html5Qrcode("qr-reader");
+  setScanState('scanning');
+  qrScanner.start(
+    {facingMode:"environment"},
+    {fps:10,qrbox:{width:250,height:250},aspectRatio:1.333},
+    txt=>{
+      // Debounce: html5-qrcode can fire the same frame twice before stop() lands.
+      if(!scannerRunning)return;
+      scannerRunning=false;
+      if(navigator.vibrate)navigator.vibrate(30);
+      stopScan();parseQR(txt);
+    },
+    ()=>{}
+  ).then(()=>{scannerRunning=true;localStorage.setItem('camOK','1');})
+   .catch(e=>{
+     scannerRunning=false;
+     const msg=e?.toString()||'';
+     if(msg.toLowerCase().includes('permission')||msg.toLowerCase().includes('denied')){
+       try{localStorage.removeItem('camOK');}catch(e2){}
+       showToast("Camera permission denied \u2014 allow camera access in settings","err");
+     }
+     else{showToast("Camera error \u2014 tap Retry","err");}
+     setScanState('retry');
+   });
+}
+
+// Always release the camera when we leave the Pay screen, background the app, or
+// finish a scan \u2014 otherwise the indicator light stays on and the battery drains.
+function stopScan(){
+  scannerRunning=false;
+  if(!qrScanner)return;
+  try{qrScanner.stop().catch(()=>{});}catch(e){}
+  setScanState('ready');
+}
+
+// Re-open the camera automatically when the customer lands on Pay and has already
+// granted permission \u2014 one less tap in front of the register.
+function maybeAutoStartScan(){
+  if(scannerRunning||pendingIntent)return;
+  if(document.visibilityState!=='visible')return;
+  // Both the Pay screen and its scan sub-state must be showing — a delayed call
+  // must never open the camera behind another screen.
+  if(!document.getElementById('screen-pay').classList.contains('active'))return;
+  if(!document.getElementById('pay-scan').classList.contains('active'))return;
+  let granted=false;
+  try{granted=localStorage.getItem('camOK')==='1';}catch(e){}
+  if(granted){startScan();return;}
+  if(!navigator.permissions||!navigator.permissions.query)return;
+  navigator.permissions.query({name:'camera'})
+    .then(s=>{if(s.state==='granted')startScan();})
+    .catch(()=>{});
+}
+
+function decodeK2(b64url){
+  // Decode K2 binary payload (206 bytes)
+  const b64=b64url.replace(/-/g,'+').replace(/_/g,'/');
+  const bin=atob(b64);const buf=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  function u8ToHex(arr){return '0x'+Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');}
+  function readBigInt(o,l){let v=0n;for(let i=0;i<l;i++)v=(v<<8n)|BigInt(buf[o+i]);return v;}
+  let off=0;
+  const receiptId=u8ToHex(buf.slice(off,off+32));off+=32;
+  const orderId=u8ToHex(buf.slice(off,off+32));off+=32;
+  const cartHash=u8ToHex(buf.slice(off,off+32));off+=32;
+  const paymentToken=u8ToHex(buf.slice(off,off+20));off+=20;  // 20-byte address
+  const tokenAmount=readBigInt(off,8).toString();off+=8;
+  const subtotalCents=Number(readBigInt(off,4));off+=4;
+  const taxCents=Number(readBigInt(off,4));off+=4;
+  const totalCents=Number(readBigInt(off,4));off+=4;
+  const itemCount=buf[off];off+=1;
+  const deadline=Number(readBigInt(off,4));off+=4;
+  const signature=u8ToHex(buf.slice(off,off+65));
+  const storeIdHash=ethers.id(PC_M.payments.storeId);
+  const terminalIdHash=ethers.id(PC_TERMINALS[0][0]);
+  return {receiptId,orderId,storeIdHash,terminalIdHash,paymentToken,tokenAmount,subtotalCents,taxCents,totalCents,itemCount,cartHash,deadline,signature};
+}
+
+function verifyIntent(intent){
+  // Two-block digest \u2014 must match _paymentDigest() in KOKOSPaymentEscrowV2
+  const enc=ethers.AbiCoder.defaultAbiCoder();
+  const blockA=ethers.keccak256(enc.encode(
+    ['bytes32','bytes32','bytes32','bytes32','address','uint256'],
+    [intent.receiptId,intent.orderId,intent.storeIdHash,intent.terminalIdHash,intent.paymentToken,BigInt(intent.tokenAmount)]
+  ));
+  const blockB=ethers.keccak256(enc.encode(
+    ['uint256','uint256','uint256','uint256','bytes32','uint256'],
+    [BigInt(intent.subtotalCents),BigInt(intent.taxCents),BigInt(intent.totalCents),BigInt(intent.itemCount),intent.cartHash,BigInt(intent.deadline)]
+  ));
+  const digest=ethers.keccak256(enc.encode(['bytes32','bytes32'],[blockA,blockB]));
+  const recovered=ethers.verifyMessage(ethers.getBytes(digest),intent.signature);
+  return recovered.toLowerCase()===CFG.POS_SIGNER.toLowerCase();
+}
+// A merchant can run several terminals; the QR does not carry which one signed, so try each
+// registered (terminalId, signer) pair and keep the one that verifies.
+function verifyIntentAnyTerminal(intent){
+  for(const [tid,sig] of PC_TERMINALS){
+    const cand={...intent,terminalIdHash:ethers.id(tid)};
+    const enc=ethers.AbiCoder.defaultAbiCoder();
+    const blockA=ethers.keccak256(enc.encode(['bytes32','bytes32','bytes32','bytes32','address','uint256'],
+      [cand.receiptId,cand.orderId,cand.storeIdHash,cand.terminalIdHash,cand.paymentToken,BigInt(cand.tokenAmount)]));
+    const blockB=ethers.keccak256(enc.encode(['uint256','uint256','uint256','uint256','bytes32','uint256'],
+      [BigInt(cand.subtotalCents),BigInt(cand.taxCents),BigInt(cand.totalCents),BigInt(cand.itemCount),cand.cartHash,BigInt(cand.deadline)]));
+    const digest=ethers.keccak256(enc.encode(['bytes32','bytes32'],[blockA,blockB]));
+    if(ethers.verifyMessage(ethers.getBytes(digest),cand.signature).toLowerCase()===sig.toLowerCase()){intent.terminalIdHash=cand.terminalIdHash;return true;}
+  }
+  return false;
+}
+
+function parseQR(raw){
+  try{
+    let intent;
+    // URL QR: https://punchcard.club/app/?m=<merchant>&d=<k2data>  (older KOKOS QRs carry no m and mean KOKOS)
+    if(raw.startsWith('http')){
+      const url=new URL(raw);const d=url.searchParams.get('d');
+      if(!d){showToast("Invalid payment link","err");setScanState('retry');return;}
+      const qm=url.searchParams.get('m')||'kokos-skoop';
+      if(qm!==PC_M.slug){
+        if(!PC_REGISTRY.merchants.some(x=>x.slug===qm)){showToast("Unknown merchant on this QR","err");setScanState('retry');return;}
+        location.href=location.pathname+'?m='+encodeURIComponent(qm)+'&d='+encodeURIComponent(d);return;
+      }
+      intent=decodeK2(d);
+    }else if(raw.startsWith('K2:')){
+      intent=decodeK2(raw.slice(3));
+    }else if(raw.startsWith('K1:')){
+      // V1 legacy \u2014 SKOOP only, single-block digest
+      const b64=raw.slice(3).replace(/-/g,'+').replace(/_/g,'/');
+      const bin=atob(b64);const buf=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+      function u8ToHex(arr){return '0x'+Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');}
+      function readBigInt(o,l){let v=0n;for(let i=0;i<l;i++)v=(v<<8n)|BigInt(buf[o+i]);return v;}
+      let off=0;
+      const receiptId=u8ToHex(buf.slice(off,off+32));off+=32;
+      const orderId=u8ToHex(buf.slice(off,off+32));off+=32;
+      const cartHash=u8ToHex(buf.slice(off,off+32));off+=32;
+      const tokenAmount=readBigInt(off,8).toString();off+=8;
+      const subtotalCents=Number(readBigInt(off,4));off+=4;
+      const taxCents=Number(readBigInt(off,4));off+=4;
+      const totalCents=Number(readBigInt(off,4));off+=4;
+      const itemCount=buf[off];off+=1;
+      const deadline=Number(readBigInt(off,4));off+=4;
+      const signature=u8ToHex(buf.slice(off,off+65));
+      intent={receiptId,orderId,storeIdHash:ethers.id(PC_M.payments.storeId),terminalIdHash:ethers.id(PC_TERMINALS[0][0]),
+        paymentToken:CFG.SKOOP,tokenAmount,subtotalCents,taxCents,totalCents,itemCount,cartHash,deadline,signature};
+    }else{
+      showToast("Not a PunchCard payment QR","err");setScanState('retry');return;
+    }
+    if(isReceiptSettled(intent.receiptId)){showToast("Already paid \u2014 ask the shop for a new QR","err");stripPaymentParam();setScanState('retry');return;}
+    if(Date.now()/1000>Number(intent.deadline)){showToast("QR expired \u2014 ask shop to regenerate","err");setScanState('retry');return;}
+    try{
+      if(!verifyIntentAnyTerminal(intent)){showToast("Invalid QR \u2014 not a "+MSHORT+" payment","err");setScanState('retry');return;}
+    }catch(e){showToast("Invalid QR \u2014 could not verify signature","err");setScanState('retry');return;}
+    pendingIntent=intent;try{localStorage.setItem('pendingIntent',JSON.stringify(intent));}catch(e){}showConfirm(intent);
+  }catch(e){showToast("Scan error \u2014 point at the QR and try again","err");setScanState('retry');}
+}
+
+async function showConfirm(d){
+  try{const isU=d.paymentToken&&d.paymentToken.toLowerCase()===CFG.USDC.toLowerCase();
+    const pw=document.getElementById('cc-paywith'),pl=document.getElementById('cc-paywith-logo');
+    if(pw)pw.textContent='with '+(isU?'USDC':SYM);if(pl)pl.style.display=isU?'none':'';}catch(e){}
+  const isUsdc=d.paymentToken?.toLowerCase()===CFG.USDC.toLowerCase();
+  const tokenDec=isUsdc?CFG.USDC_DEC:CFG.SKOOP_DEC;
+  const tokenLabel=isUsdc?'USDC':''+SYM+'';
+  const tokFloat=parseFloat(ethers.formatUnits(BigInt(d.tokenAmount),tokenDec));
+  document.getElementById("cc-usd").textContent="$"+(Number(d.totalCents)/100).toFixed(2);
+  const lbl=document.getElementById("cc-token-label");if(lbl)lbl.textContent=tokenLabel+" amount";
+  document.getElementById("cc-skoop").textContent=tokFloat.toLocaleString("en-US",{maximumFractionDigits:isUsdc?2:0})+" "+tokenLabel;
+  document.getElementById("cc-items").textContent=d.itemCount+" item"+(Number(d.itemCount)>1?"s":"");
+  document.getElementById("cc-sub").textContent="$"+(Number(d.subtotalCents)/100).toFixed(2);
+  document.getElementById("cc-receipt").textContent=d.receiptId.slice(0,20)+"\u2026";
+  startExpiryCountdown(d);
+  showRewardPreview(d,isUsdc);
+  document.getElementById("pay-scan").classList.remove("active");document.getElementById("pay-confirm").classList.add("active");
+  const notice=document.getElementById('first-time-notice');
+  // A payment is already being signed/broadcast — leave the button exactly as it is.
+  const btn=_payInFlight?null:document.getElementById('btn-confirm');
+  if(!signer||!userAddr){
+    // Wallet not connected \u2014 openWalletModal() only opens the picker, so we can't
+    // continue inline; onConnected() re-renders this card once a signer exists.
+    if(btn){btn.textContent='Connect wallet to pay';btn.disabled=false;btn.onclick=()=>{openWalletModal();};}
+    if(notice)notice.style.display='none';
+    return;
+  }
+  // Restore default onclick in case it was overwritten above
+  if(btn)btn.onclick=confirmPay;
+  try{
+    const readProvider=rpc();
+    const tok=new ethers.Contract(isUsdc?CFG.USDC:CFG.SKOOP,ABI_ERC20,readProvider);
+    const [al,rawBal]=await Promise.all([tok.allowance(userAddr,CFG.ESCROW),tok.balanceOf(userAddr)]);
+    const balFloat=parseFloat(ethers.formatUnits(rawBal,tokenDec));
+    const balEl=document.getElementById('cc-balance');
+    if(balEl){
+      balEl.textContent=balFloat.toLocaleString('en-US',{maximumFractionDigits:isUsdc?2:0})+' '+tokenLabel;
+      if(balFloat<tokFloat){balEl.style.color='#b91c1c';balEl.textContent+=' \u2014 insufficient';}else{balEl.style.color='';}
+    }
+    const firstTime=al<BigInt(d.tokenAmount);
+    if(balFloat<tokFloat){
+      // Short by this much \u2014 tell them the gap and hand them a way to close it.
+      const short=(tokFloat-balFloat).toLocaleString('en-US',{maximumFractionDigits:isUsdc?2:0});
+      if(btn){btn.disabled=true;btn.textContent='Need '+short+' more '+tokenLabel;}
+      if(notice)notice.style.display='none';
+      if(balEl){
+        balEl.innerHTML=balEl.textContent+' \u2014 <span onclick="goTo(\'buy\')" style="color:var(--coral-deep);cursor:pointer;text-decoration:underline;">'+
+          (isUsdc?'Get USDC on Base':'Buy '+SYM+'')+'</span>';
+      }
+    }else if(firstTime){
+      if(notice)notice.style.display='flex';
+      if(btn){btn.textContent='Step 1 of 2 \u2014 Approve '+tokenLabel;btn.disabled=false;}
+      const lbl=document.getElementById('ap-label-1');if(lbl)lbl.textContent='Approve '+tokenLabel;
+    }else{
+      if(notice)notice.style.display='none';
+      if(btn){btn.textContent='Confirm & Pay with '+tokenLabel;btn.disabled=false;}
+    }
+  }catch(e){}
+}
+
+// ── CONFIRM CARD: EXPIRY + REWARD PREVIEW ─────────────────────────────────────
+// The POS QR carries a deadline. A wall-clock time ("Expires 3:42:11 PM") makes the
+// customer do the math at the register — a live countdown doesn't.
+let _expiryTimer=null;
+function stopExpiryCountdown(){if(_expiryTimer){clearInterval(_expiryTimer);_expiryTimer=null;}}
+function startExpiryCountdown(d){
+  stopExpiryCountdown();
+  const el=document.getElementById('cc-exp');if(!el)return;
+  const tick=()=>{
+    const left=Math.ceil(Number(d.deadline)-Date.now()/1000);
+    if(left<=0){
+      stopExpiryCountdown();
+      el.textContent='Expired';el.style.color='#b91c1c';
+      const btn=document.getElementById('btn-confirm');
+      // Never yank the screen or relabel the button mid-flight — a wallet may be open
+      // over us waiting on a signature we already asked for.
+      if(btn&&!_payInFlight&&!btn.querySelector('.spinner')){btn.disabled=true;btn.textContent='QR expired — ask for a new one';}
+      return;
+    }
+    const m=Math.floor(left/60),s=left%60;
+    el.textContent=m+':'+String(s).padStart(2,'0');
+    el.style.color=left<=30?'#b91c1c':'';
+    el.style.fontWeight=left<=30?'700':'';
+  };
+  tick();_expiryTimer=setInterval(tick,1000);
+}
+
+// Rewards mirror the POS: 10% back on SKOOP payments, 5% on USDC. Both auto-send.
+// What happens to the payment next, read from the escrow rather than typed here: the
+// refund window is owner-adjustable (1-7 days), and a hardcoded "24 hours" would go
+// quietly wrong the day it changes.
+async function setSuccessEscrowNote(isUsdc){
+  const el=document.getElementById('success-sub');if(!el)return;
+  let win='';
+  try{
+    const esc=new ethers.Contract(CFG.ESCROW,['function refundWindow() view returns (uint256)'],rpc());
+    const h=Number(await esc.refundWindow())/3600;
+    win=h%24===0?(h/24===1?'24 hours':(h/24)+' days'):h+' hours';
+  }catch(e){}
+  el.textContent=win
+    ?(isUsdc?'Held in escrow — refundable for '+win+', then settled to '+MSHORT+'.'
+            :'Held in escrow — refundable for '+win+', then burned.')
+    :'Held in escrow';
+}
+const REWARD_RATE_SKOOP=PC_M.rewards.rateToken,REWARD_RATE_USDC=PC_M.rewards.rateUsdc;
+function showRewardPreview(d,isUsdc){
+  const box=document.getElementById('reward-preview');
+  const amtEl=document.getElementById('reward-preview-amt');
+  if(!box||!amtEl)return;
+  const rate=isUsdc?REWARD_RATE_USDC:REWARD_RATE_SKOOP;
+  const usd=Number(d.totalCents)/100*rate;
+  if(!(skoopPriceUSD>0)||!(usd>0)){
+    // No price yet — still promise the reward, just without a figure.
+    amtEl.textContent='You earn '+Math.round(rate*100)+'% back in '+SYM+'';
+    box.style.display='flex';return;
+  }
+  const skoop=Math.round(usd/skoopPriceUSD);
+  amtEl.textContent='You earn ≈ '+skoop.toLocaleString('en-US')+' '+SYM+' back ('+Math.round(rate*100)+'%)';
+  box.style.display='flex';
+}
+
+function cancelPay(){
+  clearPendingIntent(false);stripPaymentParam();hideApprovalProgress();
+  stopExpiryCountdown();
+  const btn=document.getElementById("btn-confirm");if(btn){btn.disabled=false;btn.textContent="Confirm & Pay";btn.onclick=confirmPay;}
+  const notice=document.getElementById('first-time-notice');if(notice)notice.style.display='none';
+  const rp=document.getElementById('reward-preview');if(rp)rp.style.display='none';
+  const exp=document.getElementById('cc-exp');if(exp){exp.style.color='';exp.style.fontWeight='';}
+  document.getElementById("pay-confirm").classList.remove("active");document.getElementById("pay-scan").classList.add("active");
+  setTimeout(maybeAutoStartScan,250);
+}
+
+function showApprovalProgress(){
+  document.getElementById('approval-progress').classList.add('show');document.getElementById('btn-cancel').style.display='none';
+  setApStep(1,'active','Waiting for your wallet \u2014 tap Confirm to approve');
+  setApStep(2,'waiting','Confirm the payment transaction in your wallet');
+}
+function hideApprovalProgress(){document.getElementById('approval-progress').classList.remove('show');document.getElementById('btn-cancel').style.display='';}
+function setApStep(n,state,desc){
+  const dot=document.getElementById('ap-dot-'+n);const descEl=document.getElementById('ap-desc-'+n);
+  dot.className='ap-step-dot '+state;
+  if(state==='done')dot.innerHTML='\u2713';else if(state==='error')dot.innerHTML='\u2715';else dot.innerHTML=n;
+  if(desc)descEl.textContent=desc;
+}
+
+// True from the moment the customer taps Confirm until the flow settles. While set,
+// nothing may re-enable the Confirm button — goTo('pay') and the expiry timer both
+// re-render this card, and a second tap would fire capturePayment twice.
+let _payInFlight=false;
+
+async function confirmPay(){
+  if(_payInFlight)return;
+  if(!pendingIntent||!signer)return;
+  _payInFlight=true;
+  try{await _confirmPay();}finally{_payInFlight=false;}
+}
+
+async function _confirmPay(){
+  const btn=document.getElementById("btn-confirm");btn.disabled=true;
+  // Network guard — must be on Base before touching contracts
+  try{
+    const net=await provider.getNetwork();
+    if(Number(net.chainId)!==CFG.CHAIN_ID){
+      showToast('Switch to Base network to pay','err');
+      btn.disabled=false;
+      await switchToBase();
+      return;
+    }
+  }catch(e){btn.disabled=false;return;}
+  try{
+    const d=pendingIntent;const tokAmt=BigInt(d.tokenAmount);
+    const isUsdc=d.paymentToken?.toLowerCase()===CFG.USDC.toLowerCase();
+    const tokenAddr=isUsdc?CFG.USDC:CFG.SKOOP;
+    const tokenDec=isUsdc?CFG.USDC_DEC:CFG.SKOOP_DEC;
+    const tokenLabel=isUsdc?'USDC':''+SYM+'';
+    const tok=new ethers.Contract(tokenAddr,ABI_ERC20,signer);
+    const readProvider2=rpc();
+    const tok2=new ethers.Contract(tokenAddr,ABI_ERC20,readProvider2);
+    const liveBal=await tok2.balanceOf(userAddr);
+    if(liveBal<tokAmt){showToast('Not enough '+tokenLabel+' \u2014 get some to pay','err');btn.disabled=false;btn.textContent='Confirm & Pay with '+tokenLabel;return;}
+    const al=await tok.allowance(userAddr,CFG.ESCROW);
+    if(al<tokAmt){
+      showApprovalProgress();setApStep(1,'active','Waiting for your wallet \u2014 tap Confirm to approve');
+      btn.innerHTML='<span class="spinner"></span> Step 1 of 2 \u2014 Approving\u2026';
+      try{
+        await tok.approve(CFG.ESCROW,tokAmt);
+      }catch(e){hideApprovalProgress();setApStep(1,'error','Approval rejected \u2014 tap below to try again');btn.disabled=false;btn.textContent="Try Again";return;}
+      setApStep(1,'active','Approval submitted \u2014 confirming on chain\u2026');
+      btn.innerHTML='<span class="spinner"></span> Confirming approval\u2026';
+      // Poll allowance via public RPC \u2014 avoids wallet-provider receipt polling which hangs on Coinbase Wallet
+      const pollProv=rpc();
+      const tokPoll=new ethers.Contract(tokenAddr,ABI_ERC20,pollProv);
+      let approved=false;
+      for(let i=0;i<30;i++){
+        await new Promise(r=>setTimeout(r,2000));
+        try{if(await tokPoll.allowance(userAddr,CFG.ESCROW)>=tokAmt){approved=true;break;}}catch(e){}
+      }
+      if(!approved){setApStep(1,'error','Approval timed out \u2014 tap below to try again');btn.disabled=false;btn.textContent="Try Again";return;}
+      setApStep(1,'done','Approved \u2713 \u2014 exact amount approved for this payment');
+      setApStep(2,'active','Waiting for your wallet \u2014 confirm the payment');
+      btn.innerHTML='<span class="spinner"></span> Step 2 of 2 \u2014 Sending payment\u2026';
+      await new Promise(r=>setTimeout(r,600));
+    }else{btn.innerHTML='<span class="spinner"></span> Processing\u2026';}
+    const intent={
+      receiptId:d.receiptId,orderId:d.orderId,storeIdHash:d.storeIdHash,terminalIdHash:d.terminalIdHash,
+      paymentToken:d.paymentToken,
+      tokenAmount:BigInt(d.tokenAmount),subtotalCents:BigInt(d.subtotalCents),taxCents:BigInt(d.taxCents),
+      totalCents:BigInt(d.totalCents),itemCount:BigInt(d.itemCount),cartHash:d.cartHash,deadline:BigInt(d.deadline)
+    };
+    // Re-check deadline \u2014 approve step takes time and QR may have expired
+    if(Date.now()/1000>Number(d.deadline)){
+      showToast('QR expired \u2014 ask the shop to generate a new one','err');
+      cancelPay();return;
+    }
+    const escrow=new ethers.Contract(CFG.ESCROW,ABI_ESCROW,signer);let tx;
+    try{tx=await escrow.capturePayment(intent,d.signature);}
+    catch(e){
+      setApStep(2,'error','Payment rejected \u2014 tap below to try again');
+      showToast(e?.reason||e?.shortMessage||e?.data?.message||e?.message||"Payment rejected","err");
+      try{localStorage.removeItem('pendingIntent');}catch(e2){}
+      btn.disabled=false;btn.textContent="Try Again";return;
+    }
+    if(al<tokAmt)setApStep(2,'done','Payment sent \u2713');
+    stopExpiryCountdown();
+    const fmt=parseFloat(ethers.formatUnits(tokAmt,tokenDec));
+    const totalUSD='$'+(Number(d.totalCents)/100).toFixed(2);
+    const rate=isUsdc?REWARD_RATE_USDC:REWARD_RATE_SKOOP;
+    const rewardSkoop=skoopPriceUSD>0?Math.round(Number(d.totalCents)/100*rate/skoopPriceUSD):0;
+    document.getElementById('success-total-display').textContent=totalUSD+' \u00b7 '+fmt.toLocaleString('en-US',{maximumFractionDigits:isUsdc?2:0})+' '+tokenLabel;
+    setSuccessEscrowNote(isUsdc);
+    const rewardLine=document.getElementById('success-reward-line');
+    if(rewardLine)rewardLine.textContent=
+      rewardSkoop>0?'\u2248 '+rewardSkoop.toLocaleString('en-US')+' '+SYM+' reward on its way ('+Math.round(rate*100)+'%)'
+                   :Math.round(rate*100)+'% '+SYM+' reward on its way';
+    const explorer=`https://basescan.org/tx/${tx.hash}`;
+    document.getElementById("success-detail").innerHTML=
+      `<div class="sc-row"><span class="sk">${tokenLabel} paid</span><span class="sv" style="color:var(--coral-deep);">${fmt.toLocaleString("en-US",{maximumFractionDigits:isUsdc?2:0})} ${tokenLabel}</span></div>`+
+      `<div class="sc-row"><span class="sk">Total</span><span class="sv">${totalUSD}</span></div>`+
+      `<div class="sc-row"><span class="sk">Tx</span><span class="sv"><a href="${explorer}" target="_blank" rel="noopener" style="font-family:monospace;font-size:0.62rem;color:var(--coral-deep);">${tx.hash.slice(0,16)}\u2026 &#8599;</a></span></div>`+
+      `<div class="sc-row"><span class="sk">Block</span><span class="sv">confirming\u2026</span></div>`;
+    setTimeout(()=>{navigator.vibrate&&navigator.vibrate([100,50,100]);playChaChingSound();document.getElementById("success-screen").classList.add("show");},400);
+    markReceiptSettled(d.receiptId);clearPendingIntent(true);hideApprovalProgress();
+    waitForReceipt(tx.hash).then(rcpt=>{
+      const blockEl=document.querySelector('#success-detail .sc-row:last-child .sv');
+      if(rcpt&&rcpt.blockNumber){if(blockEl)blockEl.textContent=rcpt.blockNumber;}
+      else if(blockEl){blockEl.textContent='pending';}
+      refreshBals();
+    }).catch(()=>refreshBals());
+    setTimeout(()=>refreshBals().catch(()=>{}),4000);
+  }catch(e){
+    if(document.getElementById('approval-progress').classList.contains('show'))setApStep(2,'error','Payment rejected \u2014 tap below to try again');
+    btn.disabled=false;btn.textContent="Try Again";return;
+  }
+  btn.disabled=false;btn.textContent="Confirm & Pay";
+}
+
+function closeSuccess(){
+  document.getElementById("success-screen").classList.remove("show");
+  stopExpiryCountdown();
+  // Defensive: the payment already cleared this, but nothing may leave the confirm
+  // card armed once the success screen has been dismissed.
+  clearPendingIntent(true);
+  const rp=document.getElementById('reward-preview');if(rp)rp.style.display='none';
+  const exp=document.getElementById('cc-exp');if(exp){exp.style.color='';exp.style.fontWeight='';}
+  const cbtn=document.getElementById('btn-confirm');if(cbtn){cbtn.disabled=false;cbtn.textContent='Confirm & Pay';cbtn.onclick=confirmPay;}
+  document.getElementById("pay-confirm").classList.remove("active");
+  document.getElementById("pay-scan").classList.add("active");
+  goTo("home");
+  chaseRewardActivity();
+}
+
+// The POS broadcasts the reward ~600ms after capture and it still needs a block to
+// land, so a single check right after the payment usually finds nothing. Poll with
+// backoff instead — these are explicit calls, so they bypass the 120s feed throttle.
+function chaseRewardActivity(){
+  [4000,10000,20000,40000,70000].forEach(ms=>setTimeout(()=>{
+    if(userAddr)loadActivityFeed({silent:true});
+  },ms));
+}
+
+function buildMyQR(){
+  if(!userAddr)return;
+  document.getElementById("qr-addr").textContent=userAddr;
+  const div=document.getElementById("my-qr-div");div.innerHTML="";
+  if(typeof QRCode==="undefined"){div.textContent="Show address below to shop";return;}
+  new QRCode(div,{text:userAddr,width:240,height:240,colorDark:"#2a1f1a",colorLight:"#fffaf7",correctLevel:QRCode.CorrectLevel.M});
+}
+
+function goTo(name){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  document.getElementById("screen-"+name).classList.add("active");
+  document.getElementById("nav-"+name).classList.add("active");
+  document.querySelectorAll(".screen").forEach(s=>{s.scrollTop=0;});
+  if(name!=="pay")stopScan();
+  if(name==="buy")updateFromBal();
+  // Coming back to Pay with a live intent (e.g. after topping up on Buy) re-runs the
+  // balance/allowance check so the button reflects the wallet as it is now.
+  if(name==="pay"){
+    if(pendingIntent&&isReceiptSettled(pendingIntent.receiptId))clearPendingIntent(true);
+    if(pendingIntent)showConfirm(pendingIntent);
+    else{document.getElementById("pay-confirm").classList.remove("active");document.getElementById("pay-scan").classList.add("active");setTimeout(maybeAutoStartScan,250);}
+  }
+  if(name==="qr")setTimeout(buildMyQR,80);
+}
+
+// ── PRICE MODAL ───────────────────────────────────────────────────────────────
+async function openPriceModal(){document.getElementById('price-modal').style.display='flex';await renderPriceModal();}
+function closePriceModal(){document.getElementById('price-modal').style.display='none';}
+
+async function renderPriceModal(){
+  if(!skoopPriceUSD||!ethPriceUSD)await fetchEthPrice();
+  const price=skoopPriceUSD,ethP=ethPriceUSD;
+  const setEl=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  if(price>0){
+    setEl('pm-price','$'+price.toFixed(8));
+    setEl('pm-eth-price','ETH: $'+ethP.toLocaleString('en-US',{maximumFractionDigits:0}));
+    setEl('pm-per-eth',Math.round(ethP/price).toLocaleString('en-US'));
+    setEl('pm-per-usdc',Math.round(1/price).toLocaleString('en-US'));
+    const mcap=price*CFG.SUPPLY;
+    setEl('pm-mcap','$'+(mcap>=1e6?(mcap/1e6).toFixed(2)+'M':mcap>=1e3?(mcap/1e3).toFixed(1)+'K':mcap.toFixed(0)));
+    const sub=document.getElementById('home-skoop-price');if(sub)sub.textContent='$'+price.toFixed(6);
+  }
+  await drawPriceChart();
+}
+
+function drawFlatLine(ctx,canvas,price){
+  const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
+  ['rgba(253,206,193,0.2)','rgba(205,230,215,0.2)','rgba(250,226,216,0.2)','rgba(255,221,173,0.2)'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(W/4*i,0,W/4,H);});
+  ctx.strokeStyle='rgba(232,135,106,0.35)';ctx.setLineDash([5,5]);ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(20,H/2);ctx.lineTo(W-20,H/2);ctx.stroke();ctx.setLineDash([]);
+  if(price>0){ctx.font='600 11px "Instrument Sans",sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(107,79,71,0.5)';ctx.fillText('$'+price.toFixed(6),W/2,H/2-8);}
+  ctx.font='500 10px "Instrument Sans",sans-serif';ctx.fillStyle='rgba(107,79,71,0.35)';ctx.fillText('Accumulating price history\u2026',W/2,H/2+16);
+}
+
+function drawCandlestickChart(ctx,canvas,candles,isFallback=false){
+  const W=canvas.width,H=canvas.height;
+  const pad={top:18,right:16,bottom:28,left:62};
+  const chartW=W-pad.left-pad.right,chartH=H-pad.top-pad.bottom;
+  ctx.clearRect(0,0,W,H);
+  [{color:'rgba(253,206,193,0.18)',x:pad.left,w:chartW/4},{color:'rgba(205,230,215,0.18)',x:pad.left+chartW/4,w:chartW/4},{color:'rgba(250,226,216,0.18)',x:pad.left+chartW*2/4,w:chartW/4},{color:'rgba(255,221,173,0.18)',x:pad.left+chartW*3/4,w:chartW/4}]
+    .forEach(b=>{ctx.fillStyle=b.color;ctx.fillRect(b.x,pad.top,b.w,chartH);});
+  const allLows=candles.map(c=>c.l),allHighs=candles.map(c=>c.h);
+  const dataMin=Math.min(...allLows),dataMax=Math.max(...allHighs);
+  const mid=(dataMin+dataMax)/2;const naturalRange=dataMax-dataMin;const minRange=mid*0.08;
+  const pad2=Math.max(naturalRange*0.05,minRange*0.1);
+  const minP=Math.min(dataMin,mid-minRange/2)-pad2;const maxP=Math.max(dataMax,mid+minRange/2)+pad2;
+  const range=maxP-minP;const n=candles.length;
+  function pY(p){return pad.top+chartH*(1-(p-minP)/range);}
+  function pX(i){return pad.left+(i+0.5)/n*chartW;}
+  const candleW=Math.max(3,Math.floor(chartW/n*0.55));
+  for(let i=0;i<=4;i++){
+    const t=i/4,y=pad.top+chartH*(1-t);
+    ctx.strokeStyle='rgba(42,31,26,0.07)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(107,79,71,0.5)';ctx.font='600 9px "Instrument Sans",sans-serif';ctx.textAlign='right';
+    ctx.fillText('$'+(minP+range*t).toFixed(6),pad.left-5,y+3);
+  }
+  ctx.fillStyle='rgba(107,79,71,0.45)';ctx.font='600 9px "Instrument Sans",sans-serif';ctx.textAlign='center';
+  const labelCount=Math.min(5,n);
+  for(let i=0;i<labelCount;i++){
+    const idx=Math.round(i/(labelCount-1)*(n-1));const daysAgo=Math.round((n-1-idx));
+    const lbl=daysAgo===0?'today':(isFallback?'~'+daysAgo+'d':daysAgo+'d ago');ctx.fillText(lbl,pX(idx),H-6);
+  }
+  candles.forEach((c,i)=>{
+    const x=pX(i);const isGreen=c.c>=c.o;
+    const bodyColor=isGreen?'#4a9e7a':'#e8876a';const wickColor=isGreen?'#2d7a5f':'#c0603d';
+    ctx.strokeStyle=wickColor;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,pY(c.h));ctx.lineTo(x,pY(c.l));ctx.stroke();
+    const bodyTop=pY(Math.max(c.o,c.c));const bodyBot=pY(Math.min(c.o,c.c));const bodyH=Math.max(4,bodyBot-bodyTop);
+    ctx.fillStyle=bodyColor;ctx.beginPath();ctx.roundRect(x-candleW/2,bodyTop,candleW,bodyH,2);ctx.fill();
+    if(bodyH<=1.5){ctx.strokeStyle=bodyColor;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-candleW/2,bodyTop);ctx.lineTo(x+candleW/2,bodyTop);ctx.stroke();}
+  });
+  const first=candles[0].o,last=candles[candles.length-1].c;
+  const delta=last-first,deltaPct=(delta/first*100).toFixed(2),sign=delta>=0?'+':'';
+  const lc=delta>=0?'#11483d':'#e8876a',lb=delta>=0?'rgba(205,230,215,0.85)':'rgba(253,206,193,0.85)';
+  const label=sign+deltaPct+'%'+(isFallback?' (est)':'');
+  ctx.font='700 10px "Instrument Sans",sans-serif';
+  const tw=ctx.measureText(label).width;const lbx=W-pad.right-tw-12,lby=pad.top+4;
+  ctx.fillStyle=lb;ctx.beginPath();ctx.roundRect(lbx-4,lby-1,tw+8,14,4);ctx.fill();
+  ctx.fillStyle=lc;ctx.textAlign='left';ctx.fillText(label,lbx,lby+10);
+}
+
+async function drawPriceChart(){
+  const canvas=document.getElementById('pm-chart');const ctx=canvas.getContext('2d');
+  const statusEl=document.getElementById('pm-chart-status');canvas.width=canvas.offsetWidth||390;
+  try{
+    const url=`https://api.geckoterminal.com/api/v2/networks/base/pools/${POOL_ETH_SKOOP}/ohlcv/day?aggregate=1&limit=30&currency=usd&token=base`;
+    const r=await fetch(url);if(!r.ok)throw new Error('GT status '+r.status);
+    const json=await r.json();const raw=json?.data?.attributes?.ohlcv_list;
+    if(!raw||raw.length<2)throw new Error('no data');
+    const candles=raw.slice().reverse().map(c=>({t:c[0],o:parseFloat(c[1]),h:parseFloat(c[2]),l:parseFloat(c[3]),c:parseFloat(c[4]),v:parseFloat(c[5])}));
+    statusEl.textContent=candles.length+'d \u00b7 30 day';drawCandlestickChart(ctx,canvas,candles);return;
+  }catch(e){}
+  try{
+    const pub=rpc();
+    const ABI_SWAP=["event Swap(address indexed sender,address indexed recipient,int256 amount0,int256 amount1,uint160 sqrtPriceX96,uint128 liquidity,int24 tick)"];
+    const pool=new ethers.Contract(POOL_ETH_SKOOP,ABI_SWAP,pub);
+    const currentBlock=await pub.getBlockNumber();const fromBlock=currentBlock-9000;
+    // Same 2,000-block cap as the activity feed, so the ~6h of swaps is read in spans.
+    const spans=[];
+    for(let s=fromBlock;s<=currentBlock;s+=LOG_CHUNK)spans.push([s,Math.min(s+LOG_CHUNK-1,currentBlock)]);
+    const events=[];
+    for(let i=0;i<spans.length;i+=LOG_PAR){
+      const res=await Promise.all(spans.slice(i,i+LOG_PAR).map(([a,b])=>pool.queryFilter(pool.filters.Swap(),a,b).catch(()=>[])));
+      for(const r of res)events.push(...r);
+    }
+    if(events.length<2){statusEl.textContent='not enough data yet';drawFlatLine(ctx,canvas,skoopPriceUSD);return;}
+    statusEl.textContent=events.length+' swaps \u00b7 ~6h';
+    const Q96f=Number(2n**96n);
+    const prices=events.map(e=>{const sqrtPf=Number(e.args.sqrtPriceX96)/Q96f;const raw=sqrtPf*sqrtPf;const skoopPerEth=raw*1e12;return skoopPerEth>0?ethPriceUSD/skoopPerEth:0;}).filter(p=>p>0);
+    if(!prices.length){drawFlatLine(ctx,canvas,skoopPriceUSD);return;}
+    const buckets=[];const bsize=Math.max(1,Math.floor(prices.length/24));
+    for(let i=0;i<prices.length;i+=bsize){const slice=prices.slice(i,i+bsize);buckets.push({o:slice[0],h:Math.max(...slice),l:Math.min(...slice),c:slice[slice.length-1],t:i});}
+    drawCandlestickChart(ctx,canvas,buckets,true);
+  }catch(e){statusEl.textContent='Chart unavailable';drawFlatLine(ctx,canvas,skoopPriceUSD);}
+}
+
+// ── SOUND ─────────────────────────────────────────────────────────────────────
+function playChaChingSound(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();const now=ctx.currentTime;
+    function bell(freq,start,decay,vol){const osc=ctx.createOscillator();const g=ctx.createGain();osc.connect(g);g.connect(ctx.destination);osc.type='sine';osc.frequency.setValueAtTime(freq,now+start);g.gain.setValueAtTime(vol,now+start);g.gain.exponentialRampToValueAtTime(0.0001,now+start+decay);osc.start(now+start);osc.stop(now+start+decay+0.05);}
+    function mclick(start,vol){const len=Math.floor(ctx.sampleRate*0.04);const buf=ctx.createBuffer(1,len,ctx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*(1-i/len);const src=ctx.createBufferSource();const hpf=ctx.createBiquadFilter();const g=ctx.createGain();hpf.type='highpass';hpf.frequency.value=2000;src.buffer=buf;src.connect(hpf);hpf.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(vol,now+start);g.gain.exponentialRampToValueAtTime(0.0001,now+start+0.04);src.start(now+start);src.stop(now+start+0.06);}
+    mclick(0,1.2);bell(220,0,0.06,0.4);bell(440,0,0.05,0.2);bell(880,0,0.04,0.1);
+    mclick(0.08,0.3);bell(2637,0.08,0.9,0.6);bell(3520,0.08,0.6,0.25);bell(5274,0.08,0.4,0.12);bell(1760,0.08,1.0,0.15);
+    setTimeout(()=>{try{ctx.close();}catch(e){}},1400);
+  }catch(e){}
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastT;
+function showToast(msg,type=""){
+  const el=document.getElementById("toast");
+  el.className="show"+(type?" "+type:"");
+  el.innerHTML=(type==="ok"?"\u2713 ":type==="err"?"\u2715 ":"")+msg;
+  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),4000);
+}
+// ── PWA INSTALL BANNER ────────────────────────────────────────────────────────
+let _deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();_deferredInstallPrompt=e;showPWABanner('android');
+});
+function showPWABanner(type){
+  if(localStorage.getItem('pwaBannerDismissed'))return;
+  if(window.matchMedia('(display-mode: standalone)').matches)return;
+  if(window.navigator.standalone)return;
+  if(window.ethereum&&(window.ethereum.isCoinbaseWallet||window.ethereum.isCoinbaseBrowser||window.ethereum.isMetaMask))return;
+  const banner=document.getElementById('pwa-banner');if(!banner)return;
+  if(type==='android'){
+    const btn=document.getElementById('pwa-action-btn');btn.style.display='block';
+    btn.onclick=async()=>{
+      if(!_deferredInstallPrompt)return;
+      _deferredInstallPrompt.prompt();
+      const{outcome}=await _deferredInstallPrompt.userChoice;
+      _deferredInstallPrompt=null;if(outcome==='accepted')dismissPWABanner();
+    };
+  }else if(type==='ios'){
+    const steps=document.getElementById('pwa-ios-steps');if(steps)steps.style.display='flex';
+  }else if(type==='ios-notsafari'){
+    const sub=banner.querySelector('#pwa-ios-notsafari');if(sub)sub.style.display='flex';
+  }
+  banner.style.display='block';
+}
+function dismissPWABanner(){
+  const banner=document.getElementById('pwa-banner');if(banner)banner.style.display='none';
+  localStorage.setItem('pwaBannerDismissed','1');
+}
+const _isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+const _isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+// Already running as the installed app: an "install the app" link would make no sense.
+if(_isStandalone)document.querySelectorAll('.install-guide-link').forEach(el=>el.style.display='none');
+const _isWeb3Browser=!!(window.ethereum&&(window.ethereum.isCoinbaseWallet||window.ethereum.isCoinbaseBrowser||window.ethereum.isMetaMask))||/CoinbaseBrowser|MetaMaskMobile|DappBrowser/i.test(navigator.userAgent);
+const _isIOSSafari=_isIOS&&/Safari/i.test(navigator.userAgent)&&!/CriOS|FxiOS|OPiOS|EdgiOS/i.test(navigator.userAgent);
+if(_isIOS&&!_isStandalone&&!_isWeb3Browser){setTimeout(()=>showPWABanner(_isIOSSafari?'ios':'ios-notsafari'),3000);}
+// ── SERVICE WORKER: pick up new builds without a manual refresh ──────────────
+// sw.js already activates at once (skipWaiting + clients.claim). What was missing is
+// the page noticing: an installed app could keep running an old build — old contract
+// addresses included — until it was fully closed. Now it checks for a new build on
+// launch and whenever it returns to the foreground, and reloads once the new worker
+// takes over. Never mid-payment or mid-swap: then it waits until the app is hidden.
+if('serviceWorker' in navigator){
+  const hadController=!!navigator.serviceWorker.controller;
+  let reloading=false;
+  const busy=()=>{
+    const pc=document.getElementById('pay-confirm');
+    const bs=document.getElementById('btn-swap');
+    const bc=document.getElementById('btn-confirm');
+    return (pc&&pc.classList.contains('active'))||
+           (bs&&/Swapping/.test(bs.textContent))||
+           (bc&&bc.disabled);
+  };
+  const reloadWhenSafe=()=>{
+    if(reloading)return;
+    if(busy()&&!document.hidden){
+      document.addEventListener('visibilitychange',function once(){
+        if(document.hidden){document.removeEventListener('visibilitychange',once);reloading=true;location.reload();}
+      });
+      return;
+    }
+    reloading=true;location.reload();
+  };
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    // First install also fires controllerchange; only a replacement is an update.
+    if(hadController)reloadWhenSafe();
+  });
+  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{
+    const check=()=>reg.update().catch(()=>{});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
+    setInterval(check,30*60*1000);
+  }).catch(()=>{});
+}
+</script>
+</body>
+</html>

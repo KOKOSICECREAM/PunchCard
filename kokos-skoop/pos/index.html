@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KOKOS · SKOOP Terminal</title>
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="KOKOS Terminal">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Special+Elite&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<style>
+/* PunchCard Terminal — V2 skin. Every colour the page and its scripts use still runs through
+   these variable names (the scripts set inline styles with var(--coral-deep), var(--mint) …),
+   so the names stay and only their values change: PunchCard neutrals and terra accent, with
+   the merchant appearing as its token badge and store name in the top bar. */
+:root{
+  --coral:#f8e6df;--coral-mid:#edc3b4;--coral-deep:#c0492a;
+  --mint:#e4f2e9;--mint-mid:#bcdcc8;--mint-dk:#1e7443;
+  --lavender:#f1eee8;--lavender-mid:#d8d1c5;--lavender-dk:#3d372e;
+  --sand:#fbf2dc;--sand-mid:#eed69c;--sand-dk:#8a6100;
+  --apricot:#f3f0ea;
+  --cream:#f5f3ef;--white:#fff;
+  --ink:#16130e;--ink-mid:#5c5448;--ink-lt:#958b7d;
+  --border:rgba(22,19,14,0.09);--border-2:rgba(22,19,14,0.16);
+  --accent-soft:rgba(192,73,42,0.08);
+  --shadow:0 1px 2px rgba(22,19,14,.04),0 2px 10px rgba(22,19,14,.04);
+  --shadow-lg:0 24px 64px rgba(22,19,14,.22);
+  --display:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --topbar-h:64px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;font-family:var(--display);background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased;font-feature-settings:'cv11','ss01';}
+button{font-family:inherit;}
+
+/* SHELL */
+#shell{display:flex;flex-direction:column;height:100vh;width:100vw;}
+
+/* TOPBAR */
+#topbar{height:var(--topbar-h);background:var(--white);display:flex;align-items:center;padding:0 1.1rem;gap:1rem;flex-shrink:0;border-bottom:1px solid var(--border);}
+.logo-wrap{display:flex;align-items:center;gap:0.85rem;flex-shrink:0;min-width:0;}
+.pc-brand{display:flex;align-items:center;gap:0.55rem;}
+.pc-mark{width:32px;height:32px;border-radius:8px;background:url(/brand/punchcard.svg) center/cover no-repeat;flex-shrink:0;}
+.pc-mark i{display:none;}
+.pc-word{font-family:'Special Elite',var(--display);font-size:1.08rem;letter-spacing:.01em;color:var(--ink);line-height:1;}
+.pc-word small{display:block;font-family:var(--display);font-size:.6rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-lt);margin-top:3px;}
+.pc-divider{width:1px;height:30px;background:var(--border-2);}
+.merchant{display:flex;align-items:center;gap:0.55rem;min-width:0;padding:4px 12px 4px 4px;border-radius:999px;background:var(--cream);border:1px solid var(--border);}
+.logo-wrap img#logo-img{height:30px;width:30px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px var(--border);}
+#logo-text{font-size:0.82rem;font-weight:600;color:var(--ink);white-space:nowrap;display:block;line-height:1.15;}
+#logo-subtitle{font-size:0.66rem;color:var(--ink-lt);white-space:nowrap;display:block;line-height:1.15;margin:0;font-style:normal;}
+#price-pill{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;overflow:hidden;}
+#price-pill-main{font-family:var(--mono);font-size:0.86rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:-.01em;}
+#price-pill-change{font-size:0.68rem;font-weight:600;white-space:nowrap;color:var(--ink-lt);}
+#wallet-btn{background:var(--ink);color:#fff;border:none;padding:0.55rem 1.05rem;border-radius:10px;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:var(--mono);}
+
+/* WALLET BALANCE PILL */
+#wallet-balance-wrap{display:none;flex-direction:column;align-items:flex-end;gap:2px;cursor:pointer;flex-shrink:0;min-width:0;padding:0 0.2rem;}
+#wallet-balance-wrap.visible{display:flex;}
+#wallet-balance-skoop{font-family:var(--mono);font-size:0.8rem;font-weight:600;color:var(--ink);white-space:nowrap;line-height:1.1;}
+#wallet-balance-usd{font-size:0.64rem;color:var(--ink-lt);white-space:nowrap;line-height:1.1;}
+#wallet-balance-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mint-dk);margin-right:4px;vertical-align:middle;}
+#wallet-balance-dot.loading{background:var(--sand-dk);animation:pulse 1s ease infinite;}
+#wallet-balance-dot.error{background:#c0392b;}
+@media(max-width:820px){ .pc-word,.pc-divider{display:none;} }
+@media(max-width:680px){
+  #topbar{gap:0.6rem;padding:0 0.75rem;}
+  #logo-subtitle{display:none;}
+  #price-pill{flex:0 1 auto;}
+  #price-pill-main{font-size:0.74rem;}
+  #price-pill-change{font-size:0.6rem;}
+  #wallet-balance-skoop{font-size:0.7rem;}
+  #wallet-balance-usd{font-size:0.58rem;}
+  #wallet-btn{padding:0.45rem 0.7rem;font-size:0.7rem;}
+}
+
+/* CONTENT */
+#content{flex:1;display:grid;grid-template-columns:1fr 340px;overflow:hidden;background:var(--cream);min-height:0;}
+
+/* LEFT PANEL */
+#left-panel{display:flex;flex-direction:column;overflow:hidden;}
+.cat-strip{display:flex;gap:0.4rem;overflow-x:auto;padding:0.8rem 0.9rem 0.3rem;background:var(--cream);flex-shrink:0;scrollbar-width:none;}
+.cat-strip::-webkit-scrollbar{display:none;}
+.cat-btn{flex-shrink:0;background:var(--white);border:1px solid var(--border);padding:0.45rem 1rem;border-radius:999px;font-size:0.78rem;font-weight:600;color:var(--ink-mid);cursor:pointer;transition:background .12s,color .12s;}
+.cat-btn.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+.cat-btn.custom-cat{background:var(--white);color:var(--ink-mid);}
+.cat-btn.custom-cat.active{background:var(--ink);color:#fff;}
+
+#menu-grid{flex:1;overflow-y:auto;padding:0.7rem 0.9rem 1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.7rem;align-content:start;background:var(--cream);}
+.menu-item{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:0.9rem 0.85rem 0.75rem;cursor:pointer;display:flex;flex-direction:column;aspect-ratio:1/1;justify-content:space-between;user-select:none;transition:border-color .12s,box-shadow .12s,transform .08s;box-shadow:var(--shadow);}
+.menu-item:active{transform:scale(0.96);}
+.menu-item[data-cat]{background:var(--white);border-color:var(--border);}
+.menu-item[data-cat="custom"]{background:transparent;border:1.5px dashed var(--border-2);box-shadow:none;}
+.menu-item.in-cart{border-color:var(--coral-deep)!important;background:linear-gradient(var(--accent-soft),var(--accent-soft)),var(--white)!important;box-shadow:0 0 0 3px var(--accent-soft);}
+.mi-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.mi-emoji{font-size:1.55rem;line-height:1;width:46px;height:46px;border-radius:12px;background:var(--cream);display:flex;align-items:center;justify-content:center;}
+.mi-img{width:46px;height:46px;object-fit:cover;border-radius:12px;flex-shrink:0;}
+.mi-badge{min-width:24px;height:24px;border-radius:999px;background:var(--coral-deep);color:#fff;font-family:var(--mono);font-size:0.72rem;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 5px;opacity:0;}
+.menu-item.in-cart .mi-badge{opacity:1;}
+.mi-name{font-size:0.9rem;font-weight:600;color:var(--ink);line-height:1.2;flex:1;margin-top:0.6rem;letter-spacing:-.01em;}
+.mi-bottom{display:flex;align-items:center;justify-content:space-between;}
+.mi-price,.menu-item[data-cat] .mi-price{font-family:var(--mono);font-size:0.86rem;font-weight:600;color:var(--ink-mid)!important;}
+.mi-controls{display:none;align-items:center;gap:4px;}
+.menu-item.in-cart .mi-controls{display:flex;}
+.menu-item.in-cart .mi-price{display:none;}
+.mi-q-btn{width:30px;height:30px;border-radius:9px;border:1px solid var(--border-2);background:var(--white);color:var(--ink);font-size:1rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.mi-qty{font-family:var(--mono);font-size:0.86rem;font-weight:600;color:var(--ink);min-width:18px;text-align:center;}
+
+/* Custom amount overlay */
+#custom-input-overlay{display:none;position:fixed;inset:0;background:rgba(22,19,14,0.45);backdrop-filter:blur(3px);z-index:150;align-items:center;justify-content:center;padding:1.5rem;}
+#custom-input-overlay.open{display:flex;}
+#custom-input-box{background:var(--white);border-radius:20px;width:100%;max-width:320px;overflow:hidden;box-shadow:var(--shadow-lg);}
+#custom-input-box-header{background:var(--white);border-bottom:1px solid var(--border);padding:0.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between;}
+#custom-input-box-header span{font-size:0.98rem;font-weight:600;color:var(--ink);}
+#custom-input-box-body{padding:1.1rem;display:flex;flex-direction:column;gap:0.8rem;}
+.custom-amount-row{display:flex;align-items:center;gap:0.4rem;}
+.custom-amount-dollar{font-family:var(--mono);font-size:2rem;font-weight:500;color:var(--ink-lt);line-height:1;}
+#custom-amt-input{font-family:var(--mono);font-size:2rem;font-weight:600;color:var(--ink);background:none;border:none;border-bottom:2px solid var(--border-2);outline:none;width:100%;padding-bottom:0.15rem;}
+#custom-amt-input:focus{border-bottom-color:var(--coral-deep);}
+#custom-amt-input::placeholder{color:rgba(22,19,14,0.2);}
+#custom-preview{font-size:0.7rem;color:var(--ink-mid);min-height:1rem;}
+.custom-input-actions{display:flex;gap:0.5rem;}
+.custom-tile-btn{background:var(--coral-deep);color:#fff;border:none;padding:0.75rem;border-radius:11px;font-size:0.8rem;font-weight:600;cursor:pointer;flex:1;}
+.custom-tile-btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+/* RIGHT PANEL */
+#right-panel{display:flex;flex-direction:column;overflow:hidden;background:var(--white);border-left:1px solid var(--border);}
+#order-head{padding:0.95rem 1rem 0.75rem;background:var(--white);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+#order-head h2{font-size:1rem;font-weight:650;color:var(--ink);letter-spacing:-.01em;font-style:normal;}
+#clear-btn{background:none;border:1px solid var(--border-2);padding:0.3rem 0.7rem;border-radius:8px;font-size:0.72rem;font-weight:500;color:var(--ink-mid);cursor:pointer;}
+#cart-items{flex:1;overflow-y:auto;padding:0.25rem 0.85rem 0.6rem;display:flex;flex-direction:column;gap:0.45rem;min-height:0;}
+.cart-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink-lt);gap:0.4rem;font-size:0.78rem;}
+.cart-row{background:var(--white);border-radius:12px;padding:0.6rem 0.7rem;display:flex;align-items:center;gap:0.5rem;border:1px solid var(--border);}
+.cr-info{flex:1;min-width:0;}.cr-emoji{margin-right:.45rem;}.cr-name{font-size:0.84rem;font-weight:600;color:var(--ink);}.cr-price{font-family:var(--mono);font-size:0.7rem;color:var(--ink-lt);}
+.cr-qty{display:flex;align-items:center;gap:3px;}
+.qty-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--border-2);background:var(--white);font-size:0.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);}
+.cr-qty span{font-family:var(--mono);font-size:0.82rem;font-weight:600;min-width:18px;text-align:center;}
+.cr-total{font-family:var(--mono);font-size:0.84rem;font-weight:600;color:var(--ink);min-width:52px;text-align:right;}
+
+#cart-footer{padding:0.85rem 1rem 0.95rem;border-top:1px solid var(--border);background:var(--white);flex-shrink:0;}
+.summary-row{display:flex;justify-content:space-between;font-size:0.78rem;color:var(--ink-mid);padding:0.16rem 0;}
+.summary-row span:last-child{font-family:var(--mono);}
+.summary-row.total{font-size:1.1rem;font-weight:700;color:var(--ink);padding-top:0.5rem;margin-top:0.3rem;border-top:1px solid var(--border);letter-spacing:-.01em;}
+.skoop-bar{background:var(--accent-soft);border-radius:10px;padding:0.55rem 0.8rem;display:flex;justify-content:space-between;align-items:center;margin:0.7rem 0 0.7rem;}
+.skoop-bar span:first-child{font-size:0.7rem;color:var(--coral-deep);font-weight:600;letter-spacing:0.02em;}
+.skoop-bar span:last-child{font-family:var(--mono);font-size:0.95rem;font-weight:600;color:var(--coral-deep);}
+#checkout-btn{width:100%;background:var(--coral-deep);color:#fff;border:none;padding:0.95rem;border-radius:13px;font-size:0.92rem;font-weight:600;cursor:pointer;letter-spacing:0;text-transform:none;box-shadow:0 6px 18px rgba(192,73,42,.25);transition:filter .12s,box-shadow .12s;}
+#checkout-btn:hover{filter:brightness(1.05);}
+#checkout-btn:disabled{opacity:0.35;cursor:not-allowed;box-shadow:none;}
+
+/* BOTTOM MODE TABS */
+.mode-tabs{display:flex;gap:0.5rem;padding:0.6rem 1rem 0.8rem;background:var(--white);flex-shrink:0;border-top:1px solid var(--border);}
+.mode-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:0.45rem;padding:0.62rem 0.4rem;background:var(--cream);border:1px solid var(--border);border-radius:11px;font-size:0.8rem;font-weight:600;color:var(--ink-mid);cursor:pointer;}
+.mode-tab svg{width:16px;height:16px;}
+.mode-tab.active{color:var(--coral-deep);border-color:var(--coral-deep);background:var(--accent-soft);}
+
+/* SLIDE-OVER SHEET */
+#mode-overlay{display:none;position:fixed;inset:0;background:rgba(22,19,14,0.35);backdrop-filter:blur(2px);z-index:100;align-items:flex-end;justify-content:flex-end;}
+#mode-overlay.open{display:flex;}
+#mode-sheet{background:var(--cream);border-radius:20px 0 0 0;width:360px;max-width:100vw;height:calc(100vh - var(--topbar-h));overflow-y:auto;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);}
+#mode-sheet-header{padding:0.9rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--white);flex-shrink:0;border-radius:20px 0 0 0;position:sticky;top:0;z-index:1;}
+#mode-sheet-title{font-size:1rem;font-weight:650;color:var(--ink);font-style:normal;}
+#mode-sheet-close{background:var(--cream);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;font-size:0.9rem;cursor:pointer;color:var(--ink-mid);line-height:1;}
+.mode-view{display:none;flex-direction:column;flex:1;padding:0.9rem;gap:0.7rem;}
+.mode-view.active{display:flex;}
+
+/* FORM */
+.field-label{font-size:0.62rem;font-weight:600;color:var(--ink-lt);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.3rem;}
+.field-input{background:var(--white);border:1px solid var(--border-2);border-radius:10px;padding:0.6rem 0.8rem;font-family:var(--mono);font-size:0.82rem;color:var(--ink);width:100%;}
+.field-input:focus{outline:none;border-color:var(--coral-deep);box-shadow:0 0 0 3px var(--accent-soft);}
+.addr-box{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.8rem;font-family:var(--mono);font-size:0.68rem;color:var(--ink);font-weight:500;word-break:break-all;min-height:40px;}
+.action-btn{width:100%;border:none;padding:0.72rem;border-radius:11px;font-size:0.8rem;font-weight:600;cursor:pointer;}
+.action-btn.primary{background:var(--coral-deep);color:#fff;}
+.action-btn.primary:disabled{opacity:0.35;cursor:not-allowed;}
+.action-btn.secondary{background:var(--white);color:var(--ink);border:1px solid var(--border-2);}
+.action-btn.danger{background:#b3261e;color:#fff;}
+.action-btn.danger:disabled{opacity:0.4;cursor:not-allowed;}
+.section-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:0.85rem;display:flex;flex-direction:column;gap:0.55rem;}
+.section-title{font-size:0.64rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-lt);}
+.hint-row{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--ink-mid);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:0.7rem 0.8rem;}
+.stat-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-lt);font-weight:600;}
+.stat-val{font-family:var(--mono);font-size:1rem;font-weight:600;color:var(--ink);margin-top:2px;}
+.receipt-card{background:var(--white);border:1px solid var(--border);border-radius:11px;padding:0.6rem 0.75rem;display:flex;align-items:center;gap:0.55rem;}
+.receipt-card input[type=checkbox]{accent-color:var(--coral-deep);width:16px;height:16px;cursor:pointer;flex-shrink:0;}
+.receipt-card input[type=checkbox]:disabled{opacity:0.35;cursor:default;}
+.rc-id{font-size:0.6rem;color:var(--ink-lt);font-family:var(--mono);}
+.rc-amt{font-family:var(--mono);font-size:0.78rem;font-weight:600;color:var(--ink);}
+.rc-status{font-size:0.62rem;margin-top:2px;}
+.rc-ready{color:var(--mint-dk);font-weight:600;}
+.rc-pending{color:var(--ink-lt);}
+.rc-void-btn{background:none;border:1px solid #b3261e;color:#b3261e;border-radius:8px;padding:0.28rem 0.55rem;font-size:0.64rem;font-weight:600;cursor:pointer;flex-shrink:0;line-height:1.2;}
+.rc-void-btn:hover{background:#b3261e;color:#fff;}
+.scan-wrap{background:var(--white);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+#reward-qr-reader{display:none;width:100%;}
+#reward-qr-reader video{width:100%!important;max-height:180px;object-fit:cover;}
+.scan-btn{width:100%;background:none;border:none;border-bottom:1px solid var(--border);padding:0.75rem;font-size:0.8rem;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.45rem;}
+.scan-inner{padding:0.65rem 0.8rem;}
+.scan-inner .action-btn{width:auto;flex:none;}
+.pending-item{background:var(--white);border:1px solid var(--coral-mid);border-radius:12px;padding:0.65rem 0.75rem;}
+
+/* AUTO-REWARD BANNERS */
+.auto-reward-banner{border-radius:10px;padding:0.6rem 0.8rem;font-size:0.74rem;font-weight:600;display:flex;align-items:center;gap:0.45rem;}
+.auto-reward-banner.sending{background:var(--sand);color:var(--sand-dk);}
+.auto-reward-banner.success{background:var(--mint);color:var(--mint-dk);}
+.auto-reward-banner.failed{background:#fbe9e7;color:#b3261e;}
+
+/* MODAL */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(22,19,14,0.55);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:0.75rem;box-sizing:border-box;}
+#modal-overlay.open{display:flex;}
+#modal{background:var(--white);border-radius:22px;width:calc(100vw - 1.5rem);max-width:410px;overflow:hidden;box-shadow:var(--shadow-lg);margin:auto;}
+.modal-header{background:var(--white);padding:1rem 1.1rem 0.75rem;display:flex;align-items:center;justify-content:space-between;}
+.modal-header h2{font-size:1.05rem;font-weight:650;color:var(--ink);font-style:normal;}
+.modal-close{background:var(--cream);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;font-size:0.9rem;cursor:pointer;color:var(--ink-mid);line-height:1;}
+.modal-body{padding:0.4rem 1.1rem 1.1rem;display:flex;flex-direction:column;align-items:center;gap:0.7rem;width:100%;}
+#qr-canvas-wrap{width:100%;aspect-ratio:1/1;background:#fff;border-radius:16px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;overflow:hidden;}
+#qr-canvas-wrap canvas,#qr-canvas-wrap img,#qr-canvas-wrap table{display:block!important;width:100%!important;height:100%!important;margin:0 auto!important;image-rendering:pixelated;}
+.modal-summary{width:100%;background:var(--cream);border-radius:12px;padding:0.7rem 0.9rem;border:1px solid var(--border);}
+.mos-row{display:flex;justify-content:space-between;font-size:0.74rem;padding:0.16rem 0;color:var(--ink-mid);}
+.mos-row span:last-child{font-family:var(--mono);}
+.mos-row.total{font-size:0.88rem;font-weight:700;color:var(--ink);border-top:1px solid var(--border);padding-top:0.45rem;margin-top:0.2rem;}
+.mos-row.skoop{color:var(--coral-deep);font-weight:600;}
+.modal-status{width:100%;background:var(--accent-soft);border-radius:10px;padding:0.6rem 0.85rem;font-size:0.74rem;color:var(--coral-deep);font-weight:600;text-align:center;}
+.modal-actions{width:100%;display:flex;gap:0.55rem;}
+
+/* SUCCESS */
+#modal-success{display:none;}
+@keyframes successPop{from{transform:scale(0.4);opacity:0;}to{transform:scale(1);opacity:1;}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.3);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+#toast{position:fixed;bottom:1.1rem;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:0.65rem 1.15rem;border-radius:12px;font-size:0.78rem;font-weight:600;z-index:300;transition:transform 0.22s ease;white-space:nowrap;box-shadow:0 10px 30px rgba(22,19,14,.25);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.success{background:var(--mint-dk);color:#fff;}
+#toast.error{background:#b3261e;color:#fff;}
+
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:4px;}
+@media(max-width:760px){ #content{grid-template-columns:1fr 300px;} #menu-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));} }
+</style>
+</head>
+<body>
+<div id="shell">
+
+  <header id="topbar">
+    <div class="logo-wrap">
+      <div class="pc-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="pc-word">PunchCard<small>Terminal</small></div></div>
+      <span class="pc-divider"></span>
+      <div class="merchant"><img id="logo-img" src="" alt=""><div><span id="logo-text"></span><span id="logo-subtitle"></span></div></div>
+    </div>
+    <div id="price-pill">
+      <span id="price-pill-main">SKOOP: loading…</span>
+      <span id="price-pill-change">24h: —</span>
+    </div>
+    <div id="wallet-balance-wrap" title="Rewards payable now" onclick="refreshWalletBalance()">
+      <span id="wallet-balance-skoop"><span id="wallet-balance-dot" class="loading"></span>—</span>
+      <span id="wallet-balance-usd">wallet balance</span>
+    </div>
+    <button id="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+  </header>
+
+  <div id="content">
+
+    <!-- LEFT: menu always visible -->
+    <div id="left-panel">
+      <div class="cat-strip">
+        <button class="cat-btn active" onclick="filterCat('all',this)">All</button>
+        <button class="cat-btn" onclick="filterCat('scoops',this)">Scoops</button>
+        <button class="cat-btn" onclick="filterCat('drinks',this)">Drinks</button>
+        <button class="cat-btn" onclick="filterCat('extras',this)">Extras</button>
+
+      </div>
+      <div id="menu-grid"></div>
+    </div>
+
+    <!-- RIGHT: live order panel -->
+    <div id="right-panel">
+      <div id="order-head">
+        <h2>Current Order</h2>
+        <button id="clear-btn" onclick="clearCart()">Clear all</button>
+      </div>
+      <div id="cart-items">
+        <div class="cart-empty" id="cart-empty">
+          <span style="font-size:2rem;opacity:0.22;">🍦</span>
+          <span>Tap items to add</span>
+        </div>
+      </div>
+      <div id="cart-footer">
+        <div class="summary-row"><span>Subtotal</span><span id="sub-display">$0.00</span></div>
+        <div class="summary-row"><span id="tax-label">Tax</span><span id="tax-display">$0.00</span></div>
+        <div class="summary-row total"><span>Total</span><span id="total-display">$0.00</span></div>
+        <div class="skoop-bar"><span>≈ SKOOP</span><span id="skoop-display">—</span></div>
+        <button id="checkout-btn" onclick="openCheckout()" disabled>Generate Payment QR</button>
+      </div>
+      <div class="mode-tabs">
+        <button class="mode-tab" id="tab-rewards-btn" onclick="openModeSheet('rewards',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v9H4v-9"/><rect x="2" y="7" width="20" height="5" rx="1"/><path d="M12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg>Rewards</button>
+        <button class="mode-tab" id="tab-settle-btn" onclick="openModeSheet('settle',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Settle</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- REWARDS / SETTLE SLIDE-OVER -->
+<div id="mode-overlay" onclick="closeModeSheet(event)">
+  <div id="mode-sheet">
+    <div id="mode-sheet-header">
+      <span id="mode-sheet-title">Rewards</span>
+      <button id="mode-sheet-close" onclick="closeModeSheet()">✕</button>
+    </div>
+
+    <!-- REWARDS -->
+    <div class="mode-view active" id="rewards-mode">
+      <div style="background:color-mix(in srgb,var(--mint) 55%,white);border:1px solid var(--mint-mid);border-radius:9px;padding:0.5rem 0.65rem;font-size:0.62rem;color:var(--mint-dk);line-height:1.5;">
+        <strong>⚡ Auto-Reward ON</strong> — SKOOP payments trigger a 10% reward automatically. Use below for Square / Cash only.
+      </div>
+      <div class="scan-wrap">
+        <div id="reward-qr-reader"></div>
+        <div style="display:flex;border-bottom:1px solid var(--border);">
+          <button class="scan-btn" style="border-bottom:none;flex:1;" onclick="toggleRewardScan()">
+            <span id="scan-icon">📷</span><span id="scan-label">Scan Customer QR</span>
+          </button>
+          <button id="flip-camera-btn" onclick="flipCamera()" style="display:none;background:none;border:none;border-left:1px solid var(--border);padding:0.55rem 0.75rem;font-size:1rem;cursor:pointer;color:var(--ink-mid);" title="Flip camera">🔄</button>
+        </div>
+        <div class="scan-inner">
+          <div style="font-size:0.57rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-lt);margin-bottom:0.28rem;">Or paste address</div>
+          <div style="display:flex;gap:0.35rem;">
+            <input class="field-input" type="text" id="reward-addr-input" placeholder="0x…" style="flex:1;font-size:0.68rem;padding:0.42rem 0.6rem;" oninput="onRewardAddrInput(this.value)">
+            <button class="action-btn secondary" onclick="pasteAddr()" style="padding:0.42rem 0.6rem;font-size:0.65rem;white-space:nowrap;">Paste</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="field-label">Customer Wallet</div>
+        <div class="addr-box" id="reward-addr">—</div>
+      </div>
+      <div class="section-card" style="background:var(--sand);border:none;">
+        <div class="section-title">Square / Cash — 5% Reward</div>
+        <div style="display:flex;align-items:center;gap:0.28rem;">
+          <span style="font-size:0.88rem;font-weight:700;color:var(--ink-mid);">$</span>
+          <input class="field-input" type="number" id="sale-total" placeholder="Sale total" min="0" step="0.01" style="font-size:0.88rem;font-weight:600;padding:0.38rem 0.55rem;" oninput="calcReward(this.value)">
+        </div>
+        <div class="hint-row">
+          <span>5% of sale → SKOOP</span>
+          <span id="calc-skoop-display" style="font-weight:700;color:var(--mint-dk);">—</span>
+        </div>
+        <button class="action-btn primary" id="calc-apply-btn" onclick="applyCalcReward()" disabled style="padding:0.38rem;font-size:0.65rem;">↓ Use This Amount</button>
+      </div>
+      <div style="background:var(--mint);border-radius:7px;padding:0.35rem 0.6rem;font-size:0.6rem;color:var(--mint-dk);display:flex;justify-content:space-between;">
+        <span>💳 Square/Cash: <strong>5%</strong></span>
+        <span>⚡ Paid in SKOOP: <strong>10% auto</strong></span>
+      </div>
+      <div>
+        <div class="field-label">SKOOP to Send</div>
+        <input class="field-input" type="number" id="reward-amount" placeholder="Auto-filled or enter manually" min="0" step="1">
+        <div style="font-size:0.6rem;color:var(--ink-lt);margin-top:0.18rem;" id="reward-usd-hint"></div>
+      </div>
+      <button class="action-btn primary" id="reward-send-btn" onclick="sendReward()" disabled>Send SKOOP Reward</button>
+      <div id="daily-limit-display" style="font-size:0.6rem;color:var(--ink-lt);text-align:center;"></div>
+      <button class="action-btn secondary" onclick="resetRewards()" style="font-size:0.65rem;padding:0.42rem;">Clear</button>
+      <div id="pending-section" style="display:none;border-top:1px solid var(--border);padding-top:0.55rem;flex-direction:column;gap:0.38rem;">
+        <div style="font-size:0.57rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--coral-deep);">⏳ Pending Rewards</div>
+        <div id="pending-list" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
+      </div>
+    </div>
+
+    <!-- SETTLEMENT -->
+    <div class="mode-view" id="settle-mode">
+      <div style="background:var(--sand);border-radius:7px;padding:0.42rem 0.6rem;font-size:0.62rem;color:var(--sand-dk);">
+        Owner wallet required: <span style="font-family:monospace;color:var(--ink);font-size:0.58rem;">0x001b…50b</span>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Captured</div><div class="stat-val" id="stat-captured">0</div></div>
+        <div class="stat-card"><div class="stat-label">SKOOP Pending</div><div class="stat-val" id="stat-skoop">0</div></div>
+        <div class="stat-card"><div class="stat-label">USDC Pending</div><div class="stat-val" id="stat-usdc">$0</div></div>
+      </div>
+      <div id="receipt-list" style="display:flex;flex-direction:column;gap:0.35rem;flex:1;">
+        <p style="font-size:0.68rem;color:var(--ink-lt);text-align:center;padding:0.875rem 0;">No captured receipts yet</p>
+      </div>
+      <button class="action-btn secondary" onclick="loadReceipts()" style="font-size:0.65rem;margin-top:auto;">Refresh Receipts</button>
+      <div id="owner-actions" style="display:none;gap:0.4rem;">
+        <button class="action-btn secondary" onclick="selectAllReady()" style="flex:1;font-size:0.65rem;">Select All Ready</button>
+        <button class="action-btn danger" id="burn-btn" onclick="burnSelected()" disabled style="flex:1;">🔥 Burn / Settle</button>
+      </div>
+      <div id="owner-note" style="display:block;font-size:0.64rem;color:var(--ink-mid);text-align:center;line-height:1.5;padding:0.2rem 0.4rem;">
+        Voids and settlement are manager-only. Connect the owner wallet here, or use Reporting.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div id="modal-overlay">
+  <div id="modal">
+    <div id="modal-qr">
+      <div class="modal-header">
+        <h2>Payment QR</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div style="display:flex;gap:0.4rem;padding:0 0.875rem 0.5rem;">
+        <button id="tok-skoop" onclick="selectPaymentToken('skoop')" style="flex:1;padding:0.35rem;border-radius:999px;border:2px solid var(--coral-deep);background:var(--coral-deep);color:var(--white);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">SKOOP</button>
+        <button id="tok-usdc" onclick="selectPaymentToken('usdc')" style="flex:1;padding:0.35rem;border-radius:999px;border:2px solid var(--border);background:var(--white);color:var(--ink-mid);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">USDC</button>
+      </div>
+      <div class="modal-body">
+        <div id="qr-mode-bar" style="display:none;width:100%;display:none;gap:0.3rem;">
+          <button id="mode-btn-dapp" onclick="setQRMode('dapp')" style="flex:1;padding:0.3rem;border-radius:999px;border:2px solid var(--coral-deep);background:var(--coral-deep);color:var(--white);font-family:inherit;font-size:0.68rem;font-weight:700;cursor:pointer;">Pay with App</button>
+          <button id="mode-btn-direct" onclick="setQRMode('direct')" style="flex:1;padding:0.3rem;border-radius:999px;border:2px solid var(--border);background:var(--white);color:var(--ink-mid);font-family:inherit;font-size:0.68rem;font-weight:700;cursor:pointer;">Pay with Wallet</button>
+        </div>
+        <div id="qr-canvas-wrap"></div>
+        <div class="modal-summary" id="modal-summary"></div>
+        <div class="modal-status" id="modal-status">Waiting for customer to scan…</div>
+        <div id="qr-countdown" style="font-size:0.62rem;color:var(--ink-lt);text-align:center;margin-top:-0.25rem;"></div>
+        <div class="modal-actions">
+          <button class="action-btn secondary" style="flex:1" onclick="closeModal()">Cancel</button>
+          <button class="action-btn primary" style="flex:1" onclick="regenerateQR()">Regenerate</button>
+        </div>
+      </div>
+    </div>
+    <div id="modal-success" style="display:none;">
+      <div style="height:4px;background:var(--coral-deep);"></div>
+      <div style="padding:1.5rem 1.1rem;display:flex;flex-direction:column;align-items:center;text-align:center;gap:0.75rem;">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--mint);display:flex;align-items:center;justify-content:center;animation:successPop 0.4s cubic-bezier(0.34,1.56,0.64,1);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--mint-dk)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <div style="font-size:1.5rem;font-weight:700;color:var(--ink);line-height:1.15;letter-spacing:-.02em;">Payment <span style="color:var(--mint-dk);">captured</span></div>
+          <div style="font-size:0.72rem;color:var(--ink-mid);margin-top:0.25rem;" id="success-sub"></div>
+        </div>
+        <div id="success-details" style="width:100%;background:var(--apricot);border-radius:9px;padding:0.65rem 0.875rem;text-align:left;font-size:0.68rem;display:flex;flex-direction:column;gap:0.22rem;"></div>
+        <div id="success-reward-status" style="width:100%;display:none;"></div>
+        <div style="font-size:0.62rem;color:var(--ink-lt);display:flex;align-items:center;gap:0.3rem;" id="success-countdown">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--mint);animation:pulse 1s ease infinite;"></div>Closing in 4s…
+        </div>
+        <button onclick="closeSuccess()" style="width:100%;padding:0.72rem;background:var(--coral-deep);color:#fff;border:none;border-radius:9px;font-family:inherit;font-size:0.78rem;font-weight:700;cursor:pointer;">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM AMOUNT OVERLAY -->
+<div id="custom-input-overlay" onclick="closeCustomOverlay(event)">
+  <div id="custom-input-box">
+    <div id="custom-input-box-header">
+      <span>Custom Amount</span>
+      <button onclick="closeCustomOverlay()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--lavender-dk);line-height:1;">✕</button>
+    </div>
+    <div id="custom-input-box-body">
+      <div class="custom-amount-row">
+        <span class="custom-amount-dollar">$</span>
+        <input type="number" min="0.01" step="0.01" placeholder="0.00" id="custom-amt-input" oninput="updateCustomPreview(this.value)">
+      </div>
+      <div id="custom-preview"></div>
+      <div class="custom-input-actions">
+        <button class="action-btn secondary" onclick="closeCustomOverlay()" style="flex:1;">Cancel</button>
+        <button class="custom-tile-btn" id="custom-add-btn" onclick="addCustomToCart()" disabled>+ Add to Order</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="resume-banner" style="display:none;position:fixed;top:var(--topbar-h);left:0;right:0;z-index:90;background:var(--sand);border-bottom:2px solid var(--sand-mid);padding:0.55rem 1rem;align-items:center;justify-content:space-between;gap:0.5rem;">
+  <div style="font-size:0.72rem;font-weight:600;color:var(--sand-dk);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="resume-msg">⏸ Payment pending</div>
+  <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+    <button onclick="resumeIntent()" style="background:var(--sand-dk);color:#fff;border:none;padding:0.3rem 0.875rem;border-radius:999px;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit;">Resume QR</button>
+    <button onclick="dismissResumeIntent()" style="background:none;border:1px solid var(--sand-dk);color:var(--sand-dk);padding:0.3rem 0.6rem;border-radius:999px;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit;">✕</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  FRANCHISEE CONFIG
+// ═══════════════════════════════════════════════════════════════
+const BRAND = {
+  storeName:    'KOKOS Ice Cream',
+  storeSubtitle:'SKOOP',
+  storeId:      'KOKOS_NASHVILLE_01',
+  terminalId:   'POS_1',
+  logoUrl: 'https://raw.githubusercontent.com/KOKOSICECREAM/website/main/Customer_dapp/KOKOS.png',
+  tokenLogoUrl: '/kokos-skoop/skoop.png',   // the merchant appears as its token badge
+  colors:{},
+  signerWallet:   '0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B',
+  ownerWallet:    '0x001b3fB36FE7E3a741A15Ed8bE68610442E3a50b',
+  skoopToken:     '0xBa147713adF122A8Fc224e52Cb431D7919831939',   // SKOOP PunchCard
+  usdcToken:      '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+  escrowContract: '0x46D5520Ef1DeACd6cA332A9510141b28dC6141a1',   // KOKOSPaymentEscrowV3 on SKOOP PunchCard, 2026-09-25
+  skoopPool:      '0x116d0a851632958AFD3B1a0B751089392bcb4e6A',   // ETH/SKOOP 1%
+  // In SKOOP. Was 888,888 for the old token, ~$81/day at its price; at SKOOP PunchCard's
+  // $0.001 launch price the same dollar budget is ~80,000. Revisit if the price moves a lot.
+  dailyRewardLimit: 80000,
+  taxRate: 0.0925,
+  categories: [
+    { id:'scoops', label:'Scoops' },
+    { id:'drinks', label:'Drinks' },
+    { id:'extras', label:'Extras' },
+  ],
+  menuItems: [
+    { id:'s1', cat:'scoops', emoji:'🍦', name:'Kids Scoop',  price:6.00,  img:'' },
+    { id:'s2', cat:'scoops', emoji:'🍧', name:'Small',       price:8.00,  img:'' },
+    { id:'s3', cat:'scoops', emoji:'🍨', name:'Trio',        price:10.00, img:'' },
+    { id:'s4', cat:'scoops', emoji:'🫙', name:'Pint',        price:14.00, img:'' },
+    { id:'d1', cat:'drinks', emoji:'☕', name:'Latte',        price:7.00,  img:'' },
+    { id:'d2', cat:'drinks', emoji:'💧', name:'Water',        price:1.00,  img:'' },
+    { id:'e1', cat:'extras', emoji:'🍟', name:'Fries',        price:6.50,  img:'' },
+    { id:'e2', cat:'extras', emoji:'🍦', name:'Cone',         price:0.75,  img:'' },
+    { id:'cx', cat:'custom', emoji:'✏️', name:'Custom', price:0, custom:true },
+  ],
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  CHAIN CONFIG
+// ═══════════════════════════════════════════════════════════════
+const CFG={
+  CHAIN_ID:8453,CHAIN_HEX:'0x2105',RPC:'https://mainnet.base.org',
+  SKOOP:BRAND.skoopToken,USDC:BRAND.usdcToken,ESCROW:BRAND.escrowContract,
+  SIGNER:BRAND.signerWallet,OWNER:BRAND.ownerWallet,
+  TREASURY:'0xc35397cBDbcdb24705bc09917f9DdF9E6970C904',   // KOKOSTreasuryV3 (fixed), 2026-09-25
+  POOL_ETH_SKOOP:BRAND.skoopPool,POOL_USDC_SKOOP:'0x5185bef315Dee41727865AC26243bD62008d11b1',SKOOP_DEC:6,USDC_DEC:6,
+  TAX_RATE:BRAND.taxRate,STORE_ID:BRAND.storeId,TERMINAL_ID:BRAND.terminalId,
+  DAILY_REWARD_LIMIT:BRAND.dailyRewardLimit,AUTO_REWARD_RATE:0.10,AUTO_REWARD_RATE_USDC:0.05,
+  // V2: rewards are paid by the PunchCard rewards vault (SKOOP's RewardEscrow). This terminal's
+  // signer is an operator there; the vault enforces the daily allowance and emission on-chain,
+  // so the local 80,000/day counter is display-only history now, not a limit.
+  REWARD_VAULT:'0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2',
+  // SKOOP's other PunchCard contracts — never valid reward recipients.
+  SUITE:['0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2','0xD19FE22eFF97BC574b19E5EB16FD2a9dA3902590',
+         '0x01933BfBf85905fD780157abee79bebAcFfCB7cB','0x74ed636C959e92dF6c779F0EdcB759077cFBd908'],
+};
+
+let skoopPriceUSD=0,cachedSkoopBalance=0,priceDivergence=null;
+let currentPaymentToken=null; // set to CFG.SKOOP or CFG.USDC at checkout open
+const ABI_ERC20=["function transfer(address,uint256) returns (bool)","function approve(address,uint256) returns (bool)"];
+const ABI_ESCROW=[
+  {inputs:[{components:[
+    {name:"receiptId",type:"bytes32"},{name:"orderId",type:"bytes32"},
+    {name:"storeIdHash",type:"bytes32"},{name:"terminalIdHash",type:"bytes32"},
+    {name:"paymentToken",type:"address"},
+    {name:"tokenAmount",type:"uint256"},{name:"subtotalCents",type:"uint256"},
+    {name:"taxCents",type:"uint256"},{name:"totalCents",type:"uint256"},
+    {name:"itemCount",type:"uint256"},{name:"cartHash",type:"bytes32"},{name:"deadline",type:"uint256"}
+  ],name:"intent",type:"tuple"},{name:"signature",type:"bytes"}],name:"capturePayment",outputs:[],stateMutability:"nonpayable",type:"function"},
+  {inputs:[{name:"receiptIds",type:"bytes32[]"}],name:"burnPayments",outputs:[],stateMutability:"nonpayable",type:"function"},
+  {inputs:[{name:"receiptIds",type:"bytes32[]"}],name:"settleUSDCPayments",outputs:[],stateMutability:"nonpayable",type:"function"},
+  {inputs:[{name:"receiptId",type:"bytes32"}],name:"voidPayment",outputs:[],stateMutability:"nonpayable",type:"function"},
+  {anonymous:false,inputs:[{indexed:true,name:"receiptId",type:"bytes32"},{indexed:true,name:"orderId",type:"bytes32"},{indexed:true,name:"payer",type:"address"},{indexed:false,name:"paymentToken",type:"address"},{indexed:false,name:"tokenAmount",type:"uint256"},{indexed:false,name:"timestamp",type:"uint256"}],name:"PaymentVoided",type:"event"},
+  {anonymous:false,inputs:[
+    {indexed:true,name:"receiptId",type:"bytes32"},{indexed:true,name:"orderId",type:"bytes32"},
+    {indexed:true,name:"payer",type:"address"},{indexed:false,name:"paymentToken",type:"address"},
+    {indexed:false,name:"tokenAmount",type:"uint256"},{indexed:false,name:"totalCents",type:"uint256"},
+    {indexed:false,name:"itemCount",type:"uint256"},{indexed:false,name:"storeIdHash",type:"bytes32"},
+    {indexed:false,name:"terminalIdHash",type:"bytes32"},{indexed:false,name:"cartHash",type:"bytes32"},
+    {indexed:false,name:"timestamp",type:"uint256"}
+  ],name:"PaymentCaptured",type:"event"},
+  {anonymous:false,inputs:[
+    {indexed:true,name:"receiptId",type:"bytes32"},{indexed:true,name:"orderId",type:"bytes32"},
+    {indexed:true,name:"payer",type:"address"},{indexed:false,name:"tokenAmount",type:"uint256"},
+    {indexed:false,name:"timestamp",type:"uint256"}
+  ],name:"PaymentBurned",type:"event"},
+  {anonymous:false,inputs:[
+    {indexed:true,name:"receiptId",type:"bytes32"},{indexed:true,name:"orderId",type:"bytes32"},
+    {indexed:true,name:"payer",type:"address"},{indexed:false,name:"usdcAmount",type:"uint256"},
+    {indexed:false,name:"timestamp",type:"uint256"}
+  ],name:"PaymentSettled",type:"event"},
+  {anonymous:false,inputs:[{name:"paymentCount",type:"uint256"},{name:"totalTokenAmount",type:"uint256"},{name:"timestamp",type:"uint256"}],name:"BatchBurnExecuted",type:"event"},
+  {anonymous:false,inputs:[{name:"paymentCount",type:"uint256"},{name:"totalUSDCAmount",type:"uint256"},{indexed:true,name:"treasury",type:"address"},{name:"timestamp",type:"uint256"}],name:"BatchUSDCSettled",type:"event"}
+];
+const ABI_VAULT=[
+  "function distributeReward(address recipient,uint256 amount)",
+  "function drawerAvailable(address operator) view returns (uint256)",
+  "function spendable() view returns (uint256)",
+  "function perTxFloor() view returns (uint256)","function perTxMax() view returns (uint256)",
+  "function pausedUntil() view returns (uint256)","function isFrozen() view returns (bool)",
+  "function getDrawer(address) view returns (tuple(uint128 dailyAllowance,uint128 spent,uint64 lastDraw,bool active))"
+];
+const ABI_POOL=["function slot0() view returns (uint160 sqrtPriceX96,int24,uint16,uint16,uint16,uint8,bool)","function token0() view returns (address)"];
+const MENU=[...BRAND.menuItems];
+let provider=null,signer=null,signerAddr=null;
+let cart={},capturedReceipts=[],activePollToken=null,qrModePayloads=null;
+let rewardScannerActive=false,rewardScanner=null,scannedRewardAddr=null;
+let activeCat='all',toastTimer=null,calcSkoopAmount=0,successTimer=null;
+
+// ═══════════════════════════════════════════════════════════════
+//  PRICE FETCHING
+// ═══════════════════════════════════════════════════════════════
+// ── PRICE SANITY: the two SKOOP pools must agree ──────────────────────────────
+// SKOOP payments are priced from the USDC pool alone, and it is small: someone could
+// push its price up for a minute and pay for an order with fewer SKOOP. Moving both
+// pools the same way costs far more, so compare the USDC pool against the ETH pool
+// (via ETH/USD from the deep WETH/USDC pool). More than 3% apart and SKOOP checkout
+// pauses until they agree again. If the check itself cannot be read, it blocks nothing.
+const WETH_USDC_POOL='0xd0b53D9277642d899DF5C87A3966A349A798F224',WETH_ADDR='0x4200000000000000000000000000000000000006';
+const PRICE_DIVERGENCE_MAX=0.03;
+async function checkPriceAgreement(pub){
+  const sp=async a=>{const c=new ethers.Contract(a,ABI_POOL,pub);const[s0,t0]=await Promise.all([c.slot0(),c.token0()]);const q=Number(s0.sqrtPriceX96)/Number(2n**96n);return{raw:q*q,t0:t0.toLowerCase()};};
+  try{
+    const[eu,es]=await Promise.all([sp(WETH_USDC_POOL),sp(CFG.POOL_ETH_SKOOP)]);
+    const ethUsd=eu.t0===WETH_ADDR.toLowerCase()?eu.raw*1e12:1e12/eu.raw;          // WETH 18dp, USDC 6dp
+    const skoopPerEth=es.t0===WETH_ADDR.toLowerCase()?es.raw*1e12:1e12/es.raw;      // WETH 18dp, SKOOP 6dp
+    const viaEth=ethUsd/skoopPerEth;
+    if(!(viaEth>0)||!(skoopPriceUSD>0)){priceDivergence=null;return;}
+    priceDivergence=Math.abs(viaEth-skoopPriceUSD)/skoopPriceUSD;
+  }catch(e){priceDivergence=null;}
+  const el=document.getElementById('price-pill-change');
+  if(el&&priceDivergence!==null&&priceDivergence>PRICE_DIVERGENCE_MAX){
+    el.textContent='⚠ pools disagree '+(priceDivergence*100).toFixed(1)+'% — SKOOP checkout paused';el.style.color='#c0392b';
+  }
+}
+async function fetchSkoopPrice(){
+  try{
+    // batchMaxCount:1 — slot0() and token0() go out together below, and a batched
+    // pair fails as a unit under Base's rate limit. This price drives the reward math.
+    const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{batchMaxCount:1,staticNetwork:true});
+    const pool=new ethers.Contract(CFG.POOL_USDC_SKOOP,ABI_POOL,pub);
+    const[s0,t0]=await Promise.all([pool.slot0(),pool.token0()]);
+    const sq=Number(s0.sqrtPriceX96)/Number(2n**96n);
+    const raw=sq*sq;
+    const skoopIsT0=t0.toLowerCase()===CFG.SKOOP.toLowerCase();
+    skoopPriceUSD=skoopIsT0?raw:1/raw;
+    // Show the price as soon as it is read. The two-pool cross-check runs after, capped at 8s:
+    // under the public RPC's throttling ethers backs off for minutes, and the pill used to sit
+    // on "loading…" the whole time. The checkout gate still reads priceDivergence as before.
+    if(skoopPriceUSD>0)document.getElementById('price-pill-main').textContent='1 USDC = '+Math.round(1/skoopPriceUSD).toLocaleString()+' SKOOP';
+    await Promise.race([checkPriceAgreement(pub).catch(()=>{}),new Promise(r=>setTimeout(r,8000))]);
+    if(skoopPriceUSD>0){
+      try{
+        const ds=await fetch('https://api.dexscreener.com/latest/dex/pairs/base/'+CFG.POOL_ETH_SKOOP);
+        const dj=await ds.json();
+        const change=dj?.pair?.priceChange?.h24;
+        if(change!==undefined&&change!==null&&!(priceDivergence!==null&&priceDivergence>PRICE_DIVERGENCE_MAX)){
+          const pct=parseFloat(change);const up=pct>=0;
+          const el=document.getElementById('price-pill-change');
+          el.textContent=(up?'▲':'▼')+' '+Math.abs(pct).toFixed(2)+'% (24h)';
+          el.style.color=up?'#2a7050':'#c0392b';
+        }
+      }catch{}
+    }
+    updateTotals();
+    // V2: the pill's second line shows vault + float (set in fetchWalletBalance), not a dollar value.
+  }catch(e){document.getElementById('price-pill-main').textContent='Price unavailable';}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WALLET
+// ═══════════════════════════════════════════════════════════════
+async function connectWallet(){
+  if(window.ethereum){await connectInjectedWallet();return;}
+  showWalletPicker();
+}
+async function connectInjectedWallet(){
+  try{
+    provider=new ethers.BrowserProvider(window.ethereum);
+    await provider.send('eth_requestAccounts',[]);
+    const net=await provider.getNetwork();
+    if(Number(net.chainId)!==CFG.CHAIN_ID){
+      try{await provider.send('wallet_switchEthereumChain',[{chainId:CFG.CHAIN_HEX}]);}
+      catch{
+        try{await provider.send('wallet_addEthereumChain',[{chainId:CFG.CHAIN_HEX,chainName:'Base',nativeCurrency:{name:'Ether',symbol:'ETH',decimals:18},rpcUrls:['https://mainnet.base.org'],blockExplorerUrls:['https://basescan.org']}]);}
+        catch{showToast('Switch to Base network','error');return;}
+      }
+    }
+    signer=await provider.getSigner();
+    signerAddr=await signer.getAddress();
+    document.getElementById('wallet-btn').textContent=signerAddr.slice(0,6)+'…'+signerAddr.slice(-4);
+    const name=window.ethereum.isMetaMask?'MetaMask':window.ethereum.isCoinbaseWallet?'Coinbase':'Wallet';
+    showToast(name+' connected ✓','success');
+    showWalletBalancePill();
+    setOwnerControls();if(capturedReceipts.length)renderReceipts();
+    fetchWalletBalance();
+    loadReceipts();
+  }catch(e){
+    if(e.code===4001)showToast('Connection rejected','error');
+    else showToast('Connection failed','error');
+  }
+}
+function showWalletPicker(){
+  const posUrl=window.location.href;
+  const mmLink='https://metamask.app.link/dapp/'+posUrl.replace(/^https?:\/\//,'');
+  const cbLink='https://go.cb-wallet.com/dapp?url='+encodeURIComponent(posUrl);
+  let el=document.getElementById('wallet-picker');
+  if(el){el.style.display='flex';return;}
+  el=document.createElement('div');el.id='wallet-picker';
+  el.style.cssText='position:fixed;inset:0;background:rgba(58,32,16,0.65);z-index:999;display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+  el.innerHTML=`<div style="background:var(--cream);border-radius:20px;width:100%;max-width:320px;overflow:hidden;box-shadow:var(--shadow-lg);">
+    <div style="background:var(--coral);padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-family:var(--display);font-weight:650;font-size:1.2rem;color:var(--ink);">Open in Wallet</span>
+      <button onclick="document.getElementById('wallet-picker').style.display='none'" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--ink-mid);">✕</button>
+    </div>
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;">
+      <p style="font-size:0.75rem;color:var(--ink-mid);text-align:center;line-height:1.5;">Tap your wallet below to open the POS directly inside it.</p>
+      <a href="${mmLink}" style="display:flex;align-items:center;gap:0.875rem;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:1rem;text-decoration:none;color:var(--ink);">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" style="width:36px;height:36px;object-fit:contain;flex-shrink:0;">
+        <div><div style="font-size:0.88rem;font-weight:700;">MetaMask</div><div style="font-size:0.65rem;color:var(--ink-lt);">Opens POS in MetaMask browser</div></div>
+        <span style="margin-left:auto;font-size:1rem;color:var(--ink-lt);">→</span>
+      </a>
+      <a href="${cbLink}" style="display:flex;align-items:center;gap:0.875rem;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:1rem;text-decoration:none;color:var(--ink);">
+        <img src="https://avatars.githubusercontent.com/u/18060234" style="width:36px;height:36px;object-fit:contain;border-radius:8px;flex-shrink:0;">
+        <div><div style="font-size:0.88rem;font-weight:700;">Coinbase Wallet</div><div style="font-size:0.65rem;color:var(--ink-lt);">Opens POS in Coinbase browser</div></div>
+        <span style="margin-left:auto;font-size:1rem;color:var(--ink-lt);">→</span>
+      </a>
+      <div style="background:var(--mint);border-radius:10px;padding:0.65rem 0.875rem;font-size:0.68rem;color:var(--mint-dk);line-height:1.6;"><strong>First time?</strong> Install MetaMask or Coinbase Wallet, then come back and tap above.</div>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MODE SHEET
+// ═══════════════════════════════════════════════════════════════
+let activeModeSheet=null;
+function openModeSheet(mode,btn){
+  if(activeModeSheet===mode){closeModeSheet();return;}
+  activeModeSheet=mode;
+  document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.querySelectorAll('.mode-view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(mode+'-mode').classList.add('active');
+  document.getElementById('mode-sheet-title').textContent=mode==='rewards'?'Rewards':'Settlement';
+  document.getElementById('mode-overlay').classList.add('open');
+}
+function closeModeSheet(e){
+  if(e&&e.target!==document.getElementById('mode-overlay'))return;
+  document.getElementById('mode-overlay').classList.remove('open');
+  document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));
+  activeModeSheet=null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MENU
+// ═══════════════════════════════════════════════════════════════
+function renderMenu(){
+  const grid=document.getElementById('menu-grid');
+  const items=(activeCat==='all'?MENU:MENU.filter(i=>i.cat===activeCat)).filter(i=>!i.custom);
+  let html=items.map(item=>{
+    const qty=cart[item.id]||0;const inCart=qty>0;
+    const visual=item.img
+      ?`<img src="${item.img}" alt="${item.name}" class="mi-img" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="mi-emoji" style="display:none">${item.emoji}</span>`
+      :`<span class="mi-emoji">${item.emoji}</span>`;
+    return `<div class="menu-item${inCart?' in-cart':''}" data-cat="${item.cat}" onclick="tileClick(event,'${item.id}')">
+      <div class="mi-top">${visual}<span class="mi-badge">${qty||''}</span></div>
+      <div class="mi-name">${item.name}</div>
+      <div class="mi-bottom">
+        <span class="mi-price">$${item.price.toFixed(2)}</span>
+        <div class="mi-controls" onclick="event.stopPropagation()">
+          <button class="mi-q-btn" onclick="tileQty('${item.id}',-1)">−</button>
+          <span class="mi-qty">${qty}</span>
+          <button class="mi-q-btn" onclick="tileQty('${item.id}',1)">+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  // Custom tile — same size as other tiles, always last
+  if(activeCat==='all'||activeCat==='custom'){
+    html+=`<div class="menu-item" data-cat="custom" onclick="openCustomOverlay()" style="cursor:pointer;">
+      <div class="mi-top"><span class="mi-emoji">✏️</span></div>
+      <div class="mi-name">Custom</div>
+      <div class="mi-bottom"><span class="mi-price" style="color:var(--lavender-dk);">$ amount</span></div>
+    </div>`;
+  }
+  grid.innerHTML=html;
+}
+function tileClick(e,id){if((cart[id]||0)===0)addToCart(id);}
+function tileQty(id,delta){changeQty(id,delta);}
+function filterCat(cat,btn){
+  activeCat=cat;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMenu();
+}
+function openCustomOverlay(){
+  document.getElementById('custom-amt-input').value='';
+  document.getElementById('custom-preview').textContent='';
+  document.getElementById('custom-add-btn').disabled=true;
+  document.getElementById('custom-input-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('custom-amt-input').focus(),80);
+}
+function closeCustomOverlay(e){
+  if(e&&e.target!==document.getElementById('custom-input-overlay'))return;
+  document.getElementById('custom-input-overlay').classList.remove('open');
+}
+function updateCustomPreview(val){
+  const v=parseFloat(val);
+  const btn=document.getElementById('custom-add-btn');
+  const prev=document.getElementById('custom-preview');
+  if(!v||v<=0){prev.textContent='';btn.disabled=true;return;}
+  btn.disabled=false;
+  if(skoopPriceUSD>0){
+    const tax=v*CFG.TAX_RATE;const total=v+tax;
+    prev.textContent=`+tax $${tax.toFixed(2)} → $${total.toFixed(2)} ≈ ${Math.round(total/skoopPriceUSD).toLocaleString()} SKOOP`;
+  }
+}
+function addCustomToCart(){
+  const input=document.getElementById('custom-amt-input');
+  const v=parseFloat(input.value);if(!v||v<=0)return;
+  const id='cx_'+Date.now();
+  MENU.push({id,cat:'custom',emoji:'✏️',name:'Custom $'+v.toFixed(2),price:v,_temp:true});
+  cart[id]=1;
+  document.getElementById('custom-input-overlay').classList.remove('open');
+  renderCart();renderMenu();showToast('$'+v.toFixed(2)+' added ✓','success');
+}
+function addToCart(id){cart[id]=(cart[id]||0)+1;renderCart();renderMenu();}
+function changeQty(id,delta){
+  cart[id]=(cart[id]||0)+delta;
+  if(cart[id]<=0){delete cart[id];const idx=MENU.findIndex(m=>m.id===id&&m._temp);if(idx!==-1)MENU.splice(idx,1);}
+  renderCart();renderMenu();
+}
+function clearCart(){for(let i=MENU.length-1;i>=0;i--){if(MENU[i]._temp)MENU.splice(i,1);}cart={};renderCart();renderMenu();}
+function renderCart(){
+  const container=document.getElementById('cart-items');
+  const ids=Object.keys(cart);
+  document.getElementById('cart-empty').style.display=ids.length?'none':'flex';
+  container.querySelectorAll('.cart-row').forEach(r=>{if(!cart[r.dataset.id])r.remove();});
+  ids.forEach(id=>{
+    const item=MENU.find(m=>m.id===id);const qty=cart[id];const total=item.price*qty;
+    let row=container.querySelector(`.cart-row[data-id="${id}"]`);
+    if(!row){row=document.createElement('div');row.className='cart-row';row.dataset.id=id;container.appendChild(row);}
+    row.innerHTML=`<div class="cr-info"><div class="cr-name"><span class="cr-emoji">${item.emoji}</span>${item.name}</div><div class="cr-price">$${item.price.toFixed(2)} each</div></div><div class="cr-qty"><button class="qty-btn" onclick="changeQty('${id}',-1)">−</button><span>${qty}</span><button class="qty-btn" onclick="changeQty('${id}',1)">+</button></div><div class="cr-total">$${total.toFixed(2)}</div>`;
+  });
+  updateTotals();
+}
+function updateTotals(){
+  const subtotal=Object.entries(cart).reduce((s,[id,qty])=>{const item=MENU.find(m=>m.id===id);return s+(item?item.price*qty:0);},0);
+  const tax=subtotal*CFG.TAX_RATE,total=subtotal+tax;
+  document.getElementById('sub-display').textContent='$'+subtotal.toFixed(2);
+  document.getElementById('tax-display').textContent='$'+tax.toFixed(2);
+  document.getElementById('tax-label').textContent='Tax ('+(CFG.TAX_RATE*100).toFixed(2)+'%)';
+  document.getElementById('total-display').textContent='$'+total.toFixed(2);
+  const hasItems=Object.keys(cart).length>0;
+  document.getElementById('skoop-display').textContent=(hasItems&&skoopPriceUSD>0)?(total/skoopPriceUSD).toLocaleString('en-US',{maximumFractionDigits:0})+' SKOOP':hasItems?'loading…':'—';
+  document.getElementById('checkout-btn').disabled=!hasItems;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CHECKOUT & QR
+// ═══════════════════════════════════════════════════════════════
+function selectPaymentToken(tok, skipRegen=false){
+  currentPaymentToken = tok==='usdc' ? CFG.USDC : CFG.SKOOP;
+  document.getElementById('tok-skoop').style.cssText='flex:1;padding:0.35rem;border-radius:999px;font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;border:2px solid '+(tok==='skoop'?'var(--coral-deep);background:var(--coral-deep);color:var(--white)':'var(--border);background:var(--white);color:var(--ink-mid)');
+  document.getElementById('tok-usdc').style.cssText='flex:1;padding:0.35rem;border-radius:999px;font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;border:2px solid '+(tok==='usdc'?'var(--coral-deep);background:var(--coral-deep);color:var(--white)':'var(--border);background:var(--white);color:var(--ink-mid)');
+  if(!skipRegen) generateQR();
+}
+async function openCheckout(){
+  if(!signer){showToast('Connect wallet first','error');return;}
+  if(!Object.keys(cart).length)return;
+  currentPaymentToken = CFG.SKOOP;
+  selectPaymentToken('skoop', true); // visual only — generateQR called below after modal is open
+  document.getElementById('modal-qr').style.display='';
+  document.getElementById('modal-success').style.display='none';
+  document.getElementById('modal-overlay').classList.add('open');
+  await generateQR();
+}
+let qrDeadlineSec=0,qrCountdownTimer=null;
+function startQRCountdown(){
+  clearInterval(qrCountdownTimer);
+  qrCountdownTimer=setInterval(()=>{
+    const rem=qrDeadlineSec-Math.floor(Date.now()/1000);
+    const el=document.getElementById('qr-countdown');
+    if(!el){clearInterval(qrCountdownTimer);return;}
+    if(rem<=0){el.textContent='QR expired — tap Regenerate';el.style.color='#c0392b';clearInterval(qrCountdownTimer);return;}
+    const m=Math.floor(rem/60),s=rem%60;
+    el.textContent='Expires in '+m+':'+(s<10?'0':'')+s;
+    el.style.color=rem<60?'#c0392b':'var(--ink-lt)';
+  },1000);
+}
+function setQRModeButtons(mode){
+  const activeStyle='flex:1;padding:0.3rem;border-radius:999px;border:2px solid var(--coral-deep);background:var(--coral-deep);color:var(--white);font-family:inherit;font-size:0.68rem;font-weight:700;cursor:pointer;';
+  const inactiveStyle='flex:1;padding:0.3rem;border-radius:999px;border:2px solid var(--border);background:var(--white);color:var(--ink-mid);font-family:inherit;font-size:0.68rem;font-weight:700;cursor:pointer;';
+  document.getElementById('mode-btn-dapp').style.cssText=mode==='dapp'?activeStyle:inactiveStyle;
+  document.getElementById('mode-btn-direct').style.cssText=mode==='direct'?activeStyle:inactiveStyle;
+}
+async function setQRMode(mode){
+  if(!qrModePayloads)return;
+  const wrap=document.getElementById('qr-canvas-wrap');
+  const wrapRect=wrap.getBoundingClientRect();
+  const qrSize=Math.round((wrapRect.width||280)-28);
+  await renderQRInto(wrap,qrModePayloads[mode],qrSize);
+  setQRModeButtons(mode);
+}
+async function renderQRInto(container,text,size){
+  container.innerHTML='';
+  try{
+    new QRCode(container,{text,width:size,height:size,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.L});
+    await new Promise(r=>setTimeout(r,80));
+    container.querySelectorAll('table').forEach(t=>t.remove());
+    const el=container.querySelector('img')||container.querySelector('canvas');
+    if(!el)throw new Error('nothing rendered');
+    el.style.cssText=`display:block!important;width:${size}px!important;height:${size}px!important;margin:0 auto!important;image-rendering:pixelated;`;
+  }catch(err){
+    const img=document.createElement('img');
+    img.style.cssText=`display:block;width:${size}px;height:${size}px;image-rendering:pixelated;`;
+    img.alt='QR';
+    img.onerror=()=>{container.innerHTML='<p style="color:red;font-size:0.65rem;">QR error</p>';};
+    img.src=`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&ecc=L&margin=0&data=`+encodeURIComponent(text);
+    container.appendChild(img);
+  }
+}
+async function generateQR(){
+  clearInterval(qrCountdownTimer);
+  const payToken = currentPaymentToken || CFG.SKOOP;
+  const isUSDC = payToken.toLowerCase() === CFG.USDC.toLowerCase();
+  if(!isUSDC && !skoopPriceUSD){showToast('Waiting for SKOOP price…','error');return;}
+  if(!isUSDC && priceDivergence!==null && priceDivergence>PRICE_DIVERGENCE_MAX){
+    showToast('SKOOP price unsettled ('+(priceDivergence*100).toFixed(1)+'% gap between pools) — take USDC or try again in a minute','error');return;
+  }
+  const subtotalCents=Math.round(Object.entries(cart).reduce((s,[id,qty])=>{const item=MENU.find(m=>m.id===id);return s+(item?item.price*qty:0);},0)*100);
+  const taxCents=Math.round(subtotalCents*CFG.TAX_RATE);
+  const totalCents=subtotalCents+taxCents;
+  // SKOOP: convert USD → SKOOP at spot price. USDC: cents → base units (÷100 × 1e6)
+  const tokenAmount=isUSDC
+    ? BigInt(totalCents * 10000)
+    : BigInt(Math.round(totalCents/100/skoopPriceUSD*1e6));
+  const receiptId=ethers.id('RCPT_'+Date.now()+'_'+Math.random());
+  const orderId=ethers.id('ORD_'+Date.now());
+  const storeIdHash=ethers.id(CFG.STORE_ID);
+  const terminalHash=ethers.id(CFG.TERMINAL_ID);
+  const cartItems=Object.entries(cart).map(([id,q])=>id+':'+q).join(',');
+  const cartHash=ethers.id(cartItems);
+  const deadline=BigInt(Math.floor(Date.now()/1000)+600);
+  const itemCount=BigInt(Object.values(cart).reduce((a,b)=>a+b,0));
+
+  // Two-block digest — must match _paymentDigest() in KOKOSPaymentEscrowV2
+  const enc=ethers.AbiCoder.defaultAbiCoder();
+  const blockA=ethers.keccak256(enc.encode(
+    ['bytes32','bytes32','bytes32','bytes32','address','uint256'],
+    [receiptId,orderId,storeIdHash,terminalHash,payToken,tokenAmount]
+  ));
+  const blockB=ethers.keccak256(enc.encode(
+    ['uint256','uint256','uint256','uint256','bytes32','uint256'],
+    [BigInt(subtotalCents),BigInt(taxCents),BigInt(totalCents),itemCount,cartHash,deadline]
+  ));
+  const digest=ethers.keccak256(enc.encode(['bytes32','bytes32'],[blockA,blockB]));
+
+  let signature;
+  try{signature=await signer.signMessage(ethers.getBytes(digest));}
+  catch(e){showToast('Signature rejected','error');closeModal();return;}
+  const recovered=ethers.verifyMessage(ethers.getBytes(digest),signature);
+  if(recovered.toLowerCase()!==CFG.SIGNER.toLowerCase()){showToast('Wrong signer wallet','error');closeModal();return;}
+
+  // QR payload — K2 format: 206 bytes
+  // [receiptId:32][orderId:32][cartHash:32][paymentToken:20][tokenAmount:8]
+  // [subtotalCents:4][taxCents:4][totalCents:4][itemCount:1][deadline:4][sig:65]
+  function hexToU8(hex){const h=hex.replace(/^0x/,'');const b=new Uint8Array(h.length/2);for(let i=0;i<b.length;i++)b[i]=parseInt(h.substr(i*2,2),16);return b;}
+  function numToU8(n,bytes){const b=new Uint8Array(bytes);let v=BigInt(n);for(let i=bytes-1;i>=0;i--){b[i]=Number(v&0xffn);v>>=8n;}return b;}
+  const buf=new Uint8Array(206);let off=0;
+  const copy=(src)=>{buf.set(src,off);off+=src.length;};
+  copy(hexToU8(receiptId));copy(hexToU8(orderId));copy(hexToU8(cartHash));
+  copy(hexToU8(payToken));  // 20 bytes
+  copy(numToU8(tokenAmount,8));copy(numToU8(subtotalCents,4));copy(numToU8(taxCents,4));
+  copy(numToU8(totalCents,4));copy(numToU8(Object.values(cart).reduce((a,b)=>a+b,0),1));
+  copy(numToU8(deadline,4));copy(hexToU8(signature));
+  // Use TextDecoder-safe base64url — avoids btoa() failure on bytes > 127
+  const k2data=btoa(Array.from(buf,b=>String.fromCharCode(b)).join('')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  // The PunchCard app, opened as this merchant. m= tells the app whose escrow, signer and token
+  // to use; it verifies the signature against this merchant's registered terminals.
+  const k2url='https://punchcard.club/app/?m=kokos-skoop&d='+k2data;
+  const eip681='ethereum:'+CFG.USDC+'/transfer?address='+CFG.TREASURY+'&uint256='+tokenAmount.toString()+'&chainId=8453';
+
+  const wrap=document.getElementById('qr-canvas-wrap');
+  wrap.innerHTML='<p style="color:var(--ink-lt);font-size:0.75rem;text-align:center;">Generating…</p>';
+  await new Promise(r=>setTimeout(r,80));
+  try{if(navigator.wakeLock)await navigator.wakeLock.request('screen');}catch{}
+  const wrapRect=wrap.getBoundingClientRect();
+
+  if(isUSDC){
+    qrModePayloads={dapp:k2url,direct:eip681};
+    const modeBar=document.getElementById('qr-mode-bar');
+    modeBar.style.display='flex';
+    wrap.style.aspectRatio='';
+    wrap.innerHTML='';
+    await renderQRInto(wrap,k2url,Math.round((wrapRect.width||280)-28));
+    setQRModeButtons('dapp');
+  }else{
+    qrModePayloads=null;
+    document.getElementById('qr-mode-bar').style.display='none';
+    wrap.style.aspectRatio='';
+    wrap.innerHTML='';
+    await renderQRInto(wrap,k2url,Math.round((wrapRect.width||280)-28));
+  }
+
+  const tokenDisplay=isUSDC?'$'+(totalCents/100).toFixed(2)+' USDC':Number(tokenAmount/1000000n).toLocaleString()+' SKOOP';
+  document.getElementById('modal-summary').innerHTML=
+    Object.entries(cart).map(([id,q])=>{const it=MENU.find(m=>m.id===id);return`<div class="mos-row"><span>${it.emoji} ${it.name} ×${q}</span><span>$${(it.price*q).toFixed(2)}</span></div>`;}).join('')+
+    `<div class="mos-row"><span>Tax</span><span>$${(taxCents/100).toFixed(2)}</span></div>`+
+    `<div class="mos-row total"><span>Total</span><span>$${(totalCents/100).toFixed(2)}</span></div>`+
+    `<div class="mos-row skoop"><span>Pay with</span><span>${tokenDisplay}</span></div>`;
+  document.getElementById('modal-status').textContent='Waiting for customer to scan…';
+  qrDeadlineSec=Number(deadline);
+  startQRCountdown();
+
+  // Persist so mobile browser tab reload can resume the QR without re-signing
+  try{
+    sessionStorage.setItem('kokos_pos_intent',JSON.stringify({
+      k2url,receiptId,isUSDC,payToken,
+      tokenAmount:tokenAmount.toString(),
+      totalCents,taxCents,subtotalCents,
+      deadline:Number(deadline),
+      cartSnapshot:Object.entries(cart).map(([id,qty])=>{
+        const item=MENU.find(m=>m.id===id);
+        return item?{name:item.emoji+' '+item.name,qty,price:item.price}:null;
+      }).filter(Boolean),
+      ...(isUSDC?{eip681}:{}),
+    }));
+  }catch{}
+
+  const pollToken=Symbol();activePollToken=pollToken;
+  pollForPayment(receiptId,pollToken);
+  if(isUSDC)pollForDirectUSDC(tokenAmount,totalCents,pollToken);
+}
+async function regenerateQR(){
+  clearInterval(qrCountdownTimer);
+  const wrap=document.getElementById('qr-canvas-wrap');wrap.style.opacity='0.4';
+  await generateQR();wrap.style.opacity='1';
+}
+function closeModal(){clearInterval(qrCountdownTimer);activePollToken=null;qrModePayloads=null;document.getElementById('qr-mode-bar').style.display='none';document.getElementById('modal-overlay').classList.remove('open');try{sessionStorage.removeItem('kokos_pos_intent');}catch{}}
+
+// ═══════════════════════════════════════════════════════════════
+//  PAY A REWARD (V2)
+// ═══════════════════════════════════════════════════════════════
+// Vault first. The float (SKOOP held by this signer) is used only when the vault is short —
+// its allowance or its emission is used up for now — never when it has been paused, frozen,
+// or this key removed as an operator: those are deliberate stops and the float must honour
+// them too. Anything else goes to Pending, exactly as before.
+const isProtocolAddr=a=>[CFG.ESCROW,CFG.TREASURY,CFG.SKOOP,CFG.USDC,CFG.POOL_ETH_SKOOP,CFG.POOL_USDC_SKOOP,...CFG.SUITE]
+  .some(x=>x&&x.toLowerCase()===String(a).toLowerCase());
+const vaultReason=e=>e?.revert?.args?.[0]||e?.reason||e?.shortMessage||e?.message||'';
+async function payReward(to,amountStr){
+  const amt=ethers.parseUnits(String(amountStr),CFG.SKOOP_DEC);
+  const vault=new ethers.Contract(CFG.REWARD_VAULT,ABI_VAULT,signer);
+  // Pre-check. A CALL_EXCEPTION with no revert data is the RPC failing, not the vault
+  // refusing — retry that once rather than send the reward to Pending over a dropped call.
+  let why='';
+  for(let i=0;i<2;i++){
+    try{await vault.distributeReward.staticCall(to,amt);why='';break;}
+    catch(e){why=vaultReason(e);const rpcNoise=e?.code==='CALL_EXCEPTION'&&!e?.data&&!e?.revert&&!e?.reason;
+      if(!rpcNoise||i===1)break;await new Promise(r=>setTimeout(r,1200));}
+  }
+  if(!why){
+    const tx=await vault.distributeReward(to,amt);
+    showToast('Reward broadcasting…','');
+    const rc=await tx.wait();if(rc.status!==1)throw new Error('Reward reverted');
+    return 'vault';
+  }
+  if(/Drawer empty|Emission limit/.test(why)){
+    const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+    const own=await new ethers.Contract(CFG.SKOOP,["function balanceOf(address) view returns (uint256)"],pub).balanceOf(signerAddr);
+    if(own>=amt){
+      const tx=await new ethers.Contract(CFG.SKOOP,ABI_ERC20,signer).transfer(to,amt);
+      showToast('Vault at its limit — paying from float…','');
+      const rc=await tx.wait();if(rc.status!==1)throw new Error('Reward reverted');
+      return 'float';
+    }
+    throw new Error(why==='Drawer empty'?'Daily allowance used up':'Rewards vault not refilled yet');
+  }
+  throw new Error({'Paused':'Rewards paused by owner','Frozen':'Rewards vault frozen','Not an operator':'This wallet is not a rewards operator',
+    'Below floor':'Reward below the minimum','Exceeds per-tx max':'Reward above the per-payment maximum','Not activated':'Rewards vault not live'}[why]||why||'Transaction failed');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AUTO-REWARD
+// ═══════════════════════════════════════════════════════════════
+async function autoSendReward(payerAddr,rewardSkoop,paidCents,receiptId){
+  // Never reward one of our own addresses: SKOOP sent to the escrow cannot be recovered.
+  if(isProtocolAddr(payerAddr)){
+    console.warn('autoSendReward: refused reward to protocol address',payerAddr);return;
+  }
+  setSuccessRewardStatus('sending',rewardSkoop);
+  try{
+    const src=await payReward(payerAddr,rewardSkoop);
+    addDailyRewardSent(rewardSkoop);
+    setSuccessRewardStatus('success',rewardSkoop);
+    showToast('⚡ '+rewardSkoop.toLocaleString()+' SKOOP reward auto-sent'+(src==='float'?' (float)':'')+' ✓','success');
+    refreshWalletBalance();
+  }catch(e){
+    savePendingReward(receiptId,rewardSkoop,paidCents);
+    const reason=(e?.code===4001||e?.code==='ACTION_REJECTED')?'Rejected by wallet':(e?.message||'Transaction failed').slice(0,60);
+    setSuccessRewardStatus('failed',rewardSkoop,reason);
+    showToast('Auto-reward failed — saved to Pending','error');
+    renderPendingRewards();
+  }
+}
+function setSuccessRewardStatus(state,skoopAmt,errorMsg=''){
+  const el=document.getElementById('success-reward-status');if(!el)return;
+  el.style.display='block';const amtStr=skoopAmt.toLocaleString();
+  if(state==='sending'){
+    el.innerHTML=`<div class="auto-reward-banner sending"><span style="display:inline-block;width:12px;height:12px;border:2px solid var(--sand-dk);border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;"></span>Sending ${amtStr} SKOOP reward…</div>`;
+  }else if(state==='success'){
+    el.innerHTML=`<div class="auto-reward-banner success">⚡ ${amtStr} SKOOP reward sent automatically</div>`;
+  }else{
+    el.innerHTML=`<div class="auto-reward-banner failed">⚠️ Auto-reward failed (${errorMsg}) — ${amtStr} SKOOP saved to Pending</div>`;
+  }
+}
+function showPaymentSuccess(totalCents,tokenAmt,receiptId,tokenLabel='SKOOP'){
+  document.getElementById('modal-qr').style.display='none';
+  document.getElementById('modal-success').style.display='block';
+  document.getElementById('success-sub').textContent='$'+(totalCents/100).toFixed(2)+' · '+tokenAmt.toLocaleString('en-US',{maximumFractionDigits:2})+' '+tokenLabel;
+  document.getElementById('success-details').innerHTML=
+    `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;border-bottom:1px solid rgba(58,32,16,0.08);"><span style="color:var(--ink-mid);">Total charged</span><span style="font-weight:700;">$${(totalCents/100).toFixed(2)}</span></div>`+
+    `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;border-bottom:1px solid rgba(58,32,16,0.08);"><span style="color:var(--ink-mid);">${tokenLabel} captured</span><span style="font-weight:700;color:var(--coral-deep);">${tokenAmt.toLocaleString('en-US',{maximumFractionDigits:2})} ${tokenLabel}</span></div>`+
+    `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;"><span style="color:var(--ink-mid);">Receipt</span><span style="font-family:monospace;font-size:0.58rem;">${receiptId.slice(0,20)}…</span></div>`;
+  const rewardEl=document.getElementById('success-reward-status');
+  if(rewardEl){rewardEl.style.display='none';rewardEl.innerHTML='';}
+  let secs=4;clearInterval(successTimer);
+  successTimer=setInterval(()=>{
+    secs--;
+    const el=document.getElementById('success-countdown');
+    if(el)el.innerHTML=`<div style="width:6px;height:6px;border-radius:50%;background:var(--mint);animation:pulse 1s ease infinite;"></div> Closing in ${secs}s…`;
+    if(secs<=0){clearInterval(successTimer);closeSuccess();}
+  },1000);
+}
+function closeSuccess(){clearInterval(successTimer);closeModal();}
+async function pollForPayment(receiptId,pollToken){
+  const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+  const escrow=new ethers.Contract(CFG.ESCROW,ABI_ESCROW,pub);
+  let startBlock;try{startBlock=await pub.getBlockNumber()-5;}catch(e){startBlock=0;}
+  let attempts=0;
+  const poll=setInterval(async()=>{
+    if(activePollToken!==pollToken){clearInterval(poll);return;}
+    attempts++;
+    if(attempts>200){clearInterval(poll);document.getElementById('modal-status').textContent='Timed out — regenerate QR if unpaid';return;}
+    document.getElementById('modal-status').textContent=`Waiting for payment… (${attempts*3}s)`;
+    try{
+      const events=await escrow.queryFilter(escrow.filters.PaymentCaptured(receiptId),startBlock);
+      if(events.length>0){
+        activePollToken=null;clearInterval(poll);
+        try{sessionStorage.removeItem('kokos_pos_intent');}catch{}
+        const ev=events[0];
+        const payerAddr=ev.args.payer;
+        const paidCents=Number(ev.args.totalCents);
+        const isUsdcPay=ev.args.paymentToken?.toLowerCase()===CFG.USDC.toLowerCase();
+        const paidTokenAmt=parseFloat(ethers.formatUnits(BigInt(ev.args.tokenAmount),isUsdcPay?CFG.USDC_DEC:CFG.SKOOP_DEC));
+        const paidLabel=isUsdcPay?'USDC':'SKOOP';
+        showPaymentSuccess(paidCents,paidTokenAmt,ev.args.receiptId,paidLabel);
+        if(skoopPriceUSD>0&&signer){
+          const rewardRate=isUsdcPay?CFG.AUTO_REWARD_RATE_USDC:CFG.AUTO_REWARD_RATE;
+          const rewardSkoop=Math.round((paidCents/100)*rewardRate/skoopPriceUSD);
+          if(rewardSkoop>0)setTimeout(()=>autoSendReward(payerAddr,rewardSkoop,paidCents,ev.args.receiptId),600);
+        }
+        cart={};renderCart();renderMenu();loadReceipts();
+      }
+    }catch(e){}
+  },3000);
+}
+
+async function pollForDirectUSDC(usdcAmount,totalCents,pollToken){
+  const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+  const usdc=new ethers.Contract(CFG.USDC,['event Transfer(address indexed from,address indexed to,uint256 value)'],pub);
+  let startBlock;try{startBlock=await pub.getBlockNumber()-5;}catch(e){startBlock=0;}
+  let attempts=0;
+  const seenHashes=new Set();
+  const poll=setInterval(async()=>{
+    if(activePollToken!==pollToken){clearInterval(poll);return;}
+    attempts++;
+    if(attempts>200){clearInterval(poll);return;}
+    try{
+      // value is not indexed — filter only by to=treasury, match amount client-side
+      const events=await usdc.queryFilter(usdc.filters.Transfer(null,CFG.TREASURY),startBlock);
+      // Only a customer's transfer counts. The escrow sends USDC here whenever receipts are
+      // settled, and the owner may top the treasury up by hand; either could match an
+      // order's amount by coincidence, mark it paid, and send its reward to a contract
+      // that can never return it.
+      const notOurs=a=>![CFG.ESCROW,CFG.TREASURY,CFG.OWNER,CFG.SIGNER].some(x=>x&&x.toLowerCase()===a.toLowerCase());
+      const ev=events.find(e=>e.args.value===usdcAmount&&notOurs(e.args.from)&&!seenHashes.has(e.transactionHash));
+      if(ev)seenHashes.add(ev.transactionHash);
+      if(ev){
+        activePollToken=null;clearInterval(poll);
+        try{sessionStorage.removeItem('kokos_pos_intent');}catch{}
+        const paidAmt=parseFloat(ethers.formatUnits(ev.args.value,CFG.USDC_DEC));
+        showPaymentSuccess(totalCents,paidAmt,ev.transactionHash,'USDC');
+        if(skoopPriceUSD>0&&signer){
+          const rewardSkoop=Math.round((totalCents/100)*CFG.AUTO_REWARD_RATE_USDC/skoopPriceUSD);
+          if(rewardSkoop>0)setTimeout(()=>autoSendReward(ev.args.from,rewardSkoop,totalCents,ev.transactionHash),600);
+        }
+        cart={};renderCart();renderMenu();
+      }
+    }catch(e){}
+  },3000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  REWARDS (manual)
+// ═══════════════════════════════════════════════════════════════
+function setRewardAddr(addr){
+  scannedRewardAddr=addr;
+  document.getElementById('reward-addr').textContent=addr;
+  document.getElementById('reward-addr-input').value=addr;
+  document.getElementById('reward-send-btn').disabled=!(addr&&Number(document.getElementById('reward-amount').value)>0);
+}
+function onRewardAddrInput(val){
+  const addr=val.trim().replace(/^ethereum:/i,'');
+  if(ethers.isAddress(addr))setRewardAddr(addr);
+  else{scannedRewardAddr=null;document.getElementById('reward-addr').textContent='—';document.getElementById('reward-send-btn').disabled=true;}
+}
+async function pasteAddr(){
+  try{
+    const text=await navigator.clipboard.readText();
+    const addr=text.trim().replace(/^ethereum:/i,'');
+    if(ethers.isAddress(addr)){setRewardAddr(addr);showToast('Address pasted ✓','success');}
+    else showToast('Not a valid address','error');
+  }catch{showToast('Clipboard denied','error');}
+}
+let scanFacing='user';
+function toggleRewardScan(){rewardScannerActive?stopRewardScan():startRewardScan();}
+function flipCamera(){if(!rewardScannerActive)return;scanFacing=scanFacing==='environment'?'user':'environment';stopRewardScan();startRewardScan();}
+function startRewardScan(){
+  document.getElementById('reward-qr-reader').style.display='block';
+  document.getElementById('scan-label').textContent='Stop Camera';
+  document.getElementById('scan-icon').textContent='⏹';
+  document.getElementById('flip-camera-btn').style.display='flex';
+  rewardScannerActive=true;
+  rewardScanner=new Html5Qrcode('reward-qr-reader');
+  rewardScanner.start({facingMode:scanFacing},{fps:10,qrbox:{width:150,height:150}},
+    (decoded)=>{
+      const addr=decoded.trim().replace(/^ethereum:/i,'');
+      if(ethers.isAddress(addr)){setRewardAddr(addr);stopRewardScan();showToast('Wallet scanned ✓','success');}
+      else showToast('Not a valid wallet QR','error');
+    },()=>{}
+  ).catch(()=>{showToast('Camera denied — use paste','error');stopRewardScan();});
+}
+function stopRewardScan(){
+  if(rewardScanner){rewardScanner.stop().catch(()=>{});rewardScanner=null;}
+  rewardScannerActive=false;
+  document.getElementById('reward-qr-reader').style.display='none';
+  document.getElementById('scan-label').textContent='Scan Customer QR';
+  document.getElementById('scan-icon').textContent='📷';
+  document.getElementById('flip-camera-btn').style.display='none';
+}
+function resetRewards(){
+  stopRewardScan();scannedRewardAddr=null;
+  ['reward-addr-input','reward-amount','sale-total'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('reward-addr').textContent='—';
+  document.getElementById('calc-skoop-display').textContent='—';
+  document.getElementById('calc-apply-btn').disabled=true;
+  document.getElementById('reward-usd-hint').textContent='';
+  document.getElementById('reward-send-btn').disabled=true;
+  const a=document.getElementById('reward-amount');if(a)delete a.dataset.pendingId;
+  calcSkoopAmount=0;
+}
+function calcReward(v){
+  const saleTotal=parseFloat(v);
+  const applyBtn=document.getElementById('calc-apply-btn');const display=document.getElementById('calc-skoop-display');
+  if(!saleTotal||saleTotal<=0||!skoopPriceUSD){display.textContent='—';applyBtn.disabled=true;calcSkoopAmount=0;return;}
+  calcSkoopAmount=Math.round(saleTotal*0.05/skoopPriceUSD);
+  display.textContent=calcSkoopAmount.toLocaleString()+' SKOOP';
+  applyBtn.disabled=false;
+}
+function applyCalcReward(){
+  if(!calcSkoopAmount)return;
+  const input=document.getElementById('reward-amount');
+  input.value=calcSkoopAmount;input.dispatchEvent(new Event('input'));
+  showToast(calcSkoopAmount.toLocaleString()+' SKOOP applied ✓','success');
+}
+async function sendReward(){
+  if(!signer){showToast('Connect wallet first','error');return;}
+  if(!scannedRewardAddr){showToast('No wallet address set','error');return;}
+  if(isProtocolAddr(scannedRewardAddr)){showToast('That is a contract address, not a customer wallet','error');return;}
+  const amtStr=document.getElementById('reward-amount').value;
+  if(!amtStr||Number(amtStr)<=0){showToast('Enter SKOOP amount','error');return;}
+  const amtNum=parseFloat(amtStr);
+  const btn=document.getElementById('reward-send-btn');btn.disabled=true;btn.textContent='Sending…';
+  try{
+    const src=await payReward(scannedRewardAddr,amtStr);
+    addDailyRewardSent(amtNum);
+    const pendingId=document.getElementById('reward-amount').dataset.pendingId;
+    if(pendingId)removePendingReward(pendingId);
+    showToast('Reward sent'+(src==='float'?' (float)':'')+' ✓','success');resetRewards();
+    refreshWalletBalance();
+  }catch(e){showToast((e?.code===4001||e?.code==='ACTION_REJECTED')?'Rejected by wallet':(e?.message||'Transaction failed').slice(0,80),'error');}
+  btn.disabled=false;btn.textContent='Send SKOOP Reward';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PENDING REWARDS
+// ═══════════════════════════════════════════════════════════════
+function savePendingReward(receiptId,skoopAmt,totalCents){
+  const pending=getPendingRewards();const id='PR_'+Date.now();
+  pending.push({id,receiptId:typeof receiptId==='string'?receiptId.slice(0,14)+'…':String(receiptId),skoopAmt,totalCents,ts:Date.now()});
+  localStorage.setItem('kokos_pending_rewards',JSON.stringify(pending));return id;
+}
+function getPendingRewards(){try{return JSON.parse(localStorage.getItem('kokos_pending_rewards')||'[]');}catch{return[];}}
+function removePendingReward(id){localStorage.setItem('kokos_pending_rewards',JSON.stringify(getPendingRewards().filter(r=>r.id!==id)));renderPendingRewards();}
+function renderPendingRewards(){
+  const pending=getPendingRewards();
+  const section=document.getElementById('pending-section');
+  const list=document.getElementById('pending-list');
+  if(!pending.length){section.style.display='none';return;}
+  section.style.display='flex';
+  list.innerHTML=pending.map(r=>{
+    const age=Math.round((Date.now()-r.ts)/60000);
+    return `<div class="pending-item">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.22rem;">
+        <span style="font-size:0.7rem;font-weight:700;color:var(--coral-deep);">${r.skoopAmt.toLocaleString()} SKOOP</span>
+        <span style="font-size:0.56rem;color:var(--ink-lt);">${age<1?'just now':age+'m ago'}</span>
+      </div>
+      <div style="font-size:0.58rem;color:var(--ink-mid);margin-bottom:0.3rem;">$${(r.totalCents/100).toFixed(2)} · ${r.receiptId}</div>
+      <div style="display:flex;gap:0.3rem;">
+        <button onclick="loadPendingReward('${r.id}')" class="action-btn primary" style="flex:1;padding:0.32rem;font-size:0.62rem;">Send Now</button>
+        <button onclick="removePendingReward('${r.id}')" class="action-btn secondary" style="padding:0.32rem 0.5rem;font-size:0.62rem;">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function loadPendingReward(id){
+  const r=getPendingRewards().find(x=>x.id===id);if(!r)return;
+  const input=document.getElementById('reward-amount');
+  input.value=r.skoopAmt;input.dispatchEvent(new Event('input'));
+  document.getElementById('reward-usd-hint').textContent='Failed auto-reward — scan customer wallet to retry';
+  input.dataset.pendingId=id;showToast('Loaded — scan customer wallet','success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DAILY LIMIT
+// ═══════════════════════════════════════════════════════════════
+function getDailyRewardState(){
+  const today=new Date().toDateString();
+  if(localStorage.getItem('kokos_reward_day')!==today){localStorage.setItem('kokos_reward_day',today);localStorage.setItem('kokos_reward_sent','0');return 0;}
+  return parseFloat(localStorage.getItem('kokos_reward_sent')||'0');
+}
+function addDailyRewardSent(amount){
+  localStorage.setItem('kokos_reward_day',new Date().toDateString());
+  localStorage.setItem('kokos_reward_sent',(getDailyRewardState()+amount).toString());
+  updateDailyLimitDisplay();
+}
+let vaultState=null;   // last read of the rewards vault for this signer
+// One Multicall3 request instead of five: the public RPC drops calls from a burst, and this
+// runs alongside the page's own price and balance reads. Retried once before giving up.
+async function readVault(addr,attempt=0){
+  const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+  const iv=new ethers.Interface(ABI_VAULT);
+  const mc=new ethers.Contract('0xcA11bde05977b3631167028862bE2a173976CA11',['function aggregate3((address target,bool allowFailure,bytes callData)[]) view returns ((bool success,bytes returnData)[])'],pub);
+  const calls=[['getDrawer',[addr]],['drawerAvailable',[addr]],['spendable',[]],['pausedUntil',[]],['isFrozen',[]]];
+  let res;
+  try{res=await mc.aggregate3.staticCall(calls.map(([f,a])=>({target:CFG.REWARD_VAULT,allowFailure:false,callData:iv.encodeFunctionData(f,a)})));}
+  catch(e){if(attempt<1){await new Promise(r=>setTimeout(r,1200));return readVault(addr,attempt+1);}throw e;}
+  const [drawer,avail,spend,paused,frozen]=res.map((x,i)=>iv.decodeFunctionResult(calls[i][0],x.returnData)[0]);
+  const n=x=>parseFloat(ethers.formatUnits(x,CFG.SKOOP_DEC));
+  return {operator:drawer.active,allowance:n(drawer.dailyAllowance),drawer:n(avail),emission:n(spend),
+          ready:Math.min(n(avail),n(spend)),paused:Number(paused)>Date.now()/1000,frozen};
+}
+function updateDailyLimitDisplay(){
+  const el=document.getElementById('daily-limit-display');if(!el)return;
+  const v=vaultState;
+  if(!v){el.textContent=`Sent today: ${getDailyRewardState().toLocaleString()} SKOOP`;el.style.color='var(--ink-lt)';return;}
+  if(!v.operator){el.textContent='This wallet is not a rewards operator';el.style.color='#c0392b';return;}
+  if(v.frozen||v.paused){el.textContent=v.frozen?'Rewards vault frozen':'Rewards paused by owner';el.style.color='#c0392b';return;}
+  el.textContent=`Vault ready: ${Math.floor(v.ready).toLocaleString()} SKOOP · float ${Math.floor(cachedSkoopBalance).toLocaleString()}`;
+  el.style.color=v.ready+cachedSkoopBalance<2000?'#c0392b':'var(--ink-lt)';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SETTLEMENT / BURN
+// ═══════════════════════════════════════════════════════════════
+// Base's public RPC caps eth_getLogs at a 2,000-block range and rate-limits
+// bursts, so the lookback is split into spans small enough to be accepted and
+// run a few at a time. A span that comes back rate-limited is retried, never
+// dropped: a missing burn/settle log would resurrect a finished receipt, and a
+// missing capture would hide one the shop still has to settle.
+const LOG_SPAN=900,LOG_PAR=10;
+// Base's eth_getLogs cap has gone 10k -> 2k -> 1k. LOG_SPAN is a hint; a range the node
+// still rejects as too wide is split in half and retried, so the next tightening costs
+// extra requests rather than emptying the receipt list.
+const isRangeErr=e=>/-32614|limited to a|Payload Too Large|\b413\b/i.test(
+  JSON.stringify(e&&(e.info||e.error||{message:e.message})||''));
+async function getLogsSpan(pub,filter,from,to,attempt=0){
+  try{
+    return await pub.send('eth_getLogs',[{...filter,
+      fromBlock:'0x'+from.toString(16),toBlock:'0x'+to.toString(16)}]);
+  }catch(err){
+    if(isRangeErr(err)&&to>from){
+      const mid=Math.floor((from+to)/2);
+      const [x,y]=await Promise.all([getLogsSpan(pub,filter,from,mid),getLogsSpan(pub,filter,mid+1,to)]);
+      return x.concat(y);
+    }
+    if(attempt<4){
+      await new Promise(r=>setTimeout(r,500*(attempt+1)));
+      return getLogsSpan(pub,filter,from,to,attempt+1);
+    }
+    throw err;
+  }
+}
+async function getLogsChunked(pub,filter,fromBlock,toBlock){
+  const ranges=[];
+  for(let s=fromBlock;s<=toBlock;s+=LOG_SPAN)ranges.push([s,Math.min(s+LOG_SPAN-1,toBlock)]);
+  const out=[];
+  for(let i=0;i<ranges.length;i+=LOG_PAR){
+    const res=await Promise.all(ranges.slice(i,i+LOG_PAR).map(([a,b])=>getLogsSpan(pub,filter,a,b)));
+    for(const r of res)out.push(...r);
+  }
+  return out;
+}
+async function loadReceipts(attempt=0){
+  try{
+    const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true,batchMaxCount:1});
+    const escrow=new ethers.Contract(CFG.ESCROW,ABI_ESCROW,pub);
+    const latest=await pub.getBlockNumber();
+    const LOOKBACK=90000,fromBlock=Math.max(0,latest-LOOKBACK);
+    // All four receipt events share one request per span via a topic0 OR-filter,
+    // which keeps the smaller spans from quadrupling the number of round-trips.
+    const topic=n=>escrow.interface.getEvent(n).topicHash;
+    const raw=await getLogsChunked(pub,
+      {address:CFG.ESCROW,topics:[[topic('PaymentCaptured'),topic('PaymentBurned'),topic('PaymentSettled'),topic('PaymentVoided')]]},
+      fromBlock,latest);
+    const captured=[],doneIds=new Set();
+    for(const log of raw){
+      const p=escrow.interface.parseLog(log);
+      if(!p)continue;
+      if(p.name==='PaymentCaptured')captured.push(p.args);
+      else doneIds.add(p.args.receiptId.toLowerCase());
+    }
+    capturedReceipts=captured
+      .filter(a=>!doneIds.has(a.receiptId.toLowerCase()))
+      .map(a=>({receiptId:a.receiptId,amount:a.tokenAmount,paymentToken:a.paymentToken,capturedAt:Number(a.timestamp)}));
+    renderReceipts();
+    if(!capturedReceipts.length)showToast('No pending receipts','');
+  }catch(e){
+    if(attempt<2){setTimeout(()=>loadReceipts(attempt+1),3000);return;}
+    showToast('Receipt load error','error');
+  }
+}
+function renderReceipts(){
+  const list=document.getElementById('receipt-list');
+  document.getElementById('stat-captured').textContent=capturedReceipts.length;
+  const totalSkoop=capturedReceipts.filter(r=>r.paymentToken?.toLowerCase()===CFG.SKOOP.toLowerCase()).reduce((s,r)=>s+Number(ethers.formatUnits(r.amount,CFG.SKOOP_DEC)),0);
+  const totalUsdc=capturedReceipts.filter(r=>r.paymentToken?.toLowerCase()===CFG.USDC.toLowerCase()).reduce((s,r)=>s+Number(ethers.formatUnits(r.amount,CFG.USDC_DEC)),0);
+  document.getElementById('stat-skoop').textContent=totalSkoop.toLocaleString('en-US',{maximumFractionDigits:0});
+  document.getElementById('stat-usdc').textContent='$'+totalUsdc.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(!capturedReceipts.length){list.innerHTML='<p style="font-size:0.65rem;color:var(--ink-lt);text-align:center;padding:0.875rem 0;">No captured receipts yet</p>';document.getElementById('burn-btn').disabled=true;return;}
+  const now=Math.floor(Date.now()/1000);
+  list.innerHTML=capturedReceipts.map((r,i)=>{
+    const isUsdc=r.paymentToken?.toLowerCase()===CFG.USDC.toLowerCase();
+    const amtStr=isUsdc
+      ?'$'+(Number(ethers.formatUnits(r.amount,CFG.USDC_DEC))).toFixed(2)+' USDC'
+      :parseFloat(ethers.formatUnits(r.amount,CFG.SKOOP_DEC)).toLocaleString()+' SKOOP';
+    const badge=isUsdc
+      ?'<span style="font-size:0.55rem;background:var(--mint);color:var(--mint-dk);border-radius:4px;padding:1px 4px;margin-left:4px;">USDC</span>'
+      :'<span style="font-size:0.55rem;background:var(--coral);color:var(--ink);border-radius:4px;padding:1px 4px;margin-left:4px;">SKOOP</span>';
+    const windowOpen=r.capturedAt&&(now<=r.capturedAt+1*24*3600);
+    const secsLeft=r.capturedAt?(r.capturedAt+1*24*3600-now):0;
+    const statusLabel=windowOpen
+      ?`<div class="rc-status rc-pending">Settles in ${formatTimeLeft(secsLeft)}</div>`
+      :`<div class="rc-status rc-ready">Ready ✓</div>`;
+    // Voids and settlement are owner-only in the escrow (onlyOwner). The tablet runs as the
+    // POS signer, so an employee never sees these controls; a manager connects the owner wallet.
+    const voidBtn=windowOpen&&isOwnerConnected()?`<button class="rc-void-btn" onclick="voidReceipt('${r.receiptId}')">Void</button>`:'';
+    return`<div class="receipt-card"><input type="checkbox" id="rc-${i}" value="${r.receiptId}" ${windowOpen||!isOwnerConnected()?'disabled':''} ${isOwnerConnected()?'':'style="display:none"'} onchange="updateBurnBtn()"><div style="flex:1;"><div class="rc-id">${r.receiptId.slice(0,18)}…${badge}</div><div class="rc-amt">${amtStr}</div>${statusLabel}</div>${voidBtn}</div>`;
+  }).join('');
+  setOwnerControls();
+}
+const isOwnerConnected=()=>!!signerAddr&&signerAddr.toLowerCase()===CFG.OWNER.toLowerCase();
+function setOwnerControls(){
+  const own=isOwnerConnected();
+  const a=document.getElementById('owner-actions'),n=document.getElementById('owner-note');
+  if(a)a.style.display=own?'flex':'none';if(n)n.style.display=own?'none':'block';
+}
+function updateBurnBtn(){document.getElementById('burn-btn').disabled=document.querySelectorAll('#receipt-list input:checked').length===0;}
+function formatTimeLeft(secs){
+  if(secs<=0)return'now';
+  const d=Math.floor(secs/86400),h=Math.floor((secs%86400)/3600),m=Math.floor((secs%3600)/60);
+  if(d>0)return d+'d '+(h>0?h+'h':'');
+  if(h>0)return h+'h '+(m>0?m+'m':'');
+  return m+'m';
+}
+function selectAllReady(){
+  const now=Math.floor(Date.now()/1000);
+  capturedReceipts.forEach((r,i)=>{
+    const cb=document.getElementById('rc-'+i);
+    if(cb&&!cb.disabled)cb.checked=true;
+  });
+  updateBurnBtn();
+}
+async function voidReceipt(receiptId){
+  if(!signer){showToast('Connect wallet first','error');return;}
+  if(!isOwnerConnected()){showToast('Voids are manager-only — connect the owner wallet','error');return;}
+  if(!confirm('Void this payment? Tokens will be returned to the customer.'))return;
+  try{
+    const escrow=new ethers.Contract(CFG.ESCROW,ABI_ESCROW,signer);
+    const tx=await escrow.voidPayment(receiptId);
+    showToast('Voiding…','');
+    await tx.wait();
+    showToast('Payment voided — tokens returned','success');
+    await loadReceipts();
+  }catch(e){showToast(e?.reason||e?.shortMessage||'Void failed','error');}
+}
+async function burnSelected(){
+  if(!signer){showToast('Connect wallet first','error');return;}
+  if(signerAddr&&signerAddr.toLowerCase()!==CFG.OWNER.toLowerCase()){showToast('Need owner wallet to settle','error');return;}
+  const checked=[...document.querySelectorAll('#receipt-list input:checked')].map(c=>c.value);
+  if(!checked.length)return;
+  const btn=document.getElementById('burn-btn');btn.disabled=true;btn.textContent='Settling…';
+  try{
+    const escrow=new ethers.Contract(CFG.ESCROW,ABI_ESCROW,signer);
+    const skoopIds=checked.filter(id=>{const r=capturedReceipts.find(x=>x.receiptId===id);return r&&r.paymentToken?.toLowerCase()===CFG.SKOOP.toLowerCase();});
+    const usdcIds=checked.filter(id=>{const r=capturedReceipts.find(x=>x.receiptId===id);return r&&r.paymentToken?.toLowerCase()===CFG.USDC.toLowerCase();});
+    const txs=[];
+    if(skoopIds.length)txs.push(escrow.burnPayments(skoopIds));
+    if(usdcIds.length)txs.push(escrow.settleUSDCPayments(usdcIds));
+    const results=await Promise.all(txs);
+    showToast('Broadcasting…','');
+    await Promise.all(results.map(tx=>tx.wait()));
+    const summary=[];
+    if(skoopIds.length)summary.push(skoopIds.length+' SKOOP burned');
+    if(usdcIds.length)summary.push(usdcIds.length+' USDC → treasury');
+    document.getElementById('receipt-list').innerHTML=`<div style="background:var(--mint);border-radius:9px;padding:0.75rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:0.35rem;"><div style="font-size:1.4rem;">✓</div><div style="font-weight:700;color:var(--mint-dk);font-size:0.82rem;">${summary.join(' · ')}</div></div>`;
+    document.getElementById('stat-captured').textContent='0';document.getElementById('stat-skoop').textContent='0';
+    document.getElementById('burn-btn').disabled=true;
+    showToast('Settlement complete','success');capturedReceipts=[];
+  }catch(e){showToast('Settlement failed','error');}
+  btn.textContent='🔥 Burn / Settle Selected';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WALLET BALANCE
+// ═══════════════════════════════════════════════════════════════
+let walletBalanceTimer=null;
+function showWalletBalancePill(){
+  document.getElementById('wallet-balance-wrap').classList.add('visible');
+}
+async function fetchWalletBalance(){
+  if(!signerAddr)return;
+  const dot=document.getElementById('wallet-balance-dot');
+  const skEl=document.getElementById('wallet-balance-skoop');
+  const usdEl=document.getElementById('wallet-balance-usd');
+  dot.className='loading';
+  skEl.innerHTML='<span id="wallet-balance-dot" class="loading"></span>…';
+  usdEl.textContent='loading…';
+  try{
+    const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+    const ABI_BAL=["function balanceOf(address) view returns (uint256)"];
+    const token=new ethers.Contract(CFG.SKOOP,ABI_BAL,pub);
+    const [raw,ethRaw,vs]=await Promise.all([token.balanceOf(signerAddr),pub.getBalance(signerAddr),readVault(signerAddr).catch(()=>null)]);
+    vaultState=vs;
+    const balance=parseFloat(ethers.formatUnits(raw,CFG.SKOOP_DEC));
+    const ethBal=parseFloat(ethers.formatEther(ethRaw));
+    cachedSkoopBalance=balance;
+    // What this terminal can pay out right now: the vault's ready amount (allowance and
+    // emission, whichever is lower) — unless it is paused, frozen, or this key is not an
+    // operator — plus the float it holds itself.
+    const vaultOk=vs&&vs.operator&&!vs.paused&&!vs.frozen;
+    const payable=(vaultOk?vs.ready:0)+balance;
+    const dotEl=document.getElementById('wallet-balance-dot');
+    if(dotEl){dotEl.className='';dotEl.style.background='var(--mint-dk)';}
+    skEl.innerHTML='<span id="wallet-balance-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mint-dk);margin-right:3px;vertical-align:middle;"></span>'+Math.floor(payable).toLocaleString('en-US')+' SKOOP';
+    usdEl.textContent=vs&&vs.operator?`vault ${Math.floor(vs.ready).toLocaleString()} + float ${Math.floor(balance).toLocaleString()}`:'float only';
+    updateDailyLimitDisplay();
+    // Warn before a reward fails mid-sale. The vault refills itself (emission and a rolling
+    // daily allowance), so "low" here means little is payable right now; ETH is gas.
+    const stop=vs&&(vs.paused||vs.frozen||!vs.operator);
+    const lvl=(stop||payable<1000||ethBal<0.0005)?'crit':(payable<5000||ethBal<0.002)?'warn':'ok';
+    const why=!vs?'Vault unreachable — float only':!vs.operator?'Not a rewards operator':vs.frozen?'Rewards vault frozen':vs.paused?'Rewards paused'
+             :payable<5000?'Rewards low — vault refilling':'Low ETH — add gas';
+    const dotNow=document.getElementById('wallet-balance-dot');
+    if(lvl!=='ok'){
+      const col=lvl==='crit'?'#c0392b':'#d4880f';
+      if(dotNow)dotNow.style.background=col;
+      usdEl.textContent=why;usdEl.style.color=col;usdEl.style.fontWeight='700';
+      document.getElementById('wallet-balance-wrap').title=`vault ${vs?Math.floor(vs.ready).toLocaleString():'?'} · float ${balance.toLocaleString()} SKOOP · ${ethBal.toFixed(4)} ETH`;
+    } else {usdEl.style.color='';usdEl.style.fontWeight='';}
+    clearTimeout(walletBalanceTimer);
+    walletBalanceTimer=setTimeout(fetchWalletBalance,30000);
+  }catch(e){
+    const dotEl=document.getElementById('wallet-balance-dot');
+    if(dotEl){dotEl.className='error';}
+    document.getElementById('wallet-balance-usd').textContent='tap to retry';
+  }
+}
+function refreshWalletBalance(){
+  clearTimeout(walletBalanceTimer);
+  if(signerAddr)fetchWalletBalance();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════════
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='show '+(type||'');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PAYMENT RESUME (mobile wallet state loss recovery)
+// ═══════════════════════════════════════════════════════════════
+function checkResumeIntent(){
+  try{
+    const saved=sessionStorage.getItem('kokos_pos_intent');
+    if(!saved)return;
+    const intent=JSON.parse(saved);
+    if(!intent||intent.deadline<=Math.floor(Date.now()/1000)){
+      sessionStorage.removeItem('kokos_pos_intent');return;
+    }
+    const items=intent.cartSnapshot.map(i=>i.name.replace(/^\S+\s/,'')+' ×'+i.qty).join(', ');
+    document.getElementById('resume-msg').textContent='⏸ Payment pending — '+items+' · $'+(intent.totalCents/100).toFixed(2);
+    document.getElementById('resume-banner').style.display='flex';
+  }catch{sessionStorage.removeItem('kokos_pos_intent');}
+}
+function dismissResumeIntent(){
+  try{sessionStorage.removeItem('kokos_pos_intent');}catch{}
+  document.getElementById('resume-banner').style.display='none';
+}
+async function resumeIntent(){
+  document.getElementById('resume-banner').style.display='none';
+  try{
+    const saved=sessionStorage.getItem('kokos_pos_intent');
+    if(!saved)return;
+    const intent=JSON.parse(saved);
+    if(intent.deadline<=Math.floor(Date.now()/1000)){
+      sessionStorage.removeItem('kokos_pos_intent');
+      showToast('QR expired — rebuild the order','error');return;
+    }
+    currentPaymentToken=intent.payToken;
+    selectPaymentToken(intent.isUSDC?'usdc':'skoop',true);
+    document.getElementById('modal-qr').style.display='';
+    document.getElementById('modal-success').style.display='none';
+    document.getElementById('modal-overlay').classList.add('open');
+    const wrap=document.getElementById('qr-canvas-wrap');
+    await new Promise(r=>setTimeout(r,80));
+    const qrSize=Math.round((wrap.getBoundingClientRect().width||280)-28);
+    if(intent.isUSDC&&intent.eip681){
+      qrModePayloads={dapp:intent.k2url,direct:intent.eip681};
+      document.getElementById('qr-mode-bar').style.display='flex';
+      wrap.innerHTML='';
+      await renderQRInto(wrap,intent.k2url,qrSize);
+      setQRModeButtons('dapp');
+    }else{
+      qrModePayloads=null;
+      document.getElementById('qr-mode-bar').style.display='none';
+      wrap.innerHTML='';
+      await renderQRInto(wrap,intent.k2url,qrSize);
+    }
+    const tokenDisplay=intent.isUSDC?'$'+(intent.totalCents/100).toFixed(2)+' USDC':Number(BigInt(intent.tokenAmount)/1000000n).toLocaleString()+' SKOOP';
+    document.getElementById('modal-summary').innerHTML=
+      intent.cartSnapshot.map(i=>`<div class="mos-row"><span>${i.name} ×${i.qty}</span><span>$${(i.price*i.qty).toFixed(2)}</span></div>`).join('')+
+      `<div class="mos-row"><span>Tax</span><span>$${(intent.taxCents/100).toFixed(2)}</span></div>`+
+      `<div class="mos-row total"><span>Total</span><span>$${(intent.totalCents/100).toFixed(2)}</span></div>`+
+      `<div class="mos-row skoop"><span>Pay with</span><span>${tokenDisplay}</span></div>`;
+    document.getElementById('modal-status').textContent='Resumed — waiting for payment…';
+    qrDeadlineSec=intent.deadline;
+    startQRCountdown();
+    const pollToken=Symbol();activePollToken=pollToken;
+    pollForPayment(intent.receiptId,pollToken);
+    if(intent.isUSDC)pollForDirectUSDC(BigInt(intent.tokenAmount),intent.totalCents,pollToken);
+  }catch(e){
+    sessionStorage.removeItem('kokos_pos_intent');
+    showToast('Could not resume payment','error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BRAND + INIT
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('reward-amount').addEventListener('input',(e)=>{
+    const amt=Number(e.target.value);
+    document.getElementById('reward-send-btn').disabled=!(scannedRewardAddr&&amt>0);
+    document.getElementById('reward-usd-hint').textContent=(amt>0&&skoopPriceUSD>0)?'≈ $'+(amt*skoopPriceUSD).toFixed(2)+' USD':'';
+  });
+  checkResumeIntent();
+});
+function applyBrand(){
+  const logoImg=document.getElementById('logo-img');
+  const logoText=document.getElementById('logo-text');
+  // V2: PunchCard is the frame; the merchant is its token badge plus its name.
+  const badge=BRAND.tokenLogoUrl||BRAND.logoUrl;
+  if(badge){logoImg.src=badge;logoImg.style.display='block';}else{logoImg.style.display='none';}
+  logoText.textContent=BRAND.storeName;logoText.style.display='block';
+  document.getElementById('logo-subtitle').textContent=BRAND.storeSubtitle;
+  document.title=BRAND.storeName+' · PunchCard Terminal';
+  document.querySelector('meta[name="apple-mobile-web-app-title"]').content=BRAND.storeName;
+  const strip=document.querySelector('.cat-strip');
+  strip.innerHTML='<button class="cat-btn active" onclick="filterCat(\'all\',this)">All</button>'
+    +BRAND.categories.map(cat=>`<button class="cat-btn" onclick="filterCat('${cat.id}',this)">${cat.label}</button>`).join('');
+}
+applyBrand();
+renderMenu();renderCart();updateDailyLimitDisplay();renderPendingRewards();
+fetchSkoopPrice();setInterval(fetchSkoopPrice,60000);
+if(window.ethereum){window.ethereum.request({method:'eth_accounts'}).then(accounts=>{if(accounts.length)connectWallet();}).catch(()=>{});}
+</script>
+</body>
+</html>

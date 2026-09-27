@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- PunchCard mark: a terra punch card with a bold cream P, a column of punch holes (the last
+       one green — punched, reward earned) and a ticket notch. Vector redraw of the Codex
+       "ticket-p" concept, chosen 2026-09-27. -->
+  <defs>
+    <mask id="pc-notch">
+      <rect width="512" height="512" fill="#fff"/>
+      <circle cx="512" cy="258" r="36" fill="#000"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" rx="60" fill="#b3472b" mask="url(#pc-notch)"/>
+  <g fill="#f6efe2">
+    <circle cx="88" cy="108" r="36"/>
+    <circle cx="88" cy="206" r="36"/>
+    <circle cx="88" cy="303" r="36"/>
+  </g>
+  <circle cx="88" cy="406" r="36" fill="#93c2a4"/>
+  <path fill="#f6efe2" fill-rule="evenodd"
+        d="M170 92a18 18 0 0 1 18-18H300a121 121 0 0 1 0 242H258V430a18 18 0 0 1-18 18H188a18 18 0 0 1-18-18Z
+           M297 148a50 50 0 1 0 0.01 0Z"/>
+</svg>
