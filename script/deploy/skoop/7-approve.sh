@@ -18,4 +18,4 @@ done
 if [ "$(call $WDC 'registrars(address)(bool)' $REGISTRAR)" = true ]; then echo "  - $REGISTRAR already a registrar"
 else tx "appoint registrar $REGISTRAR" $WDC "setRegistrar(address,bool)" $REGISTRAR true; fi
 st_set progress.approved yes
-echo "Next: bash script/deploy/skoop/8-verify.sh"
+echo "Next: bash script/deploy/skoop/8-verify.sh — then 4-fund.sh; the 60M goes in only once everything else is proven"

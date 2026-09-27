@@ -8,16 +8,16 @@ ESCROW=$(st_get suite.escrow); VESTING=$(st_get suite.vesting); TREASURY=$(st_ge
 say "Step 4 — fund the suite from the owner wallet"
 use_signer "$OWNER" "$OWNER_PATH"
 fund(){ local name=$1 to=$2 want=$3 have; have=$(bal $SKOOP "$to")
-  if [ "$have" -ge "$want" ]; then echo "  - $name already holds $(fmt6 "$have")"; return; fi
+  if ge "$have" "$want"; then echo "  - $name already holds $(fmt6 "$have")"; return; fi
   tx "fund $name with $(fmt6 $((want-have)))" $SKOOP "transfer(address,uint256)" "$to" $((want-have)); }
 fund escrow  "$ESCROW"  $ESCROW_FUND
 fund vesting "$VESTING" $VESTING_FUND
 REST=$(bal $SKOOP $OWNER)
-if [ "$REST" -gt 0 ]; then tx "fund treasury with the remaining $(fmt6 "$REST")" $SKOOP "transfer(address,uint256)" "$TREASURY" "$REST"
+if ! ge 0 "$REST"; then tx "fund treasury with the remaining $(fmt6 "$REST")" $SKOOP "transfer(address,uint256)" "$TREASURY" "$REST"
 else echo "  - owner holds nothing more; treasury holds $(fmt6 "$(bal $SKOOP "$TREASURY")")"; fi
 
-say "Check"
+settle; say "Check"
 echo "  escrow $(fmt6 "$(bal $SKOOP "$ESCROW")") · vesting $(fmt6 "$(bal $SKOOP "$VESTING")") · treasury $(fmt6 "$(bal $SKOOP "$TREASURY")") · owner left $(fmt6 "$(bal $SKOOP $OWNER)")"
 [ "$(bal $SKOOP $OWNER)" = 0 ] || die "owner still holds SKOOP"
 st_set progress.funded yes
-echo "Next: bash script/deploy/skoop/5-starter-lp.sh  (LP wallet, Ledger #25)"
+echo "Next: bash script/deploy/skoop/8-verify.sh, then 11-register.sh  (registrar, Ledger #43)"

@@ -13,7 +13,7 @@ say "Step 5b — initialise and activate"
 use_signer "$ACTIVATOR" "$ACTIVATOR_SIGNER"
 if [ "$(call $LOCKER 'isInitialized()(bool)')" = true ]; then echo "  - locker already initialized"
 else
-  [ "$(bal $SKOOP $LOCKER)" -gt 0 ] || die "the reserve is not in the locker — initializeLP would record zero forever"
+  ge "$(bal $SKOOP $LOCKER)" 1 || die "the reserve is not in the locker — initializeLP would record zero forever"
   tx "initializeLP(#$U, #$E)" $LOCKER "initializeLP(uint256,uint256,uint24,uint24)" $U $E 10000 10000 "${GAS[@]}"
 fi
 for pair in escrow:$ESCROW vesting:$VESTING treasury:$TREASURY locker:$LOCKER; do
@@ -22,8 +22,8 @@ for pair in escrow:$ESCROW vesting:$VESTING treasury:$TREASURY locker:$LOCKER; d
   else tx "activate ${pair%%:*}" $c "activate()"; fi
 done
 
-say "Check"
+settle; say "Check"
 echo "  locker initialized $(call $LOCKER 'isInitialized()(bool)') · reserve $(fmt6 "$(call $LOCKER 'reserveTokens()(uint256)')") · evacuationOpen $(call $LOCKER 'evacuationOpen()(bool)')"
 for c in $ESCROW $VESTING $TREASURY $LOCKER; do [ "$(call $c 'activatedAt()(uint256)')" != 0 ] || die "$c not activated"; done
 st_set progress.activated yes
-echo "Next: bash script/deploy/skoop/6-sourcify.sh"
+echo "Next: bash script/deploy/skoop/7-approve.sh  (governance, Ledger #41) — step 6 is already done"

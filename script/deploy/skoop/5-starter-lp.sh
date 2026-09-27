@@ -27,11 +27,11 @@ print(next(int(l['topics'][3],16) for l in r['logs'] if l['address'].lower()=='$
   st_set starter.$key "$id"; echo "    -> #$id"; }
 
 if [ -z "$(st_get starter.usdc)" ] || [ -z "$(st_get starter.eth)" ]; then
-  [ "$(bal $USDC $LP_WALLET)" -ge $STARTER_USDC ] || die "LP wallet needs $STARTER_USDC raw USDC"
-  [ "$(call $SKOOP 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" -ge 2700000000 ] || tx "approve SKOOP" $SKOOP "approve(address,uint256)" $NPM 2700000000
-  [ "$(call $USDC 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" -ge $STARTER_USDC ] || tx "approve USDC" $USDC "approve(address,uint256)" $NPM $STARTER_USDC
-  [ "$(bal $WETH $LP_WALLET)" -ge $STARTER_WETH ] || tx "wrap ETH" $WETH "deposit()" --value $STARTER_WETH
-  [ "$(call $WETH 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" -ge $STARTER_WETH ] || tx "approve WETH" $WETH "approve(address,uint256)" $NPM $STARTER_WETH
+  ge "$(bal $USDC $LP_WALLET)" $STARTER_USDC || die "LP wallet needs $STARTER_USDC raw USDC"
+  ge "$(call $SKOOP 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" 2700000000 || tx "approve SKOOP" $SKOOP "approve(address,uint256)" $NPM 2700000000
+  ge "$(call $USDC 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" $STARTER_USDC || tx "approve USDC" $USDC "approve(address,uint256)" $NPM $STARTER_USDC
+  ge "$(bal $WETH $LP_WALLET)" $STARTER_WETH || tx "wrap ETH" $WETH "deposit()" --value $STARTER_WETH
+  ge "$(call $WETH 'allowance(address,address)(uint256)' $LP_WALLET $NPM)" $STARTER_WETH || tx "approve WETH" $WETH "approve(address,uint256)" $NPM $STARTER_WETH
 fi
 # The pair side is the limit; SKOOP desired is set high and the unused part stays in the wallet.
 mint usdc $USDC $STARTER_USDC 1300000000 950000 900000000
@@ -41,10 +41,10 @@ for key in usdc eth; do id=$(st_get starter.$key)
   else tx "move #$id into the locker" $NPM "transferFrom(address,address,uint256)" $LP_WALLET $LOCKER $id; fi
 done
 LEFT=$(bal $SKOOP $LP_WALLET)
-if [ "$LEFT" -gt 0 ]; then tx "send the reserve ($(fmt6 "$LEFT") SKOOP)" $SKOOP "transfer(address,uint256)" $LOCKER "$LEFT"
+if ! ge 0 "$LEFT"; then tx "send the reserve ($(fmt6 "$LEFT") SKOOP)" $SKOOP "transfer(address,uint256)" $LOCKER "$LEFT"
 else echo "  - LP wallet has no SKOOP left; locker holds $(fmt6 "$(bal $SKOOP $LOCKER)")"; fi
 
-say "Check"
+settle; say "Check"
 echo "  locker holds $(fmt6 "$(bal $SKOOP $LOCKER)") SKOOP · starter #$(st_get starter.usdc) / #$(st_get starter.eth) owned by the locker"
 echo "  real #$REAL_USDC_NFT / #$REAL_ETH_NFT still owned by $(call $NPM 'ownerOf(uint256)(address)' $REAL_USDC_NFT)"
-echo "Next: bash script/deploy/skoop/5b-init-activate.sh  (activator)"
+echo "Next: bash script/deploy/skoop/5b-init-activate.sh  (owner/activator, Ledger #40)"

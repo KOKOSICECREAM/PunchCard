@@ -114,6 +114,12 @@ use_signer(){
   NONCE=$(cast nonce "$FROM" --block pending --rpc-url "$RPC")
   echo "  signer $FROM · nonce $NONCE · $(cast balance "$FROM" --ether --rpc-url "$RPC") ETH"
 }
+# ge A B — true if A >= B for integers of any size. Bash's [ -ge ] overflows past 2^63 and
+# erred on the LP wallet's unlimited (2^256-1) approvals left over from the Uniswap app.
+ge(){ python3 -c "import sys; sys.exit(0 if int('$1')>=int('$2') else 1)"; }
+# Before reading results back: wait until the RPC shows this signer's last tx mined. Without
+# it, step 5's check read the locker's balance one block early and printed 0.
+settle(){ [ -n "${FROM:-}" ] && [ -n "${NONCE:-}" ] && wait_mined || true; }
 wait_mined(){ local i; for i in $(seq 1 90); do [ "$(cast nonce "$FROM" --rpc-url "$RPC")" -ge "$NONCE" ] && return 0; sleep 2; done; die "RPC never showed nonce $NONCE for $FROM"; }
 # tx "what" <cast send args…>  — prints and returns the receipt JSON in $RECEIPT
 tx(){ local what=$1; shift

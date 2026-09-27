@@ -16,5 +16,10 @@
   },
   "progress": {
     "sourcify": "yes"
+  },
+  "starter": {
+    "usdc": 6102819,
+    "eth": 6102820,
+    "_verified": "2026-09-26 step 5 live: #6102819 (USDC, liquidity 31528108) and #6102820 (ETH, liquidity 653384896985) owned by the locker; reserve 26,997,938.699785 SKOOP in the locker (tx 0x9247d19d...eef0, block 51846727); real #6100109/#6100112 still in the LP wallet with their original liquidity. The LP wallet's unlimited Uniswap-app approvals were replaced by small ones as a side effect."
   }
 }
