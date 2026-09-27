@@ -18,7 +18,8 @@
     "sourcify": "yes",
     "activated": "yes",
     "approved": "yes",
-    "verified": "yes"
+    "verified": "yes",
+    "funded": "yes"
   },
   "starter": {
     "usdc": 6102819,
@@ -43,5 +44,11 @@
     "TREASURY_TIMELOCK": "0xaf3277b609a86c399e86be3a6158748d3df8d2bc97f2176ab230f2b09e156dbd",
     "LP_LOCKER": "0xa576300f0e8c4edf227099e1425d6255e98dda19e16ac2c38105eb12f9a0578d",
     "registrar": "0x3B44CF955Db742aEbCDC3260cb2599eE209E90dC"
+  },
+  "funding": {
+    "escrow": "45000000 - tx 0xe6d338b4...5a66 block 51847025",
+    "vesting": "15000000 - tx 0x40fd7c70...9280 block 51847029",
+    "treasury": "9544083 - tx 0xc4a33508...785e block 51847068",
+    "_note": "2026-09-26, funded last (after activation, approvals and a passing verifier). Owner and LP wallets hold 0 SKOOP. Verifier after funding: PASSED with the two documented warnings (treasury short 455,917; reserve short 2,061.30)."
   }
 }
