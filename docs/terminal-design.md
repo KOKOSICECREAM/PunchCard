@@ -63,17 +63,29 @@ funds return to the payer.
 
 **Settlement — follows the tokenomics.** After the window, **anyone** may settle a receipt:
 - Merchant-token payment → **burned**.
-- USDC payment → **buys the merchant's token in its own USDC pool, and the tokens bought are
-  burned.** The merchant does not keep the USDC; it becomes buy pressure and burn. The buy pays
-  the pool's fee, whose USDC side is PunchCard's network fee via the locker — commerce earns the
-  network from merchant #1, as the README intends.
+- USDC payment → **KOKOS's split: buy-and-burn plus protocol-owned liquidity.** The merchant
+  does not keep the USDC.
+  - **60%** buys the merchant's token in its USDC pool; the tokens bought are **burned**.
+  - **40%** becomes **POL**: half is swapped for the token and both halves are added to a
+    full-range position in the merchant's USDC pool, held by the terminal.
+  - The split is a **constant**, identical for every merchant (KOKOS's treasury let the owner
+    change it; the protocol's terms are not negotiable — same premise as 45/30/15/10).
+  - The swaps pay the pool's fee, whose USDC side is PunchCard's network fee via the locker —
+    commerce earns the network from merchant #1, as the README intends.
 - Token settlement is price-free, so it is open to anyone. USDC settlement is a swap into a thin
   pool, so it needs a slippage floor: it takes a caller-supplied minimum (quoted off-chain, as the
   Reporting page now does) and settles in batches small enough that impact stays bounded. Whether
   it can safely be fully permissionless is an open question below.
 
+**Protocol-owned liquidity** — the terminal's own full-range position, one per terminal, minted
+on the first USDC settlement and increased on every one after. **It can never be withdrawn**: no
+`withdrawLP`, no `recoverNFT` (KOKOS's treasury had both, so its "POL" was really owner-held).
+Its trading fees are collected back into the terminal: the token side is burned, the USDC side
+rolls into the next settlement's 60/40. `LPLocker.addLiquidity` is owner-only and the locker's
+code is fixed, which is why POL lives here and not in the locker.
+
 **Owner controls** — add/remove till signers, set the refund window, void inside it. None move
-funds anywhere but back to the payer or into the burn.
+funds anywhere but back to the payer, into the burn, or into the POL position.
 
 **Wind-down** — once the controller initiates, the terminal stops taking payments; settlement of
 existing receipts continues.
@@ -103,8 +115,8 @@ immutable metadata deliberately omits because a shop can move or rename, live on
 
 ## Defaults taken, to confirm
 
-1. **All** of a USDC payment is bought and burned — the README's rule. KOKOS's current treasury
-   sends 40% into its own LP position instead.
+1. ~~All of a USDC payment is bought and burned~~ — **decided 2026-09-26: KOKOS's logic, 60% buy
+   and burn, 40% protocol-owned liquidity**, the split fixed in the contract.
 2. Rewards are paid inside `pay`, not by the till afterwards.
 
 ## Open questions
@@ -114,6 +126,8 @@ immutable metadata deliberately omits because a shop can move or rename, live on
 - Should `pay` accept any network token and swap internally, so cross-merchant spending is one
   transaction? Better UX, more surface in the contract that holds money.
 - Deployment fee and who pays gas for `createTerminal`.
+- What happens to the POL position at wind-down: burn the token side and return USDC like the
+  locker, or leave it in the pool as a permanent floor (the locker already leaves 10% for good).
 
 ## Sequencing
 
