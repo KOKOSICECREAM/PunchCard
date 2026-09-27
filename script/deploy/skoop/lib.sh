@@ -37,7 +37,7 @@ LP_WALLET=0x6A9Ad1cE8d6256acd28fd8C50A6C72e0043C221F;  LP_PATH="m/44'/60'/25'/0/
 GOVERNANCE=0x5478bab8986eb652D3083Db6bbb34FA3188AB9cb; GOV_PATH="m/44'/60'/41'/0/0"
 
 # ── REQUIRED — not decided yet. Each step refuses to run while its values are empty. ──
-TEAM_WALLET=${SKOOP_TEAM_WALLET:-}          # Ledger #42, to be confirmed on the device. PERMANENT.
+TEAM_WALLET=${SKOOP_TEAM_WALLET:-0xa40A4893051ebC62718579c23e7ED0F4044cdA0f}  # Ledger #42 (m/44'/60'/42'/0/0), read from the device and confirmed on its screen 2026-09-26. PERMANENT.
 # Activator: the owner wallet, Ledger #40 (decided 2026-09-26). Its only powers are activate()
 # once per contract and initializeLP() once — both spent at step 5b, after which it can do
 # nothing. The old "fresh hot key" plan assumed the key had to outlive launch; under option B

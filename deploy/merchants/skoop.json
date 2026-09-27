@@ -38,7 +38,7 @@
     "_fill_note": "Every value below is required before step 2 or step 3 can run. The permanence column is the point: several of these can never be changed after the contract that takes them is deployed, and the suite is deployed one contract at a time precisely so each can be checked before the next.",
     "owner": "0x5426E59b783cd3b5083Ccc8cB571AA36e9f4a3be",
     "_owner_note": "Holds the entire supply. Becomes ownerWallet on the escrow, treasury and locker - immutable in all three - and is the only address that can ever call evacuateLP(). Highest-stakes key in the system.",
-    "team": null,
+    "team": "0xa40A4893051ebC62718579c23e7ED0F4044cdA0f",
     "_team_note": "IMMUTABLE FOREVER on VestingWallet - no update function exists anywhere. Receives the 15M team allocation over 730 days after a 30-day cliff. Wrong value here is only fixable by abandoning the vesting contract and redeploying, which is free before step 11 and impossible after.",
     "operator": "0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B",
     "_operator_note": "The first POS kiosk signer on RewardEscrow. NOT immutable - addOperator / removeOperator / setDrawerAllowance are all onlyOwner, which is the un-rotatable-key problem PunchCard fixed relative to live SKOOP. Safe to set provisionally.",
@@ -56,7 +56,8 @@
     "_factoryDeployer_signer": "0xEfaf... signs with a Trezor (not the Ledger). Unchanged 2026-09-26.",
     "_owner_decision": "Confirmed 2026-09-26: 0x5426... (Ledger account 40, m/44'/60'/40'/0/0) is SKOOP's admin wallet - ownerWallet on RewardEscrow, TreasuryTimelock and LPLockerPilot, immutable on all three. It adds/removes till operators, sets drawer allowances and per-reward bounds, pauses the escrow, requests treasury releases, and is the only key that can evacuate the LP.",
     "_operator_decision": "Decided 2026-09-26: the live POS signer is the escrow's first till operator for now. Changeable by the owner (addOperator/removeOperator).",
-    "_registrar_decision": "Decided 2026-09-26: Ledger account 43 (m/44'/60'/43'/0/0), read from the device. Separate from governance (#41) so reviewing (codehash approval) and admitting are two keys. Needs ~0.0003 ETH for registerManual."
+    "_registrar_decision": "Decided 2026-09-26: Ledger account 43 (m/44'/60'/43'/0/0), read from the device. Separate from governance (#41) so reviewing (codehash approval) and admitting are two keys. Needs ~0.0003 ETH for registerManual.",
+    "_team_decision": "Decided 2026-09-26: Ledger account 42 (m/44'/60'/42'/0/0), the founder's own. Read from the device by cast and confirmed by the user on the Ledger's screen. IMMUTABLE on VestingWallet: receives the 15M team allocation, nothing for 30 days after activation, then linearly over 730 days."
   },
   "verifiedOnChain": {
     "supply": "100,000,000.000000 to the owner, nothing elsewhere",
