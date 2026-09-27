@@ -35,18 +35,50 @@
         "treasury": "0xc35397cBDbcdb24705bc09917f9DdF9E6970C904",
         "owner": "0x001b3fB36FE7E3a741A15Ed8bE68610442E3a50b",
         "storeId": "KOKOS_NASHVILLE_01",
-        "terminals": { "POS_1": "0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B" },
+        "terminals": {
+          "POS_1": "0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B"
+        },
         "refundWindowHours": 24
       },
       "rewards": {
         "vault": "0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2",
-        "sources": ["0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B", "0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2"],
-        "rateToken": 0.10,
+        "sources": [
+          "0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B",
+          "0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2"
+        ],
+        "rateToken": 0.1,
         "rateUsdc": 0.05,
         "rateCashCard": 0.05
       },
       "pos": "/kokos-skoop/pos/",
       "page": "/kokos-skoop/"
     }
-  ]
+  ],
+  "comingSoon": [
+    {
+      "kind": "Coffee shop",
+      "emoji": "☕"
+    },
+    {
+      "kind": "Bakery",
+      "emoji": "🥐"
+    },
+    {
+      "kind": "Bookstore",
+      "emoji": "📚"
+    },
+    {
+      "kind": "Taco spot",
+      "emoji": "🌮"
+    },
+    {
+      "kind": "Record shop",
+      "emoji": "💿"
+    },
+    {
+      "kind": "Yoga studio",
+      "emoji": "🧘"
+    }
+  ],
+  "_comingSoon": "Generic shop types for the app's \"Coming soon\" list — illustrative only, never real business names."
 }
