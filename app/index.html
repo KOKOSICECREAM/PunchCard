@@ -304,6 +304,21 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
 .bal-number{font-size:52px!important;}
 .btn-primary,.btn-cta-repeat,.btn-done{border-radius:14px!important;}
 .nav-item.active .nav-icon{background:var(--accent-soft);}
+.hdr-merchant,.pc-hero-merchant{cursor:pointer;}
+.hdr-merchant::after{content:'';width:6px;height:6px;border-right:1.5px solid var(--ink-mid);border-bottom:1.5px solid var(--ink-mid);transform:rotate(45deg);margin:-3px 2px 0 1px;flex-shrink:0;}
+.pc-hero-merchant::after{content:'Switch';font-size:11px;font-weight:600;color:var(--coral-deep);margin-left:8px;}
+#merchant-sheet{max-height:82%;overflow-y:auto;}
+.ms-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-light);margin:4px 0 8px;}
+.ms-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:14px;margin-bottom:8px;background:var(--white);cursor:pointer;width:100%;text-align:left;font:inherit;color:inherit;}
+.ms-item img{width:44px;height:44px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px var(--border);flex-shrink:0;}
+.ms-item .t{flex:1;min-width:0;} .ms-item b{display:block;font-size:14px;color:var(--ink);} .ms-item small{display:block;font-size:12px;color:var(--ink-mid);}
+.ms-item .tok{font:600 11px var(--mono);color:var(--coral-deep);background:var(--accent-soft);padding:4px 8px;border-radius:999px;}
+.ms-item.current{border-color:var(--coral-deep);box-shadow:0 0 0 3px var(--accent-soft);}
+.ms-item.current .tok::after{content:' ✓';}
+.ms-soon{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px;}
+.ms-soon div{border:1.5px dashed var(--border-mid);border-radius:14px;padding:12px 6px;text-align:center;color:var(--ink-mid);font-size:11px;font-weight:600;}
+.ms-soon span{display:block;font-size:22px;margin-bottom:4px;filter:grayscale(.2);opacity:.85;}
+.ms-join{display:block;text-align:center;font-size:12px;font-weight:600;color:var(--coral-deep);text-decoration:none;padding:10px;border-radius:12px;background:var(--accent-soft);}
 .cc-merchant{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--white);}
 .cc-merchant img{width:48px;height:48px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px var(--border);}
 .cc-merchant .who{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-light);}
@@ -355,6 +370,18 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
   </div>
 </div>
 
+<!-- Merchant switcher: every PunchCard merchant, plus what's coming -->
+<div class="backdrop" id="merchant-back" onclick="hideMerchants()" style="z-index:250;"></div>
+<div class="tok-sheet" id="merchant-sheet" style="z-index:300;padding-bottom:40px;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Merchants</div>
+  <div class="ms-label">On PunchCard</div>
+  <div id="ms-live"></div>
+  <div class="ms-label" style="margin-top:14px;">Coming soon</div>
+  <div class="ms-soon" id="ms-soon"></div>
+  <a class="ms-join" href="https://punchcard.club" target="_blank" rel="noopener">Run a local business? Join PunchCard &rarr;</a>
+</div>
+
 <!-- CHANGE 2 of 3: Wallet choice bottom sheet -->
 <div class="backdrop" id="wallet-choice-back" onclick="hideWalletOptions()" style="z-index:250;"></div>
 <div class="tok-sheet" id="wallet-choice-sheet" style="z-index:300;padding-bottom:48px;">
@@ -400,7 +427,7 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
 <div id="connect-gate" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
   <div class="pc-hero">
     <div class="pc-hero-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><span class="pc-word">PunchCard</span></div>
-    <div class="pc-hero-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><div><b>{{name}}</b><small>Pay &amp; earn with {{sym}}</small></div></div>
+    <div class="pc-hero-merchant" onclick="showMerchants()" role="button" aria-label="Switch merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><div><b>{{name}}</b><small>Pay &amp; earn with {{sym}}</small></div></div>
   </div>
   <div class="stripe"><div class="s1"></div><div class="s2"></div><div class="s3"></div><div class="s4"></div><div class="s5"></div><div class="s6"></div></div>
   <div class="gate-bottom">
@@ -463,7 +490,7 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
   <!-- HOME -->
   <div class="screen active" id="screen-home">
     <div class="hdr" style="background:var(--coral);">
-      <div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div>
+      <div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant" onclick="showMerchants()" role="button" aria-label="Switch merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div>
       <div class="hdr-right">
         <div class="pill pill-dark" id="net-label">Base</div>
         <div class="pill pill-white" id="wallet-pill">0x&#8230;</div>
@@ -502,7 +529,7 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
 
   <!-- BUY -->
   <div class="screen" id="screen-buy">
-    <div class="hdr" style="background:var(--sand);"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div><div class="hdr-right"><div class="pill pill-dark" id="buy-pill">0x&#8230;</div></div></div>
+    <div class="hdr" style="background:var(--sand);"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant" onclick="showMerchants()" role="button" aria-label="Switch merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div><div class="hdr-right"><div class="pill pill-dark" id="buy-pill">0x&#8230;</div></div></div>
     <div class="stripe stripe-thin"><div class="s5"></div><div class="s3"></div><div class="s2"></div><div class="s1"></div><div class="s4"></div><div class="s6"></div></div>
     <div class="backdrop" id="tok-back" onclick="closeTokSheet()"></div>
     <div class="tok-sheet" id="tok-sheet">
@@ -542,7 +569,7 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
 
   <!-- PAY -->
   <div class="screen" id="screen-pay">
-    <div class="hdr" style="background:var(--lavender);"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div><div class="hdr-right"><div class="pill pill-white">Pay at shop</div></div></div>
+    <div class="hdr" style="background:var(--lavender);"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant" onclick="showMerchants()" role="button" aria-label="Switch merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div><div class="hdr-right"><div class="pill pill-white">Pay at shop</div></div></div>
     <div class="stripe stripe-thin"><div class="s4"></div><div class="s1"></div><div class="s5"></div><div class="s2"></div><div class="s6"></div><div class="s3"></div></div>
     <div class="pay-state active" id="pay-scan">
       <div class="scan-box">
@@ -619,7 +646,7 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
 
   <!-- QR -->
   <div class="screen" id="screen-qr">
-    <div class="hdr" style="background:var(--sand);"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div><div class="hdr-right"><div class="pill pill-dark">Card &amp; cash QR</div></div></div>
+    <div class="hdr" style="background:var(--sand);"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><div class="hdr-merchant" onclick="showMerchants()" role="button" aria-label="Switch merchant"><img data-pc-logo src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><span>{{short}} · {{sym}}</span></div></div><div class="hdr-right"><div class="pill pill-dark">Card &amp; cash QR</div></div></div>
     <div class="stripe stripe-thin"><div class="s5"></div><div class="s1"></div><div class="s4"></div><div class="s3"></div><div class="s2"></div><div class="s6"></div></div>
     <div class="info-block" style="background:var(--apricot);margin:16px 20px 0;"><div class="ib-title">Card &amp; cash reward QR</div><div class="ib-text">Paid with Square or cash? Show this QR to the {{short}} team and they'll send {{sym}} to your wallet. Paid with {{sym}}? Your rewards were sent automatically — no QR needed.</div></div>
     <div class="qr-card">
@@ -722,7 +749,7 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
 // runs. The merchant comes from ?m=<slug>. A payment link with no ?m= is a KOKOS link
 // from before PunchCard hosted the app, so it is KOKOS by definition — never "whichever
 // merchant was used last".
-const PC_REGISTRY={"_about":"PunchCard merchant registry: the one place a merchant's public details live. The PunchCard app, each merchant page and each POS read it. Trust still comes from the chain: a merchant here must also be registered on the PunchCard Network (WindDownController.isRegistered), which pages check before showing it as verified. The app keeps an embedded copy for its synchronous start-up; test/site/merchants.py checks the two match.","version":1,"network":{"chainId":8453,"windDownController":"0x7dbd9CA01fa60aB480f3A4AE7892970C97EF0cac","router":"0xB64A96f69bE171FE2d81F03b6D3c4029367d4f08","usdc":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","weth":"0x4200000000000000000000000000000000000006","uniswapSwapRouter":"0x2626664c2603336E57B271c5C0b26F421741e481"},"merchants":[{"slug":"kokos-skoop","name":"KOKOS Ice Cream","shortName":"KOKOS","city":"Nashville, TN","tagline":"Nashville's original plant-based scoop shop","website":"https://kokosicecream.com","accent":"#e8876a","token":{"symbol":"SKOOP","address":"0xBa147713adF122A8Fc224e52Cb431D7919831939","decimals":6,"logo":"/kokos-skoop/skoop.png","totalSupply":100000000},"pools":{"usdc":"0x5185bef315Dee41727865AC26243bD62008d11b1","eth":"0x116d0a851632958AFD3B1a0B751089392bcb4e6A","fee":10000},"payments":{"escrow":"0x46D5520Ef1DeACd6cA332A9510141b28dC6141a1","treasury":"0xc35397cBDbcdb24705bc09917f9DdF9E6970C904","owner":"0x001b3fB36FE7E3a741A15Ed8bE68610442E3a50b","storeId":"KOKOS_NASHVILLE_01","terminals":{"POS_1":"0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B"},"refundWindowHours":24},"rewards":{"vault":"0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2","sources":["0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B","0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2"],"rateToken":0.1,"rateUsdc":0.05,"rateCashCard":0.05},"pos":"/kokos-skoop/pos/","page":"/kokos-skoop/"}]};
+const PC_REGISTRY={"_about":"PunchCard merchant registry: the one place a merchant's public details live. The PunchCard app, each merchant page and each POS read it. Trust still comes from the chain: a merchant here must also be registered on the PunchCard Network (WindDownController.isRegistered), which pages check before showing it as verified. The app keeps an embedded copy for its synchronous start-up; test/site/merchants.py checks the two match.","version":1,"network":{"chainId":8453,"windDownController":"0x7dbd9CA01fa60aB480f3A4AE7892970C97EF0cac","router":"0xB64A96f69bE171FE2d81F03b6D3c4029367d4f08","usdc":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","weth":"0x4200000000000000000000000000000000000006","uniswapSwapRouter":"0x2626664c2603336E57B271c5C0b26F421741e481"},"merchants":[{"slug":"kokos-skoop","name":"KOKOS Ice Cream","shortName":"KOKOS","city":"Nashville, TN","tagline":"Nashville's original plant-based scoop shop","website":"https://kokosicecream.com","accent":"#e8876a","token":{"symbol":"SKOOP","address":"0xBa147713adF122A8Fc224e52Cb431D7919831939","decimals":6,"logo":"/kokos-skoop/skoop.png","totalSupply":100000000},"pools":{"usdc":"0x5185bef315Dee41727865AC26243bD62008d11b1","eth":"0x116d0a851632958AFD3B1a0B751089392bcb4e6A","fee":10000},"payments":{"escrow":"0x46D5520Ef1DeACd6cA332A9510141b28dC6141a1","treasury":"0xc35397cBDbcdb24705bc09917f9DdF9E6970C904","owner":"0x001b3fB36FE7E3a741A15Ed8bE68610442E3a50b","storeId":"KOKOS_NASHVILLE_01","terminals":{"POS_1":"0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B"},"refundWindowHours":24},"rewards":{"vault":"0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2","sources":["0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B","0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2"],"rateToken":0.1,"rateUsdc":0.05,"rateCashCard":0.05},"pos":"/kokos-skoop/pos/","page":"/kokos-skoop/"}],"comingSoon":[{"kind":"Coffee shop","emoji":"\u2615"},{"kind":"Bakery","emoji":"\ud83e\udd50"},{"kind":"Bookstore","emoji":"\ud83d\udcda"},{"kind":"Taco spot","emoji":"\ud83c\udf2e"},{"kind":"Record shop","emoji":"\ud83d\udcbf"},{"kind":"Yoga studio","emoji":"\ud83e\uddd8"}],"_comingSoon":"Generic shop types for the app's \"Coming soon\" list \u2014 illustrative only, never real business names."};
 const PC_M=(()=>{
   const q=new URLSearchParams(location.search);
   let slug=q.get('m');
@@ -833,6 +860,24 @@ function updateSkoopBalanceDisplay(){
   valEl.textContent=(window._skoopBal*skoopPriceUSD).toLocaleString("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2});
   const sub=document.getElementById('home-skoop-price');
   if(sub&&skoopPriceUSD>0)sub.textContent='$'+skoopPriceUSD.toFixed(6);
+}
+
+// ── MERCHANT SWITCHER ─────────────────────────────────────────────────────────
+// Every merchant's config is fixed at page load (see PC_M), so switching reloads the app as
+// that merchant. A payment in progress (?d=) is dropped: it belongs to the shop it was for.
+function showMerchants(){
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  document.getElementById('ms-live').innerHTML=PC_REGISTRY.merchants.map(m=>
+    `<button class="ms-item${m.slug===PC_M.slug?' current':''}" onclick="switchMerchant('${esc(m.slug)}')">
+      <img src="${esc(m.token.logo)}" alt=""><div class="t"><b>${esc(m.name)}</b><small>${esc(m.city)}</small></div><span class="tok">${esc(m.token.symbol)}</span></button>`).join('');
+  document.getElementById('ms-soon').innerHTML=(PC_REGISTRY.comingSoon||[]).map(c=>`<div><span>${esc(c.emoji)}</span>${esc(c.kind)}</div>`).join('');
+  document.getElementById('merchant-sheet').classList.add('open');document.getElementById('merchant-back').classList.add('open');
+}
+function hideMerchants(){document.getElementById('merchant-sheet').classList.remove('open');document.getElementById('merchant-back').classList.remove('open');}
+function switchMerchant(slug){
+  if(slug===PC_M.slug){hideMerchants();return;}
+  try{localStorage.setItem('pc-merchant',slug);}catch(e){}
+  location.href=location.pathname+'?m='+encodeURIComponent(slug);
 }
 
 // ── WALLET CONNECTION ─────────────────────────────────────────────────────────

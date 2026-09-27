@@ -5,7 +5,8 @@
 // PunchCard app (was the KOKOS customer dapp; its skoop-v1..v10 history lives in the
 // KOKOS website repo).
 // v1 2026-09-27: first PunchCard build — merchant-aware, PunchCard branding.
-const CACHE='pc-app-v1';
+// v2 2026-09-27: merchant switcher with a Coming soon list.
+const CACHE='pc-app-v2';
 
 // Third-party libs are version-pinned URLs — safe to serve from cache forever.
 const CDN=[
