@@ -170,7 +170,18 @@ contract VerifyManualSuite is Script {
     function _checkSupplyAndAllocations(Inputs memory i) private {
         console2.log("[3] supply and allocations");
         uint256 supply = IV_ERC20(i.token).totalSupply();
-        _eq("total supply", supply, TOTAL_SUPPLY, true);
+        // At most TOTAL_SUPPLY, not exactly it. The token has no mint and burns by design —
+        // payment settlement, the SKOOP side of every LP fee — so an exact-equality check
+        // fails a correct token the first time anything burns. SKOOP's did: a live locker
+        // test burned 0.020618 on 2026-09-26 and this line refused it. More than
+        // TOTAL_SUPPLY is still fatal: no MerchantToken can get there, so it is a wrong token.
+        if (supply > TOTAL_SUPPLY) {
+            _fail(string.concat("total supply is ", _amt(supply), ", above ", _amt(TOTAL_SUPPLY), " - not this token"));
+        } else if (supply == TOTAL_SUPPLY) {
+            console2.log(string.concat("    total supply: ", _amt(supply)));
+        } else {
+            console2.log(string.concat("    total supply: ", _amt(supply), "  (", _amt(TOTAL_SUPPLY - supply), " burned since mint)"));
+        }
 
         _alloc(i, "escrow  ", i.escrow,   REWARDS_ALLOC);
         _alloc(i, "vesting ", i.vesting,  TEAM_ALLOC);

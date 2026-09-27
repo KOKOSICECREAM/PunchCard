@@ -114,16 +114,40 @@ tx $OWNER $SKOOP "transfer(address,uint256)" $TREASURY $TSY_AMT
 echo "treasury funded with $(skoop $TSY_AMT) (target 10,000,000 — short by $(skoop $((10000000000000-TSY_AMT))))"
 
 # ── step 5: the live pools go into the locker, then the reserve, then initializeLP ──
-say "Step 5 — move the seeded positions and the reserve into the locker"
-for id in $USDC_NFT $ETH_NFT; do        # uncollected fees first: they belong to the LP wallet, not the locker
-  tx $LP_WALLET $NPM "collect((uint256,address,uint128,uint128))" "($id,$LP_WALLET,340282366920938463463374607431768211455,340282366920938463463374607431768211455)" "${NESTED[@]}"
-  tx $LP_WALLET $NPM "transferFrom(address,address,uint256)" $LP_WALLET $LOCKER $id
-done
-# The reserve is what the LP wallet held BEFORE collecting — the collected fees are its own.
-tx $LP_WALLET $SKOOP "transfer(address,uint256)" $LOCKER $LP_BAL
-tx $ACTIVATOR $LOCKER "initializeLP(uint256,uint256,uint24,uint24)" $USDC_NFT $ETH_NFT 10000 10000 "${NESTED[@]}"
-echo "locker owns #$USDC_NFT: $(call $NPM 'ownerOf(uint256)(address)' $USDC_NFT)"
+say "Step 5 — option B: two ~\$10 starter positions + the reserve into the locker; the real LP stays in the LP wallet"
+# Decided 2026-09-26. registerManual checks codehashes, not liquidity amounts, and the router
+# reads only the fee tier from the locker and trades against the WHOLE pool — so SKOOP can be on
+# the network with small starter positions in its locker while the real $3k positions
+# (#6100109, #6100112) stay in the LP wallet, withdrawable in any amount, earning KOKOS their
+# fees. Their liquidity can move in later through locker.addLiquidity (reserve + owner's pair).
+FULL=(-887200 887200)                              # full range at the 1% tier's 200 spacing
+DEADLINE=$(( $(cast block --rpc-url "$RPC" -f timestamp) + 1200 ))
+mint(){  # pair pairAmt skoopDesired pairMin skoopMin -> prints the new tokenId
+  local out st id
+  out=$(cast send --unlocked --from $LP_WALLET --rpc-url "$RPC" $NPM \
+    "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))" \
+    "($1,$SKOOP,10000,${FULL[0]},${FULL[1]},$2,$3,$4,$5,$LP_WALLET,$DEADLINE)" "${NESTED[@]}" --json)
+  st=$(echo "$out" | python3 -c "import sys,json;print(int(json.load(sys.stdin)['status'],16))")
+  [ "$st" = 1 ] || { echo "  ✗ mint FAILED"; exit 1; }
+  echo "$out" | python3 -c "
+import sys,json
+r=json.load(sys.stdin); T='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+print(next(int(l['topics'][3],16) for l in r['logs'] if l['address'].lower()=='$NPM'.lower() and l['topics'][0]==T and int(l['topics'][1],16)==0))"; }
+tx $LP_WALLET $SKOOP "approve(address,uint256)" $NPM 30000000000
+tx $LP_WALLET $USDC  "approve(address,uint256)" $NPM 10000000
+tx $LP_WALLET $WETH  "deposit()" --value 0.004ether
+tx $LP_WALLET $WETH  "approve(address,uint256)" $NPM 4000000000000000
+# USDC is the limiting side (10 USDC); SKOOP desired is set high and the unused part stays put.
+NEW_USDC_NFT=$(mint $USDC 10000000 11000000000 9500000 9000000000)
+NEW_ETH_NFT=$(mint $WETH 4000000000000000 12500000000 3800000000000000 9000000000)
+echo "starter positions: USDC #$NEW_USDC_NFT, ETH #$NEW_ETH_NFT (real #$USDC_NFT / #$ETH_NFT stay in the LP wallet)"
+for id in $NEW_USDC_NFT $NEW_ETH_NFT; do tx $LP_WALLET $NPM "transferFrom(address,address,uint256)" $LP_WALLET $LOCKER $id; done
+RESERVE=$(call $SKOOP 'balanceOf(address)(uint256)' $LP_WALLET | num)     # all SKOOP the LP wallet has left
+tx $LP_WALLET $SKOOP "transfer(address,uint256)" $LOCKER $RESERVE
+tx $ACTIVATOR $LOCKER "initializeLP(uint256,uint256,uint24,uint24)" $NEW_USDC_NFT $NEW_ETH_NFT 10000 10000 "${NESTED[@]}"
+echo "locker owns #$NEW_USDC_NFT: $(call $NPM 'ownerOf(uint256)(address)' $NEW_USDC_NFT) · #$NEW_ETH_NFT: $(call $NPM 'ownerOf(uint256)(address)' $NEW_ETH_NFT)"
 echo "locker reserve: $(skoop "$(call $SKOOP 'balanceOf(address)(uint256)' $LOCKER | num)")"
+echo "real positions still in the LP wallet: #$USDC_NFT $(call $NPM 'ownerOf(uint256)(address)' $USDC_NFT) · #$ETH_NFT $(call $NPM 'ownerOf(uint256)(address)' $ETH_NFT)"
 
 say "Step 5b — activate all four (starts every clock)"
 for c in $ESCROW $VESTING $TREASURY $LOCKER; do tx $ACTIVATOR $c "activate()"; done

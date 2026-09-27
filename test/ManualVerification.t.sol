@@ -201,6 +201,20 @@ contract ManualVerificationTest is Test {
         emit log("a position the locker does not own fails verification");
     }
 
+    /// Burning is how this token is meant to shrink, so a burn must not fail verification.
+    /// The check used to require totalSupply == 100M exactly; SKOOP failed it after a live
+    /// locker test burned 0.020618 in LP fees.
+    function test_aBurnedSupplyStillVerifies() public {
+        if (!forked) { vm.skip(true); }
+
+        vm.prank(locker);
+        ERC20Burnable(token).burn(20_618);       // 0.020618 — the amount SKOOP's test burned
+
+        _env();                                  // pilot: the reserve is 0.020618 short, a warning
+        v.run();                                 // must not revert
+        emit log("a supply below 100M after a burn verifies");
+    }
+
     /// The mode difference, isolated: a shortfall warns in pilot and fails in strict.
     function test_pilotToleratesAShortfallAndStrictDoesNot() public {
         if (!forked) { vm.skip(true); }
