@@ -6,7 +6,8 @@
 // KOKOS website repo).
 // v1 2026-09-27: first PunchCard build — merchant-aware, PunchCard branding.
 // v2 2026-09-27: merchant switcher with a Coming soon list.
-const CACHE='pc-app-v2';
+// v3 2026-09-27: Shops tab and Your cards (every merchant's balance); WalletConnect session restore.
+const CACHE='pc-app-v3';
 
 // Third-party libs are version-pinned URLs — safe to serve from cache forever.
 const CDN=[

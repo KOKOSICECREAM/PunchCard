@@ -305,6 +305,21 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
 .btn-primary,.btn-cta-repeat,.btn-done{border-radius:14px!important;}
 .nav-item.active .nav-icon{background:var(--accent-soft);}
 .hdr-merchant,.pc-hero-merchant{cursor:pointer;}
+/* Your cards: one card per PunchCard merchant with the wallet's balance of its token */
+.wc-wrap{padding:16px 16px 6px;display:flex;flex-direction:column;gap:8px;}
+.wc-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 4px 2px;}
+.wc-head b{font-size:15px;color:var(--ink);} .wc-head button{background:none;border:0;color:var(--coral-deep);font:600 12px var(--sans);cursor:pointer;padding:0;}
+.wc-card{display:flex;align-items:center;gap:12px;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:12px 14px;cursor:pointer;text-align:left;width:100%;font:inherit;color:inherit;}
+.wc-card img{width:44px;height:44px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1px var(--border);flex-shrink:0;}
+.wc-card .t{flex:1;min-width:0;} .wc-card .n{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wc-card .c{font-size:11px;color:var(--ink-light);}
+.wc-card .b{text-align:right;} .wc-card .b .v{font:600 14px var(--mono);color:var(--ink);} .wc-card .b .u{font-size:11px;color:var(--ink-mid);}
+.wc-card.current{border-color:var(--coral-deep);box-shadow:0 0 0 3px var(--accent-soft);}
+.wc-card .act{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--coral-deep);background:var(--accent-soft);border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:2px;}
+.wc-more{display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed var(--border-mid);border-radius:16px;padding:12px;color:var(--ink-mid);font:600 12px var(--sans);background:none;cursor:pointer;width:100%;}
+.shops-intro{padding:16px 20px 0;font-size:13px;color:var(--ink-mid);line-height:1.6;}
+.shops-soon{padding:4px 16px 0;}
+
 .hdr-merchant::after{content:'';width:6px;height:6px;border-right:1.5px solid var(--ink-mid);border-bottom:1.5px solid var(--ink-mid);transform:rotate(45deg);margin:-3px 2px 0 1px;flex-shrink:0;}
 .pc-hero-merchant::after{content:'Switch';font-size:11px;font-weight:600;color:var(--coral-deep);margin-left:8px;}
 #merchant-sheet{max-height:82%;overflow-y:auto;}
@@ -521,9 +536,25 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
       <button class="action-cell ac-apricot" onclick="openPriceModal()"><div class="ac-icon">&#128200;</div><div><div class="ac-label">{{sym}} price</div><div class="ac-sub" id="home-skoop-price">Live on Base</div></div></button>
     </div>
     <div class="stripe stripe-thin"><div class="s2"></div><div class="s4"></div><div class="s1"></div><div class="s5"></div><div class="s3"></div><div class="s6"></div></div>
+    <div class="wc-wrap">
+      <div class="wc-head"><b>Your cards</b><button onclick="goTo('shops')">All shops &rarr;</button></div>
+      <div id="home-cards"></div>
+    </div>
     <div class="section-hdr"><div class="section-hdr-title">Recent activity</div></div>
     <div class="tx-list">
       <div class="tx-row"><div class="tx-dot td-mint" style="font-size:11px;">&#9203;</div><div class="tx-info"><div class="tx-name">Loading activity&hellip;</div><div class="tx-date">Checking recent rewards</div></div></div>
+    </div>
+  </div>
+
+  <!-- SHOPS: every PunchCard merchant, the wallet's balance of each, and what's coming -->
+  <div class="screen" id="screen-shops">
+    <div class="hdr"><div class="hdr-brand"><div class="pc-mark"><i></i><i></i><i></i><i></i></div><span class="pc-word">Shops</span></div><div class="hdr-right"><div class="pill pill-dark">PunchCard</div></div></div>
+    <div class="shops-intro">One wallet for every PunchCard shop. Tap a card to pay, buy and earn with that shop's token.</div>
+    <div class="wc-wrap"><div id="shops-cards"></div></div>
+    <div class="shops-soon">
+      <div class="ms-label" style="margin:10px 4px 8px;">Coming soon</div>
+      <div class="ms-soon" id="shops-soon"></div>
+      <a class="ms-join" href="https://punchcard.club" target="_blank" rel="noopener">Run a local business? Join PunchCard &rarr;</a>
     </div>
   </div>
 
@@ -652,6 +683,7 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
     <div class="qr-card">
       <div class="qr-eyebrow">Your wallet</div>
       <div class="qr-italic">Show to {{short}} to receive {{sym}}</div>
+      <div style="font-size:11px;color:var(--ink-light);text-align:center;margin-top:4px;">This address receives every PunchCard token.</div>
       <div id="my-qr-div"></div>
       <div class="qr-addr" id="qr-addr">Connect wallet to generate QR</div>
     </div>
@@ -661,6 +693,7 @@ em,.gate-tagline,.section-hdr-title,.gate-footer-cta p,.token-card-title,.qr-ita
 
 <div id="bottom-nav" style="display:none;">
   <button class="nav-item active" id="nav-home" onclick="goTo('home')"><div class="nav-icon">&#127968;</div><div class="nav-label">Home</div></button>
+  <button class="nav-item" id="nav-shops" onclick="goTo('shops')"><div class="nav-icon">&#127978;</div><div class="nav-label">Shops</div></button>
   <button class="nav-item" id="nav-buy" onclick="goTo('buy')"><div class="nav-icon">&#x1F4B1;</div><div class="nav-label">Buy</div></button>
   <button class="nav-item" id="nav-pay" onclick="goTo('pay')"><div class="nav-icon">&#128247;</div><div class="nav-label">Pay</div></button>
   <button class="nav-item" id="nav-qr" onclick="goTo('qr')"><div class="nav-icon">&#11035;</div><div class="nav-label">My QR</div></button>
@@ -873,6 +906,39 @@ function showMerchants(){
   document.getElementById('ms-soon').innerHTML=(PC_REGISTRY.comingSoon||[]).map(c=>`<div><span>${esc(c.emoji)}</span>${esc(c.kind)}</div>`).join('');
   document.getElementById('merchant-sheet').classList.add('open');document.getElementById('merchant-back').classList.add('open');
 }
+// Your cards: every merchant's token balance for this wallet, and its dollar value from that
+// merchant's USDC pool. Read-only; a few calls per merchant on the shared read provider.
+let _cardsBusy=false;
+async function loadWalletCards(){
+  const targets=['home-cards','shops-cards'].map(id=>document.getElementById(id)).filter(Boolean);
+  if(!targets.length||_cardsBusy)return;_cardsBusy=true;
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const ABI_P=['function slot0() view returns (uint160,int24,uint16,uint16,uint16,uint8,bool)','function token0() view returns (address)'];
+  try{
+    const rp=rpc();
+    const rows=await Promise.all(PC_REGISTRY.merchants.map(async m=>{
+      let bal=null,px=null;
+      try{if(userAddr)bal=parseFloat(ethers.formatUnits(await new ethers.Contract(m.token.address,ABI_ERC20,rp).balanceOf(userAddr),m.token.decimals));}catch(e){}
+      try{const p=new ethers.Contract(m.pools.usdc,ABI_P,rp);const[s0,t0]=await Promise.all([p.slot0(),p.token0()]);
+          const r=(Number(s0[0])/2**96)**2;const perUsdcRaw=t0.toLowerCase()===m.token.address.toLowerCase()?1/r:r;px=1/(perUsdcRaw*10**(6-m.token.decimals));}catch(e){}
+      return {m,bal,px};
+    }));
+    const card=({m,bal,px})=>{
+      const cur=m.slug===PC_M.slug;
+      const v=bal===null?'\u2014':bal.toLocaleString('en-US',{maximumFractionDigits:bal<10?2:0});
+      const u=bal!==null&&px?'\u2248 $'+(bal*px).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+      return `<button class="wc-card${cur?' current':''}" onclick="${cur?"goTo('home')":"switchMerchant('"+esc(m.slug)+"')"}">
+        <img src="${esc(m.token.logo)}" alt=""><div class="t"><div class="n">${esc(m.name)}</div><div class="c">${esc(m.city)}${cur?'<span class="act">Active</span>':''}</div></div>
+        <div class="b"><div class="v">${v} ${esc(m.token.symbol)}</div><div class="u">${u}</div></div></button>`;
+    };
+    const list=rows.map(card).join('');
+    const more=`<button class="wc-more" onclick="goTo('shops')">&#10024; More shops coming soon</button>`;
+    const home=document.getElementById('home-cards');if(home)home.innerHTML=list+(PC_REGISTRY.merchants.length<4?more:'');
+    const shops=document.getElementById('shops-cards');if(shops)shops.innerHTML=list;
+    const soon=document.getElementById('shops-soon');
+    if(soon)soon.innerHTML=(PC_REGISTRY.comingSoon||[]).map(c=>`<div><span>${esc(c.emoji)}</span>${esc(c.kind)}</div>`).join('');
+  }finally{_cardsBusy=false;}
+}
 function hideMerchants(){document.getElementById('merchant-sheet').classList.remove('open');document.getElementById('merchant-back').classList.remove('open');}
 function switchMerchant(slug){
   if(slug===PC_M.slug){hideMerchants();return;}
@@ -964,17 +1030,39 @@ async function openWalletModal(){
   showWalletOptions();
 }
 
+function wcInit(showQrModal){
+  const WCEthProvider=window["@walletconnect/ethereum-provider"]?.EthereumProvider;
+  return WCEthProvider.init({
+    projectId:'c5be163298ba25127afa6b7529e29059',chains:[8453],showQrModal,
+    qrModalOptions:{themeMode:'light',themeVariables:{'--wcm-accent-color':'#c0492a','--wcm-background-color':'#ffffff'}},
+    metadata:{name:'PunchCard',description:'Buy, earn and pay with local merchant tokens',url:'https://punchcard.club/app/',icons:['https://punchcard.club/app/icon-512.png']}
+  });
+}
+// A WalletConnect session outlives the page (the provider keeps it in localStorage). Pick it
+// back up silently on load, so opening the installed app — or switching shop, which reloads
+// it as the new merchant — does not ask the customer to connect again.
+async function restoreWalletConnect(){
+  try{
+    if(localStorage.getItem('pc-wc')!=='1'||userAddr)return;
+    if(!window["@walletconnect/ethereum-provider"]?.EthereumProvider)return;
+    const wcp=await wcInit(false);
+    if(!wcp.session||!wcp.accounts?.length){localStorage.removeItem('pc-wc');return;}
+    window._wcp=wcp;
+    provider=new ethers.BrowserProvider(wcp);signer=await provider.getSigner();userAddr=await signer.getAddress();
+    await onConnected();
+    wcp.on('disconnect',()=>{window._wcp=null;disconnectWallet();});
+    wcp.on('accountsChanged',a=>{if(a[0]){userAddr=a[0];updatePills();refreshBals();}});
+  }catch(e){}
+}
+
 async function connectWalletConnect(){
   const WCEthProvider=window["@walletconnect/ethereum-provider"]?.EthereumProvider;
   if(!WCEthProvider){showToast("WalletConnect not loaded \u2014 refresh","err");return;}
   try{
     showToast("Opening wallet...","");
-    const wcp=await WCEthProvider.init({
-      projectId:'c5be163298ba25127afa6b7529e29059',chains:[8453],showQrModal:true,
-      qrModalOptions:{themeMode:'light',themeVariables:{'--wcm-accent-color':'#c0492a','--wcm-background-color':'#ffffff'}},
-      metadata:{name:'PunchCard',description:'Buy, earn and pay with local merchant tokens',url:'https://punchcard.club/app/',icons:['https://punchcard.club/app/icon-512.png']}
-    });
+    const wcp=await wcInit(true);
     window._wcp=wcp;await wcp.enable();
+    try{localStorage.setItem('pc-wc','1');}catch(e){}
     provider=new ethers.BrowserProvider(wcp);signer=await provider.getSigner();userAddr=await signer.getAddress();
     await onConnected();
     wcp.on('disconnect',()=>{window._wcp=null;disconnectWallet();});
@@ -989,6 +1077,7 @@ async function connectWalletConnect(){
 async function disconnectWallet(){
   stopScan();stopExpiryCountdown();
   try{if(window._wcp)await window._wcp.disconnect();}catch(e){}
+  try{localStorage.removeItem('pc-wc');}catch(e){}
   try{if(window._cbProvider)await window._cbProvider.disconnect();}catch(e){}
   if(window._balancePollTimer){clearInterval(window._balancePollTimer);window._balancePollTimer=null;}
   window._wcp=null;window._cbProvider=null;provider=null;signer=null;userAddr=null;
@@ -1075,6 +1164,7 @@ async function refreshBals(){
   try{const eb=await readProvider.getBalance(userAddr);document.getElementById("bal-eth").textContent=parseFloat(ethers.formatEther(eb)).toFixed(4)+" ETH";}catch(e){}
   try{const uc=new ethers.Contract(CFG.USDC,ABI_ERC20,readProvider);document.getElementById("bal-usdc").textContent=parseFloat(ethers.formatUnits(await uc.balanceOf(userAddr),6)).toFixed(2)+" USDC";}catch(e){}
   await updateFromBal();
+  loadWalletCards().catch(()=>{});
   // Activity is a log scan — far heavier than a balance read. Refresh it on its own
   // slower cadence so the 30s balance poll doesn't reset the list to "Loading…".
   if(Date.now()-_lastActivityLoad>60000)loadActivityFeed({silent:true});
@@ -1253,7 +1343,9 @@ document.addEventListener('visibilitychange',async function(){
 });
 
 if(window.ethereum){
-  window.ethereum.request({method:'eth_accounts'}).then(async a=>{if(a.length)await connectInjected();}).catch(()=>{});
+  window.ethereum.request({method:'eth_accounts'}).then(async a=>{if(a.length)await connectInjected();else await restoreWalletConnect();}).catch(()=>restoreWalletConnect());
+}else{
+  restoreWalletConnect();
 }
 
 fetchEthPrice().catch(()=>{});
@@ -1913,6 +2005,7 @@ function goTo(name){
   document.querySelectorAll(".screen").forEach(s=>{s.scrollTop=0;});
   if(name!=="pay")stopScan();
   if(name==="buy")updateFromBal();
+  if(name==="shops")loadWalletCards().catch(()=>{});
   // Coming back to Pay with a live intent (e.g. after topping up on Buy) re-runs the
   // balance/allowance check so the button reflects the wallet as it is now.
   if(name==="pay"){
