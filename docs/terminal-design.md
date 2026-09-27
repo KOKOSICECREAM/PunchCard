@@ -68,7 +68,7 @@ funds return to the payer.
   - **60%** buys the merchant's token in its USDC pool; the tokens bought are **burned**.
   - **40%** becomes **POL**: half is swapped for the token and both halves are added to a
     full-range position in the merchant's USDC pool, held by the terminal.
-  - The split is a **constant**, identical for every merchant (KOKOS's treasury let the owner
+  - The split is a **constant** (decided 2026-09-26), identical for every merchant (KOKOS's treasury let the owner
     change it; the protocol's terms are not negotiable — same premise as 45/30/15/10).
   - The swaps pay the pool's fee, whose USDC side is PunchCard's network fee via the locker —
     commerce earns the network from merchant #1, as the README intends.
@@ -126,8 +126,9 @@ immutable metadata deliberately omits because a shop can move or rename, live on
 - Should `pay` accept any network token and swap internally, so cross-merchant spending is one
   transaction? Better UX, more surface in the contract that holds money.
 - Deployment fee and who pays gas for `createTerminal`.
-- What happens to the POL position at wind-down: burn the token side and return USDC like the
-  locker, or leave it in the pool as a permanent floor (the locker already leaves 10% for good).
+- ~~What happens to the POL position at wind-down~~ — **decided 2026-09-26: it stays in the pool
+  for good**, a permanent liquidity floor in the spirit of the locker's 10%. Wind-down stops new
+  payments and settles open receipts; it never releases the POL.
 
 ## Sequencing
 
