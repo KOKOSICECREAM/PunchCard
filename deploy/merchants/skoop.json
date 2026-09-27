@@ -99,5 +99,118 @@
     "_ceiling_note": "The real constraint is NOT a 500,000 dailyCap. That figure appears in deploy/network/base-mainnet.json and deploy/merchants/_template.json and corresponds to no constant in any contract - grep DAILY_CAP returns nothing. The actual check is require(_perTxMax <= perDay * MAX_DRAWER_DAYS). With a 45,000,000 allocation over EMISSION_PERIOD = 1825 days, perDay = 24,657,534,246 base units (24,657.53 SKOOP) and MAX_DRAWER_DAYS = 14, so the ceiling is 345,205,479,444 base units = 345,205.48 SKOOP. A perTxMax of 500,000 SKOOP reverts at construction with 'Max above drawer ceiling'.",
     "perTxCeilingBaseUnits": "345205479444",
     "_settled_note": "Settled 2026-09-21. perTxFloor 1 = 0.000001 SKOOP, effectively no floor. perTxMax 50000000000 = 50,000 SKOOP, well clear of the 345,205.48 ceiling. Both adjustable via setPerTxBounds until wind-down, so these are starting values rather than commitments - unlike teamWallet and the suite addresses, which are permanent."
+  },
+  "preLaunchSpend": {
+    "_note": "Everything the owner wallet sent before the suite existed, read from every Transfer out of 0x5426... since the token's deploy block (51432107). 16 transfers; 100,000,000 - 30,455,917 = 69,544,083 remaining, which is what funds the suite.",
+    "liquidityWallet": {
+      "to": "0x6A9Ad1cE8d6256acd28fd8C50A6C72e0043C221F",
+      "amount": "30000000",
+      "block": 51797570,
+      "purpose": "the LP allocation: 3M seeded into the 1% pools 2026-09-25, 27M reserve for the locker"
+    },
+    "airdrops": {
+      "_note": "Compensation to old KOKOS SKOOPS holders, 2026-09-25, blocks 51802176-51802692. Treasury-type spend made before the treasury existed.",
+      "total": "355917",
+      "count": 14,
+      "recipients": [
+        {
+          "to": "0x86C60670fb693364d4abE1028662F52b98F9a79e",
+          "amount": "110238",
+          "block": 51802176,
+          "tx": "0xd101fcbbc75af9c4ab3d43ca6deedc2ada4fa5080e36d70668f80e15ddb17cf2"
+        },
+        {
+          "to": "0x8631A7Fe663ce6856756B8E12578341B8598C95e",
+          "amount": "101819",
+          "block": 51802257,
+          "tx": "0x27f3b27dcfcf43e52b1ac49eb2a3d58c614a436df40e10fb34c954f3de04c4cd"
+        },
+        {
+          "to": "0xa2471C84429819A7818c8615164d21Db789cB45b",
+          "amount": "56152",
+          "block": 51802290,
+          "tx": "0x9289e3ee3693ce078139060bad25401be6dfdecddc52035e7b2ee3b55d9ca811"
+        },
+        {
+          "to": "0x1FE392a95BDf927f385c3e63B978D92b269281e4",
+          "amount": "29822",
+          "block": 51802324,
+          "tx": "0xfeb125de1802aed0c0c44d5e18fb70d7ce7f1c5018e4cb16a65b009044a02586"
+        },
+        {
+          "to": "0xf580283D9bE13500cFe129e2f07EDeFDB5495f47",
+          "amount": "16764",
+          "block": 51802352,
+          "tx": "0x32ccdbac5e1d84897eb585436f01c2bffbcd33118c19a40bf340da9cc6c1d5bb"
+        },
+        {
+          "to": "0xd62c9C14fE1f4338AdDA902DCdCb5370939726C0",
+          "amount": "14358",
+          "block": 51802391,
+          "tx": "0x021a3646671aafb0fe09a2c836f11f9e86b06a990ff52cf10134c00fe856d01e"
+        },
+        {
+          "to": "0x7FB1fad795ddD0AcD186e523b34804D6419Bc77f",
+          "amount": "12577",
+          "block": 51802417,
+          "tx": "0x191e420f64c9f56075aa66d65449ff0c16797dbc4afb781072613e46a68f267f"
+        },
+        {
+          "to": "0xa22675c629743a126E136a80244ddd2c3b2A4b12",
+          "amount": "5074",
+          "block": 51802451,
+          "tx": "0x88228a6cd7cc21ef8a537b0b11717ed937d61060e7af5bd6a8cd7cfd4573d600"
+        },
+        {
+          "to": "0x6a946262897717613FEB0e1f7C98f6C66dF3619e",
+          "amount": "2622",
+          "block": 51802489,
+          "tx": "0xa2099e1c71f50616d64f223751bc73966331d8ca2e7a0fd21d6b27766bc03e9b"
+        },
+        {
+          "to": "0xbAcDf1f8a63D50BFB62c6b113049F44E1F231DB4",
+          "amount": "2398",
+          "block": 51802534,
+          "tx": "0x58c4f82de5f510843d039bc065a90b1cc3e5777dff10b0079e841cb06c8a7fde"
+        },
+        {
+          "to": "0x2Af040c15CEb2b35e9b7D96864C59C02958cdC20",
+          "amount": "1600",
+          "block": 51802569,
+          "tx": "0xe72f7290d96e36a9ede4f7a37ea0c78e7777387422fa59e15953b031a74018d0"
+        },
+        {
+          "to": "0xB671a3520BBC0C96AB9223a7A08bb987F2530cA3",
+          "amount": "1520",
+          "block": 51802649,
+          "tx": "0x91adc42c5ebcce600e8b164c798ee8b97efef72dc85c09f8438618d12fdcf1ba"
+        },
+        {
+          "to": "0xDe4f8Cc75529932ED7BEbE3190559476Fda9E3Ce",
+          "amount": "828",
+          "block": 51802660,
+          "tx": "0x05f9f1fb35cdb4581b9b61000fd28b092c0b7939e66e289e5eb5001288c3d8a9"
+        },
+        {
+          "to": "0x9F900dB8e1522c35F498B50e60d5031eEc4196D9",
+          "amount": "145",
+          "block": 51802692,
+          "tx": "0x0128c12a1934be449c03773cebf807a5eb8e40d3e159322a136e3e927487c330"
+        }
+      ]
+    },
+    "posFloat": {
+      "to": "0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B",
+      "amount": "100000",
+      "block": 51804551,
+      "purpose": "reward float for the interim KOKOS POS (legacy V3), which pays rewards by plain transfer"
+    }
+  },
+  "treasuryFunding": {
+    "decided": "2026-09-26",
+    "amount": "9544083",
+    "target": "10000000",
+    "short": "455917",
+    "_note": "Accepted: the treasury starts at 9,544,083 - what remains after escrow 45M and vesting 15M. The 455,917 gap is exactly the pre-launch spend above (355,917 airdrops + 100,000 POS float), all of it discretionary, treasury-type spending made before the treasury existed. VerifyManualSuite reports it as a pilot-mode warning; topping up from the 27M LP reserve would only move the warning to the locker."
   }
 }
