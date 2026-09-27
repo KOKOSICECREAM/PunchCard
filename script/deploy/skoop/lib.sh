@@ -38,8 +38,12 @@ GOVERNANCE=0x5478bab8986eb652D3083Db6bbb34FA3188AB9cb; GOV_PATH="m/44'/60'/41'/0
 
 # ── REQUIRED — not decided yet. Each step refuses to run while its values are empty. ──
 TEAM_WALLET=${SKOOP_TEAM_WALLET:-}          # Ledger #42, to be confirmed on the device. PERMANENT.
-ACTIVATOR=${SKOOP_ACTIVATOR:-}              # fresh launch-only key. PERMANENT on all four contracts.
-ACTIVATOR_KEYSTORE=pc-skoop-activator
+# Activator: the owner wallet, Ledger #40 (decided 2026-09-26). Its only powers are activate()
+# once per contract and initializeLP() once — both spent at step 5b, after which it can do
+# nothing. The old "fresh hot key" plan assumed the key had to outlive launch; under option B
+# it does not, and a Ledger beats a hot key.
+ACTIVATOR=${SKOOP_ACTIVATOR:-$OWNER}
+ACTIVATOR_SIGNER=${SKOOP_ACTIVATOR_SIGNER:-$OWNER_PATH}   # a Ledger path, or keystore:NAME
 OPERATOR=${SKOOP_OPERATOR:-}                # first till key on the escrow. Changeable later.
 REGISTRAR=${SKOOP_REGISTRAR:-}              # admits SKOOP. Must not be GOVERNANCE.
 REGISTRAR_PATH=${SKOOP_REGISTRAR_PATH:-}    # its Ledger path, if it is on the Ledger
@@ -103,6 +107,10 @@ use_signer(){
     same "$got" "$FROM" "Ledger $how"
     SIGN=(--ledger --mnemonic-derivation-path "$how")
   fi
+  # forge script: --sender not --from, and the Ledger flag is plural (--mnemonic-derivation-paths)
+  if   [ "${SKOOP_UNLOCKED:-0}" = 1 ]; then FORGE_SIGN=(--unlocked)
+  elif [[ "$how" == keystore:* ]];   then FORGE_SIGN=("${SIGN[@]}")
+  else FORGE_SIGN=(--ledger --mnemonic-derivation-paths "$how"); fi
   NONCE=$(cast nonce "$FROM" --block pending --rpc-url "$RPC")
   echo "  signer $FROM · nonce $NONCE · $(cast balance "$FROM" --ether --rpc-url "$RPC") ETH"
 }

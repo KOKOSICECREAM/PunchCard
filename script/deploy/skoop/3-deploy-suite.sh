@@ -1,24 +1,18 @@
 #!/usr/bin/env bash
-# Step 3 — deploy SKOOP's four suite contracts. Signer: the ACTIVATOR keystore, which the
-# contracts record as their activator forever (only it can initializeLP and activate()).
-#
-# Create the activator first, in a separate terminal:
-#   cast wallet new                                  # note the address and private key
-#   cast wallet import pc-skoop-activator --interactive
-# then fund it with ~0.001 ETH on Base.
+# Step 3 — deploy SKOOP's four suite contracts. Signer: the activator — the owner wallet,
+# Ledger #40 — which the contracts record as their activator forever (only it can
+# initializeLP and activate(); both are spent at step 5b).
 #
 # Every constructor value is read back on-chain afterwards and compared.
 source "$(dirname "$0")/lib.sh"
-need TEAM_WALLET ACTIVATOR OPERATOR
+need TEAM_WALLET OPERATOR
 
 say "Step 3 — deploy the suite"
 if [ -n "$(st_get suite.locker)" ]; then
   for k in escrow vesting treasury locker; do has_code "$(st_get suite.$k)" || die "state names suite.$k but it has no code"; done
   echo "  already deployed — checking it"
 else
-  use_signer "$ACTIVATOR" "keystore:$ACTIVATOR_KEYSTORE"
-  # forge script takes --sender, not cast's --from: in rehearsal mode pass only --unlocked.
-  if [ "${SKOOP_UNLOCKED:-0}" = 1 ]; then FORGE_SIGN=(--unlocked); else FORGE_SIGN=("${SIGN[@]}"); fi
+  use_signer "$ACTIVATOR" "$ACTIVATOR_SIGNER"
   wait_mined
   PC_TOKEN=$SKOOP PC_WIND_DOWN_CONTROLLER=$WDC PC_OWNER_WALLET=$OWNER PC_TEAM_WALLET=$TEAM_WALLET \
   PC_OPERATOR=$OPERATOR PC_POSITION_MANAGER=$NPM PC_USDC=$USDC PC_WETH=$WETH PC_FEE_RECIPIENT=$FEE_RECIPIENT \

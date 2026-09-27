@@ -11,7 +11,6 @@ BASE_RPC=${BASE_RPC:-https://mainnet.base.org}; PORT=${PORT:-8546}
 export SKOOP_RPC=http://127.0.0.1:$PORT SKOOP_UNLOCKED=1
 export SKOOP_STATE=${TMPDIR:-/tmp}/skoop-suite-rehearsal.json; rm -f "$SKOOP_STATE"
 export SKOOP_TEAM_WALLET=0x0000000000000000000000000000000000007Ea3
-export SKOOP_ACTIVATOR=0x00000000000000000000000000000000000Ac701
 export SKOOP_OPERATOR=0x0000000000000000000000000000000000000A11
 export SKOOP_REGISTRAR=0x00000000000000000000000000000000000Be617
 
@@ -19,7 +18,7 @@ anvil --fork-url "$BASE_RPC" --port "$PORT" --auto-impersonate --silent &
 ANVIL=$!; trap 'kill $ANVIL 2>/dev/null' EXIT
 for _ in $(seq 1 60); do cast block-number --rpc-url "$SKOOP_RPC" >/dev/null 2>&1 && break; sleep 0.5; done
 echo "fork block $(cast block-number --rpc-url "$SKOOP_RPC")"
-for a in $SKOOP_ACTIVATOR $SKOOP_REGISTRAR 0x5478bab8986eb652D3083Db6bbb34FA3188AB9cb 0x5426E59b783cd3b5083Ccc8cB571AA36e9f4a3be 0x6A9Ad1cE8d6256acd28fd8C50A6C72e0043C221F; do
+for a in $SKOOP_REGISTRAR 0x5478bab8986eb652D3083Db6bbb34FA3188AB9cb 0x5426E59b783cd3b5083Ccc8cB571AA36e9f4a3be 0x6A9Ad1cE8d6256acd28fd8C50A6C72e0043C221F; do
   cast rpc --rpc-url "$SKOOP_RPC" anvil_setBalance $a 0x2386F26FC10000 >/dev/null     # 0.01 ETH of gas on the fork
 done
 
