@@ -386,6 +386,11 @@ derive. The first is free and needs enforcing, or it is just a hope.
 
 ## PunchCard Terminal — the payment surface, deliberately out of scope
 
+> **Superseded as the plan by `docs/terminal-design.md` (2026-09-26):** one Terminal blueprint per
+> registered token, created from the token address alone; USDC payments follow the tokenomics (buy
+> and burn); rewards paid inside the payment. The caution below still holds — it is built after
+> SKOOP is registered.
+
 The protocol has no payment contract, and that is a boundary rather than an omission. It
 handles the token, its economics, its liquidity and its membership of the network. It does
 not handle the till.
