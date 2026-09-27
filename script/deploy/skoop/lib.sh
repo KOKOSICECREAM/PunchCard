@@ -44,9 +44,9 @@ TEAM_WALLET=${SKOOP_TEAM_WALLET:-}          # Ledger #42, to be confirmed on the
 # it does not, and a Ledger beats a hot key.
 ACTIVATOR=${SKOOP_ACTIVATOR:-$OWNER}
 ACTIVATOR_SIGNER=${SKOOP_ACTIVATOR_SIGNER:-$OWNER_PATH}   # a Ledger path, or keystore:NAME
-OPERATOR=${SKOOP_OPERATOR:-}                # first till key on the escrow. Changeable later.
-REGISTRAR=${SKOOP_REGISTRAR:-}              # admits SKOOP. Must not be GOVERNANCE.
-REGISTRAR_PATH=${SKOOP_REGISTRAR_PATH:-}    # its Ledger path, if it is on the Ledger
+OPERATOR=${SKOOP_OPERATOR:-0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B}   # the live POS signer, for now (2026-09-26). Owner can swap it.
+REGISTRAR=${SKOOP_REGISTRAR:-0x3B44CF955Db742aEbCDC3260cb2599eE209E90dC}  # Ledger #43, read from the device 2026-09-26. Not GOVERNANCE.
+REGISTRAR_PATH=${SKOOP_REGISTRAR_PATH:-"m/44'/60'/43'/0/0"}
 
 # ── suite parameters ───────────────────────────────────────────────────────────
 ESCROW_FUND=45000000000000                  # 45M

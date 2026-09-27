@@ -40,11 +40,11 @@
     "_owner_note": "Holds the entire supply. Becomes ownerWallet on the escrow, treasury and locker - immutable in all three - and is the only address that can ever call evacuateLP(). Highest-stakes key in the system.",
     "team": null,
     "_team_note": "IMMUTABLE FOREVER on VestingWallet - no update function exists anywhere. Receives the 15M team allocation over 730 days after a 30-day cliff. Wrong value here is only fixable by abandoning the vesting contract and redeploying, which is free before step 11 and impossible after.",
-    "operator": null,
+    "operator": "0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B",
     "_operator_note": "The first POS kiosk signer on RewardEscrow. NOT immutable - addOperator / removeOperator / setDrawerAllowance are all onlyOwner, which is the un-rotatable-key problem PunchCard fixed relative to live SKOOP. Safe to set provisionally.",
     "multisig": "0x5478bab8986eb652D3083Db6bbb34FA3188AB9cb",
     "_multisig_note": "PunchCard governance. Changed 2026-09-26 from 0x25CB3b3c06fD821136d66b03A2cF02CfC754ADDb (provided 2026-09-21, never used) to this key: Ledger account 41, path m/44'/60'/41'/0/0, verified on the device. An EOA, not a multisig contract - the parameter is only named multisig. Governs WindDownController and PunchCardRouter: codehash approval, registrars, factory authorisation, router params, and wind-down initiation. Transferable by proposeMultisig -> 48h -> acceptMultisig on both contracts; nothing enforces they agree, so move both together. Needs ETH for gas from step 7 (codehash approvals).",
-    "registrar": null,
+    "registrar": "0x3B44CF955Db742aEbCDC3260cb2599eE209E90dC",
     "_registrar_note": "The only address that can call registerManual at step 11. Set on the controller via setRegistrar, so it is changeable right up until it is used. Not needed until step 11.",
     "feeRecipient": "0x6588A99071e0e988071dA4252e9499ddFc752dd1",
     "_feeRecipient_note": "PunchCard fees, provided 2026-09-21, checksummed from 0x6588a99071e0e988071da4252e9499ddfc752dd1. EOA, nonce 0. Receives the network fee. IMMUTABLE on LPLockerPilot - cannot be redirected after step 3. Mutable on PunchCardRouter via setRouterParams.",
@@ -54,7 +54,9 @@
     "_factoryDeployer_note": "PunchCard deploy wallet - the PC_DEPLOYER argument at step 2, which is a DIFFERENT role from SKOOP's activator. It is written into approvedDeployers on StagedTokenFactoryBeta and authorises staging FUTURE merchants; approval is grantable and revocable by the multisig afterwards, so this one is not a permanent commitment. Same wallet that deployed the token. Fine here precisely because it is revocable.",
     "_multisig_decision": "Decided 2026-09-26: the beta runs with this Ledger key as governance, knowingly an EOA. Since c8b046e the controller and router hand governance over by propose -> 48h -> accept, so a move to a Safe later needs no redeploy. What that key can do once SKOOP is registered: approve codehashes, set registrars, authorise factories, and initiate a 365-day wind-down of a registered merchant, which freezes its rewards and treasury at once and cannot be cancelled. That last power is the reason to revisit this before production.",
     "_factoryDeployer_signer": "0xEfaf... signs with a Trezor (not the Ledger). Unchanged 2026-09-26.",
-    "_owner_decision": "Confirmed 2026-09-26: 0x5426... (Ledger account 40, m/44'/60'/40'/0/0) is SKOOP's admin wallet - ownerWallet on RewardEscrow, TreasuryTimelock and LPLockerPilot, immutable on all three. It adds/removes till operators, sets drawer allowances and per-reward bounds, pauses the escrow, requests treasury releases, and is the only key that can evacuate the LP."
+    "_owner_decision": "Confirmed 2026-09-26: 0x5426... (Ledger account 40, m/44'/60'/40'/0/0) is SKOOP's admin wallet - ownerWallet on RewardEscrow, TreasuryTimelock and LPLockerPilot, immutable on all three. It adds/removes till operators, sets drawer allowances and per-reward bounds, pauses the escrow, requests treasury releases, and is the only key that can evacuate the LP.",
+    "_operator_decision": "Decided 2026-09-26: the live POS signer is the escrow's first till operator for now. Changeable by the owner (addOperator/removeOperator).",
+    "_registrar_decision": "Decided 2026-09-26: Ledger account 43 (m/44'/60'/43'/0/0), read from the device. Separate from governance (#41) so reviewing (codehash approval) and admitting are two keys. Needs ~0.0003 ETH for registerManual."
   },
   "verifiedOnChain": {
     "supply": "100,000,000.000000 to the owner, nothing elsewhere",
