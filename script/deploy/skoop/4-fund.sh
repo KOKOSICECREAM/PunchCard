@@ -7,12 +7,14 @@ ESCROW=$(st_get suite.escrow); VESTING=$(st_get suite.vesting); TREASURY=$(st_ge
 
 say "Step 4 — fund the suite from the owner wallet"
 use_signer "$OWNER" "$OWNER_PATH"
-fund(){ local name=$1 to=$2 want=$3 have; have=$(bal $SKOOP "$to")
+# Every balance is read only after the RPC shows the previous transfer mined: the treasury
+# amount was once read one transfer stale (24,544,083 instead of 9,544,083) and reverted.
+fund(){ local name=$1 to=$2 want=$3 have; settle; have=$(bal $SKOOP "$to")
   if ge "$have" "$want"; then echo "  - $name already holds $(fmt6 "$have")"; return; fi
   tx "fund $name with $(fmt6 $((want-have)))" $SKOOP "transfer(address,uint256)" "$to" $((want-have)); }
 fund escrow  "$ESCROW"  $ESCROW_FUND
 fund vesting "$VESTING" $VESTING_FUND
-REST=$(bal $SKOOP $OWNER)
+settle; REST=$(bal $SKOOP $OWNER)
 if ! ge 0 "$REST"; then tx "fund treasury with the remaining $(fmt6 "$REST")" $SKOOP "transfer(address,uint256)" "$TREASURY" "$REST"
 else echo "  - owner holds nothing more; treasury holds $(fmt6 "$(bal $SKOOP "$TREASURY")")"; fi
 
