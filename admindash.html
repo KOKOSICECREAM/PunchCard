@@ -140,14 +140,51 @@
   .skeleton .v { color: transparent; background: var(--panel-2); border-radius: 6px; }
 
   @media (max-width: 900px) {
-    .app { grid-template-columns: 1fr; }
-    aside { position: sticky; top: 0; z-index: 10; height: auto; flex-direction: row; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; gap: 12px; border-right: 0; border-bottom: 1px solid var(--line); overflow: hidden; }
-    .brand span, .aside-foot { display: none; }
-    nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; } nav::-webkit-scrollbar { display: none; }
-    nav a { padding: 6px 10px; white-space: nowrap; } nav svg { display: none; }
-    main { padding: 18px 16px 96px; }
-    .tok-switch { width: 100%; } .tok-switch input { flex: 1; width: auto; max-width: none; }
-    .tiles { grid-template-columns: 1fr; }
+    /* minmax(0,1fr), not 1fr: a 1fr track grows to its widest child (a full address, a
+       nowrap table) and pushes the whole page off the right edge of a phone. */
+    .app { grid-template-columns: minmax(0, 1fr); }
+    main { min-width: 0; padding: 16px 16px calc(96px + env(safe-area-inset-bottom, 0px)); }
+    aside { position: sticky; top: 0; z-index: 10; height: auto; flex-direction: row; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px 16px; gap: 10px; border-right: 0; border-bottom: 1px solid var(--line); min-width: 0; }
+    .brand { padding: 0; flex-shrink: 0; } .brand b, .brand span, .aside-foot { display: none; }
+    .mark { width: 28px; height: 28px; padding: 6px; }
+    nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 1; gap: 2px; mask-image: linear-gradient(90deg, #000 88%, transparent); }
+    nav::-webkit-scrollbar { display: none; }
+    nav a { padding: 7px 11px; white-space: nowrap; font-size: .86rem; } nav svg { display: none; }
+    section { scroll-margin-top: 64px; margin-top: 28px; }
+
+    .top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin-bottom: 14px; }
+    .tok { margin: 0; } .tok h1 { font-size: 1.15rem; }
+    #connectBtn { grid-column: 2; grid-row: 1; align-self: center; }
+    .tok-switch { grid-column: 1 / -1; width: 100%; } .tok-switch input { flex: 1; width: auto; max-width: none; }
+    .acct { padding: 12px 14px; gap: 10px; } .acct .addr { word-break: break-all; }
+
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat { padding: 12px 13px; } .stat .v { font-size: .98rem; } .kpis .stat .v { font-size: 1.04rem; }
+    .stat .k { font-size: .66rem; letter-spacing: .06em; }
+
+    .tiles { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .tile { padding: 14px; }
+    .sec-head { align-items: flex-start; } .sec-head > button { width: 100%; }
+
+    /* touch: 16px inputs stop iOS zooming in on focus; 44px targets */
+    input { font-size: 16px; min-height: 44px; }
+    button { min-height: 44px; padding: 10px 14px; }
+    .row input.w-sm, .row input.w-md { flex: 1 1 100px; width: auto; }
+    .row > button { flex: 1 1 auto; }
+    .row label { width: auto; }
+
+    /* operators: cards instead of a table */
+    .tablewrap table, .tablewrap tbody, .tablewrap tr, .tablewrap td { display: block; width: 100%; }
+    .tablewrap thead { display: none; }
+    .tablewrap tr { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    .tablewrap tr:last-child { border-bottom: 0; }
+    .tablewrap td { border: 0; padding: 3px 0; white-space: normal; text-align: left !important; }
+    .tablewrap td[data-label]::before { content: attr(data-label); display: block; color: var(--muted); font: 600 .66rem var(--sans); text-transform: uppercase; letter-spacing: .06em; }
+    .tablewrap td a.mono { word-break: break-all; }
+    .tablewrap td button { width: 100%; margin-top: 6px; }
+
+    #log { right: 12px; left: 12px; width: auto; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+    .foot { flex-direction: column; gap: 6px; }
   }
 </style>
 </head>
@@ -193,10 +230,10 @@
       <div class="tiles">
         <div class="tile"><h3>Add operator <span class="role">Owner</span></h3><p>Authorise a new point-of-sale key. The allowance refills continuously over a day; maximum <span id="maxDrawerTxt">—</span>.</p>
           <div class="row"><input id="opAddr" class="grow" placeholder="0x… operator address"></div>
-          <div class="row"><input id="opAllow" class="w-md" placeholder="Daily allowance"><button data-act="addOperator" data-role="owner" class="primary">Add operator</button></div></div>
+          <div class="row"><input id="opAllow" class="w-md" placeholder="Per day"><button data-act="addOperator" data-role="owner" class="primary">Add operator</button></div></div>
         <div class="tile"><h3>Change allowance <span class="role">Owner</span></h3><p>Set a new daily allowance. Raising it does not refill a till already drawn down.</p>
           <div class="row"><input id="opAddr2" class="grow" placeholder="0x… operator address"></div>
-          <div class="row"><input id="opAllow2" class="w-md" placeholder="New allowance"><button data-act="setDrawerAllowance" data-role="owner">Update</button></div></div>
+          <div class="row"><input id="opAllow2" class="w-md" placeholder="New per day"><button data-act="setDrawerAllowance" data-role="owner">Update</button></div></div>
         <div class="tile"><h3>Per-payment limits <span class="role">Owner</span></h3><p>Smallest and largest single reward, in tokens. Adjust as the token's price moves.</p>
           <div class="row"><label>Min</label><input id="bFloor" class="w-sm"><label>Max</label><input id="bMax" class="w-sm"><button data-act="setPerTxBounds" data-role="owner">Save</button></div></div>
         <div class="tile"><h3>Pause payouts <span class="role">Owner</span></h3><p>Halts every payout for up to seven days, then lapses on its own. Use it if an operator key may be compromised, then remove that operator.</p>
@@ -521,7 +558,7 @@ async function scanOperators() {
   const live = rows.filter(r => r.d?.active);
   S.ops = new Set(live.map(r => lc(r.a)));
   $('opCount').textContent = `${live.length} active`;
-  $('opRows').innerHTML = live.length ? live.map(r => `<tr><td><a class="mono" href="https://basescan.org/address/${ethers.getAddress(r.a)}" target="_blank" rel="noopener">${ethers.getAddress(r.a)}</a></td><td class="num">${T(r.d.dailyAllowance, 0)} / day</td><td class="num">${T(r.av, 0)}</td>
+  $('opRows').innerHTML = live.length ? live.map(r => `<tr><td data-label="Operator"><a class="mono" href="https://basescan.org/address/${ethers.getAddress(r.a)}" target="_blank" rel="noopener">${ethers.getAddress(r.a)}</a></td><td class="num" data-label="Daily allowance">${T(r.d.dailyAllowance, 0)} / day</td><td class="num" data-label="Available now">${T(r.av, 0)}</td>
     <td style="text-align:right"><button data-act="removeOperator" data-arg="${ethers.getAddress(r.a)}" data-role="owner" class="danger">Remove</button></td></tr>`).join('')
     : `<tr><td colspan="4" class="empty">No active operators.</td></tr>`;
   gateButtons();
@@ -529,7 +566,7 @@ async function scanOperators() {
 
 // ── wallet ────────────────────────────────────────────────────────────────
 async function connect() {
-  if (!window.ethereum) { toast('No wallet found in this browser.', 'bad'); return; }
+  if (!window.ethereum) { toast(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'No wallet in this browser. Open this page inside your wallet app\'s browser (Rabby, MetaMask, Coinbase Wallet) to connect.' : 'No wallet found in this browser.', 'bad', true); return; }
   bp = new ethers.BrowserProvider(window.ethereum, 'any');
   const accts = await bp.send('eth_requestAccounts', []); await onAccounts(accts);
   window.ethereum.on?.('accountsChanged', onAccounts);
@@ -679,7 +716,8 @@ async function boot(token) {
 boot();
 // Highlight the section in view.
 const navLinks = [...document.querySelectorAll('#nav a')];
-const navObs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${e.target.id}`)); }),
+const navObs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) navLinks.forEach(a => { const on = a.getAttribute('href') === `#${e.target.id}`; a.classList.toggle('on', on);
+    if (on && innerWidth <= 900) a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }); }),
   { rootMargin: '-30% 0px -60% 0px' });
 document.querySelectorAll('main section').forEach(s => navObs.observe(s));
 setInterval(() => { if (S && document.visibilityState === 'visible') load(S.token).catch(() => {}); }, 60_000);
