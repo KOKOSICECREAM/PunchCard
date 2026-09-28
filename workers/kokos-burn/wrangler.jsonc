@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kokos-burn",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-28",
+  // @solana/web3.js uses Buffer
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "c69291f66e4017569be579c65d7b8bf5",
+  "workers_dev": true,
+  "observability": { "enabled": true }
+}
