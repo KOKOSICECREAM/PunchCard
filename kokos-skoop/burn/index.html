@@ -62,7 +62,7 @@
   <div class="burn-note">This payment <b>burns</b> your KOKOS — it is destroyed on-chain, not sent to anyone, and cannot be refunded.</div>
   <div id="actions"></div>
   <div id="status"></div>
-  <p class="hint">Works with Phantom, Solflare and Backpack.</p>
+  <p class="hint">Works with Phantom, Coinbase Wallet, Solflare and Backpack.</p>
 </main>
 
 <script>
@@ -99,6 +99,7 @@ function findProvider() {
   if (window.phantom?.solana?.isPhantom) return window.phantom.solana;
   if (window.solflare?.isSolflare) return window.solflare;
   if (window.backpack?.isBackpack) return window.backpack;
+  if (window.coinbaseSolana) return window.coinbaseSolana;      // Coinbase Wallet's in-app browser
   if (window.solana) return window.solana;
   return null;
 }
@@ -106,6 +107,7 @@ function renderOpenIn() {
   const here = encodeURIComponent(location.href), ref = encodeURIComponent(location.origin);
   $('actions').innerHTML =
     `<a class="btn primary" href="https://phantom.app/ul/browse/${here}?ref=${ref}">Open in Phantom</a>
+     <a class="btn ghost" href="https://go.cb-w.com/dapp?cb_url=${here}">Open in Coinbase Wallet</a>
      <a class="btn ghost" href="https://solflare.com/ul/v1/browse/${here}?ref=${ref}">Open in Solflare</a>`;
   info('Open this page in your Solana wallet to pay.');
 }
