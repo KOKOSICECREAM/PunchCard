@@ -412,6 +412,7 @@ button{font-family:inherit;}
       <div style="display:flex;gap:0.4rem;padding:0 0.875rem 0.5rem;">
         <button id="tok-skoop" onclick="selectPaymentToken('skoop')" style="flex:1;padding:0.35rem;border-radius:999px;border:2px solid var(--coral-deep);background:var(--coral-deep);color:var(--white);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">SKOOP</button>
         <button id="tok-usdc" onclick="selectPaymentToken('usdc')" style="flex:1;padding:0.35rem;border-radius:999px;border:2px solid var(--border);background:var(--white);color:var(--ink-mid);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">USDC</button>
+        <button id="tok-kokos" onclick="selectPaymentToken('kokos')" style="flex:1;padding:0.35rem;border-radius:999px;border:2px solid var(--border);background:var(--white);color:var(--ink-mid);font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;">KOKOS · SOL</button>
       </div>
       <div class="modal-body">
         <div id="qr-mode-bar" style="display:none;width:100%;display:none;gap:0.3rem;">
@@ -845,8 +846,11 @@ function updateTotals(){
 // ═══════════════════════════════════════════════════════════════
 //  CHECKOUT & QR
 // ═══════════════════════════════════════════════════════════════
+const KOKOS_SOL='KOKOS_SOL';   // sentinel: KOKOS on Solana, paid by burning (see generateKokosQR)
 function selectPaymentToken(tok, skipRegen=false){
-  currentPaymentToken = tok==='usdc' ? CFG.USDC : CFG.SKOOP;
+  currentPaymentToken = tok==='usdc' ? CFG.USDC : tok==='kokos' ? KOKOS_SOL : CFG.SKOOP;
+  const kb=document.getElementById('tok-kokos');
+  if(kb)kb.style.cssText='flex:1;padding:0.35rem;border-radius:999px;font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;border:2px solid '+(tok==='kokos'?'var(--coral-deep);background:var(--coral-deep);color:var(--white);':'var(--border);background:var(--white);color:var(--ink-mid);');
   document.getElementById('tok-skoop').style.cssText='flex:1;padding:0.35rem;border-radius:999px;font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;border:2px solid '+(tok==='skoop'?'var(--coral-deep);background:var(--coral-deep);color:var(--white)':'var(--border);background:var(--white);color:var(--ink-mid)');
   document.getElementById('tok-usdc').style.cssText='flex:1;padding:0.35rem;border-radius:999px;font-family:inherit;font-size:0.75rem;font-weight:700;cursor:pointer;border:2px solid '+(tok==='usdc'?'var(--coral-deep);background:var(--coral-deep);color:var(--white)':'var(--border);background:var(--white);color:var(--ink-mid)');
   if(!skipRegen) generateQR();
@@ -908,6 +912,7 @@ async function renderQRInto(container,text,size){
 }
 async function generateQR(){
   clearInterval(qrCountdownTimer);
+  if(currentPaymentToken===KOKOS_SOL)return generateKokosQR();
   const payToken = currentPaymentToken || CFG.SKOOP;
   const isUSDC = payToken.toLowerCase() === CFG.USDC.toLowerCase();
   if(!isUSDC && !skoopPriceUSD){showToast('Waiting for SKOOP price…','error');return;}
@@ -1023,6 +1028,100 @@ async function regenerateQR(){
   const wrap=document.getElementById('qr-canvas-wrap');wrap.style.opacity='0.4';
   await generateQR();wrap.style.opacity='1';
 }
+// ═══════════════════════════════════════════════════════════════
+//  KOKOS ON SOLANA — PAID BY BURNING (MVP, 2026-09-28)
+// ═══════════════════════════════════════════════════════════════
+// The customer burns KOKOS worth the total; nothing is sent to the shop, so there is no
+// settlement and no refund. The QR opens punchcard.club/kokos-skoop/burn/ with the amount and a
+// one-off reference key; the customer's wallet signs a Token-2022 BurnChecked that carries that
+// key. This terminal finds the burn by the key and accepts it only if it is the KOKOS mint and
+// at least the amount asked — so an edited link can only overpay, never underpay.
+const KOKOS_SOLANA={
+  MINT:'XrR9rqzFCBEcYoeyKrHV2uYFmEkwPCh6cxB3KuPCGd5',DECIMALS:6,
+  TOKEN_2022:'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+  // Browser-friendly public RPCs (Solana's api.mainnet-beta refuses web pages with 403).
+  RPCS:['https://solana-rpc.publicnode.com','https://rpc.solanatracker.io/public'],
+  PRICE:'https://lite-api.jup.ag/price/v3?ids=XrR9rqzFCBEcYoeyKrHV2uYFmEkwPCh6cxB3KuPCGd5',
+  PAGE:'https://punchcard.club/kokos-skoop/burn/',
+  QR_SECONDS:180,               // KOKOS moves fast; a short window keeps the price honest
+};
+async function solRpc(method,params){
+  for(let i=0;i<4;i++){
+    try{
+      const res=await fetch(KOKOS_SOLANA.RPCS[i%KOKOS_SOLANA.RPCS.length],{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});
+      if(res.status===429){await new Promise(r=>setTimeout(r,1500*(i+1)));continue;}
+      const j=await res.json();if(j.error)throw new Error(j.error.message);return j.result;
+    }catch(e){if(i===3)throw e;await new Promise(r=>setTimeout(r,1000*(i+1)));}
+  }
+}
+async function kokosPriceUSD(){
+  const j=await (await fetch(KOKOS_SOLANA.PRICE)).json();
+  const p=Number(j?.[KOKOS_SOLANA.MINT]?.usdPrice);
+  if(!(p>0))throw new Error('no KOKOS price');
+  return p;
+}
+async function generateKokosQR(){
+  clearInterval(qrCountdownTimer);
+  const wrap=document.getElementById('qr-canvas-wrap');
+  wrap.innerHTML='<p style="color:var(--ink-lt);font-size:0.75rem;text-align:center;">Pricing KOKOS…</p>';
+  document.getElementById('qr-mode-bar').style.display='none';qrModePayloads=null;
+  const subtotalCents=Math.round(Object.entries(cart).reduce((s,[id,qty])=>{const item=MENU.find(m=>m.id===id);return s+(item?item.price*qty:0);},0)*100);
+  const taxCents=Math.round(subtotalCents*CFG.TAX_RATE);
+  const totalCents=subtotalCents+taxCents;
+  let price;
+  try{price=await kokosPriceUSD();}catch(e){wrap.innerHTML='';showToast('KOKOS price unavailable — take SKOOP or USDC, or try again','error');return;}
+  // round up to a whole base unit: the customer never burns less than the total's worth
+  const raw=BigInt(Math.ceil(totalCents/100/price*10**KOKOS_SOLANA.DECIMALS));
+  const reference=ethers.encodeBase58(ethers.randomBytes(32));
+  const deadline=Math.floor(Date.now()/1000)+KOKOS_SOLANA.QR_SECONDS;
+  const url=KOKOS_SOLANA.PAGE+'?a='+raw+'&r='+reference+'&c='+totalCents+'&e='+deadline;
+  const kokos=Number(raw)/10**KOKOS_SOLANA.DECIMALS;
+  document.getElementById('modal-summary').innerHTML=
+    `<div class="mos-row"><span>Subtotal</span><span>$${(subtotalCents/100).toFixed(2)}</span></div>`+
+    `<div class="mos-row"><span>Tax</span><span>$${(taxCents/100).toFixed(2)}</span></div>`+
+    `<div class="mos-row total"><span>Total</span><span>$${(totalCents/100).toFixed(2)}</span></div>`+
+    `<div class="mos-row skoop"><span>KOKOS to burn</span><span>${kokos.toLocaleString('en-US',{maximumFractionDigits:2})} KOKOS</span></div>`+
+    `<div class="mos-row"><span>Network</span><span>Solana · burn</span></div>`;
+  const wrapRect=wrap.getBoundingClientRect();
+  await renderQRInto(wrap,url,Math.round((wrapRect.width||280)-28));
+  const st=document.getElementById('modal-status');
+  st.textContent='Waiting for the customer to burn KOKOS…';
+  qrDeadlineSec=deadline;startQRCountdown();
+  const pollToken=Symbol();activePollToken=pollToken;
+  pollForKokosBurn(reference,raw,totalCents,deadline,pollToken);
+}
+// Accept the first confirmed transaction carrying our reference that burns >= raw of the KOKOS
+// mint. A burn landing just after the QR's expiry still counts — the customer did pay — so
+// we keep looking for two minutes past it.
+async function pollForKokosBurn(reference,raw,totalCents,deadline,pollToken){
+  const seen=new Set();
+  while(activePollToken===pollToken&&Date.now()/1000<deadline+120){
+    try{
+      const sigs=await solRpc('getSignaturesForAddress',[reference,{limit:10,commitment:'confirmed'}])||[];
+      for(const s of sigs){
+        if(s.err||seen.has(s.signature))continue;seen.add(s.signature);
+        const tx=await solRpc('getTransaction',[s.signature,{encoding:'jsonParsed',commitment:'confirmed',maxSupportedTransactionVersion:1}]);
+        if(!tx||tx.meta?.err)continue;
+        const ixs=[...(tx.transaction.message.instructions||[]),...((tx.meta.innerInstructions||[]).flatMap(x=>x.instructions))];
+        const burned=ixs.filter(ix=>ix.programId===KOKOS_SOLANA.TOKEN_2022&&ix.parsed&&(ix.parsed.type==='burnChecked'||ix.parsed.type==='burn')&&ix.parsed.info.mint===KOKOS_SOLANA.MINT)
+          .reduce((t,ix)=>t+BigInt(ix.parsed.info.tokenAmount?.amount??ix.parsed.info.amount??0),0n);
+        const hasRef=(tx.transaction.message.accountKeys||[]).some(k=>(k.pubkey||k)===reference);
+        if(hasRef&&burned>=raw){
+          if(activePollToken!==pollToken)return;
+          activePollToken=null;
+          try{const log=JSON.parse(localStorage.getItem('kokos_sol_burns')||'[]');
+            log.push({sig:s.signature,reference,raw:burned.toString(),totalCents,ts:Date.now()});
+            localStorage.setItem('kokos_sol_burns',JSON.stringify(log.slice(-500)));}catch(e){}
+          showPaymentSuccess(totalCents,Number(burned)/10**KOKOS_SOLANA.DECIMALS,s.signature,'KOKOS burned');
+          return;   // no reward: KOKOS payers are on Solana, rewards are on Base (MVP)
+        }
+      }
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,3000));
+  }
+  if(activePollToken===pollToken){const st=document.getElementById('modal-status');if(st)st.textContent='No burn seen — tap Regenerate for a fresh QR';}
+}
+
 function closeModal(){clearInterval(qrCountdownTimer);activePollToken=null;qrModePayloads=null;document.getElementById('qr-mode-bar').style.display='none';document.getElementById('modal-overlay').classList.remove('open');try{sessionStorage.removeItem('kokos_pos_intent');}catch{}}
 
 // ═══════════════════════════════════════════════════════════════
@@ -1107,7 +1206,7 @@ function showPaymentSuccess(totalCents,tokenAmt,receiptId,tokenLabel='SKOOP'){
   document.getElementById('success-sub').textContent='$'+(totalCents/100).toFixed(2)+' · '+tokenAmt.toLocaleString('en-US',{maximumFractionDigits:2})+' '+tokenLabel;
   document.getElementById('success-details').innerHTML=
     `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;border-bottom:1px solid rgba(58,32,16,0.08);"><span style="color:var(--ink-mid);">Total charged</span><span style="font-weight:700;">$${(totalCents/100).toFixed(2)}</span></div>`+
-    `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;border-bottom:1px solid rgba(58,32,16,0.08);"><span style="color:var(--ink-mid);">${tokenLabel} captured</span><span style="font-weight:700;color:var(--coral-deep);">${tokenAmt.toLocaleString('en-US',{maximumFractionDigits:2})} ${tokenLabel}</span></div>`+
+    `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;border-bottom:1px solid rgba(58,32,16,0.08);"><span style="color:var(--ink-mid);">${/burned$/.test(tokenLabel)?tokenLabel:tokenLabel+' captured'}</span><span style="font-weight:700;color:var(--coral-deep);">${tokenAmt.toLocaleString('en-US',{maximumFractionDigits:2})} ${tokenLabel}</span></div>`+
     `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;"><span style="color:var(--ink-mid);">Receipt</span><span style="font-family:monospace;font-size:0.58rem;">${receiptId.slice(0,20)}…</span></div>`;
   const rewardEl=document.getElementById('success-reward-status');
   if(rewardEl){rewardEl.style.display='none';rewardEl.innerHTML='';}
