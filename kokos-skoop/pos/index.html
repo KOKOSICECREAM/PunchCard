@@ -1044,11 +1044,9 @@ const KOKOS_SOLANA={
   RPCS:['https://solana-rpc.publicnode.com','https://rpc.solanatracker.io/public'],
   PRICE:'https://lite-api.jup.ag/price/v3?ids=XrR9rqzFCBEcYoeyKrHV2uYFmEkwPCh6cxB3KuPCGd5',
   PAGE:'https://punchcard.club/kokos-skoop/burn/',
-  // Wallet scanners (Phantom's included) only read Solana Pay *transfer* requests — they
-  // reject transaction requests as "not a valid address" — so a scanned payment is a transfer
-  // to the shop's burn wallet, labelled with POS_MEMO, and the owner burns the day's labelled
-  // payments at close (/kokos-skoop/burn-collected/). The phone-camera route still burns
-  // instantly through the web page above.
+  // Payments are instant burns through the page above. The POS also still accepts a transfer
+  // labelled POS_MEMO into the burn wallet (the owner burns those at close, at
+  // /kokos-skoop/burn-collected/), though its QR no longer asks for one.
   BURN_WALLET:'BV8BAAFRakZxjfyR1X4ZvYtKe2Z3F6K51kFCQJSjkVJA',
   BURN_ATA:'Eq9T8yv6LTag24EtdJXHzocGLGgvtiNqUY1BWzcPRcpw',   // its Token-2022 KOKOS account
   POS_MEMO:'KOKOS POS payment',
@@ -1085,13 +1083,13 @@ async function generateKokosQR(){
   const deadline=Math.floor(Date.now()/1000)+KOKOS_SOLANA.QR_SECONDS;
   const params='?a='+raw+'&r='+reference+'&c='+totalCents+'&e='+deadline;
   const url=KOKOS_SOLANA.PAGE+params;
-  // Solana Pay transfer request. amount is in whole KOKOS (raw is already whole base units);
-  // memo marks it as a POS payment so the daily burn counts it and nothing else.
-  const kokosAmt=(raw/10n**BigInt(KOKOS_SOLANA.DECIMALS)).toString()+'.'+(raw%10n**BigInt(KOKOS_SOLANA.DECIMALS)).toString().padStart(KOKOS_SOLANA.DECIMALS,'0');
-  const solanaPay='solana:'+KOKOS_SOLANA.BURN_WALLET+'?amount='+kokosAmt.replace(/\.?0+$/,'')+'&spl-token='+KOKOS_SOLANA.MINT
-    +'&reference='+reference+'&label='+encodeURIComponent('KOKOS Ice Cream')
-    +'&message='+encodeURIComponent('$'+(totalCents/100).toFixed(2)+' at KOKOS Ice Cream — burned at close')
-    +'&memo='+encodeURIComponent(KOKOS_SOLANA.POS_MEMO);
+  // KOKOS is a Token-2022 mint, and Solana Pay transfer requests do not handle Token-2022 —
+  // the reference createTransfer throws on it and Phantom opens a blank send screen — while
+  // Phantom's scanner rejects transaction requests outright. So the customer's wallet never
+  // builds this payment: our burn page does, pre-filled. The default QR is a Phantom universal
+  // link that opens that page straight inside Phantom (scan with the phone camera); "Other
+  // wallet" shows the plain page link, which offers Solflare/Backpack/Coinbase buttons.
+  const phantomLink='https://phantom.app/ul/browse/'+encodeURIComponent(url)+'?ref='+encodeURIComponent('https://punchcard.club');
   const kokos=Number(raw)/10**KOKOS_SOLANA.DECIMALS;
   document.getElementById('modal-summary').innerHTML=
     `<div class="mos-row"><span>Subtotal</span><span>$${(subtotalCents/100).toFixed(2)}</span></div>`+
@@ -1102,13 +1100,13 @@ async function generateKokosQR(){
   const wrapRect=wrap.getBoundingClientRect();
   // Two ways in: the wallet's own scanner (Solana Pay — the default) or the phone camera,
   // which opens the burn page. Both produce the same burn, found by the same reference.
-  qrModePayloads={dapp:solanaPay,direct:url};
-  document.getElementById('mode-btn-dapp').textContent='Wallet scanner';document.getElementById('mode-btn-direct').textContent='Phone camera';
+  qrModePayloads={dapp:phantomLink,direct:url};
+  document.getElementById('mode-btn-dapp').textContent='Phantom';document.getElementById('mode-btn-direct').textContent='Other wallet';
   document.getElementById('qr-mode-bar').style.display='flex';
-  await renderQRInto(wrap,solanaPay,Math.round((wrapRect.width||280)-28));
+  await renderQRInto(wrap,phantomLink,Math.round((wrapRect.width||280)-28));
   setQRModeButtons('dapp');
   const st=document.getElementById('modal-status');
-  st.innerHTML='Customer: scan with your <b>Solana wallet</b> (Phantom, Solflare…) and approve<br><span style="font-weight:500;opacity:.8">Waiting for the KOKOS payment…</span>';
+  st.innerHTML='Customer: scan with your <b>phone camera</b> — it opens in Phantom, pre-filled; tap Connect, then Burn &amp; pay<br><span style="font-weight:500;opacity:.8">Waiting for the KOKOS burn…</span>';
   qrDeadlineSec=deadline;startQRCountdown();
   const pollToken=Symbol();activePollToken=pollToken;
   pollForKokosBurn(reference,raw,totalCents,deadline,pollToken);
