@@ -1044,9 +1044,14 @@ const KOKOS_SOLANA={
   RPCS:['https://solana-rpc.publicnode.com','https://rpc.solanatracker.io/public'],
   PRICE:'https://lite-api.jup.ag/price/v3?ids=XrR9rqzFCBEcYoeyKrHV2uYFmEkwPCh6cxB3KuPCGd5',
   PAGE:'https://punchcard.club/kokos-skoop/burn/',
-  // Solana Pay transaction request (workers/kokos-burn): wallets' own scanners open it and are
-  // handed the burn to sign. The web page above stays as the phone-camera route.
-  TX_REQUEST:'https://kokos-burn.quiet-mode-468e.workers.dev/',
+  // Wallet scanners (Phantom's included) only read Solana Pay *transfer* requests — they
+  // reject transaction requests as "not a valid address" — so a scanned payment is a transfer
+  // to the shop's burn wallet, labelled with POS_MEMO, and the owner burns the day's labelled
+  // payments at close (/kokos-skoop/burn-collected/). The phone-camera route still burns
+  // instantly through the web page above.
+  BURN_WALLET:'BV8BAAFRakZxjfyR1X4ZvYtKe2Z3F6K51kFCQJSjkVJA',
+  BURN_ATA:'Eq9T8yv6LTag24EtdJXHzocGLGgvtiNqUY1BWzcPRcpw',   // its Token-2022 KOKOS account
+  POS_MEMO:'KOKOS POS payment',
   QR_SECONDS:180,               // KOKOS moves fast; a short window keeps the price honest
 };
 async function solRpc(method,params){
@@ -1080,8 +1085,13 @@ async function generateKokosQR(){
   const deadline=Math.floor(Date.now()/1000)+KOKOS_SOLANA.QR_SECONDS;
   const params='?a='+raw+'&r='+reference+'&c='+totalCents+'&e='+deadline;
   const url=KOKOS_SOLANA.PAGE+params;
-  // Solana Pay: the link after "solana:" is URL-encoded because it carries query parameters.
-  const solanaPay='solana:'+encodeURIComponent(KOKOS_SOLANA.TX_REQUEST+params);
+  // Solana Pay transfer request. amount is in whole KOKOS (raw is already whole base units);
+  // memo marks it as a POS payment so the daily burn counts it and nothing else.
+  const kokosAmt=(raw/10n**BigInt(KOKOS_SOLANA.DECIMALS)).toString()+'.'+(raw%10n**BigInt(KOKOS_SOLANA.DECIMALS)).toString().padStart(KOKOS_SOLANA.DECIMALS,'0');
+  const solanaPay='solana:'+KOKOS_SOLANA.BURN_WALLET+'?amount='+kokosAmt.replace(/\.?0+$/,'')+'&spl-token='+KOKOS_SOLANA.MINT
+    +'&reference='+reference+'&label='+encodeURIComponent('KOKOS Ice Cream')
+    +'&message='+encodeURIComponent('$'+(totalCents/100).toFixed(2)+' at KOKOS Ice Cream — burned at close')
+    +'&memo='+encodeURIComponent(KOKOS_SOLANA.POS_MEMO);
   const kokos=Number(raw)/10**KOKOS_SOLANA.DECIMALS;
   document.getElementById('modal-summary').innerHTML=
     `<div class="mos-row"><span>Subtotal</span><span>$${(subtotalCents/100).toFixed(2)}</span></div>`+
@@ -1098,7 +1108,7 @@ async function generateKokosQR(){
   await renderQRInto(wrap,solanaPay,Math.round((wrapRect.width||280)-28));
   setQRModeButtons('dapp');
   const st=document.getElementById('modal-status');
-  st.innerHTML='Customer: scan with your <b>Solana wallet</b> (Phantom, Solflare…) and approve the burn<br><span style="font-weight:500;opacity:.8">Waiting for the KOKOS burn…</span>';
+  st.innerHTML='Customer: scan with your <b>Solana wallet</b> (Phantom, Solflare…) and approve<br><span style="font-weight:500;opacity:.8">Waiting for the KOKOS payment…</span>';
   qrDeadlineSec=deadline;startQRCountdown();
   const pollToken=Symbol();activePollToken=pollToken;
   pollForKokosBurn(reference,raw,totalCents,deadline,pollToken);
@@ -1118,21 +1128,26 @@ async function pollForKokosBurn(reference,raw,totalCents,deadline,pollToken){
         const ixs=[...(tx.transaction.message.instructions||[]),...((tx.meta.innerInstructions||[]).flatMap(x=>x.instructions))];
         const burned=ixs.filter(ix=>ix.programId===KOKOS_SOLANA.TOKEN_2022&&ix.parsed&&(ix.parsed.type==='burnChecked'||ix.parsed.type==='burn')&&ix.parsed.info.mint===KOKOS_SOLANA.MINT)
           .reduce((t,ix)=>t+BigInt(ix.parsed.info.tokenAmount?.amount??ix.parsed.info.amount??0),0n);
+        const received=ixs.filter(ix=>ix.programId===KOKOS_SOLANA.TOKEN_2022&&ix.parsed&&(ix.parsed.type==='transferChecked'||ix.parsed.type==='transfer')
+            &&ix.parsed.info.destination===KOKOS_SOLANA.BURN_ATA&&(ix.parsed.info.mint===KOKOS_SOLANA.MINT||ix.parsed.type==='transfer'))
+          .reduce((t,ix)=>t+BigInt(ix.parsed.info.tokenAmount?.amount??ix.parsed.info.amount??0),0n);
         const hasRef=(tx.transaction.message.accountKeys||[]).some(k=>(k.pubkey||k)===reference);
-        if(hasRef&&burned>=raw){
+        const paid=burned>=raw?'burned':received>=raw?'received':null;
+        if(hasRef&&paid){
           if(activePollToken!==pollToken)return;
           activePollToken=null;
           try{const log=JSON.parse(localStorage.getItem('kokos_sol_burns')||'[]');
-            log.push({sig:s.signature,reference,raw:burned.toString(),totalCents,ts:Date.now()});
+            log.push({sig:s.signature,reference,raw:(paid==='burned'?burned:received).toString(),how:paid,totalCents,ts:Date.now()});
             localStorage.setItem('kokos_sol_burns',JSON.stringify(log.slice(-500)));}catch(e){}
-          showPaymentSuccess(totalCents,Number(burned)/10**KOKOS_SOLANA.DECIMALS,s.signature,'KOKOS burned');
+          if(paid==='burned')showPaymentSuccess(totalCents,Number(burned)/10**KOKOS_SOLANA.DECIMALS,s.signature,'KOKOS burned');
+          else showPaymentSuccess(totalCents,Number(received)/10**KOKOS_SOLANA.DECIMALS,s.signature,'KOKOS · burned at close');
           return;   // no reward: KOKOS payers are on Solana, rewards are on Base (MVP)
         }
       }
     }catch(e){}
     await new Promise(r=>setTimeout(r,3000));
   }
-  if(activePollToken===pollToken){const st=document.getElementById('modal-status');if(st)st.textContent='No burn seen — tap Regenerate for a fresh QR';}
+  if(activePollToken===pollToken){const st=document.getElementById('modal-status');if(st)st.textContent='No KOKOS payment seen — tap Regenerate for a fresh QR';}
 }
 
 function closeModal(){clearInterval(qrCountdownTimer);activePollToken=null;qrModePayloads=null;document.getElementById('qr-mode-bar').style.display='none';document.getElementById('modal-overlay').classList.remove('open');try{sessionStorage.removeItem('kokos_pos_intent');}catch{}}
@@ -1219,7 +1234,7 @@ function showPaymentSuccess(totalCents,tokenAmt,receiptId,tokenLabel='SKOOP'){
   document.getElementById('success-sub').textContent='$'+(totalCents/100).toFixed(2)+' · '+tokenAmt.toLocaleString('en-US',{maximumFractionDigits:2})+' '+tokenLabel;
   document.getElementById('success-details').innerHTML=
     `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;border-bottom:1px solid rgba(58,32,16,0.08);"><span style="color:var(--ink-mid);">Total charged</span><span style="font-weight:700;">$${(totalCents/100).toFixed(2)}</span></div>`+
-    `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;border-bottom:1px solid rgba(58,32,16,0.08);"><span style="color:var(--ink-mid);">${/burned$/.test(tokenLabel)?tokenLabel:tokenLabel+' captured'}</span><span style="font-weight:700;color:var(--coral-deep);">${tokenAmt.toLocaleString('en-US',{maximumFractionDigits:2})} ${tokenLabel}</span></div>`+
+    `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;border-bottom:1px solid rgba(58,32,16,0.08);"><span style="color:var(--ink-mid);">${/burned|close$/.test(tokenLabel)?tokenLabel:tokenLabel+' captured'}</span><span style="font-weight:700;color:var(--coral-deep);">${tokenAmt.toLocaleString('en-US',{maximumFractionDigits:2})} ${tokenLabel}</span></div>`+
     `<div style="display:flex;justify-content:space-between;padding:0.12rem 0;"><span style="color:var(--ink-mid);">Receipt</span><span style="font-family:monospace;font-size:0.58rem;">${receiptId.slice(0,20)}…</span></div>`;
   const rewardEl=document.getElementById('success-reward-status');
   if(rewardEl){rewardEl.style.display='none';rewardEl.innerHTML='';}
