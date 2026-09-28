@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Pay with KOKOS — KOKOS Ice Cream</title>
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Special+Elite&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+<script src="kokos-burn.js"></script>
+<style>
+  :root{--bg:#f5f3ef;--panel:#fff;--ink:#16130e;--ink-2:#4a443a;--muted:#857c6e;--line:rgba(22,19,14,.09);--line-2:rgba(22,19,14,.16);
+    --accent:#c0492a;--accent-soft:rgba(192,73,42,.08);--ok:#1e7443;--ok-soft:rgba(30,116,67,.1);--bad:#b3261e;--bad-soft:rgba(179,38,30,.08);
+    --sol:#7c4dff;--mono:'JetBrains Mono',ui-monospace,Menlo,monospace;--sans:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;color-scheme:light}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:9px;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 14px;background:#fff;border-bottom:1px solid var(--line)}
+  header img{width:28px;height:28px;border-radius:7px} header b{font-family:'Special Elite',var(--sans);font-weight:400;font-size:17px}
+  main{flex:1;width:100%;max-width:440px;margin:0 auto;padding:18px 16px calc(28px + env(safe-area-inset-bottom,0px))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 8px 30px rgba(22,19,14,.05)}
+  .who{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .who img{width:48px;height:48px;border-radius:50%;box-shadow:0 0 0 1px var(--line)}
+  .who .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .who .n{font-size:17px;font-weight:700}
+  .chip{margin-left:auto;font:700 11px var(--sans);color:var(--sol);background:rgba(124,77,255,.1);padding:5px 9px;border-radius:999px;white-space:nowrap}
+  .amt{padding:20px 18px 6px}
+  .amt .usd{font:600 34px var(--mono);letter-spacing:-.02em}
+  .amt .tok{font:600 16px var(--mono);color:var(--accent);margin-top:2px}
+  .rows{padding:8px 18px 16px}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .row:last-child{border-bottom:0} .row span:first-child{color:var(--muted)} .row span:last-child{font-family:var(--mono);font-size:12.5px;text-align:right;word-break:break-all}
+  .burn-note{margin:14px 0 0;padding:12px 14px;border-radius:14px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:500;line-height:1.5}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:14px;padding:16px;font:600 16px var(--sans);cursor:pointer;margin-top:12px;text-decoration:none}
+  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 8px 22px rgba(192,73,42,.25)}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line-2)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+  .msg{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:13.5px;line-height:1.5}
+  .msg.bad{background:var(--bad-soft);color:var(--bad)} .msg.info{background:#fff;border:1px solid var(--line);color:var(--ink-2)}
+  .done{text-align:center;padding:28px 18px}
+  .done .tick{width:72px;height:72px;border-radius:50%;background:var(--ok-soft);display:grid;place-items:center;margin:0 auto 14px}
+  .done h1{font-size:24px;margin:0 0 4px;letter-spacing:-.01em} .done p{margin:0;color:var(--ink-2)}
+  .done .big{font:600 22px var(--mono);margin:14px 0 4px}
+  .done a{color:var(--accent);font-size:13px}
+  .hint{margin-top:16px;font-size:12px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<header><img src="/brand/punchcard.svg" alt=""><b>PunchCard</b></header>
+<main>
+  <div class="card" id="payCard">
+    <div class="who"><img src="/kokos-skoop/kokos.png" alt=""><div><div class="k">Paying</div><div class="n">KOKOS Ice Cream</div></div><span class="chip">KOKOS · Solana</span></div>
+    <div class="amt"><div class="usd" id="usd">—</div><div class="tok" id="tok">—</div></div>
+    <div class="rows">
+      <div class="row"><span>Expires in</span><span id="exp">—</span></div>
+      <div class="row"><span>Your wallet</span><span id="wallet">not connected</span></div>
+      <div class="row"><span>Your KOKOS</span><span id="bal">—</span></div>
+    </div>
+  </div>
+  <div class="burn-note">This payment <b>burns</b> your KOKOS — it is destroyed on-chain, not sent to anyone, and cannot be refunded.</div>
+  <div id="actions"></div>
+  <div id="status"></div>
+  <p class="hint">Works with Phantom, Solflare and Backpack.</p>
+</main>
+
+<script>
+const W = window.solanaWeb3, K = window.KokosBurn;
+// Browser-friendly public RPCs. Solana's own api.mainnet-beta refuses requests from web pages
+// (403), so it cannot be used here. The second is tried when the first errors.
+const RPCS = ['https://solana-rpc.publicnode.com', 'https://rpc.solanatracker.io/public'];
+const $ = id => document.getElementById(id);
+const q = new URLSearchParams(location.search);
+const P = { amount: q.get('a'), ref: q.get('r'), cents: Number(q.get('c')), exp: Number(q.get('e')) };
+let provider = null, owner = null, sending = false;
+
+function fail(t) { $('status').innerHTML = `<div class="msg bad">${t}</div>`; }
+function info(t) { $('status').innerHTML = `<div class="msg info">${t}</div>`; }
+const fmtK = raw => (Number(BigInt(raw)) / 10 ** K.KOKOS.DECIMALS).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+// ── the payment request, from the POS's QR ─────────────────────────────────
+function validRequest() {
+  try {
+    if (!/^\d+$/.test(P.amount || '') || BigInt(P.amount) <= 0n) return false;
+    new W.PublicKey(P.ref);                     // throws if not a 32-byte base58 key
+    return Number.isFinite(P.cents) && P.cents > 0 && Number.isFinite(P.exp);
+  } catch { return false; }
+}
+function tick() {
+  const rem = P.exp - Math.floor(Date.now() / 1000);
+  if (rem <= 0) { $('exp').textContent = 'expired'; $('exp').style.color = 'var(--bad)'; return false; }
+  $('exp').textContent = Math.floor(rem / 60) + ':' + String(rem % 60).padStart(2, '0');
+  return true;
+}
+
+// ── wallet ─────────────────────────────────────────────────────────────────
+function findProvider() {
+  if (window.phantom?.solana?.isPhantom) return window.phantom.solana;
+  if (window.solflare?.isSolflare) return window.solflare;
+  if (window.backpack?.isBackpack) return window.backpack;
+  if (window.solana) return window.solana;
+  return null;
+}
+function renderOpenIn() {
+  const here = encodeURIComponent(location.href), ref = encodeURIComponent(location.origin);
+  $('actions').innerHTML =
+    `<a class="btn primary" href="https://phantom.app/ul/browse/${here}?ref=${ref}">Open in Phantom</a>
+     <a class="btn ghost" href="https://solflare.com/ul/v1/browse/${here}?ref=${ref}">Open in Solflare</a>`;
+  info('Open this page in your Solana wallet to pay.');
+}
+async function connect() {
+  try {
+    const r = await provider.connect();
+    owner = new W.PublicKey((r && r.publicKey) || provider.publicKey);
+    $('wallet').textContent = owner.toBase58().slice(0, 4) + '…' + owner.toBase58().slice(-4);
+    await refreshBalance();
+  } catch (e) { fail('Wallet connection was cancelled.'); }
+}
+let conn = new W.Connection(RPCS[0], 'confirmed');
+// On an RPC failure, retry the same step once on the next endpoint.
+async function withRpc(fn) {
+  try { return await fn(conn); }
+  catch (e) { conn = new W.Connection(RPCS[(RPCS.indexOf(conn.rpcEndpoint) + 1) % RPCS.length], 'confirmed'); return fn(conn); }
+}
+async function refreshBalance() {
+  const need = BigInt(P.amount);
+  try {
+    const { src, total } = await withRpc(c => K.findSource(c, W, owner, need));
+    $('bal').textContent = fmtK(total) + ' KOKOS';
+    if (!src) {
+      $('actions').innerHTML = `<button class="btn primary" disabled>Not enough KOKOS</button>`;
+      fail(`You need ${fmtK(need)} KOKOS; this wallet has ${fmtK(total)}.`);
+      return;
+    }
+    $('actions').innerHTML = `<button class="btn primary" id="burnBtn">Burn ${fmtK(need)} KOKOS &amp; pay</button>`;
+    $('burnBtn').onclick = () => pay(src);
+    $('status').innerHTML = '';
+  } catch (e) { fail('Could not read your KOKOS balance — check your connection and reload.'); }
+}
+
+// ── pay: one burn, found by the POS through the reference key ──────────────
+async function pay(src) {
+  if (sending) return;
+  if (!tick()) { fail('This payment request has expired. Ask the cashier for a new QR.'); return; }
+  sending = true; const btn = $('burnBtn'); btn.disabled = true; btn.textContent = 'Confirm in your wallet…';
+  try {
+    const { blockhash } = await withRpc(c => c.getLatestBlockhash('confirmed'));
+    const tx = K.buildBurnTx(W, { owner, source: src, amount: BigInt(P.amount), reference: P.ref,
+      memo: `KOKOS Ice Cream · POS payment · $${(P.cents / 100).toFixed(2)}`, blockhash });
+    let sig;
+    if (provider.signAndSendTransaction) {
+      const r = await provider.signAndSendTransaction(tx);
+      sig = r.signature || r;
+    } else {
+      const signed = await provider.signTransaction(tx);
+      sig = await conn.sendRawTransaction(signed.serialize());
+    }
+    btn.textContent = 'Burning…';
+    info('Waiting for Solana to confirm…');
+    for (let i = 0; i < 40; i++) {
+      const st = (await withRpc(c => c.getSignatureStatuses([sig]))).value[0];
+      if (st && st.err) throw new Error('The burn failed on-chain.');
+      if (st && (st.confirmationStatus === 'confirmed' || st.confirmationStatus === 'finalized')) return done(sig);
+      await new Promise(r => setTimeout(r, 1500));
+    }
+    done(sig, true);
+  } catch (e) {
+    sending = false; btn.disabled = false; btn.textContent = `Burn ${fmtK(P.amount)} KOKOS & pay`;
+    const m = String(e?.message || e);
+    fail(/reject|cancel|denied/i.test(m) ? 'You cancelled in your wallet — nothing was burned.' : 'Payment did not go through: ' + m.slice(0, 120));
+  }
+}
+function done(sig, pending) {
+  $('payCard').outerHTML = `<div class="card"><div class="done">
+    <div class="tick"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1e7443" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <h1>${pending ? 'Burn sent' : 'Paid — KOKOS burned'}</h1><p>Show this screen to the cashier.</p>
+    <div class="big">${fmtK(P.amount)} KOKOS</div><p>$${(P.cents / 100).toFixed(2)} at KOKOS Ice Cream</p>
+    <p style="margin-top:12px"><a href="https://solscan.io/tx/${sig}" target="_blank" rel="noopener">View on Solscan ↗</a></p></div></div>`;
+  $('actions').innerHTML = ''; document.querySelector('.burn-note').remove(); $('status').innerHTML = '';
+}
+
+// ── start ──────────────────────────────────────────────────────────────────
+(function start() {
+  if (!validRequest()) { $('actions').innerHTML = ''; fail('This payment link is not valid. Ask the cashier for a new QR.'); return; }
+  $('usd').textContent = '$' + (P.cents / 100).toFixed(2);
+  $('tok').textContent = fmtK(P.amount) + ' KOKOS';
+  tick(); setInterval(tick, 1000);
+  provider = findProvider();
+  if (!provider) { renderOpenIn(); return; }
+  $('actions').innerHTML = `<button class="btn primary" id="connectBtn">Connect wallet</button>`;
+  $('connectBtn').onclick = connect;
+  if (provider.isConnected && provider.publicKey) connect();
+})();
+</script>
+</body>
+</html>
