@@ -50,8 +50,8 @@
         { pubkey: new W.PublicKey(KOKOS.MINT), isSigner: false, isWritable: true },
         { pubkey: owner, isSigner: true, isWritable: false },
         // Not read by the token program (only multisig owners use extra accounts); it is here so
-        // the POS can find this transaction with getSignaturesForAddress(reference).
-        { pubkey: new W.PublicKey(reference), isSigner: false, isWritable: false },
+        // the POS can find this transaction with getSignaturesForAddress(reference). Optional.
+        ...(reference ? [{ pubkey: new W.PublicKey(reference), isSigner: false, isWritable: false }] : []),
       ],
       data,
     });
