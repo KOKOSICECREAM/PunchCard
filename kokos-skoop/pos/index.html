@@ -979,6 +979,7 @@ async function generateQR(){
   const wrapRect=wrap.getBoundingClientRect();
 
   if(isUSDC){
+    document.getElementById('mode-btn-dapp').textContent='Pay with App';document.getElementById('mode-btn-direct').textContent='Pay with Wallet';
     qrModePayloads={dapp:k2url,direct:eip681};
     const modeBar=document.getElementById('qr-mode-bar');
     modeBar.style.display='flex';
@@ -1043,6 +1044,9 @@ const KOKOS_SOLANA={
   RPCS:['https://solana-rpc.publicnode.com','https://rpc.solanatracker.io/public'],
   PRICE:'https://lite-api.jup.ag/price/v3?ids=XrR9rqzFCBEcYoeyKrHV2uYFmEkwPCh6cxB3KuPCGd5',
   PAGE:'https://punchcard.club/kokos-skoop/burn/',
+  // Solana Pay transaction request (workers/kokos-burn): wallets' own scanners open it and are
+  // handed the burn to sign. The web page above stays as the phone-camera route.
+  TX_REQUEST:'https://kokos-burn.quiet-mode-468e.workers.dev/',
   QR_SECONDS:180,               // KOKOS moves fast; a short window keeps the price honest
 };
 async function solRpc(method,params){
@@ -1064,7 +1068,7 @@ async function generateKokosQR(){
   clearInterval(qrCountdownTimer);
   const wrap=document.getElementById('qr-canvas-wrap');
   wrap.innerHTML='<p style="color:var(--ink-lt);font-size:0.75rem;text-align:center;">Pricing KOKOS…</p>';
-  document.getElementById('qr-mode-bar').style.display='none';qrModePayloads=null;
+  qrModePayloads=null;
   const subtotalCents=Math.round(Object.entries(cart).reduce((s,[id,qty])=>{const item=MENU.find(m=>m.id===id);return s+(item?item.price*qty:0);},0)*100);
   const taxCents=Math.round(subtotalCents*CFG.TAX_RATE);
   const totalCents=subtotalCents+taxCents;
@@ -1074,7 +1078,10 @@ async function generateKokosQR(){
   const raw=BigInt(Math.ceil(totalCents/100/price*10**KOKOS_SOLANA.DECIMALS));
   const reference=ethers.encodeBase58(ethers.randomBytes(32));
   const deadline=Math.floor(Date.now()/1000)+KOKOS_SOLANA.QR_SECONDS;
-  const url=KOKOS_SOLANA.PAGE+'?a='+raw+'&r='+reference+'&c='+totalCents+'&e='+deadline;
+  const params='?a='+raw+'&r='+reference+'&c='+totalCents+'&e='+deadline;
+  const url=KOKOS_SOLANA.PAGE+params;
+  // Solana Pay: the link after "solana:" is URL-encoded because it carries query parameters.
+  const solanaPay='solana:'+encodeURIComponent(KOKOS_SOLANA.TX_REQUEST+params);
   const kokos=Number(raw)/10**KOKOS_SOLANA.DECIMALS;
   document.getElementById('modal-summary').innerHTML=
     `<div class="mos-row"><span>Subtotal</span><span>$${(subtotalCents/100).toFixed(2)}</span></div>`+
@@ -1083,10 +1090,15 @@ async function generateKokosQR(){
     `<div class="mos-row skoop"><span>KOKOS to burn</span><span>${kokos.toLocaleString('en-US',{maximumFractionDigits:2})} KOKOS</span></div>`+
     `<div class="mos-row"><span>Network</span><span>Solana · burn</span></div>`;
   const wrapRect=wrap.getBoundingClientRect();
-  await renderQRInto(wrap,url,Math.round((wrapRect.width||280)-28));
+  // Two ways in: the wallet's own scanner (Solana Pay — the default) or the phone camera,
+  // which opens the burn page. Both produce the same burn, found by the same reference.
+  qrModePayloads={dapp:solanaPay,direct:url};
+  document.getElementById('mode-btn-dapp').textContent='Wallet scanner';document.getElementById('mode-btn-direct').textContent='Phone camera';
+  document.getElementById('qr-mode-bar').style.display='flex';
+  await renderQRInto(wrap,solanaPay,Math.round((wrapRect.width||280)-28));
+  setQRModeButtons('dapp');
   const st=document.getElementById('modal-status');
-  // Wallet apps' own scanners reject web links, so point customers at the phone camera.
-  st.innerHTML='Customer: scan with your <b>phone camera</b>, then open in your Solana wallet<br><span style="font-weight:500;opacity:.8">Waiting for the KOKOS burn…</span>';
+  st.innerHTML='Customer: scan with your <b>Solana wallet</b> (Phantom, Solflare…) and approve the burn<br><span style="font-weight:500;opacity:.8">Waiting for the KOKOS burn…</span>';
   qrDeadlineSec=deadline;startQRCountdown();
   const pollToken=Symbol();activePollToken=pollToken;
   pollForKokosBurn(reference,raw,totalCents,deadline,pollToken);

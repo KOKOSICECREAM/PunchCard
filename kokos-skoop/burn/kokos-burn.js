@@ -19,12 +19,15 @@
   // which is derived — no indexed RPC call. Only if that one is short do we list all their accounts.
   async function findSource(conn, W, owner, amount) {
     const a = ata(W, owner);
-    try {
-      const b = await conn.getTokenAccountBalance(a);
-      const have = BigInt(b.value.amount);
+    // Plain getAccountInfo, served by every RPC (publicnode refuses token-balance lookups
+    // without a key). A token account's amount is the u64 at byte 64.
+    const info = await conn.getAccountInfo(a);
+    let have = 0n;
+    if (info && info.owner.toBase58() === KOKOS.TOKEN_2022 && info.data.length >= 72) {
+      have = new DataView(info.data.buffer, info.data.byteOffset + 64, 8).getBigUint64(0, true);
       if (have >= amount) return { src: a, total: have };
-    } catch (e) { /* no associated account */ }
-    return findSourceIndexed(conn, W, owner, amount);
+    }
+    try { return await findSourceIndexed(conn, W, owner, amount); } catch (e) { return { src: null, total: have }; }
   }
   async function findSourceIndexed(conn, W, owner, amount) {
     const res = await conn.getParsedTokenAccountsByOwner(owner, { mint: new W.PublicKey(KOKOS.MINT) });

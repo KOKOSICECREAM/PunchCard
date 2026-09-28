@@ -69,7 +69,7 @@
 const W = window.solanaWeb3, K = window.KokosBurn;
 // Browser-friendly public RPCs. Solana's own api.mainnet-beta refuses requests from web pages
 // (403), so it cannot be used here. The second is tried when the first errors.
-const RPCS = ['https://solana-rpc.publicnode.com', 'https://rpc.solanatracker.io/public'];
+const RPCS = ['https://rpc.solanatracker.io/public', 'https://solana-rpc.publicnode.com'];
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const P = { amount: q.get('a'), ref: q.get('r'), cents: Number(q.get('c')), exp: Number(q.get('e')) };
