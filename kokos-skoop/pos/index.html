@@ -1085,7 +1085,8 @@ async function generateKokosQR(){
   const wrapRect=wrap.getBoundingClientRect();
   await renderQRInto(wrap,url,Math.round((wrapRect.width||280)-28));
   const st=document.getElementById('modal-status');
-  st.textContent='Waiting for the customer to burn KOKOS…';
+  // Wallet apps' own scanners reject web links, so point customers at the phone camera.
+  st.innerHTML='Customer: scan with your <b>phone camera</b>, then open in your Solana wallet<br><span style="font-weight:500;opacity:.8">Waiting for the KOKOS burn…</span>';
   qrDeadlineSec=deadline;startQRCountdown();
   const pollToken=Symbol();activePollToken=pollToken;
   pollForKokosBurn(reference,raw,totalCents,deadline,pollToken);
