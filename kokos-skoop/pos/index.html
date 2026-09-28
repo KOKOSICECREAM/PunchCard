@@ -542,6 +542,57 @@ const CFG={
 };
 
 let skoopPriceUSD=0,cachedSkoopBalance=0,priceDivergence=null;
+let priceIsLive=false;   // false while the pill shows a saved price; SKOOP checkout waits for a live one
+
+// ── Base RPC pools ────────────────────────────────────────────────────────────
+// One public RPC (mainnet.base.org) used to serve everything, and under its rate limit
+// ethers backs off and retries without giving up — the price and vault pills sat on
+// "loading…". Now reads go to a pool where a provider that stalls ~1.5s is passed over,
+// and nothing retries forever. Log scans need providers that accept 2,000-block
+// eth_getLogs ranges; only these two do (drpc/1rpc/blast/tenderly refuse), checked 2026-09-28.
+const READ_RPCS=['https://mainnet.base.org','https://base-rpc.publicnode.com','https://base.drpc.org','https://1rpc.io/base'];
+const LOG_RPCS=['https://mainnet.base.org','https://base-rpc.publicnode.com'];
+// A provider over several RPCs: ask the first; if it has not answered in 1.5s — or errors, or
+// is rate-limited — ask the next too; the first good answer wins. A JSON-RPC error that is a
+// real answer (a revert, or a getLogs range limit the scan splits on) is passed straight back.
+// ethers' FallbackProvider was tried first: it syncs every member before its first answer, so
+// one dead RPC stalled the pool for its whole timeout.
+const RPC_STAGGER_MS=1500,RPC_TIMEOUT_MS=8000;
+const isThrottle=e=>e&&(/rate|limit exceeded|too many|capacity|-32005|-32016|-32029/i.test(String(e.message||''))||[-32005,-32016,-32029,429].includes(e.code));
+class PooledProvider extends ethers.JsonRpcProvider{
+  constructor(urls){super(urls[0],CFG.CHAIN_ID,{staticNetwork:true,batchMaxCount:1});this._urls=urls;}
+  _send(payload){
+    const body=JSON.stringify(payload),urls=this._urls;
+    const one=async url=>{
+      const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body,signal:AbortSignal.timeout(RPC_TIMEOUT_MS)});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const j=await r.json();const arr=Array.isArray(j)?j:[j];
+      if(arr.some(x=>x&&x.error&&isThrottle(x.error)))throw new Error('rate limited');
+      return arr;
+    };
+    return new Promise((resolve,reject)=>{
+      let done=false,started=0,failed=0,lastErr,timer;
+      const launch=()=>{
+        if(done||started>=urls.length)return;
+        const url=urls[started++];
+        one(url).then(res=>{if(!done){done=true;clearInterval(timer);resolve(res);}})
+          .catch(e=>{lastErr=e;failed++;if(done)return;if(started<urls.length)launch();else if(failed>=started){clearInterval(timer);reject(lastErr);}});
+      };
+      launch();
+      timer=setInterval(()=>{if(done||started>=urls.length){clearInterval(timer);return;}launch();},RPC_STAGGER_MS);
+    });
+  }
+}
+let _readP=null,_logP=null;
+const readProvider=()=>_readP||(_readP=new PooledProvider(READ_RPCS));   // eth_call, balances, blocks
+const logFallback=()=>_logP||(_logP=new PooledProvider(LOG_RPCS));       // queryFilter and raw eth_getLogs
+const logProvider={send:(m,p)=>logFallback().send(m,p),getBlockNumber:()=>logFallback().getBlockNumber()};
+
+// ── saved last-known values, so the pills never open empty ─────────────────────
+const posCache={
+  get(k,maxAgeMs){try{const v=JSON.parse(localStorage.getItem('pos_cache_'+k)||'null');return v&&Date.now()-v.ts<maxAgeMs?v.val:null;}catch(e){return null;}},
+  set(k,val){try{localStorage.setItem('pos_cache_'+k,JSON.stringify({ts:Date.now(),val}));}catch(e){}},
+};
 let currentPaymentToken=null; // set to CFG.SKOOP or CFG.USDC at checkout open
 const ABI_ERC20=["function transfer(address,uint256) returns (bool)","function approve(address,uint256) returns (bool)"];
 const ABI_ESCROW=[
@@ -623,13 +674,14 @@ async function fetchSkoopPrice(){
   try{
     // batchMaxCount:1 — slot0() and token0() go out together below, and a batched
     // pair fails as a unit under Base's rate limit. This price drives the reward math.
-    const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{batchMaxCount:1,staticNetwork:true});
+    const pub=readProvider();
     const pool=new ethers.Contract(CFG.POOL_USDC_SKOOP,ABI_POOL,pub);
     const[s0,t0]=await Promise.all([pool.slot0(),pool.token0()]);
     const sq=Number(s0.sqrtPriceX96)/Number(2n**96n);
     const raw=sq*sq;
     const skoopIsT0=t0.toLowerCase()===CFG.SKOOP.toLowerCase();
     skoopPriceUSD=skoopIsT0?raw:1/raw;
+    priceIsLive=true;posCache.set('price',skoopPriceUSD);
     // Show the price as soon as it is read. The two-pool cross-check runs after, capped at 8s:
     // under the public RPC's throttling ethers backs off for minutes, and the pill used to sit
     // on "loading…" the whole time. The checkout gate still reads priceDivergence as before.
@@ -915,7 +967,12 @@ async function generateQR(){
   if(currentPaymentToken===KOKOS_SOL)return generateKokosQR();
   const payToken = currentPaymentToken || CFG.SKOOP;
   const isUSDC = payToken.toLowerCase() === CFG.USDC.toLowerCase();
-  if(!isUSDC && !skoopPriceUSD){showToast('Waiting for SKOOP price…','error');return;}
+  if(!isUSDC && (!skoopPriceUSD||!priceIsLive)){
+    // The pill may be showing a saved price; a SKOOP charge always uses a live one.
+    showToast('Getting the live SKOOP price…','');
+    await fetchSkoopPrice();
+    if(!priceIsLive){showToast('SKOOP price unavailable — take USDC or try again','error');return;}
+  }
   if(!isUSDC && priceDivergence!==null && priceDivergence>PRICE_DIVERGENCE_MAX){
     showToast('SKOOP price unsettled ('+(priceDivergence*100).toFixed(1)+'% gap between pools) — take USDC or try again in a minute','error');return;
   }
@@ -1178,7 +1235,7 @@ async function payReward(to,amountStr){
     return 'vault';
   }
   if(/Drawer empty|Emission limit/.test(why)){
-    const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+    const pub=readProvider();
     const own=await new ethers.Contract(CFG.SKOOP,["function balanceOf(address) view returns (uint256)"],pub).balanceOf(signerAddr);
     if(own>=amt){
       const tx=await new ethers.Contract(CFG.SKOOP,ABI_ERC20,signer).transfer(to,amt);
@@ -1246,7 +1303,7 @@ function showPaymentSuccess(totalCents,tokenAmt,receiptId,tokenLabel='SKOOP'){
 }
 function closeSuccess(){clearInterval(successTimer);closeModal();}
 async function pollForPayment(receiptId,pollToken){
-  const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+  const pub=logFallback();
   const escrow=new ethers.Contract(CFG.ESCROW,ABI_ESCROW,pub);
   let startBlock;try{startBlock=await pub.getBlockNumber()-5;}catch(e){startBlock=0;}
   let attempts=0;
@@ -1279,7 +1336,7 @@ async function pollForPayment(receiptId,pollToken){
 }
 
 async function pollForDirectUSDC(usdcAmount,totalCents,pollToken){
-  const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+  const pub=logFallback();
   const usdc=new ethers.Contract(CFG.USDC,['event Transfer(address indexed from,address indexed to,uint256 value)'],pub);
   let startBlock;try{startBlock=await pub.getBlockNumber()-5;}catch(e){startBlock=0;}
   let attempts=0;
@@ -1461,7 +1518,7 @@ let vaultState=null;   // last read of the rewards vault for this signer
 // One Multicall3 request instead of five: the public RPC drops calls from a burst, and this
 // runs alongside the page's own price and balance reads. Retried once before giving up.
 async function readVault(addr,attempt=0){
-  const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+  const pub=readProvider();
   const iv=new ethers.Interface(ABI_VAULT);
   const mc=new ethers.Contract('0xcA11bde05977b3631167028862bE2a173976CA11',['function aggregate3((address target,bool allowFailure,bytes callData)[]) view returns ((bool success,bytes returnData)[])'],pub);
   const calls=[['getDrawer',[addr]],['drawerAvailable',[addr]],['spendable',[]],['pausedUntil',[]],['isFrozen',[]]];
@@ -1526,8 +1583,8 @@ async function getLogsChunked(pub,filter,fromBlock,toBlock){
 }
 async function loadReceipts(attempt=0){
   try{
-    const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true,batchMaxCount:1});
-    const escrow=new ethers.Contract(CFG.ESCROW,ABI_ESCROW,pub);
+    const pub=logProvider;
+    const escrow=new ethers.Contract(CFG.ESCROW,ABI_ESCROW,null);   // decoding only
     const latest=await pub.getBlockNumber();
     const LOOKBACK=90000,fromBlock=Math.max(0,latest-LOOKBACK);
     // All four receipt events share one request per span via a topic0 OR-filter,
@@ -1656,11 +1713,14 @@ async function fetchWalletBalance(){
   const dot=document.getElementById('wallet-balance-dot');
   const skEl=document.getElementById('wallet-balance-skoop');
   const usdEl=document.getElementById('wallet-balance-usd');
-  dot.className='loading';
-  skEl.innerHTML='<span id="wallet-balance-dot" class="loading"></span>…';
-  usdEl.textContent='loading…';
+  // Keep what is on screen (or the last saved values) while refreshing; only a first-ever
+  // load shows a placeholder.
+  const saved=posCache.get('pill_'+signerAddr,24*3600*1000);
+  if(/…|—/.test(skEl.textContent)&&saved){skEl.innerHTML=saved.sk;usdEl.textContent=saved.usd;}
+  const dotNow0=document.getElementById('wallet-balance-dot');if(dotNow0)dotNow0.className='loading';
+  if(!saved&&/—/.test(skEl.textContent)){skEl.innerHTML='<span id="wallet-balance-dot" class="loading"></span>…';usdEl.textContent='loading…';}
   try{
-    const pub=new ethers.JsonRpcProvider(CFG.RPC,CFG.CHAIN_ID,{staticNetwork:true});
+    const pub=readProvider();
     const ABI_BAL=["function balanceOf(address) view returns (uint256)"];
     const token=new ethers.Contract(CFG.SKOOP,ABI_BAL,pub);
     const [raw,ethRaw,vs]=await Promise.all([token.balanceOf(signerAddr),pub.getBalance(signerAddr),readVault(signerAddr).catch(()=>null)]);
@@ -1691,6 +1751,7 @@ async function fetchWalletBalance(){
       usdEl.textContent=why;usdEl.style.color=col;usdEl.style.fontWeight='700';
       document.getElementById('wallet-balance-wrap').title=`vault ${vs?Math.floor(vs.ready).toLocaleString():'?'} · float ${balance.toLocaleString()} SKOOP · ${ethBal.toFixed(4)} ETH`;
     } else {usdEl.style.color='';usdEl.style.fontWeight='';}
+    posCache.set('pill_'+signerAddr,{sk:skEl.innerHTML,usd:usdEl.textContent});
     clearTimeout(walletBalanceTimer);
     walletBalanceTimer=setTimeout(fetchWalletBalance,30000);
   }catch(e){
@@ -1807,6 +1868,15 @@ function applyBrand(){
 }
 applyBrand();
 renderMenu();renderCart();updateDailyLimitDisplay();renderPendingRewards();
+(function showSavedPrice(){
+  const p=posCache.get('price',6*3600*1000);
+  if(p>0&&!skoopPriceUSD){
+    skoopPriceUSD=p;priceIsLive=false;
+    document.getElementById('price-pill-main').textContent='1 USDC = '+Math.round(1/p).toLocaleString()+' SKOOP';
+    document.getElementById('price-pill-change').textContent='updating…';
+    updateTotals();
+  }
+})();
 fetchSkoopPrice();setInterval(fetchSkoopPrice,60000);
 if(window.ethereum){window.ethereum.request({method:'eth_accounts'}).then(accounts=>{if(accounts.length)connectWallet();}).catch(()=>{});}
 </script>
