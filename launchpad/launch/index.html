@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Launch a Community Token — PunchCard</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f8f4ec">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
+</head>
+<body>
+<div class="testnet-bar">Test network (Solana devnet) <span>· no real money · coins here are for testing only</span></div>
+<nav>
+  <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
+  <ul class="nav-links">
+    <li><a href="/launchpad/">How it works</a></li>
+    <li><a href="/launchpad/launch/" aria-current="page">Launch</a></li>
+  </ul>
+</nav>
+
+<main class="app-wrap">
+  <div>
+    <h1>Launch a token for a business <em>you love.</em></h1>
+    <p class="lede">Its creator fees are held for the business until the owner claims them.</p>
+  </div>
+
+  <section class="panel" aria-labelledby="s1">
+    <h2 id="s1"><span class="step-num">1</span>Which business?</h2>
+    <div class="field">
+      <label for="maps">Google Maps link</label>
+      <input id="maps" placeholder="https://maps.app.goo.gl/…  or a google.com/maps/place/… link" autocomplete="off">
+      <span class="hint">On Google Maps, open the business, tap Share and copy the link.</span>
+    </div>
+    <div class="btn-row"><button class="btn-secondary" id="find" type="button">Find business</button><span class="status-line" id="findStatus"></span></div>
+    <div id="bizBox" hidden>
+      <div class="biz"><span class="name" id="bizName"></span><span class="addr" id="bizAddr"></span></div>
+      <div id="bizNotice" class="notice" style="margin-top:0.75rem"></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="s2" id="coinPanel" hidden>
+    <h2 id="s2"><span class="step-num">2</span>Your community token</h2>
+    <div class="row2">
+      <div class="field"><label for="name">Token name</label><input id="name" maxlength="32" placeholder="Rosie's Bagels Fans"></div>
+      <div class="field"><label for="ticker">Ticker</label><input id="ticker" maxlength="10" placeholder="ROSIE"></div>
+    </div>
+    <div class="field"><label for="desc">Description <span class="hint">(optional)</span></label><textarea id="desc" maxlength="500" placeholder="Why this place matters to you."></textarea></div>
+    <div class="row2">
+      <div class="field"><label for="img">Image <span class="hint">(optional, square works best)</span></label><input id="img" type="file" accept="image/*"></div>
+      <div class="field"><label for="devbuy">Your first buy (SOL)</label><input id="devbuy" type="number" min="0" max="0.5" step="0.01" value="0"><span class="hint">0 to 0.5 SOL</span></div>
+    </div>
+    <div class="notice ok"><b>Fair launch.</b> You get no share of the fees. Your first buy is capped at 0.5 SOL, and your wallet is left out of holder rewards. One token per business.</div>
+  </section>
+
+  <section class="panel" aria-labelledby="s3" id="launchPanel" hidden>
+    <h2 id="s3"><span class="step-num">3</span>Launch</h2>
+    <p id="walletLine" class="status-line">Connect the wallet that will launch and pay (Phantom works best).</p>
+    <div class="btn-row">
+      <button class="btn-secondary" id="connect" type="button">Connect wallet</button>
+      <button class="btn-primary sol" id="launch" type="button" disabled>Launch token</button>
+    </div>
+    <p class="status-line" id="launchStatus" role="status"></p>
+  </section>
+
+  <section class="panel" aria-labelledby="recentH">
+    <h2 id="recentH">Recently launched</h2>
+    <ul class="coin-list" id="recent"><li class="status-line">Loading…</li></ul>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span></a>
+    <ul class="footer-links"><li><a href="/launchpad/">How the launchpad works</a></li><li><a href="/loyalty/">Tokenized Loyalty Rewards</a></li></ul>
+    <div class="footer-meta">punchcard.club · Community Launchpad (test network) · © 2026</div>
+  </div>
+</footer>
+
+<script type="module">
+import { $, esc, api, connectWallet, signTx, imageToPng, short } from '/launchpad/lp.js';
+
+let business = null, wallet = null;
+
+$('ticker').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+
+$('find').addEventListener('click', async () => {
+  const maps = $('maps').value.trim();
+  if (!maps) return ($('findStatus').textContent = 'Paste a Google Maps link first.');
+  $('find').disabled = true; $('findStatus').textContent = 'Looking it up on Google…';
+  try {
+    const r = await api('/api/business', { maps });
+    business = r;
+    $('bizName').textContent = r.business.name;
+    $('bizAddr').textContent = r.business.address || '';
+    const n = $('bizNotice');
+    if (r.alreadyLaunched) {
+      n.className = 'notice bad';
+      n.innerHTML = `<b>${esc(r.business.name)} already has a community token.</b> ${r.mint ? `<a href="/launchpad/coin/?mint=${esc(r.mint)}">See it here</a>.` : ''}`;
+    } else if (!r.ownerCanVerifyVia) {
+      n.className = 'notice warn';
+      n.innerHTML = `<b>Heads up:</b> this business's Google listing has no website of its own, so its owner can't verify yet. If nobody claims within 30 days, the token's creator fees go to its holders instead.`;
+    } else {
+      n.className = 'notice ok';
+      n.innerHTML = `The owner can claim the fees by verifying <b>${esc(r.ownerCanVerifyVia)}</b>, the website on this Google listing.`;
+    }
+    $('bizBox').hidden = false;
+    $('coinPanel').hidden = $('launchPanel').hidden = !!r.alreadyLaunched;
+    if (!$('name').value) $('name').value = `${r.business.name} Fans`.slice(0, 32);
+    $('findStatus').textContent = '';
+  } catch (e) {
+    $('findStatus').textContent = e.message;
+  } finally { $('find').disabled = false; }
+});
+
+$('connect').addEventListener('click', async () => {
+  try {
+    wallet = await connectWallet();
+    $('walletLine').textContent = `Connected: ${short(wallet)}. This wallet signs and pays for the launch.`;
+    $('connect').textContent = 'Switch wallet';
+    $('launch').disabled = false;
+  } catch (e) { $('walletLine').textContent = e.message; }
+});
+
+$('launch').addEventListener('click', async () => {
+  const s = $('launchStatus');
+  const devBuySol = Number($('devbuy').value || 0);
+  if (!(devBuySol >= 0 && devBuySol <= 0.5)) return (s.textContent = 'Your first buy must be between 0 and 0.5 SOL.');
+  $('launch').disabled = true;
+  try {
+    s.textContent = 'Preparing your launch…';
+    const imageBase64 = await imageToPng($('img').files[0]);
+    const prep = await api('/api/launch/prepare', {
+      maps: $('maps').value.trim(), coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
+      description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64,
+    });
+    s.textContent = 'Approve the launch in your wallet…';
+    const signed = await signTx(prep.tx);
+    s.textContent = 'Launching on Solana… (10–30 seconds)';
+    const res = await api('/api/launch/submit', { mint: prep.mint, tx: signed });
+    s.textContent = 'Live! Opening your token…';
+    location.href = `/launchpad/coin/?mint=${encodeURIComponent(res.mint)}&new=1`;
+  } catch (e) {
+    s.textContent = /reject|cancel/i.test(e.message) ? 'Cancelled in the wallet. Nothing was launched.' : e.message;
+    $('launch').disabled = false;
+  }
+});
+
+api('/api/coins').then((r) => {
+  $('recent').innerHTML = r.coins.length
+    ? r.coins.slice(0, 10).map((c) => `<li><a href="/launchpad/coin/?mint=${esc(c.mint)}"><span><b>${esc(c.coin_name)}</b> $${esc(c.ticker)}</span><span class="status-line">${esc(c.business_name)}${c.city ? ' · ' + esc(c.city) : ''}</span></a></li>`).join('')
+    : '<li class="status-line">No tokens yet. Be the first.</li>';
+}).catch(() => { $('recent').innerHTML = '<li class="status-line">Couldn’t load the list right now.</li>'; });
+</script>
+</body>
+</html>
