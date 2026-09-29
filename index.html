@@ -806,6 +806,21 @@
     line-height: 1.75;
   }
 
+  /* Two Layers overview and layer tags. */
+  .layers-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:3rem; }
+  .layer-card { display:flex; flex-direction:column; gap:0.75rem; background:var(--paper-card); border:1px solid var(--border-mid); border-radius:8px; padding:2.25rem 2rem; color:inherit; text-decoration:none; transition:box-shadow 0.2s, border-color 0.2s; }
+  .layer-card:hover { box-shadow:var(--shadow-md); border-color:var(--terra); }
+  .layer-card h3 { font-family:'Lora',serif; font-size:1.45rem; font-weight:600; line-height:1.25; }
+  .layer-card p { font-size:0.92rem; color:var(--ink-mid); line-height:1.7; }
+  .layer-card .layer-proof { font-size:0.82rem; color:var(--ink-faded); font-style:italic; }
+  .layer-top { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+  .layer-num, .layer-tag { font-family:'Courier Prime',monospace; font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--terra); }
+  .layer-tag { display:inline-block; border:1px solid var(--border-mid); border-radius:999px; padding:0.35rem 0.85rem; margin-bottom:1.25rem; }
+  .layer-status { font-size:0.6rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-mid); background:var(--paper-warm); border-radius:999px; padding:0.3rem 0.7rem; white-space:nowrap; }
+  .layer-status.live { color:var(--terra); background:var(--terra-pale); }
+  .layer-link { margin-top:auto; padding-top:0.5rem; font-size:0.85rem; font-weight:600; color:var(--terra); }
+  .layers-note { margin-top:1.75rem; font-size:0.85rem; color:var(--ink-faded); max-width:640px; }
+  @media(max-width:900px){ .layers-grid { grid-template-columns:1fr; } }
   /* PunchCard mark beside the wordmark. */
   .brand-mark { height: 1.35em; width: auto; vertical-align: middle; margin-right: 0.5rem; position: relative; top: -0.1em; }
   /* Community Tokens section and SKOOP merchant link. */
@@ -819,7 +834,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://punchcard.club/">
   <meta property="og:title" content="PunchCard.club — Crypto-Powered Loyalty Rewards">
-  <meta property="og:description" content="Built by businesses, earned by customers, owned outright, rented from no one. Loyalty rewards on Base mainnet — immutable, permanent, yours.">
+  <meta property="og:description" content="Two layers, one PunchCard: tokenized Loyalty Rewards on Base, and a Community Token Launchpad on Solana for the businesses you love.">
   <meta property="og:image" content="https://punchcard.club/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -828,11 +843,11 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://punchcard.club/">
   <meta name="twitter:title" content="PunchCard.club — Crypto-Powered Loyalty Rewards">
-  <meta name="twitter:description" content="Built by businesses, earned by customers, owned outright, rented from no one. Loyalty rewards on Base mainnet — immutable, permanent, yours.">
+  <meta name="twitter:description" content="Two layers, one PunchCard: tokenized Loyalty Rewards on Base, and a Community Token Launchpad on Solana for the businesses you love.">
   <meta name="twitter:image" content="https://punchcard.club/og-image.png">
 
   <!-- General -->
-  <meta name="description" content="Crypto-powered loyalty rewards built by businesses, earned by customers, owned outright, rented from no one. Deploy your token on Base mainnet.">
+  <meta name="description" content="Two layers, one PunchCard: tokenized Loyalty Rewards on Base, and a Community Token Launchpad on Solana for the businesses you love.">
   <meta name="theme-color" content="#f8f4ec">
 </head>
 <body id="top">
@@ -840,13 +855,13 @@
 <nav>
   <a class="nav-logo" href="#top"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small style="font-family:'Courier Prime',monospace;font-size:0.55rem;letter-spacing:0.12em;color:var(--ink-faded);vertical-align:middle;margin-left:2px;font-weight:400">.club</small></a>
   <ul class="nav-links">
+    <li><a href="#layers">Two Layers</a></li>
     <li><a href="#network">The Network</a></li>
     <li><a href="#why">Why Crypto</a></li>
     <li><a href="#how">How It Works</a></li>
     <li><a href="#promise">The Promise</a></li>
     <li><a href="#implementation">Setup</a></li>
-    <li><a href="#community">Community Tokens</a></li>
-    <li><a href="#contact" class="nav-cta">Get Started</a></li>
+    <li><a href="#community" class="nav-cta">Launchpad</a></li>
   </ul>
   <button class="nav-hamburger" onclick="toggleMenu()" aria-label="Menu">
     <span></span><span></span><span></span>
@@ -854,13 +869,13 @@
 </nav>
 
 <div class="mobile-menu" id="mobileMenu">
+  <a href="#layers" onclick="closeMenu()">Two Layers</a>
   <a href="#network" onclick="closeMenu()">The Network</a>
   <a href="#why" onclick="closeMenu()">Why Crypto</a>
   <a href="#how" onclick="closeMenu()">How It Works</a>
   <a href="#promise" onclick="closeMenu()">The Promise</a>
   <a href="#implementation" onclick="closeMenu()">Setup</a>
-  <a href="#community" onclick="closeMenu()">Community Tokens</a>
-  <a href="#contact" onclick="closeMenu()" style="color:var(--terra);font-weight:600">Get Started →</a>
+  <a href="#community" onclick="closeMenu()" style="color:var(--terra);font-weight:600">Launchpad →</a>
 </div>
 
 <section class="hero">
@@ -868,14 +883,14 @@
     <img src="punchbari.jpg" alt="Customer receiving a punchcard at a coffee bar">
     <div class="hero-image-caption">Est. 2026</div>
   </div>
-  <div class="edition-line">punchcard.club · Est. 2026 · Base Mainnet</div>
+  <div class="edition-line">punchcard.club · Est. 2026 · Base + Solana</div>
   <h2 class="hero-tagline-title">Crypto-Powered<br><em>Loyalty Rewards</em></h2>
   <p class="hero-tagline-sub">Built by businesses, earned by customers, owned outright, rented from no one.</p>
   <h1 class="hero-headline">Real loyalty<br>can't be <em>rented.</em></h1>
   <p class="hero-sub">Relationships are built over time. Trust can't be bought, it is earned — loyalty is the reward, and it belongs to you and your customer. Nobody else should be in the middle of it.</p>
   <div class="hero-actions">
-    <a href="#contact" class="btn-primary">Deploy Your Token</a>
-    <a href="#how" class="btn-ghost">See how it works <span class="arrow">→</span></a>
+    <a href="#network" class="btn-primary">Loyalty Rewards on Base</a>
+    <a href="#community" class="btn-ghost">Community Launchpad on Solana <span class="arrow">→</span></a>
   </div>
   <div class="hero-trust">
     <span class="trust-item"><span class="trust-check">✓</span> Live on Base Mainnet</span>
@@ -901,8 +916,34 @@
   </div>
 </div>
 
+<div id="layers">
+  <div class="section-wrap">
+    <div class="section-label">Two Layers</div>
+    <h2 class="section-heading">One PunchCard.<br><em>Two layers.</em></h2>
+    <p class="section-sub">Two separate products under one name, each with its own token and its own purpose, both built around the businesses you love.</p>
+    <div class="layers-grid">
+      <a class="layer-card" href="#network">
+        <div class="layer-top"><span class="layer-num">Layer 1 · Base</span><span class="layer-status live">Live</span></div>
+        <h3>Tokenized Loyalty Rewards</h3>
+        <p>Customers earn a business's own reward token with every purchase, hold it in their own wallet, and spend or swap it across the PunchCard network. Merchants get a POS, a customer app and a dashboard.</p>
+        <p class="layer-proof">Running at KOKOS Ice Cream with SKOOP, our first registered merchant.</p>
+        <span class="layer-link">Explore Loyalty Rewards ↓</span>
+      </a>
+      <a class="layer-card" href="#community">
+        <div class="layer-top"><span class="layer-num">Layer 2 · Solana</span><span class="layer-status">In development</span></div>
+        <h3>Community Token Launchpad</h3>
+        <p>Rally around the businesses you love. Anyone will be able to launch a community token for a favorite local business, with creator fees set aside for its owner.</p>
+        <p class="layer-proof">Benefiting the businesses you love, not replacing their loyalty program.</p>
+        <span class="layer-link">Explore the Launchpad ↓</span>
+      </a>
+    </div>
+    <p class="layers-note">The layers are separate. A loyalty token on Base and a community token on Solana are different assets, and holding one gives you nothing in the other.</p>
+  </div>
+</div>
+
 <div class="section-alt" id="network">
   <div class="section-wrap">
+    <div class="layer-tag">Layer 1 · Tokenized Loyalty Rewards · Base</div>
     <div class="section-label">The Network</div>
     <h2 class="section-heading">Your token.<br><em>The whole network.</em></h2>
     <div class="network-grid">
@@ -1234,7 +1275,7 @@
             <div class="impl-step-num">1</div>
             <div class="impl-step-content">
               <h4>Tell us about your business</h4>
-              <p>Fill out the form. We handle token design, reward rates, and deployment config.</p>
+              <p>We handle token design, reward rates, and deployment config.</p>
             </div>
           </div>
           <div class="impl-step">
@@ -1291,7 +1332,7 @@
       <div class="hww-card fade-up">
         <div class="hww-num">01</div>
         <h3>Tell us about your business</h3>
-        <p>Fill out the form below. Business type, location, what you're hoping loyalty does for your customers. No technical knowledge required.</p>
+        <p>Business type, location, what you're hoping loyalty does for your customers. No technical knowledge required.</p>
       </div>
       <div class="hww-card fade-up" style="transition-delay:0.1s">
         <div class="hww-num">02</div>
@@ -1306,14 +1347,14 @@
     </div>
     <div class="hww-footer fade-up">
       <p>Every business is different. Some need the full stack. Some just need a token and a POS. We'll figure out the right fit together — and every business that joins becomes part of something larger.</p>
-      <a href="#contact" class="btn-primary" style="margin-top:1.5rem;display:inline-block">Start the Conversation</a>
     </div>
   </div>
 </div>
 
 <div id="community">
   <div class="section-wrap">
-    <div class="section-label">Community Tokens · Solana</div>
+    <div class="layer-tag">Layer 2 · Community Token Launchpad · Solana</div>
+    <div class="section-label">Community Tokens</div>
     <h2 class="section-heading">Support the businesses<br>you <em>love.</em></h2>
     <p class="section-sub">A second PunchCard product, now in development: a community launchpad on Solana. Anyone will be able to start a token for a favorite local business and bring its community together around it, with creator fees set aside for the business's owner.</p>
     <div class="how-we-work-grid">
@@ -1336,43 +1377,6 @@
   </div>
 </div>
 
-<div id="contact" class="section-alt">
-  <div class="section-wrap">
-    <div class="contact-grid">
-      <div class="contact-left">
-        <h2>Ready to own<br>your <em>loyalty?</em></h2>
-        <p>Tell us about your business. We'll send over a deployment plan, tokenomics recommendations, and a custom quote within one business day.</p>
-        <p>No crypto experience required. We handle the entire deployment.</p>
-        <div class="contact-reassure">
-          <div class="reassure-item">Response within one business day</div>
-          <div class="reassure-item">No crypto knowledge required</div>
-          <div class="reassure-item">Already running in Nashville</div>
-          <div class="reassure-item">No obligation — just a conversation</div>
-        </div>
-      </div>
-      <form class="contact-form" id="contactForm" onsubmit="handleSubmit(event)">
-        <div class="form-row">
-          <input type="text" name="business_name" placeholder="Business name" required>
-          <input type="text" name="name" placeholder="Your name" required>
-        </div>
-        <input type="email" name="email" placeholder="Email address" required>
-        <input type="text" name="city" placeholder="City / location">
-        <select name="business_type">
-          <option value="" disabled selected>Business type</option>
-          <option>Restaurant / Food & Beverage</option>
-          <option>Retail</option>
-          <option>Coffee Shop / Café</option>
-          <option>Fitness / Wellness</option>
-          <option>Franchise / Multi-Location</option>
-          <option>Other</option>
-        </select>
-        <textarea name="message" placeholder="Tell us about your business..."></textarea>
-        <button type="submit">Send My Inquiry →</button>
-      </form>
-    </div>
-  </div>
-</div>
-
 <footer>
   <div class="footer-inner">
     <a class="footer-logo" href="#"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span><small style="font-family:'Courier Prime',monospace;font-size:0.5rem;letter-spacing:0.12em;color:rgba(248,244,236,0.25);vertical-align:middle;margin-left:2px">.club</small></a>
@@ -1381,10 +1385,9 @@
       <li><a href="#how">How It Works</a></li>
       <li><a href="#promise">The Promise</a></li>
       <li><a href="#implementation">Setup</a></li>
-      <li><a href="#community">Community Tokens</a></li>
-      <li><a href="#contact">Contact</a></li>
+      <li><a href="#community">Launchpad</a></li>
     </ul>
-    <div class="footer-meta">punchcard.club · Built on Base · © 2026</div>
+    <div class="footer-meta">punchcard.club · Loyalty on Base · Launchpad on Solana · © 2026</div>
   </div>
 </footer>
 
@@ -1405,36 +1408,7 @@
   function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }
   function closeMenu(){ document.getElementById('mobileMenu').classList.remove('open'); }
 
-  async function handleSubmit(e){
-    e.preventDefault();
-    const form = e.target;
-    const btn = form.querySelector('button');
-    const originalText = btn.textContent;
-    btn.textContent = 'Sending...';
-    btn.disabled = true;
-    const data = new FormData(form);
-    try {
-      const res = await fetch('https://formspree.io/f/xreojenr', {
-        method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
-      });
-      if (res.ok) {
-        btn.textContent = "Sent ✓ We'll be in touch soon";
-        btn.style.background = '#1c1812';
-        form.reset();
-        setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.disabled = false; }, 5000);
-      } else {
-        btn.textContent = 'Something went wrong — try again';
-        btn.style.background = '#8c8070';
-        setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.disabled = false; }, 3000);
-      }
-    } catch(err) {
-      btn.textContent = 'Something went wrong — try again';
-      btn.style.background = '#8c8070';
-      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.disabled = false; }, 3000);
-    }
-  }
+
 </script>
 </body>
 </html>
