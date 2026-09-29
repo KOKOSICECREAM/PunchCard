@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PunchCard Tokenized Loyalty Rewards — The Curated PunchCard Network</title>
+  <link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+  <link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f8f4ec;
+    --paper-warm: #f2ece0;
+    --paper-card: #faf7f1;
+    --ink: #1c1812;
+    --ink-mid: #4a4438;
+    --ink-faded: #8c8070;
+    --ink-ghost: #c4b9a8;
+    --terra: #a83a20;
+    --terra-hover: #c04828;
+    --terra-pale: #f9ede8;
+    --border: rgba(28,24,18,0.1);
+    --border-mid: rgba(28,24,18,0.18);
+    --shadow-sm: 0 1px 8px rgba(28,24,18,0.06);
+    --shadow-md: 0 4px 24px rgba(28,24,18,0.1);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(248,244,236,0.94);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+
+  .nav-logo {
+    font-family: 'Special Elite', cursive;
+    font-size: 1.5rem;
+    color: var(--ink);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+  }
+
+  .nav-logo span { color: var(--terra); }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+    align-items: center;
+  }
+
+  .nav-links a {
+    color: var(--ink-mid);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--ink); }
+
+  .nav-cta {
+    background: var(--terra) !important;
+    color: var(--paper) !important;
+    padding: 0.5rem 1.25rem;
+    border-radius: 4px;
+    font-weight: 600 !important;
+    transition: background 0.2s !important;
+  }
+
+  .nav-cta:hover { background: var(--terra-hover) !important; }
+
+  .hero {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 4rem 3rem 4.5rem;
+    text-align: center;
+  }
+
+  .hero-image-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto 3rem;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(28,24,18,0.2);
+  }
+
+  .hero-image-wrap img {
+    width: 100%;
+    display: block;
+    filter: sepia(45%) contrast(1.08) brightness(0.95) saturate(1.1) hue-rotate(-8deg);
+  }
+
+  .hero-image-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='0.09'/%3E%3C/svg%3E");
+    z-index: 1;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+  }
+
+  .hero-image-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(28,24,18,0.5) 100%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .hero-image-caption {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 0.85rem;
+    z-index: 3;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(248,244,236,0.45);
+  }
+
+  .edition-line {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-faded);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .edition-line::before,
+  .edition-line::after {
+    content: '';
+    height: 1px;
+    width: 3rem;
+    background: var(--border-mid);
+    display: inline-block;
+  }
+
+  .hero-headline {
+    font-family: 'Lora', serif;
+    font-size: clamp(1rem, 1.8vw, 1.3rem);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.5;
+    letter-spacing: 0;
+    margin-bottom: 1.5rem;
+    color: var(--ink-faded);
+  }
+
+  .hero-tagline-title {
+    font-family: 'Special Elite', cursive;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+    margin: 0 auto 0.75rem;
+  }
+
+  .hero-tagline-title em {
+    font-style: normal;
+    color: var(--terra);
+  }
+
+  .hero-tagline-sub {
+    font-family: 'Lora', serif;
+    font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--ink-mid);
+    max-width: 48ch;
+    margin: 0 auto 1.75rem;
+  }
+
+  .hero-headline em { font-style: italic; color: var(--ink-mid); }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--ink-mid);
+    line-height: 1.75;
+    max-width: 52ch;
+    margin: 0 auto 2.5rem;
+    font-weight: 400;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 3.5rem;
+  }
+
+  .btn-primary {
+    background: var(--terra);
+    color: var(--paper);
+    padding: 0.85rem 2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background 0.2s, transform 0.15s;
+    display: inline-block;
+    box-shadow: 0 2px 12px rgba(168,58,32,0.25);
+  }
+
+  .btn-primary:hover { background: var(--terra-hover); transform: translateY(-1px); }
+
+  .btn-ghost {
+    color: var(--ink-mid);
+    font-size: 0.88rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: color 0.2s;
+  }
+
+  .btn-ghost:hover { color: var(--ink); }
+  .btn-ghost .arrow { transition: transform 0.2s; }
+  .btn-ghost:hover .arrow { transform: translateX(3px); }
+
+  .hero-trust {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--ink-faded);
+  }
+
+  .trust-check { color: var(--terra); font-weight: 700; font-size: 0.7rem; }
+
+  .ticker {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--paper-warm);
+    padding: 0.65rem 0;
+    overflow: hidden;
+  }
+
+  .ticker-inner {
+    display: flex;
+    animation: ticker 30s linear infinite;
+    white-space: nowrap;
+  }
+
+  .ticker-item {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    color: var(--ink-faded);
+    padding: 0 2.5rem;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .ticker-item span { color: var(--terra); font-weight: 700; }
+  @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+  .section-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 5rem 3rem;
+  }
+
+  .section-alt { background: var(--paper-warm); }
+
+  .section-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--terra);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 1.5rem;
+    height: 2px;
+    background: var(--terra);
+    border-radius: 1px;
+  }
+
+  .section-heading {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+
+  .section-heading em { font-style: italic; color: var(--terra); }
+
+  .section-sub {
+    font-size: 1rem;
+    color: var(--ink-mid);
+    line-height: 1.7;
+    max-width: 52ch;
+    margin-bottom: 3rem;
+  }
+
+  .problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+    margin-top: 3rem;
+  }
+
+  .problem-text p { font-size: 1rem; color: var(--ink-mid); line-height: 1.8; margin-bottom: 1rem; }
+  .problem-text strong { color: var(--ink); font-weight: 600; }
+  .vs-stack { display: flex; flex-direction: column; gap: 1rem; }
+
+  .vs-card { padding: 1.5rem; border-radius: 6px; border: 1px solid var(--border); }
+  .vs-card.theirs { background: var(--paper-card); }
+  .vs-card.ours { background: var(--terra-pale); border-color: rgba(168,58,32,0.2); }
+
+  .vs-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 0.6rem; }
+  .vs-card.theirs .vs-label { color: var(--ink-faded); }
+  .vs-card.ours .vs-label { color: var(--terra); }
+  .vs-card p { font-size: 0.88rem; color: var(--ink-mid); line-height: 1.7; }
+
+  .steps { display: grid; grid-template-columns: repeat(4,1fr); gap: 2rem; margin-top: 3rem; }
+  .step { position: relative; }
+  .step-num { font-family: 'Special Elite', cursive; font-size: 2.5rem; color: rgba(168,58,32,0.12); line-height: 1; margin-bottom: 0.75rem; }
+  .step h3 { font-family: 'Lora', serif; font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .step p { font-size: 0.85rem; color: var(--ink-mid); line-height: 1.7; }
+
+  .deliverables { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-top: 3rem; }
+  .d-card { background: var(--paper-card); padding: 1.75rem; transition: background 0.2s; }
+  .d-card:hover { background: var(--paper-warm); }
+  .d-tag { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--terra); margin-bottom: 0.75rem; display: block; }
+  .d-card h3 { font-family: 'Lora', serif; font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+  .d-card p { font-size: 0.83rem; color: var(--ink-mid); line-height: 1.65; }
+
+  .network-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 4rem; align-items: center; margin-top: 3rem; }
+  .network-text p { font-size: 0.95rem; color: var(--ink-mid); line-height: 1.8; margin-bottom: 1rem; }
+  .network-text strong { color: var(--ink); font-weight: 600; }
+
+  .network-flow { background: var(--ink); border-radius: 8px; padding: 2rem; display: flex; flex-direction: column; gap: 0; }
+
+  .flow-step { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid rgba(248,244,236,0.07); }
+  .flow-step:last-child { border-bottom: none; }
+
+  .flow-icon { font-family: 'Courier Prime', monospace; font-size: 0.65rem; color: var(--terra); background: rgba(168,58,32,0.15); border: 1px solid rgba(168,58,32,0.3); border-radius: 3px; padding: 0.2rem 0.5rem; white-space: nowrap; flex-shrink: 0; margin-top: 0.1rem; letter-spacing: 0.08em; }
+
+  .flow-content h4 { font-family: 'Lora', serif; font-size: 0.9rem; font-weight: 600; color: var(--paper); margin-bottom: 0.2rem; }
+  .flow-content p { font-size: 0.78rem; color: rgba(248,244,236,0.45); line-height: 1.5; }
+
+  .flow-path { font-family: 'Courier Prime', monospace; font-size: 0.7rem; color: rgba(248,244,236,0.25); letter-spacing: 0.06em; padding: 0.85rem 0 0; border-top: 1px solid rgba(248,244,236,0.07); margin-top: 0.5rem; line-height: 1.8; }
+  .flow-path span { color: rgba(168,58,32,0.8); }
+
+  .proof-card { background: var(--ink); border-radius: 8px; padding: 3.5rem; display: grid; grid-template-columns: 1.2fr 1fr; gap: 3.5rem; align-items: center; margin-top: 3rem; position: relative; overflow: hidden; }
+  .proof-card::after { content: 'PunchCard'; position: absolute; bottom: -1rem; right: 1.5rem; font-family: 'Special Elite', cursive; font-size: 7rem; color: rgba(248,244,236,0.03); pointer-events: none; letter-spacing: 0.05em; line-height: 1; }
+
+  .proof-eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(248,244,236,0.45); margin-bottom: 1rem; }
+
+  .live-dot { width: 6px; height: 6px; background: #f4a57a; border-radius: 50%; animation: blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  .proof-card h3 { font-family: 'Lora', serif; font-size: 1.9rem; font-weight: 600; color: var(--paper); line-height: 1.2; margin-bottom: 1rem; }
+  .proof-card p { font-size: 0.9rem; color: rgba(248,244,236,0.6); line-height: 1.75; margin-bottom: 0.75rem; }
+  .proof-address { font-family: 'Courier Prime', monospace; font-size: 0.6rem; color: rgba(248,244,236,0.25); letter-spacing: 0.06em; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(248,244,236,0.08); }
+
+  .proof-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .proof-stat { background: rgba(248,244,236,0.05); border: 1px solid rgba(248,244,236,0.08); border-radius: 6px; padding: 1.25rem; }
+  .proof-stat-num { font-family: 'Lora', serif; font-size: 2rem; font-weight: 600; color: var(--paper); line-height: 1; margin-bottom: 0.3rem; }
+  .proof-stat-label { font-size: 0.75rem; color: rgba(248,244,236,0.4); line-height: 1.4; }
+
+  .why-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 4rem; align-items: start; margin-top: 3rem; }
+  .why-text p { font-size: 0.95rem; color: var(--ink-mid); line-height: 1.8; margin-bottom: 1rem; }
+  .why-text strong { color: var(--ink); font-weight: 600; }
+
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .compare-table th { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--paper); background: var(--ink); padding: 0.75rem 1rem; text-align: left; }
+  .compare-table td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--border); color: var(--ink-mid); }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:nth-child(even) td { background: var(--paper-warm); }
+  .compare-table td:first-child { color: var(--ink); font-weight: 500; }
+  .check { color: #2d7a3a; font-weight: 700; }
+  .cross { color: var(--terra); font-weight: 700; }
+
+  .how-we-work-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-top:3rem; }
+  .hww-card { background:var(--paper-card); border:1px solid var(--border); border-radius:8px; padding:2rem 1.75rem; transition:box-shadow 0.2s; }
+  .hww-card:hover { box-shadow:var(--shadow-md); }
+  .hww-num { font-family:'Special Elite',cursive; font-size:2.2rem; color:rgba(168,58,32,0.12); line-height:1; margin-bottom:0.75rem; }
+  .hww-card h3 { font-family:'Lora',serif; font-size:1rem; font-weight:600; margin-bottom:0.5rem; }
+  .hww-card p { font-size:0.88rem; color:var(--ink-mid); line-height:1.7; }
+  .hww-footer { margin-top:3rem; padding-top:2.5rem; border-top:1px solid var(--border); max-width:58ch; }
+  .hww-footer p { font-size:1rem; color:var(--ink-mid); line-height:1.75; font-style:italic; }
+
+  .contact-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: start; }
+  .contact-left h2 { font-family: 'Lora', serif; font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 1rem; }
+  .contact-left h2 em { font-style: italic; color: var(--terra); }
+  .contact-left p { font-size: 0.95rem; color: var(--ink-mid); line-height: 1.75; margin-bottom: 0.75rem; }
+  .contact-reassure { margin-top: 1.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .reassure-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--ink-mid); }
+  .reassure-item::before { content:'✓'; color: var(--terra); font-weight:700; font-size:0.75rem; flex-shrink:0; }
+
+  .contact-form { display: flex; flex-direction: column; gap: 0.85rem; background: var(--paper-card); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; box-shadow: var(--shadow-sm); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+
+  .contact-form input,
+  .contact-form textarea,
+  .contact-form select { background: var(--paper); border: 1px solid var(--border-mid); border-radius: 4px; padding: 0.75rem 0.9rem; color: var(--ink); font-family: 'Inter', sans-serif; font-size: 0.88rem; width: 100%; outline: none; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; }
+  .contact-form select option { background: var(--paper); }
+  .contact-form input::placeholder, .contact-form textarea::placeholder { color: var(--ink-ghost); }
+  .contact-form input:focus, .contact-form textarea:focus, .contact-form select:focus { border-color: var(--terra); box-shadow: 0 0 0 3px rgba(168,58,32,0.1); }
+  .contact-form textarea { resize: vertical; min-height: 90px; }
+  .contact-form button { background: var(--terra); color: var(--paper); border: none; padding: 0.85rem 1.75rem; font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; border-radius: 4px; cursor: pointer; transition: background 0.2s, transform 0.15s; align-self: flex-start; box-shadow: 0 2px 12px rgba(168,58,32,0.25); }
+  .contact-form button:hover { background: var(--terra-hover); transform: translateY(-1px); }
+
+  footer { background: var(--ink); color: var(--paper); padding: 2.5rem 3rem; }
+  .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; }
+  .footer-logo { font-family: 'Special Elite', cursive; font-size: 1.3rem; color: rgba(248,244,236,0.7); text-decoration: none; }
+  .footer-logo span { color: #f4a57a; }
+  .footer-links { display: flex; gap: 1.75rem; list-style: none; }
+  .footer-links a { font-size: 0.82rem; color: rgba(248,244,236,0.4); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: rgba(248,244,236,0.85); }
+  .footer-meta { font-family: 'Courier Prime', monospace; font-size: 0.62rem; color: rgba(248,244,236,0.2); letter-spacing: 0.08em; }
+
+  .fade-up { opacity:0; transform:translateY(16px); transition:opacity 0.6s ease,transform 0.6s ease; }
+  .fade-up.visible { opacity:1; transform:translateY(0); }
+
+  .why-callout { margin-top: 1.5rem; background: var(--terra-pale); border: 1px solid rgba(168,58,32,0.18); border-left: 3px solid var(--terra); border-radius: 0 6px 6px 0; padding: 1.25rem 1.5rem; }
+  .why-callout-label { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--terra); margin-bottom: 0.5rem; }
+  .why-callout p { font-size: 0.85rem; color: var(--ink-mid); line-height: 1.7; margin-bottom: 0; }
+
+  .promise-intro { max-width: 64ch; margin-bottom: 3.5rem; }
+  .promise-intro p { font-size: 1.05rem; color: var(--ink-mid); line-height: 1.85; margin-bottom: 1rem; }
+  .promise-intro strong { color: var(--ink); font-weight: 600; }
+  .promise-intro .promise-statement { font-family: 'Lora', serif; font-size: 1.1rem; font-style: italic; color: var(--ink); border-left: 3px solid var(--terra); padding-left: 1.25rem; margin-top: 1.5rem; line-height: 1.7; }
+
+  .promise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem; }
+  .promise-card { background: var(--paper-card); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; transition: box-shadow 0.2s, border-color 0.2s; }
+  .promise-card:hover { box-shadow: var(--shadow-md); border-color: rgba(168,58,32,0.2); }
+  .promise-card-emotion { font-family: 'Lora', serif; font-size: 1.05rem; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 0.75rem; }
+  .promise-card-body { font-size: 0.88rem; color: var(--ink-mid); line-height: 1.75; margin-bottom: 1.25rem; font-style: italic; }
+  .promise-card-technical { font-family: 'Courier Prime', monospace; font-size: 0.7rem; color: var(--ink-faded); letter-spacing: 0.04em; border-top: 1px solid var(--border); padding-top: 0.85rem; line-height: 1.6; }
+  .promise-card-technical span { color: var(--terra); font-weight: 700; }
+
+  .alloc-note { max-width: 68ch; margin-top: 1.75rem; font-family: 'Lora', serif; font-size: 0.98rem; font-style: italic; color: var(--ink); border-left: 3px solid var(--terra); padding-left: 1.25rem; line-height: 1.75; }
+  .promise-close { max-width: 58ch; margin-top: 1rem; }
+  .promise-close p { font-family: 'Lora', serif; font-size: 1.1rem; font-style: italic; color: var(--ink-mid); line-height: 1.75; }
+
+  .promise-allocation { display: flex; gap: 0; margin-top: 3rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .alloc-bar { display: flex; flex-direction: column; padding: 1.25rem 1.5rem; border-right: 1px solid var(--border); flex: 1; transition: background 0.2s; }
+  .alloc-bar:last-child { border-right: none; }
+  .alloc-bar:hover { background: var(--paper-warm); }
+  .alloc-pct { font-family: 'Lora', serif; font-size: 2rem; font-weight: 600; color: var(--terra); line-height: 1; margin-bottom: 0.3rem; }
+  .alloc-name { font-size: 0.78rem; font-weight: 600; color: var(--ink); margin-bottom: 0.25rem; }
+  .alloc-desc { font-size: 0.72rem; color: var(--ink-faded); line-height: 1.5; }
+
+  @media(max-width:900px){
+    nav { padding:0 1.25rem; }
+    .nav-links { display:none; }
+    .section-wrap { padding:3.5rem 1.5rem; }
+    .hero { padding:5rem 1.5rem 3rem; }
+    .problem-grid { grid-template-columns:1fr; gap:2rem; }
+    .steps { grid-template-columns:1fr 1fr; gap:1.5rem; }
+    .deliverables { grid-template-columns:1fr; }
+    .how-we-work-grid { grid-template-columns:1fr; }
+    .proof-card { grid-template-columns:1fr; gap:2.5rem; padding:2.5rem; }
+    .why-grid { grid-template-columns:1fr; gap:2rem; }
+    .network-grid { grid-template-columns:1fr; gap:2rem; }
+    .contact-grid { grid-template-columns:1fr; gap:2rem; }
+    .form-row { grid-template-columns:1fr; }
+    footer { padding:2rem 1.5rem; }
+    .footer-inner { flex-direction:column; text-align:center; }
+    .footer-links { flex-wrap:wrap; justify-content:center; }
+    .promise-grid { grid-template-columns:1fr; }
+    .promise-allocation { flex-direction:column; }
+    .alloc-bar { border-right:none; border-bottom:1px solid var(--border); }
+    .alloc-bar:last-child { border-bottom:none; }
+  }
+
+  .nav-hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; background: none; border: none; }
+  .nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--ink); border-radius: 1px; transition: all 0.2s; }
+
+  .mobile-menu { display: none; position: fixed; top: 54px; left: 0; right: 0; background: rgba(248,244,236,0.98); border-bottom: 1px solid var(--border); padding: 1.25rem; z-index: 99; flex-direction: column; gap: 0; }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a { color: var(--ink-mid); text-decoration: none; font-size: 1rem; font-weight: 500; padding: 0.85rem 0; border-bottom: 1px solid var(--border); display: block; transition: color 0.15s; }
+  .mobile-menu a:last-child { border-bottom: none; }
+  .mobile-menu a:hover { color: var(--terra); }
+
+  @media(max-width:768px){ .nav-hamburger { display: flex; } }
+
+  /* IMPLEMENTATION */
+  .impl-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    margin-top: 3rem;
+  }
+
+  .impl-text p { font-size: 0.95rem; color: var(--ink-mid); line-height: 1.8; margin-bottom: 1rem; }
+  .impl-text strong { color: var(--ink); font-weight: 600; }
+
+  .impl-device {
+    background: var(--ink);
+    border-radius: 12px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .impl-device::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top left, rgba(168,58,32,0.12), transparent 70%);
+    pointer-events: none;
+  }
+
+  .impl-device-label {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(248,244,236,0.3);
+    margin-bottom: 1.5rem;
+  }
+
+  .impl-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .impl-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid rgba(248,244,236,0.06);
+  }
+
+  .impl-step:last-child { border-bottom: none; }
+
+  .impl-step-num {
+    font-family: 'Special Elite', cursive;
+    font-size: 1.4rem;
+    color: rgba(168,58,32,0.4);
+    line-height: 1;
+    flex-shrink: 0;
+    width: 1.8rem;
+  }
+
+  .impl-step-content h4 {
+    font-family: 'Lora', serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--paper);
+    margin-bottom: 0.2rem;
+  }
+
+  .impl-step-content p {
+    font-size: 0.75rem;
+    color: rgba(248,244,236,0.4);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .impl-hardware {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(248,244,236,0.08);
+  }
+
+  .impl-hardware-label {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(248,244,236,0.25);
+    margin-bottom: 0.6rem;
+  }
+
+  .impl-hardware-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .impl-tag {
+    font-size: 0.7rem;
+    color: rgba(248,244,236,0.5);
+    background: rgba(248,244,236,0.06);
+    border: 1px solid rgba(248,244,236,0.1);
+    border-radius: 3px;
+    padding: 0.2rem 0.6rem;
+    font-family: 'Courier Prime', monospace;
+  }
+
+  @media(max-width:900px){ .impl-grid { grid-template-columns: 1fr; gap: 2rem; } }
+
+
+  /* NETWORK EFFECT */
+  .network-effect {
+    background: var(--ink);
+    padding: 5rem 0;
+  }
+
+  .network-effect .section-wrap {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .ne-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(168,58,32,0.7);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .ne-label::before {
+    content: '';
+    width: 1.5rem;
+    height: 2px;
+    background: rgba(168,58,32,0.7);
+    border-radius: 1px;
+  }
+
+  .ne-heading {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.8rem, 3.5vw, 3rem);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--paper);
+    max-width: 18ch;
+    margin-bottom: 1.5rem;
+  }
+
+  .ne-heading em {
+    font-style: italic;
+    color: #f4a57a;
+  }
+
+  .ne-intro {
+    font-size: 1rem;
+    color: rgba(248,244,236,0.55);
+    line-height: 1.8;
+    max-width: 52ch;
+    margin-bottom: 3.5rem;
+  }
+
+  .ne-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: rgba(248,244,236,0.06);
+    border: 1px solid rgba(248,244,236,0.06);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 3.5rem;
+  }
+
+  .ne-card {
+    background: rgba(248,244,236,0.03);
+    padding: 2rem 1.75rem;
+    transition: background 0.2s;
+  }
+
+  .ne-card:hover { background: rgba(248,244,236,0.06); }
+
+  .ne-card-num {
+    font-family: 'Special Elite', cursive;
+    font-size: 2.8rem;
+    color: rgba(168,58,32,0.5);
+    line-height: 1;
+    margin-bottom: 0.75rem;
+  }
+
+  .ne-card h3 {
+    font-family: 'Lora', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--paper);
+    margin-bottom: 0.5rem;
+  }
+
+  .ne-card p {
+    font-size: 0.83rem;
+    color: rgba(248,244,236,0.45);
+    line-height: 1.7;
+  }
+
+  .ne-manifesto {
+    border-top: 1px solid rgba(248,244,236,0.08);
+    padding-top: 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  .ne-manifesto-quote {
+    font-family: 'Lora', serif;
+    font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+    font-style: italic;
+    color: var(--paper);
+    line-height: 1.45;
+    border-left: 3px solid rgba(168,58,32,0.6);
+    padding-left: 1.5rem;
+  }
+
+  .ne-manifesto-body {
+    font-size: 0.9rem;
+    color: rgba(248,244,236,0.5);
+    line-height: 1.8;
+  }
+
+  .ne-manifesto-body strong {
+    color: rgba(248,244,236,0.8);
+    font-weight: 500;
+  }
+
+  @media(max-width:900px){
+    .ne-grid { grid-template-columns: 1fr; }
+    .ne-manifesto { grid-template-columns: 1fr; gap: 2rem; }
+  }
+
+  /* COLLECTIBLE — WHY CRYPTO addition */
+  .collectible-callout {
+    margin-top: 2rem;
+    background: rgba(28,24,18,0.04);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--terra);
+    border-radius: 0 6px 6px 0;
+    padding: 1.5rem 1.75rem;
+  }
+
+  .collectible-callout-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--terra);
+    margin-bottom: 0.6rem;
+  }
+
+  .collectible-callout h4 {
+    font-family: 'Lora', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+
+  .collectible-callout p {
+    font-size: 0.85rem;
+    color: var(--ink-mid);
+    line-height: 1.75;
+  }
+
+  /* "You are here" bar. */
+  .path-bar { background: var(--ink); color: rgba(248,244,236,0.8); font-size: 0.82rem; padding: 0.7rem 3rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem 1.5rem; flex-wrap: wrap; }
+  .path-bar b { color: var(--paper); font-weight: 600; }
+  .path-bar a { color: #f4a57a; font-weight: 600; text-decoration: none; }
+  .path-bar a:hover { color: var(--paper); }
+  @media(max-width:900px){ .path-bar { padding: 0.7rem 1.25rem; } }
+  /* Hamburger from 900px, where the desktop links hide. */
+  @media(max-width:900px){ .nav-hamburger { display: flex; } }
+  /* Layer tags. */
+  .layers-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:3rem; }
+  .layer-card { display:flex; flex-direction:column; gap:0.75rem; background:var(--paper-card); border:1px solid var(--border-mid); border-radius:8px; padding:2.25rem 2rem; color:inherit; text-decoration:none; transition:box-shadow 0.2s, border-color 0.2s; }
+  .layer-card:hover { box-shadow:var(--shadow-md); border-color:var(--terra); }
+  .layer-card h3 { font-family:'Lora',serif; font-size:1.45rem; font-weight:600; line-height:1.25; }
+  .layer-card p { font-size:0.92rem; color:var(--ink-mid); line-height:1.7; }
+  .layer-card .layer-proof { font-size:0.82rem; color:var(--ink-faded); font-style:italic; }
+  .layer-top { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+  .layer-num, .layer-tag { font-family:'Courier Prime',monospace; font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--terra); }
+  .layer-tag { display:inline-block; border:1px solid var(--border-mid); border-radius:999px; padding:0.35rem 0.85rem; margin-bottom:1.25rem; }
+  .layer-status { font-size:0.6rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-mid); background:var(--paper-warm); border-radius:999px; padding:0.3rem 0.7rem; white-space:nowrap; }
+  .layer-status.live { color:var(--terra); background:var(--terra-pale); }
+  .layer-link { margin-top:auto; padding-top:0.5rem; font-size:0.85rem; font-weight:600; color:var(--terra); }
+  .layers-note { margin-top:1.75rem; font-size:0.85rem; color:var(--ink-faded); max-width:640px; }
+  @media(max-width:900px){ .layers-grid { grid-template-columns:1fr; } }
+  /* PunchCard mark beside the wordmark. */
+  .brand-mark { height: 1.35em; width: auto; vertical-align: middle; margin-right: 0.5rem; position: relative; top: -0.1em; }
+  /* Community Tokens section and SKOOP merchant link. */
+  #community { border-top: 1px solid var(--border); }
+  .status-pill { display:inline-block; font-size:0.62rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--terra); background:var(--terra-pale); border-radius:999px; padding:0.3rem 0.75rem; margin-right:0.75rem; vertical-align:middle; }
+  .proof-link { display:inline-block; margin-top:1.25rem; color:#f4a57a; font-size:0.85rem; font-weight:600; text-decoration:none; border-bottom:1px solid rgba(244,165,122,0.4); }
+  .proof-link:hover { color:var(--paper); }
+</style>
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://punchcard.club/loyalty/">
+  <meta property="og:title" content="PunchCard.club — Crypto-Powered Loyalty Rewards">
+  <meta property="og:description" content="Tokenized loyalty rewards in the curated PunchCard Network, on Base. Built by businesses, earned by customers, owned outright, rented from no one.">
+  <meta property="og:image" content="https://punchcard.club/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://punchcard.club/">
+  <meta name="twitter:title" content="PunchCard.club — Crypto-Powered Loyalty Rewards">
+  <meta name="twitter:description" content="Tokenized loyalty rewards in the curated PunchCard Network, on Base. Built by businesses, earned by customers, owned outright, rented from no one.">
+  <meta name="twitter:image" content="https://punchcard.club/og-image.png">
+
+  <!-- General -->
+  <meta name="description" content="Tokenized loyalty rewards in the curated PunchCard Network, on Base. Built by businesses, earned by customers, owned outright, rented from no one.">
+  <meta name="theme-color" content="#f8f4ec">
+</head>
+<body id="top">
+
+<nav>
+  <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small style="font-family:'Courier Prime',monospace;font-size:0.55rem;letter-spacing:0.12em;color:var(--ink-faded);vertical-align:middle;margin-left:2px;font-weight:400">.club</small></a>
+  <ul class="nav-links">
+    <li><a href="#network">The Network</a></li>
+    <li><a href="#why">Why Crypto</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#promise">The Promise</a></li>
+    <li><a href="#implementation">Setup</a></li>
+    <li><a href="/launchpad/">Launchpad</a></li>
+    <li><a href="#apply" class="nav-cta">Request to Join</a></li>
+  </ul>
+  <button class="nav-hamburger" onclick="toggleMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#network" onclick="closeMenu()">The Network</a>
+  <a href="#why" onclick="closeMenu()">Why Crypto</a>
+  <a href="#how" onclick="closeMenu()">How It Works</a>
+  <a href="#promise" onclick="closeMenu()">The Promise</a>
+  <a href="#implementation" onclick="closeMenu()">Setup</a>
+  <a href="/launchpad/" onclick="closeMenu()">Community Launchpad (pump.fun)</a>
+  <a href="/" onclick="closeMenu()">PunchCard home</a>
+  <a href="#apply" onclick="closeMenu()" style="color:var(--terra);font-weight:600">Request to Join →</a>
+</div>
+
+<div class="path-bar"><span>You're on <b>Tokenized Loyalty Rewards</b> · the curated PunchCard Network · Base · for businesses</span><a href="/launchpad/">Want to launch a token on pump.fun instead? →</a></div>
+
+<section class="hero">
+  <div class="hero-image-wrap">
+    <img src="/punchbari.jpg" alt="Customer receiving a punchcard at a coffee bar">
+    <div class="hero-image-caption">Est. 2026</div>
+  </div>
+  <div class="edition-line">Tokenized Loyalty Rewards · Base Mainnet</div>
+  <h2 class="hero-tagline-title">Crypto-Powered<br><em>Loyalty Rewards</em></h2>
+  <p class="hero-tagline-sub">Built by businesses, earned by customers, owned outright, rented from no one.</p>
+  <h1 class="hero-headline">Real loyalty<br>can't be <em>rented.</em></h1>
+  <p class="hero-sub">Relationships are built over time. Trust can't be bought, it is earned — loyalty is the reward, and it belongs to you and your customer. Nobody else should be in the middle of it.</p>
+  <div class="hero-actions">
+    <a href="#apply" class="btn-primary">Request to Be Considered</a>
+    <a href="#how" class="btn-ghost">See how it works <span class="arrow">→</span></a>
+  </div>
+  <div class="hero-trust">
+    <span class="trust-item"><span class="trust-check">✓</span> Live on Base Mainnet</span>
+    <span class="trust-item"><span class="trust-check">✓</span> No Ongoing Platform Fees</span>
+    <span class="trust-item"><span class="trust-check">✓</span> Already Running in Nashville</span>
+  </div>
+</section>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">Deployed in days · <span>Running for decades</span></span>
+    <span class="ticker-item">Your Token · <span>Your Customers · Your Brand</span></span>
+    <span class="ticker-item">Built on <span>Base Mainnet</span></span>
+    <span class="ticker-item">No Platform Dependency</span>
+    <span class="ticker-item">Immutable Token · <span>No Mint, No Pause</span></span>
+    <span class="ticker-item">Swap Across the Network</span>
+    <span class="ticker-item">Deployed in days · <span>Running for decades</span></span>
+    <span class="ticker-item">Your Token · <span>Your Customers · Your Brand</span></span>
+    <span class="ticker-item">Built on <span>Base Mainnet</span></span>
+    <span class="ticker-item">No Platform Dependency</span>
+    <span class="ticker-item">Immutable Token · <span>No Mint, No Pause</span></span>
+    <span class="ticker-item">Swap Across the Network</span>
+  </div>
+</div>
+
+<div class="section-alt" id="network">
+  <div class="section-wrap">
+    <div class="section-label">The Network</div>
+    <h2 class="section-heading">Your token.<br><em>The whole network.</em></h2>
+    <div class="network-grid">
+      <div class="network-text">
+        <p>Every PunchCard merchant joins the same network. Your customers' tokens don't just work at your business — <strong>they swap freely across every business on the network,</strong> anywhere in the world.</p>
+        <p>A customer earns COFFEE tokens at your café. Later they walk into any network business — down the street or across the country. One tap and their Loyalty Reward Assets move with them at market rate, instantly, on-chain.</p>
+        <p><strong>Points are trapped. Tokens travel.</strong> PunchCard tokens are real Loyalty Reward Assets on a shared network. The more businesses that join, the more useful every token becomes.</p>
+      </div>
+      <div class="network-flow">
+        <div class="flow-step">
+          <div class="flow-icon">EARN</div>
+          <div class="flow-content">
+            <h4>Buy coffee, earn COFFEE</h4>
+            <p>10% reward on crypto sales, 5% on card sales. Automatic, every transaction.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-icon">SWAP</div>
+          <div class="flow-content">
+            <h4>Swap to any network token</h4>
+            <p>Market-rate exchange through the PunchCard router. 0.3% network fee, taken atomically.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-icon">SPEND</div>
+          <div class="flow-content">
+            <h4>Redeem anywhere on the network</h4>
+            <p>Loyalty Reward Assets work at every participating business on the network — anywhere in the world. Or redeem for USDC or ETH anytime.</p>
+          </div>
+        </div>
+        <div class="flow-path">
+          COFFEE <span>→</span> USDC <span>→</span> PIZZA<br>
+          COFFEE <span>→</span> USDC &nbsp;&nbsp;&nbsp;(exit to stable)<br>
+          COFFEE <span>→</span> ETH &nbsp;&nbsp;&nbsp;&nbsp;(exit to ETH)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- NETWORK EFFECT -->
+<div class="network-effect">
+  <div class="section-wrap">
+    <div class="ne-label">Network Effect</div>
+    <h2 class="ne-heading">Every business that joins makes every other business <em>more valuable.</em></h2>
+    <p class="ne-intro">A customer earns at the coffee shop and wants to spend at your place. They don't need your token to have been handed to them &mdash; they can trade the one they have for the one they want, in a couple of taps, with neither of you arranging anything. That's what makes this a network instead of a pile of separate loyalty schemes.</p>
+    <p class="ne-intro">Every customer in the network is a potential customer for every business in the network. Advertising that costs nothing and compounds with every new merchant.</p>
+
+    <div class="ne-grid">
+      <div class="ne-card fade-up">
+        <div class="ne-card-num">01</div>
+        <h3>Customers follow their tokens</h3>
+        <p>A customer with COFFEE tokens in their wallet is actively looking for network businesses to spend at. Your token in someone's wallet is a standing invitation to return — and to explore.</p>
+      </div>
+      <div class="ne-card fade-up" style="transition-delay:0.1s">
+        <div class="ne-card-num">02</div>
+        <h3>Merchants drive each other's traffic</h3>
+        <p>When a customer earns at the coffee shop and spends at your pizza place, neither business paid for that referral. The network created it. Every new merchant is a new source of customers for every existing one.</p>
+      </div>
+      <div class="ne-card fade-up" style="transition-delay:0.2s">
+        <div class="ne-card-num">03</div>
+        <h3>Loyalty becomes a habit, not a transaction</h3>
+        <p>Customers who hold multiple network tokens don't think about individual loyalty programs — they think about the network. They choose to spend inside it. That habit drives repeat visits without a single marketing dollar spent.</p>
+      </div>
+    </div>
+
+    <div class="ne-manifesto">
+      <div class="ne-manifesto-quote fade-up">
+        "Your best customers are already walking into other network businesses. Now they're bringing your brand with them."
+      </div>
+      <div class="ne-manifesto-body fade-up">
+        <p>Traditional loyalty programs are silos. Points earned at one business are worthless everywhere else — so customers forget about them. <strong>PunchCard Loyalty Reward Assets hold real utility anywhere on the network.</strong> Customers remember that. They seek it out.</p>
+        <p style="margin-top:1rem">The network effect compounds with every new merchant. A five-business network creates five referral paths. A fifty-business network creates fifty. <strong>The math works in everyone's favor — including yours.</strong></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WHY CRYPTO -->
+<div id="why">
+  <div class="section-wrap">
+    <div class="section-label">Why Crypto</div>
+    <h2 class="section-heading">Not a gimmick.<br><em>A better architecture.</em></h2>
+    <div class="why-grid">
+      <div class="why-text">
+        <p>We're not putting blockchain on loyalty because it's trendy. We're doing it because <strong>a token on Base mainnet has properties that a database record never will.</strong></p>
+        <p><strong>Your customers' rewards are real Loyalty Reward Assets.</strong> Not points that expire. Not credits locked to your POS system. Tokens they hold in their own wallet — earned, transferable, redeemable anywhere on the network.</p>
+        <p><strong>Your program runs without a middleman.</strong> Smart contracts on Base mainnet automate the entire reward cycle — issuance, tracking, redemption — with no intermediary taking a cut and no server you depend on.</p>
+        <p><strong>The data is yours and it's tamper-proof.</strong> Every transaction is recorded on a public, immutable ledger. You always know exactly what's in circulation, what's been redeemed, and what your customers hold.</p>
+        <p>No crypto experience required on your customers' end. The QR experience feels as simple as Apple Pay.</p>
+      </div>
+      <div>
+        <table class="compare-table">
+          <thead>
+            <tr><th>Feature</th><th>Legacy</th><th>PunchCard</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Customer owns their rewards</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Rewards are Loyalty Reward Assets</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Swap across businesses</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>No vendor lock-in</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Tamper-proof transaction record</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>No monthly platform fee</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Survives platform shutdown</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Zero admin keys</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>On-chain transparency</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Works without a crypto wallet</td><td><span class="check">✓</span></td><td><span class="cross">✗</span></td></tr>
+          </tbody>
+        </table>
+        <div class="why-callout fade-up">
+          <div class="why-callout-label">Network Effect</div>
+          <p>Every merchant that joins PunchCard deepens the liquidity pool and expands where customers can spend their rewards — whether that's across the street or across the country.</p>
+        </div>
+        <div class="collectible-callout fade-up">
+          <div class="collectible-callout-label">The Collectible Angle</div>
+          <h4>Your token isn't just a reward — it's a piece of the community you helped build.</h4>
+          <p>Trading cards have been bought, sold, and cherished for over a century without anyone calling them a security. PunchCard Loyalty Reward Assets work the same way — earned through participation, valued by the community, redeemable across the network. Customers don't just spend them. They collect them.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="section-alt" id="how">
+  <div class="section-wrap">
+    <div class="section-label">Process</div>
+    <h2 class="section-heading">Deployed in days.<br><em>Running for decades.</em></h2>
+    <p class="section-sub">We handle every step — from token contract to POS terminal. You focus on your customers.</p>
+    <div class="steps">
+      <div class="step fade-up">
+        <div class="step-num">01</div>
+        <h3>Configure</h3>
+        <p>We work with you to define your token name, supply, reward rates, and branding. One config. Every decision documented before deployment.</p>
+      </div>
+      <div class="step fade-up" style="transition-delay:0.1s">
+        <div class="step-num">02</div>
+        <h3>Deploy</h3>
+        <p>Your full token suite — escrow, vesting, treasury, and liquidity — is deployed on Base mainnet from one reviewed config. The contract code can never be changed.</p>
+      </div>
+      <div class="step fade-up" style="transition-delay:0.2s">
+        <div class="step-num">03</div>
+        <h3>Launch</h3>
+        <p>Your branded POS app goes live on your tablet. Customers scan a QR, earn tokens on every purchase, and redeem them right at the counter.</p>
+      </div>
+      <div class="step fade-up" style="transition-delay:0.3s">
+        <div class="step-num">04</div>
+        <h3>Own It</h3>
+        <p>Your program runs itself on-chain. No ongoing dependency on us or anyone else. Your dashboard tracks everything. The contracts are permanent.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="what">
+  <div class="section-wrap">
+    <div class="section-label">Deliverables</div>
+    <h2 class="section-heading">Eight components.<br>One complete system.</h2>
+    <p class="section-sub">Every deployment includes the full stack — smart contracts, frontend apps, and live on-chain analytics.</p>
+    <div class="deliverables">
+      <div class="d-card fade-up">
+        <span class="d-tag">Token Contract</span>
+        <h3>Your Branded Token</h3>
+        <p>Custom ERC-20 on Base mainnet. Your name, symbol, 100M fixed supply. Immutable after deployment — no admin keys, no inflation, ever.</p>
+      </div>
+      <div class="d-card fade-up" style="transition-delay:0.07s">
+        <span class="d-tag">Vesting Contract</span>
+        <h3>Team Vesting</h3>
+        <p>Linear vesting for your team allocation over two years, after a short cliff. The team wallet can never be reassigned, by you or by us.</p>
+      </div>
+      <div class="d-card fade-up" style="transition-delay:0.14s">
+        <span class="d-tag">Reward Escrow</span>
+        <h3>Rewards, Paced Over Five Years</h3>
+        <p>Your reward allocation unlocks continuously rather than sitting in one drainable pot. Spend less than the schedule and nothing is lost — it stays claimable and the programme simply runs longer. That is also what absorbs a rising token price, with no oracle involved.</p>
+      </div>
+      <div class="d-card fade-up" style="transition-delay:0.21s">
+        <span class="d-tag">Treasury Timelock</span>
+        <h3>Your Working Capital</h3>
+        <p>Ten percent of supply, released to you on a 90-day delay you control. This is your discretionary budget — marketing, partnerships, converting to cash — the one allocation that isn't already promised to customers, the pools, or your team. You submit, you wait, you execute, and you can cancel your own request. Nobody approves it. Nobody can hurry it.</p>
+      </div>
+      <div class="d-card fade-up" style="transition-delay:0.28s">
+        <span class="d-tag">LP Locker</span>
+        <h3>Your Liquidity</h3>
+        <p>Thirty percent of supply, held in Uniswap positions across a USDC and an ETH pool. Three percent seeds them at launch; the rest is a reserve only you can deploy, at your own pace, as your programme grows.</p>
+      </div>
+      <div class="d-card fade-up" style="transition-delay:0.35s">
+        <span class="d-tag">POS Terminal</span>
+        <h3>Point of Sale App</h3>
+        <p>Tablet-ready app with QR generation and reward processing. Your branding, your tablet. Works with both crypto and card payments.</p>
+      </div>
+      <div class="d-card fade-up" style="transition-delay:0.28s">
+        <span class="d-tag">Customer Dapp</span>
+        <h3>Customer Portal</h3>
+        <p>Customers check their balance, view transaction history, swap tokens across the network, and redeem rewards. Fully branded to your business.</p>
+      </div>
+      <div class="d-card fade-up" style="transition-delay:0.35s">
+        <span class="d-tag">Dashboard</span>
+        <h3>Owner Dashboard</h3>
+        <p>Live on-chain analytics — transaction volume, redemption rates, LP performance, reserve deployment, and token metrics.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div>
+  <div class="section-wrap">
+    <div class="section-label">Live Proof</div>
+    <h2 class="section-heading">Built in a real shop. <em>Not a whitepaper.</em></h2>
+    <div class="proof-card fade-up">
+      <div>
+        <div class="proof-eyebrow"><span class="live-dot"></span>Live on Base Mainnet</div>
+        <h3>KOKOS Ice Cream<br>Nashville, TN — Where This Was Built</h3>
+        <p>We own an ice cream shop, and we built this in it. SKOOP has been live on Base mainnet since 2026 with a working POS, customer app and accounting dashboard — taking real payments over the counter while we worked out what a loyalty token actually needs to survive a Tuesday afternoon.</p>
+        <p style="color:rgba(248,244,236,0.4)">SKOOP is now SKOOP PunchCard &mdash; the first token built for the PunchCard Network. We are our own first customer, and we would rather tell you exactly where we are than dress it up.</p>
+        <div class="proof-address">SKOOP PunchCard · 0xBa147713adF122A8Fc224e52Cb431D7919831939 · Base Mainnet</div>
+        <a class="proof-link" href="/kokos-skoop/">Visit SKOOP, our first registered merchant →</a>
+      </div>
+      <div class="proof-stats">
+        <div class="proof-stat">
+          <div class="proof-stat-num">Base</div>
+          <div class="proof-stat-label">Mainnet — not a testnet</div>
+        </div>
+        <div class="proof-stat">
+          <div class="proof-stat-num">1 tx</div>
+          <div class="proof-stat-label">Deploys a merchant's whole suite</div>
+        </div>
+        <div class="proof-stat">
+          <div class="proof-stat-num">0</div>
+          <div class="proof-stat-label">Ways to mint, pause or claw back your token</div>
+        </div>
+        <div class="proof-stat">
+          <div class="proof-stat-num">∞</div>
+          <div class="proof-stat-label">Token lifespan on-chain</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div id="promise" class="section-alt">
+  <div class="section-wrap">
+    <div class="section-label">The PunchCard Promise</div>
+    <h2 class="section-heading">Built to protect what<br>you've already <em>earned.</em></h2>
+    <div class="promise-intro">
+      <p>Every customer who walks back through your door made a choice. They chose you. <strong>That's not a data point. That's trust.</strong> And trust deserves better than a loyalty program generating someone else's revenue.</p>
+      <div class="promise-statement">Every PunchCard deployment is built to the same standard — not because we're required to, but because the relationship it protects demands it.</div>
+    </div>
+
+    <div class="promise-grid">
+      <div class="promise-card fade-up">
+        <div class="promise-card-emotion">Your customers' rewards can never be taken away.</div>
+        <div class="promise-card-body">When someone earns a token at your business, it's theirs. Not held in trust by a platform. Not subject to expiration policies or account closures. It lives in their wallet, permanently — because that's what a real reward feels like.</div>
+        <div class="promise-card-technical"><span>—</span> Your token contract has no owner, no mint function and no pause switch. Tokens already earned can never be frozen or clawed back.</div>
+      </div>
+      <div class="promise-card fade-up" style="transition-delay:0.1s">
+        <div class="promise-card-emotion">Nobody can change the rules after the fact.</div>
+        <div class="promise-card-body">The allocation split, the vesting cliff, the treasury delay and the daily reward cap are written into the contract as constants — identical for every business on the network and impossible to renegotiate. Your team's vesting wallet can never be reassigned, by us or by anyone. You keep one dial: the per-transaction reward ceiling for your own program.</div>
+        <div class="promise-card-technical"><span>—</span> 45/30/15/10 allocation, 30-day cliff, 90-day treasury delay and daily cap are hardcoded. Owner and team wallets are immutable after deployment.</div>
+      </div>
+      <div class="promise-card fade-up" style="transition-delay:0.12s">
+        <div class="promise-card-emotion">A stolen till key costs you a till, not the business.</div>
+        <div class="promise-card-body">Every kiosk gets its own key and its own daily allowance, exactly like a cash drawer. If a tablet walks out of the door, the most anyone can take is that drawer's day — and you remove it from your phone in one tap, without calling us. The rest of your rewards never move.</div>
+        <div class="promise-card-technical"><span>&mdash;</span> Per-kiosk spending limits that refill continuously, a hard ceiling no single till can exceed, and instant removal. Your reward pool is never one key away from being emptied.</div>
+      </div>
+      <div class="promise-card fade-up" style="transition-delay:0.15s">
+        <div class="promise-card-emotion">The program is funded before it launches.</div>
+        <div class="promise-card-body">We require real liquidity before any deployment goes live — seeded across both a USDC and ETH pool. Your customers' Loyalty Reward Assets are tradable against real onchain liquidity from the moment they earn their first one. Not promises. Not IOUs.</div>
+        <div class="promise-card-technical"><span>—</span> LP seeded at deployment. Merchant controls the pace of adding more. No deployment without it.</div>
+      </div>
+      <div class="promise-card fade-up" style="transition-delay:0.2s">
+        <div class="promise-card-emotion">We take no piece of your token.</div>
+        <div class="promise-card-body">PunchCard receives no allocation of your supply — not at launch, not on a vesting schedule, not ever. There is no monthly subscription and no cut of your sales. We are paid a setup fee for deployment, then a network fee when tokens are swapped, in USDC and ETH — so we earn when your programme is actually used.</div>
+        <div class="promise-card-technical"><span>—</span> The network fee is taken in USDC and ETH only. Your token's side of every trading fee is <strong>burned</strong> — permanently removed from supply. We never take it, and never hold a single unit of it.</div>
+      </div>
+    </div>
+
+    <div class="promise-statement" style="margin-top:2.5rem">One thing we will not pretend away: if a business closes or abandons its program, PunchCard can begin a wind-down. It freezes future rewards and, after a full twelve months, burns what was never distributed. It cannot touch a single token already in a customer's wallet — those are theirs no matter what happens to the business or to us.</div>
+
+    <div class="section-label" style="margin-top:3rem">Token Allocation — Every Deployment</div>
+    <div class="promise-allocation">
+      <div class="alloc-bar">
+        <div class="alloc-pct">45%</div>
+        <div class="alloc-name">Rewards Pool</div>
+        <div class="alloc-desc">Deployed to escrow at launch. Powers customer rewards with a daily cap and automatic refill.</div>
+      </div>
+      <div class="alloc-bar">
+        <div class="alloc-pct">30%</div>
+        <div class="alloc-name">Liquidity</div>
+        <div class="alloc-desc">3% seeds both USDC and ETH pools at launch. The remaining 27% is your reserve — deploy more LP as your business grows.</div>
+      </div>
+      <div class="alloc-bar">
+        <div class="alloc-pct">15%</div>
+        <div class="alloc-name">Business Team</div>
+        <div class="alloc-desc">Vested over two years after a short cliff. Keeps ownership aligned and long-term.</div>
+      </div>
+      <div class="alloc-bar">
+        <div class="alloc-pct">10%</div>
+        <div class="alloc-name">Treasury</div>
+        <div class="alloc-desc">Merchant-controlled reserve. 90-day timelock on any release. Fully autonomous — PunchCard has no access.</div>
+      </div>
+    </div>
+    <div class="alloc-note fade-up">Twenty-five percent of the supply stays with your business &mdash; the team allocation and the treasury &mdash; on a vesting schedule and a ninety-day release delay. Those locks are the point. They mean your programme cannot be cashed out from under your customers, by you or by us, and that the only way it works for anyone is the slow way: more customers, more visits, more rewards actually redeemed.</div>
+    <p style="font-size:0.78rem;color:var(--ink-faded);margin-top:1rem;font-style:italic;">PunchCard takes no token allocation. Your token belongs entirely to your business and your customers.</p>
+    <div class="promise-close fade-up">
+      <p>You spent years building a business your customers trust. The least your loyalty program can do is be worthy of that.</p>
+    </div>
+  </div>
+</div>
+
+<!-- IMPLEMENTATION -->
+<div id="implementation">
+  <div class="section-wrap">
+    <div class="section-label">Setup</div>
+    <h2 class="section-heading">No hardware.<br><em>No complexity.</em></h2>
+    <div class="impl-grid">
+      <div class="impl-text">
+        <p>If your business has a tablet and Wi-Fi, you're ready. <strong>No proprietary hardware. No new POS system. No integration fees.</strong> Any device that runs a browser is everything you need.</p>
+        <p><strong>Crypto and card payments both work out of the box.</strong> Crypto sales trigger rewards automatically on-chain. Card sales through Square fire a webhook just as fast. Customers never know the difference — they just earn tokens either way.</p>
+        <p>We handle setup remotely. One conversation, one deployment, one QR code on your counter.</p>
+      </div>
+      <div class="impl-device">
+        <div class="impl-device-label">From zero to live — what setup looks like</div>
+        <div class="impl-steps">
+          <div class="impl-step">
+            <div class="impl-step-num">1</div>
+            <div class="impl-step-content">
+              <h4>Tell us about your business</h4>
+              <p>We handle token design, reward rates, and deployment config.</p>
+            </div>
+          </div>
+          <div class="impl-step">
+            <div class="impl-step-num">2</div>
+            <div class="impl-step-content">
+              <h4>We deploy your token suite</h4>
+              <p>Deployed on Base mainnet. Your contracts are live, and their code can never be changed.</p>
+            </div>
+          </div>
+          <div class="impl-step">
+            <div class="impl-step-num">3</div>
+            <div class="impl-step-content">
+              <h4>Open the POS app on your tablet</h4>
+              <p>Browser-based. No app store. No install. Works on any device with a screen.</p>
+            </div>
+          </div>
+          <div class="impl-step">
+            <div class="impl-step-num">4</div>
+            <div class="impl-step-content">
+              <h4>Customer scans, reward fires</h4>
+              <p>QR at checkout. Tokens land in their wallet automatically. Done.</p>
+            </div>
+          </div>
+          <div class="impl-step">
+            <div class="impl-step-num">5</div>
+            <div class="impl-step-content">
+              <h4>You never touch it again</h4>
+              <p>The contracts run themselves. Your dashboard shows everything in real time.</p>
+            </div>
+          </div>
+        </div>
+        <div class="impl-hardware">
+          <div class="impl-hardware-label">Works on any of these — or whatever you already have</div>
+          <div class="impl-hardware-tags">
+            <span class="impl-tag">Samsung Galaxy Tab A9</span>
+            <span class="impl-tag">iPad</span>
+            <span class="impl-tag">Fire HD</span>
+            <span class="impl-tag">Any Android Tablet</span>
+            <span class="impl-tag">Laptop</span>
+            <span class="impl-tag">Any Web Browser</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pricing">
+  <div class="section-wrap">
+    <div class="section-label">How We Work</div>
+    <h2 class="section-heading">Every deployment starts<br>with a <em>conversation.</em></h2>
+    <p class="section-sub">We learn about your business, recommend a token structure, and give you a clear scope and quote — usually within a day. No pressure, no obligation.</p>
+    <div class="how-we-work-grid">
+      <div class="hww-card fade-up">
+        <div class="hww-num">01</div>
+        <h3>Tell us about your business</h3>
+        <p>Send a short request below: business type, location, and what you're hoping loyalty does for your customers. No technical knowledge required.</p>
+      </div>
+      <div class="hww-card fade-up" style="transition-delay:0.1s">
+        <div class="hww-num">02</div>
+        <h3>We send you a custom proposal</h3>
+        <p>Within one business day you'll have a deployment plan, tokenomics recommendations, and a clear quote scoped to exactly what your business needs — nothing more.</p>
+      </div>
+      <div class="hww-card fade-up" style="transition-delay:0.2s">
+        <div class="hww-num">03</div>
+        <h3>We build and you launch</h3>
+        <p>Once you're ready, we handle the entire deployment. Contracts, apps, hosting, training. You show up on launch day and start rewarding customers.</p>
+      </div>
+    </div>
+    <div class="hww-footer fade-up">
+      <p>Every business is different. Some need the full stack. Some just need a token and a POS. We'll figure out the right fit together — and every business that joins becomes part of something larger.</p>
+      <a href="#apply" class="btn-primary" style="margin-top:1.5rem;display:inline-block">Request to Be Considered</a>
+    </div>
+  </div>
+</div>
+
+<div id="apply" class="section-alt">
+  <div class="section-wrap">
+    <div class="layer-tag">The curated PunchCard Network · Base</div>
+    <div class="contact-grid">
+      <div class="contact-left">
+        <h2>Request to be<br><em>considered.</em></h2>
+        <p>The PunchCard Network is curated. We add businesses one at a time, so every loyalty token on the network is backed by a real business. Tell us about yours and we'll reply within one business day.</p>
+        <p>This request is for loyalty rewards on Base. To create a community token for a business you love, you don't need to apply: see the <a href="/launchpad/" style="color:var(--terra)">Community Token Launchpad on pump.fun</a>.</p>
+        <div class="contact-reassure">
+          <div class="reassure-item">We review every request</div>
+          <div class="reassure-item">Response within one business day</div>
+          <div class="reassure-item">No crypto knowledge required</div>
+          <div class="reassure-item">No obligation</div>
+        </div>
+      </div>
+      <form class="contact-form" id="applyForm" onsubmit="handleSubmit(event)">
+        <input type="hidden" name="_subject" value="PunchCard Network: request to be considered">
+        <div class="form-row">
+          <input type="text" id="apply-business" name="business_name" placeholder="Business name" required>
+          <input type="text" id="apply-name" name="name" placeholder="Your name" required>
+        </div>
+        <input type="email" id="apply-email" name="email" placeholder="Email address" required>
+        <input type="text" id="apply-city" name="city" placeholder="City / location">
+        <select id="apply-type" name="business_type">
+          <option value="" disabled selected>Business type</option>
+          <option>Restaurant / Food & Beverage</option>
+          <option>Retail</option>
+          <option>Coffee Shop / Café</option>
+          <option>Fitness / Wellness</option>
+          <option>Franchise / Multi-Location</option>
+          <option>Other</option>
+        </select>
+        <textarea id="apply-message" name="message" placeholder="Tell us about your business..."></textarea>
+        <button type="submit">Request to Be Considered →</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span><small style="font-family:'Courier Prime',monospace;font-size:0.5rem;letter-spacing:0.12em;color:rgba(248,244,236,0.25);vertical-align:middle;margin-left:2px">.club</small></a>
+    <ul class="footer-links">
+      <li><a href="#network">The Network</a></li>
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#promise">The Promise</a></li>
+      <li><a href="#implementation">Setup</a></li>
+      <li><a href="#apply">Request to Join</a></li>
+      <li><a href="/launchpad/">Community Launchpad</a></li>
+      <li><a href="/">PunchCard home</a></li>
+    </ul>
+    <div class="footer-meta">punchcard.club · Tokenized Loyalty Rewards · Built on Base · © 2026</div>
+  </div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); }});
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      const t = document.querySelector(this.getAttribute('href'));
+      if(t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 70, behavior:'smooth' });
+    });
+  });
+
+  function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); }
+  function closeMenu(){ document.getElementById('mobileMenu').classList.remove('open'); }
+
+
+
+  async function handleSubmit(e){
+    e.preventDefault();
+    const form = e.target;
+    const btn = form.querySelector('button');
+    const originalText = btn.textContent;
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+    const data = new FormData(form);
+    try {
+      const res = await fetch('https://formspree.io/f/xreojenr', {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        btn.textContent = "Sent ✓ We'll be in touch soon";
+        btn.style.background = '#1c1812';
+        form.reset();
+        setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.disabled = false; }, 5000);
+      } else {
+        btn.textContent = 'Something went wrong — try again';
+        btn.style.background = '#8c8070';
+        setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.disabled = false; }, 3000);
+      }
+    } catch(err) {
+      btn.textContent = 'Something went wrong — try again';
+      btn.style.background = '#8c8070';
+      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.disabled = false; }, 3000);
+    }
+  }
+</script>
+</body>
+</html>
