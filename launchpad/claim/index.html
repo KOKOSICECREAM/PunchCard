@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claim Your Business — PunchCard</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f8f4ec">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<div class="testnet-bar">Test network (Solana devnet) <span>· no real money · coins here are for testing only</span></div>
+<nav>
+  <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
+  <ul class="nav-links">
+    <li><a href="/launchpad/">How it works</a></li>
+    <li><a href="/launchpad/launch/">Launch</a></li>
+  </ul>
+</nav>
+
+<main class="app-wrap" id="main">
+  <p class="status-line">Loading…</p>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span></a>
+    <ul class="footer-links"><li><a href="/launchpad/">How the launchpad works</a></li></ul>
+    <div class="footer-meta">punchcard.club · Community Launchpad (test network) · © 2026</div>
+  </div>
+</footer>
+
+<script type="module">
+import { $, esc, api, sol, short, connectWallet, signMessage } from '/launchpad/lp.js';
+
+const mint = new URLSearchParams(location.search).get('mint') || '';
+const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } } };
+let coin = null, claim = null, wallet = null;
+
+// Must match the backend's claimMessage() exactly.
+const claimMessage = (w) => ['PunchCard owner claim', `Business: ${coin.business.name}`, `Coin: ${mint}`, `Pay creator fees to: ${w}`, `Claim ID: ${claim.claimId}`].join('\n');
+
+function render() {
+  const held = BigInt(coin.feesInVaultLamports) + BigInt(coin.feesPendingAtPumpLamports);
+  $('main').innerHTML = `
+    <div>
+      <h1>Claim <em>${esc(coin.business.name)}</em></h1>
+      <p class="lede">${sol(held)} SOL in creator fees from <b>$${esc(coin.ticker)}</b> ${coin.deadline && Date.now() / 1000 >= coin.deadline ? 'will go to you from now on (the 30-day window has passed, so earlier fees stay with holders)' : 'is waiting for you'}.</p>
+    </div>
+    <section class="panel">
+      <h2><span class="step-num">1</span>Prove you run the website</h2>
+      <p>We check the website on this business’s Google listing: <b>${esc(coin.ownerCanVerifyVia || 'none')}</b>. Only whoever runs it can add a code there.</p>
+      <div class="btn-row"><button class="btn-secondary" id="getCode" type="button">${claim ? 'Show my code again' : 'Get my code'}</button><span class="status-line" id="codeStatus"></span></div>
+      <div id="codeBox" hidden>
+        <div class="code-box" id="code" title="Copy"></div>
+        <p>Put it in <b>one</b> of these places, then continue below:</p>
+        <ul style="padding-left:1.2rem;display:grid;gap:0.35rem">
+          <li><b>Easiest:</b> paste it anywhere on your homepage (footer or About text) and publish.</li>
+          <li>Or upload a file named <span class="mono">punchcard.txt</span> containing the code to <span class="mono" id="host1"></span>.</li>
+          <li>Or add a DNS TXT record with the code on <span class="mono" id="host2"></span>.</li>
+        </ul>
+        <p class="status-line">You can remove it once you’re verified.</p>
+      </div>
+    </section>
+    <section class="panel" id="walletPanel" hidden>
+      <h2><span class="step-num">2</span>Choose where the fees go</h2>
+      <p>Connect the Solana wallet that should receive this business’s creator fees.</p>
+      <div class="btn-row"><button class="btn-secondary" id="connect" type="button">Connect wallet</button><span class="status-line" id="walletLine"></span></div>
+      <div class="notice warn"><b>This is permanent.</b> Once your claim goes through, pump.fun pays this token’s creator fees to this wallet forever. It can’t be changed later. Use a wallet you’ll keep, ideally a hardware wallet or a multisig for your business.</div>
+      <label class="check"><input type="checkbox" id="agree"> I understand this wallet can’t be changed later, and I run ${esc(coin.business.name)}.</label>
+      <div class="field"><label for="email">Email <span class="hint">(optional, for updates about your claim)</span></label><input id="email" type="email" placeholder="you@yourbusiness.com"></div>
+    </section>
+    <section class="panel" id="verifyPanel" hidden>
+      <h2><span class="step-num">3</span>Verify</h2>
+      <p>Your wallet will ask you to sign a short message. It costs nothing and proves the wallet is yours.</p>
+      <div class="btn-row"><button class="btn-primary sol" id="verify" type="button" disabled>Check my website and verify</button></div>
+      <p class="status-line" id="verifyStatus" role="status"></p>
+    </section>`;
+
+  const showCode = () => {
+    $('code').textContent = claim.code; $('host1').textContent = claim.host; $('host2').textContent = claim.host;
+    $('codeBox').hidden = false; $('walletPanel').hidden = false; $('verifyPanel').hidden = false;
+    $('getCode').textContent = 'Show my code again';
+  };
+  if (claim) showCode();
+  $('getCode').addEventListener('click', async () => {
+    if (claim) return showCode();
+    $('getCode').disabled = true; $('codeStatus').textContent = 'Creating your code…';
+    try { claim = await api('/api/claims/start', { mint }); store.set('pc-claim-' + mint, claim); $('codeStatus').textContent = ''; showCode(); }
+    catch (e) { $('codeStatus').textContent = e.message; }
+    finally { $('getCode').disabled = false; }
+  });
+  $('main').addEventListener('click', (e) => { if (e.target.id === 'code') navigator.clipboard?.writeText(claim.code).then(() => ($('codeStatus').textContent = 'Code copied.'), () => {}); });
+  const ready = () => { $('verify').disabled = !(wallet && $('agree').checked); };
+  $('agree').addEventListener('change', ready);
+  $('connect').addEventListener('click', async () => {
+    try { wallet = await connectWallet(); $('walletLine').textContent = `Fees will go to ${short(wallet)}`; $('connect').textContent = 'Use a different wallet'; }
+    catch (e) { $('walletLine').textContent = e.message; }
+    ready();
+  });
+  $('verify').addEventListener('click', async () => {
+    const s = $('verifyStatus');
+    $('verify').disabled = true;
+    try {
+      s.textContent = 'Sign the message in your wallet…';
+      const signature = await signMessage(claimMessage(wallet));
+      s.textContent = `Checking ${claim.host} for your code…`;
+      const r = await api('/api/claims/check', { claimId: claim.claimId, wallet, signature, email: $('email').value.trim() });
+      const when = r.payoutAfter ? new Date(r.payoutAfter * 1000).toLocaleString() : 'after the 24-hour check';
+      $('main').innerHTML = `
+        <div><h1>Verified. <em>Welcome aboard.</em></h1>
+        <p class="lede">${esc(coin.business.name)} is claimed to ${esc(short(wallet))}.</p></div>
+        <section class="panel">
+          <p>There’s a 24-hour check before the first payout, in case anyone contests the claim. After it ends (${esc(when)}), ${r.inTime === false ? 'this token’s future creator fees' : 'everything held for you'} is sent to your wallet automatically, and from then on pump.fun pays you directly.</p>
+          <div class="btn-row"><a class="btn-primary sol" href="/launchpad/coin/?mint=${esc(mint)}">See your token</a></div>
+        </section>`;
+    } catch (e) {
+      s.textContent = /reject|cancel/i.test(e.message) ? 'Cancelled in the wallet.' : e.message;
+      $('verify').disabled = false;
+    }
+  });
+}
+
+(async () => {
+  try { coin = await api('/api/coins/' + mint); }
+  catch (e) { $('main').innerHTML = `<p class="notice bad">${esc(e.message)}</p>`; return; }
+  if (coin.status !== 'Open') {
+    $('main').innerHTML = `<div><h1>${esc(coin.business.name)} is <em>already claimed.</em></h1></div>
+      <section class="panel"><p>If that’s wrong, report it on the <a href="/launchpad/coin/?mint=${esc(mint)}">token page</a> during the 24-hour check.</p></section>`;
+    return;
+  }
+  if (!coin.ownerCanVerifyVia) {
+    $('main').innerHTML = `<div><h1>Claim <em>${esc(coin.business.name)}</em></h1></div>
+      <section class="panel"><div class="notice warn">This business’s Google listing has no website of its own, so we can’t verify ownership yet. Add your business’s website to your Google Business Profile, then come back to this page.</div></section>`;
+    return;
+  }
+  claim = store.get('pc-claim-' + mint);
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Community Token — PunchCard</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f8f4ec">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<div class="testnet-bar">Test network (Solana devnet) <span>· no real money · coins here are for testing only</span></div>
+<nav>
+  <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
+  <ul class="nav-links">
+    <li><a href="/launchpad/">How it works</a></li>
+    <li><a href="/launchpad/launch/">Launch</a></li>
+  </ul>
+</nav>
+
+<main class="app-wrap" id="main">
+  <p class="status-line" id="loading">Loading…</p>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span></a>
+    <ul class="footer-links"><li><a href="/launchpad/">How the launchpad works</a></li><li><a href="/launchpad/launch/">Launch a token</a></li></ul>
+    <div class="footer-meta">punchcard.club · Community Launchpad (test network) · © 2026</div>
+  </div>
+</footer>
+
+<script type="module">
+import { $, esc, api, API, sol, short, explorer, countdown } from '/launchpad/lp.js';
+
+const params = new URLSearchParams(location.search);
+const mint = params.get('mint') || '';
+const now = () => Math.floor(Date.now() / 1000);
+
+function statusOf(c) {
+  if (c.status === 'HandedOver') return { pill: 'owned', label: 'Claimed by the owner', text: `Verified owner ${short(c.owner)} receives this token's creator fees directly from pump.fun.` };
+  if (c.status === 'Attested') {
+    const ends = c.attestedAt + c.challengeSecs;
+    return { pill: 'attested', label: 'Owner verified: 24-hour check', ends,
+      text: `An owner verified this business${c.inTime ? '' : ' after the 30 days, so they receive future fees only'}. Payout to ${short(c.owner)} happens automatically when the check window ends.` };
+  }
+  if (c.deadline && now() >= c.deadline) return { pill: 'holders', label: 'Unclaimed: holders share the fees', text: 'The owner didn’t claim within 30 days, so this token’s holders share its creator fees until an owner claims.' };
+  return { pill: 'open', label: 'Waiting for the owner', ends: c.deadline, text: `Creator fees are held for ${esc(c.business.name)}. The owner has until the deadline to claim them; after that, holders share them.` };
+}
+
+async function load() {
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) { $('main').innerHTML = '<p class="notice bad">No token address in the link.</p>'; return; }
+  let c;
+  try { c = await api('/api/coins/' + mint); } catch (e) { $('main').innerHTML = `<p class="notice bad">${esc(e.message)}</p>`; return; }
+  document.title = `${c.coinName} ($${c.ticker}) — PunchCard`;
+  const st = statusOf(c);
+  const newNote = params.get('new') ? `<div class="notice ok"><b>It’s live.</b> Share this page with ${esc(c.business.name)} so the owner can claim their fees. <button class="btn-secondary" id="copyLink" type="button" style="margin-left:0.5rem">Copy link</button></div>` : '';
+  $('main').innerHTML = `
+    ${newNote}
+    <div class="coin-head">
+      <img src="${API}/img/${esc(mint)}" alt="" onerror="this.style.visibility='hidden'">
+      <div><h1 style="font-size:clamp(1.6rem,4vw,2.3rem)">${esc(c.coinName)} <em>$${esc(c.ticker)}</em></h1>
+        <p class="lede" style="font-size:1rem">for ${esc(c.business.name)}${c.business.city ? ' · ' + esc(c.business.city) : ''}</p></div>
+    </div>
+    <section class="panel">
+      <div><span class="pill ${st.pill}">${st.label}</span>${st.ends && st.ends > now() ? ` <span class="status-line" id="cd"></span>` : ''}</div>
+      <p>${st.text}</p>
+      <div class="stats">
+        <div class="stat"><small>Held for the business</small><b>${sol(c.feesInVaultLamports)} SOL</b></div>
+        <div class="stat"><small>Waiting at pump.fun</small><b>${sol(c.feesPendingAtPumpLamports)} SOL</b></div>
+        <div class="stat"><small>${c.status === 'HandedOver' ? 'Paid to the owner at claim' : 'Paid to the owner'}</small><b>${sol(c.ownerPaidLamports)} SOL</b></div>
+      </div>
+      <div class="btn-row">
+        ${c.status === 'Open' ? `<a class="btn-primary sol" href="/launchpad/claim/?mint=${esc(mint)}">I own this business</a>` : ''}
+        <button class="btn-secondary" id="payout" type="button">Pay out now</button>
+        <a class="btn-secondary" href="${explorer('token', mint)}" target="_blank" rel="noopener">View on Solscan</a>
+      </div>
+      <p class="status-line" id="payoutStatus" role="status"></p>
+    </section>
+    ${c.status === 'Attested' ? `
+    <section class="panel">
+      <h2>Is this claim wrong?</h2>
+      <p>If you own ${esc(c.business.name)} and didn’t make this claim, tell us now. We can stop it during the 24-hour check.</p>
+      <div class="field"><label for="reason">What’s wrong?</label><textarea id="reason" maxlength="1000"></textarea></div>
+      <div class="field"><label for="contact">How can we reach you?</label><input id="contact" maxlength="200" placeholder="Email or phone"></div>
+      <div class="btn-row"><button class="btn-primary" id="report" type="button">Report this claim</button><span class="status-line" id="reportStatus"></span></div>
+    </section>` : ''}
+    <section class="panel">
+      <h2>Details</h2>
+      <p class="status-line">${esc(c.business.address || '')}${c.business.website ? ` · <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(c.business.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>` : ''}</p>
+      <p class="status-line">Token <span class="mono">${esc(mint)}</span></p>
+      <p class="status-line">Launched by <span class="mono">${esc(short(c.launcher))}</span>${c.launchedAt ? ' on ' + new Date(c.launchedAt * 1000).toLocaleDateString() : ''}${c.deadline ? ` · claim deadline ${new Date(c.deadline * 1000).toLocaleString()}` : ''}</p>
+      ${c.description ? `<p>${esc(c.description)}</p>` : ''}
+      <p class="status-line">Creator fees only. pump.fun keeps its own trading fees. Community tokens are tradable and can lose value.</p>
+    </section>`;
+
+  if (st.ends && st.ends > now()) { const tick = () => { const el = $('cd'); if (el) el.textContent = `· ${countdown(st.ends)} left`; }; tick(); setInterval(tick, 1000); }
+  $('copyLink')?.addEventListener('click', () => { const u = location.origin + location.pathname + '?mint=' + mint; navigator.clipboard.writeText(u).then(() => ($('copyLink').textContent = 'Copied'), () => ($('copyLink').outerHTML = `<span class="mono">${esc(u)}</span>`)); });
+  $('payout').addEventListener('click', async () => {
+    $('payout').disabled = true; $('payoutStatus').textContent = 'Paying out…';
+    try {
+      const r = await api(`/api/coins/${mint}/payout`, {});
+      $('payoutStatus').textContent = r.done.length ? `Done: ${r.done.map((d) => d.action).join(', ')}. Updating…` : r.note;
+      if (r.done.length) setTimeout(load, 2500);
+    } catch (e) { $('payoutStatus').textContent = e.message; }
+    finally { $('payout').disabled = false; }
+  });
+  $('report')?.addEventListener('click', async () => {
+    $('report').disabled = true;
+    try { await api(`/api/coins/${mint}/report`, { reason: $('reason').value, contact: $('contact').value }); $('reportStatus').textContent = 'Thanks. We’ve been alerted and will review it within the 24-hour window.'; }
+    catch (e) { $('reportStatus').textContent = e.message; $('report').disabled = false; }
+  });
+}
+load();
+</script>
+</body>
+</html>
