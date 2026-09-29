@@ -803,6 +803,11 @@
     line-height: 1.75;
   }
 
+  /* Community Tokens section and SKOOP merchant link. */
+  #community { border-top: 1px solid var(--border); }
+  .status-pill { display:inline-block; font-size:0.62rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--terra); background:var(--terra-pale); border-radius:999px; padding:0.3rem 0.75rem; margin-right:0.75rem; vertical-align:middle; }
+  .proof-link { display:inline-block; margin-top:1.25rem; color:#f4a57a; font-size:0.85rem; font-weight:600; text-decoration:none; border-bottom:1px solid rgba(244,165,122,0.4); }
+  .proof-link:hover { color:var(--paper); }
 </style>
 
   <!-- Open Graph / Social Media -->
@@ -835,6 +840,7 @@
     <li><a href="#how">How It Works</a></li>
     <li><a href="#promise">The Promise</a></li>
     <li><a href="#implementation">Setup</a></li>
+    <li><a href="#community">Community Tokens</a></li>
     <li><a href="#contact" class="nav-cta">Get Started</a></li>
   </ul>
   <button class="nav-hamburger" onclick="toggleMenu()" aria-label="Menu">
@@ -848,6 +854,7 @@
   <a href="#how" onclick="closeMenu()">How It Works</a>
   <a href="#promise" onclick="closeMenu()">The Promise</a>
   <a href="#implementation" onclick="closeMenu()">Setup</a>
+  <a href="#community" onclick="closeMenu()">Community Tokens</a>
   <a href="#contact" onclick="closeMenu()" style="color:var(--terra);font-weight:600">Get Started →</a>
 </div>
 
@@ -1109,6 +1116,7 @@
         <p>We own an ice cream shop, and we built this in it. SKOOP has been live on Base mainnet since 2026 with a working POS, customer app and accounting dashboard — taking real payments over the counter while we worked out what a loyalty token actually needs to survive a Tuesday afternoon.</p>
         <p style="color:rgba(248,244,236,0.4)">SKOOP is now SKOOP PunchCard &mdash; the first token built for the PunchCard Network. We are our own first customer, and we would rather tell you exactly where we are than dress it up.</p>
         <div class="proof-address">SKOOP PunchCard · 0xBa147713adF122A8Fc224e52Cb431D7919831939 · Base Mainnet</div>
+        <a class="proof-link" href="/kokos-skoop/">Visit SKOOP, our first registered merchant →</a>
       </div>
       <div class="proof-stats">
         <div class="proof-stat">
@@ -1298,6 +1306,31 @@
   </div>
 </div>
 
+<div id="community">
+  <div class="section-wrap">
+    <div class="section-label">Community Tokens · Solana</div>
+    <h2 class="section-heading">Support the businesses<br>you <em>love.</em></h2>
+    <p class="section-sub">A second PunchCard product, now in development: a community launchpad on Solana. Anyone will be able to start a token for a favorite local business and bring its community together around it, with creator fees set aside for the business's owner.</p>
+    <div class="how-we-work-grid">
+      <div class="hww-card fade-up">
+        <h3>For the people who champion a place</h3>
+        <p>The café you walk to every morning. The shop that knows your name. Start a community token for it and give its regulars something to rally around.</p>
+      </div>
+      <div class="hww-card fade-up" style="transition-delay:0.1s">
+        <h3>The business comes first</h3>
+        <p>Creator fees from each community token are set aside for the business. Owners who verify their business receive them.</p>
+      </div>
+      <div class="hww-card fade-up" style="transition-delay:0.2s">
+        <h3>Separate from PunchCard Loyalty</h3>
+        <p>Community tokens are tradable and can lose value. They are not Loyalty Reward Assets, and holding one gives no balance or rewards on Base.</p>
+      </div>
+    </div>
+    <div class="hww-footer fade-up">
+      <p><span class="status-pill">In development</span>Nothing is live yet. Full details will be published before launch.</p>
+    </div>
+  </div>
+</div>
+
 <div id="contact" class="section-alt">
   <div class="section-wrap">
     <div class="contact-grid">
@@ -1343,6 +1376,7 @@
       <li><a href="#how">How It Works</a></li>
       <li><a href="#promise">The Promise</a></li>
       <li><a href="#implementation">Setup</a></li>
+      <li><a href="#community">Community Tokens</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
     <div class="footer-meta">punchcard.club · Built on Base · © 2026</div>
