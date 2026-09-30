@@ -103,7 +103,7 @@ $('find').addEventListener('click', async () => {
       out.innerHTML = `<div class="notice warn"><b>No token for ${name} yet.</b> Want one? You can launch it yourself: you'll still claim the fees as the owner.</div>
         <div class="btn-row" style="margin-top:0.75rem"><a class="btn-primary sol" href="/launchpad/launch/">Launch one →</a></div>`;
     }
-    if (!r.ownerCanVerifyVia) out.insertAdjacentHTML('beforeend', `<div class="notice warn" style="margin-top:0.75rem">Your Google listing has no website of its own yet. Add one to your Google Business Profile so you can verify.</div>`);
+    if (r.ownerCanVerifyVia === null) out.insertAdjacentHTML('beforeend', `<div class="notice warn" style="margin-top:0.75rem">Your Google listing has no website of its own yet. Add one to your Google Business Profile so you can verify.</div>`);
     out.hidden = false; $('st').textContent = '';
   } catch (e) { $('st').textContent = e.message; }
   finally { $('find').disabled = false; }

@@ -106,12 +106,15 @@ $('find').addEventListener('click', async () => {
     if (r.alreadyLaunched) {
       n.className = 'notice bad';
       n.innerHTML = `<b>${esc(r.business.name)} already has a community token.</b> ${r.mint ? `<a href="/launchpad/coin/?mint=${esc(r.mint)}">See it here</a>.` : ''}`;
-    } else if (!r.ownerCanVerifyVia) {
+    } else if (r.ownerCanVerifyVia === null) {
       n.className = 'notice warn';
       n.innerHTML = `<b>Heads up:</b> this business's Google listing has no website of its own, so its owner can't verify yet. If nobody claims within 30 days, the token's creator fees go to its holders instead.`;
-    } else {
+    } else if (r.ownerCanVerifyVia) {
       n.className = 'notice ok';
       n.innerHTML = `The owner can claim the fees by verifying <b>${esc(r.ownerCanVerifyVia)}</b>, the website on this Google listing.`;
+    } else {
+      n.className = 'notice ok';
+      n.innerHTML = `The owner claims the fees by verifying the website on this business's Google listing.`;
     }
     $('bizBox').hidden = false;
     $('coinPanel').hidden = $('launchPanel').hidden = !!r.alreadyLaunched;

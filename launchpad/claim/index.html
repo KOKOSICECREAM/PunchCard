@@ -137,7 +137,17 @@ function render() {
   }
   if (!coin.ownerCanVerifyVia) {
     $('main').innerHTML = `<div><h1>Claim <em>${esc(coin.business.name)}</em></h1></div>
-      <section class="panel"><div class="notice warn">This business’s Google listing has no website of its own, so we can’t verify ownership yet. Add your business’s website to your Google Business Profile, then come back to this page.</div></section>`;
+      <section class="panel"><div class="notice warn">This business’s Google listing has no website of its own, so we can’t verify ownership yet. Add your business’s website to your Google Business Profile, then check again here.</div>
+      <div class="btn-row"><button class="btn-secondary" id="recheck" type="button">I added it: check again</button><span class="status-line" id="recheckStatus" role="status"></span></div></section>`;
+    $('recheck').addEventListener('click', async () => {
+      $('recheck').disabled = true; $('recheckStatus').textContent = 'Checking Google…';
+      try {
+        claim = await api('/api/claims/start', { mint });
+        store.set('pc-claim-' + mint, claim);
+        coin.ownerCanVerifyVia = claim.host;
+        render();
+      } catch (e) { $('recheckStatus').textContent = e.message; $('recheck').disabled = false; }
+    });
     return;
   }
   claim = store.get('pc-claim-' + mint);
