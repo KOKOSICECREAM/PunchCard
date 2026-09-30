@@ -130,7 +130,8 @@ function render() {
         <div><h1>Verified. <em>Welcome aboard.</em></h1>
         <p class="lede">${esc(coin.business.name)} is claimed to ${esc(short(wallet))}.</p></div>
         <section class="panel">
-          <p>There’s a 24-hour check before the first payout, in case anyone contests the claim. After it ends (${esc(when)}), ${r.inTime === false ? 'your share of this token’s future creator fees' : 'your share of everything held'} is sent to your wallet automatically, and from then on pump.fun pays you directly.</p>
+          ${r.held ? `<div class="notice warn"><b>Your claim is getting a longer review (up to 7 days).</b> We hold a small number of claims for a closer look when something about the website needs checking${r.flags?.length ? `: ${r.flags.map(esc).join(' ')}` : '.'} If this is your business, email <b>hello@punchcard.club</b> from an address at your business and we can finish the review sooner.</div>` : ''}
+          <p>${r.held ? 'After the review' : 'There’s a 24-hour check before the first payout, in case anyone contests the claim. After it'} ends (${esc(when)}), ${r.inTime === false ? 'your share of this token’s future creator fees' : 'your share of everything held'} is sent to your wallet automatically, and from then on pump.fun pays you directly.</p>
           <div class="btn-row"><a class="btn-primary sol" href="/launchpad/coin/?mint=${esc(mint)}">See your token</a></div>
         </section>`;
     } catch (e) {

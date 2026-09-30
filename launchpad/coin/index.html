@@ -46,8 +46,9 @@ const now = () => Math.floor(Date.now() / 1000);
 function statusOf(c) {
   if (c.status === 'HandedOver') return { pill: 'owned', label: 'Claimed by the owner', text: `Verified owner ${short(c.owner)} receives this token's creator fees directly from pump.fun.` };
   if (c.status === 'Attested') {
-    const ends = c.attestedAt + c.challengeSecs;
-    return { pill: 'attested', label: 'Owner verified: 24-hour check', ends,
+    const ends = c.attestedAt + Math.max(c.holdSecs || 0, c.challengeSecs || 0);
+    const held = (c.holdSecs || 0) > (c.challengeSecs || 0);
+    return { pill: 'attested', label: held ? 'Owner verified: extended review' : 'Owner verified: 24-hour check', ends,
       text: `An owner verified this business${c.inTime ? '' : ' after the 30 days, so they receive future fees only'}. Payout to ${short(c.owner)} happens automatically when the check window ends.` };
   }
   if (c.deadline && now() >= c.deadline) return { pill: 'holders', label: 'Unclaimed: holders share the fees', text: 'The owner didn’t claim within 30 days, so this token’s holders share its creator fees until an owner claims.' };
