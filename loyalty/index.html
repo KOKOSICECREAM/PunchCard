@@ -836,6 +836,23 @@
   .status-pill { display:inline-block; font-size:0.62rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--terra); background:var(--terra-pale); border-radius:999px; padding:0.3rem 0.75rem; margin-right:0.75rem; vertical-align:middle; }
   .proof-link { display:inline-block; margin-top:1.25rem; color:#f4a57a; font-size:0.85rem; font-weight:600; text-decoration:none; border-bottom:1px solid rgba(244,165,122,0.4); }
   .proof-link:hover { color:var(--paper); }
+  /* Merchants in the Network, built from /merchants.json. */
+  .merchant-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1.25rem; margin-top:2rem; }
+  .merchant-card { display:flex; flex-direction:column; gap:0.9rem; background:var(--paper); border:1px solid var(--border); border-top:4px solid var(--m-accent, var(--terra)); border-radius:10px; padding:1.5rem; min-width:0; box-shadow:var(--shadow-sm); }
+  .merchant-top { display:flex; align-items:center; gap:0.9rem; }
+  .merchant-top img { width:52px; height:52px; border-radius:50%; flex:none; background:var(--paper-warm); }
+  .merchant-card h3 { font-family:'Lora', serif; font-size:1.2rem; line-height:1.2; }
+  .merchant-meta { font-family:'Courier Prime', monospace; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-faded); }
+  .merchant-card p { font-size:0.92rem; color:var(--ink-mid); }
+  .merchant-links { display:flex; flex-wrap:wrap; gap:0.6rem; margin-top:auto; }
+  .merchant-links a { font-size:0.85rem; font-weight:600; text-decoration:none; padding:0.55rem 0.95rem; border-radius:6px; border:1px solid var(--border-mid); color:var(--ink); }
+  .merchant-links a.go { background:var(--terra); border-color:var(--terra); color:var(--paper); }
+  .merchant-card.soon { border-top-color:var(--border-mid); border-style:dashed; box-shadow:none; background:transparent; justify-content:center; }
+  .merchant-card.soon .soon-emoji { font-size:1.4rem; letter-spacing:0.3rem; }
+  .app-callout { margin-top:2rem; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; background:var(--ink); color:var(--paper); border-radius:10px; padding:1.4rem 1.6rem; }
+  .app-callout p { font-size:0.95rem; color:rgba(248,244,236,0.8); max-width:52ch; }
+  .app-callout b { color:var(--paper); }
+  .app-callout a { background:var(--paper); color:var(--ink); font-weight:700; text-decoration:none; padding:0.75rem 1.3rem; border-radius:6px; white-space:nowrap; }
 </style>
 
   <!-- Open Graph / Social Media -->
@@ -863,7 +880,9 @@
 <nav>
   <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small style="font-family:'Courier Prime',monospace;font-size:0.55rem;letter-spacing:0.12em;color:var(--ink-faded);vertical-align:middle;margin-left:2px;font-weight:400">.club</small></a>
   <ul class="nav-links">
+    <li><a href="#merchants">Merchants</a></li>
     <li><a href="#network">The Network</a></li>
+    <li><a href="/app/">Open the App</a></li>
     <li><a href="#why">Why Crypto</a></li>
     <li><a href="#how">How It Works</a></li>
     <li><a href="#promise">The Promise</a></li>
@@ -877,6 +896,8 @@
 </nav>
 
 <div class="mobile-menu" id="mobileMenu">
+  <a href="#merchants" onclick="closeMenu()">Merchants in the Network</a>
+  <a href="/app/" onclick="closeMenu()">Open the PunchCard App</a>
   <a href="#network" onclick="closeMenu()">The Network</a>
   <a href="#why" onclick="closeMenu()">Why Crypto</a>
   <a href="#how" onclick="closeMenu()">How It Works</a>
@@ -902,6 +923,7 @@
   <div class="hero-actions">
     <a href="#apply" class="btn-primary">Request to Be Considered</a>
     <a href="#how" class="btn-ghost">See how it works <span class="arrow">→</span></a>
+    <a href="/app/" class="btn-ghost">Have rewards? Open the app <span class="arrow">→</span></a>
   </div>
   <div class="hero-trust">
     <span class="trust-item"><span class="trust-check">✓</span> Live on Base Mainnet</span>
@@ -926,6 +948,24 @@
     <span class="ticker-item">Swap Across the Network</span>
   </div>
 </div>
+
+<section id="merchants">
+  <div class="section-wrap">
+    <div class="section-label">Merchants in the Network</div>
+    <h2 class="section-heading">Where you can earn<br><em>and spend today.</em></h2>
+    <div class="merchant-grid" id="merchantGrid">
+      <article class="merchant-card" style="--m-accent:#e8876a">
+        <div class="merchant-top"><img src="/kokos-skoop/skoop.png" alt="" width="52" height="52"><div><h3>KOKOS Ice Cream</h3><div class="merchant-meta">Nashville, TN · $SKOOP</div></div></div>
+        <p>Nashville's original plant-based scoop shop</p>
+        <div class="merchant-links"><a class="go" href="/kokos-skoop/">Visit SKOOP</a><a href="/app/?m=kokos-skoop">Open in the app</a></div>
+      </article>
+    </div>
+    <div class="app-callout">
+      <p><b>Earned rewards at a PunchCard shop?</b> The PunchCard app shows your balance, swaps across the network and redeems rewards. Open it in your phone's browser or your wallet app.</p>
+      <a href="/app/">Open the PunchCard App →</a>
+    </div>
+  </div>
+</section>
 
 <div class="section-alt" id="network">
   <div class="section-wrap">
@@ -1380,6 +1420,8 @@
   <div class="footer-inner">
     <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span><small style="font-family:'Courier Prime',monospace;font-size:0.5rem;letter-spacing:0.12em;color:rgba(248,244,236,0.25);vertical-align:middle;margin-left:2px">.club</small></a>
     <ul class="footer-links">
+      <li><a href="#merchants">Merchants</a></li>
+      <li><a href="/app/">PunchCard App</a></li>
       <li><a href="#network">The Network</a></li>
       <li><a href="#how">How It Works</a></li>
       <li><a href="#promise">The Promise</a></li>
@@ -1442,6 +1484,24 @@
       setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.disabled = false; }, 3000);
     }
   }
+</script>
+<script>
+// Rebuild the merchant list from the registry; the static KOKOS card stays if this fails.
+(async () => {
+  try {
+    const reg = await fetch('/merchants.json').then((r) => r.json());
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const cards = (reg.merchants || []).map((m) => `<article class="merchant-card" style="--m-accent:${/^#[0-9a-f]{3,8}$/i.test(m.accent) ? m.accent : 'var(--terra)'}">
+        <div class="merchant-top">${m.token?.logo ? `<img src="${esc(m.token.logo)}" alt="" width="52" height="52">` : ''}<div><h3>${esc(m.name)}</h3><div class="merchant-meta">${esc(m.city)} · $${esc(m.token?.symbol)}</div></div></div>
+        <p>${esc(m.tagline)}</p>
+        <div class="merchant-links"><a class="go" href="${esc(m.page)}">Visit ${esc(m.token?.symbol || m.shortName)}</a><a href="/app/?m=${encodeURIComponent(m.slug)}">Open in the app</a></div>
+      </article>`);
+    if (!cards.length) return;
+    const soon = (reg.comingSoon || []).map((c) => c.emoji).join(' ');
+    if (soon) cards.push(`<article class="merchant-card soon"><div class="soon-emoji" aria-hidden="true">${esc(soon)}</div><h3>More shops coming soon</h3><p>Businesses join by request. <a href="#apply" style="color:var(--terra)">Want yours in the network?</a></p></article>`);
+    document.getElementById('merchantGrid').innerHTML = cards.join('');
+  } catch { /* keep the static card */ }
+})();
 </script>
 </body>
 </html>
