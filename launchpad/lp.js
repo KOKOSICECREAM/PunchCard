@@ -132,7 +132,7 @@ async function legacyFor(w) {
 }
 function walletError(w, e) {
   const detail = [e?.code, e?.message || String(e)].filter((x) => x !== undefined && x !== '').join(': ');
-  return new Error(`${w.name} couldn't sign (${detail || 'no details'}). Make sure it's on Solana devnet (testnet mode), then try again.`);
+  return new Error(`${w.name} couldn't sign (${detail || 'no details'}). Make sure it's on Solana devnet (testnet mode). Using a Ledger? Open the Solana app on the Ledger, go to Settings and turn on Blind signing, then try again.`);
 }
 const chainFor = (w) => (w.std.chains || []).includes(`solana:${CLUSTER}`) ? `solana:${CLUSTER}` : undefined;
 
