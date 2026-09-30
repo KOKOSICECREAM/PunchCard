@@ -41,8 +41,9 @@
     <section class="panel" aria-labelledby="findH">
       <h2 id="findH">Find your business's token</h2>
       <div class="field">
-        <label for="maps">Your Google Maps link</label>
-        <input id="maps" placeholder="Open your business on Google Maps, tap Share, paste the link" autocomplete="off">
+        <label for="maps">Your business</label>
+        <input id="maps" placeholder="Start typing your business name and city" autocomplete="off">
+        <span class="hint">Pick it from the list. You can also paste a Google Maps link.</span>
       </div>
       <div class="btn-row"><button class="btn-primary sol" id="find" type="button">Find it</button><span class="status-line" id="st" role="status"></span></div>
       <div id="result" hidden></div>
@@ -50,7 +51,7 @@
   </div>
 
   <ol class="pitch-steps" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
-    <li><b>Find your token</b><span>Paste your Google Maps link above.</span></li>
+    <li><b>Find your token</b><span>Search for your business above.</span></li>
     <li><b>Prove it's yours</b><span>Add a short code to the website on your Google listing.</span></li>
     <li><b>Pick your wallet</b><span>Choose where the fees go. This is permanent.</span></li>
     <li><b>Get paid</b><span>After a 24-hour check, everything held is sent to you. Then pump.fun pays you directly.</span></li>
@@ -85,14 +86,15 @@
 </footer>
 
 <script type="module">
-import { $, esc, api } from '/launchpad/lp.js';
+import { $, esc, api, businessSearch, businessQuery } from '/launchpad/lp.js';
+businessSearch($('maps'), () => $('find').click());
 $('find').addEventListener('click', async () => {
-  const maps = $('maps').value.trim();
-  if (!maps) return ($('st').textContent = 'Paste your Google Maps link first.');
+  const q = businessQuery($('maps'));
+  if (!q.maps) return ($('st').textContent = 'Type your business name first.');
   $('find').disabled = true; $('st').textContent = 'Looking it up…';
   const out = $('result');
   try {
-    const r = await api('/api/business', { maps });
+    const r = await api('/api/business', q);
     const name = esc(r.business.name);
     if (r.alreadyLaunched && r.mint) {
       out.innerHTML = `<div class="notice ok"><b>${name} has a token.</b> Its creator fees are being held for you.</div>

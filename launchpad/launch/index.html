@@ -34,9 +34,9 @@
   <section class="panel" aria-labelledby="s1">
     <h2 id="s1"><span class="step-num">1</span>Which business?</h2>
     <div class="field">
-      <label for="maps">Google Maps link</label>
-      <input id="maps" placeholder="https://maps.app.goo.gl/…  or a google.com/maps/place/… link" autocomplete="off">
-      <span class="hint">On Google Maps, open the business, tap Share and copy the link.</span>
+      <label for="maps">Find the business</label>
+      <input id="maps" placeholder="Start typing its name and city, e.g. Rosie's Bagels Nashville" autocomplete="off">
+      <span class="hint">Pick it from the list. You can also paste a Google Maps link.</span>
     </div>
     <div class="btn-row"><button class="btn-secondary" id="find" type="button">Find business</button><span class="status-line" id="findStatus"></span></div>
     <div id="bizBox" hidden>
@@ -85,18 +85,20 @@
 </footer>
 
 <script type="module">
-import { $, esc, api, connectWallet, signTx, imageToPng, short } from '/launchpad/lp.js';
+import { $, esc, api, connectWallet, signTx, imageToPng, short, businessSearch, businessQuery } from '/launchpad/lp.js';
 
 let business = null, wallet = null;
+
+businessSearch($('maps'), () => $('find').click());
 
 $('ticker').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
 
 $('find').addEventListener('click', async () => {
-  const maps = $('maps').value.trim();
-  if (!maps) return ($('findStatus').textContent = 'Paste a Google Maps link first.');
+  const q = businessQuery($('maps'));
+  if (!q.maps) return ($('findStatus').textContent = 'Type the business name first.');
   $('find').disabled = true; $('findStatus').textContent = 'Looking it up on Google…';
   try {
-    const r = await api('/api/business', { maps });
+    const r = await api('/api/business', q);
     business = r;
     $('bizName').textContent = r.business.name;
     $('bizAddr').textContent = r.business.address || '';
@@ -147,7 +149,7 @@ $('launch').addEventListener('click', async () => {
     s.textContent = 'Preparing your launch…';
     const imageBase64 = await imageToPng($('img').files[0]);
     const prep = await api('/api/launch/prepare', {
-      maps: $('maps').value.trim(), coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
+      maps: businessQuery($('maps')).maps, coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
       description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64,
     });
     s.textContent = 'Approve the launch in your wallet…';

@@ -121,6 +121,71 @@ export async function connectWallet() {
 function need() { if (!active) throw new Error('Connect a wallet first.'); return active; }
 const chainFor = (w) => (w.std.chains || []).includes(`solana:${CLUSTER}`) ? `solana:${CLUSTER}` : undefined;
 
+// ---------- Business search ----------
+// Type a name (and city); pick a real business from Google. A pasted Google Maps link still works.
+
+const newSession = () => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : String(Math.random()).slice(2) + Date.now());
+const looksLikeLink = (q) => /^https?:|goo\.gl|google\.[a-z.]+\/maps/i.test(q);
+
+/** What to send to the API for a search box: the picked place ID, or whatever was pasted. */
+export const businessQuery = (input) => ({ maps: input.dataset.placeId || input.value.trim(), session: input.dataset.session });
+
+/** Turns an input into a business search with suggestions; calls onPick after a choice. */
+export function businessSearch(input, onPick) {
+  const list = document.createElement('ul');
+  list.className = 'biz-suggest'; list.id = input.id + '-suggest'; list.setAttribute('role', 'listbox'); list.hidden = true;
+  input.insertAdjacentElement('afterend', list);
+  input.parentElement.classList.add('has-suggest');
+  Object.assign(input, { autocomplete: 'off' });
+  input.setAttribute('role', 'combobox'); input.setAttribute('aria-autocomplete', 'list');
+  input.setAttribute('aria-controls', list.id); input.setAttribute('aria-expanded', 'false');
+
+  let session = newSession(), timer = 0, seq = 0, items = [], active = -1;
+  const close = () => { list.hidden = true; active = -1; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); };
+  const mark = () => [...list.children].forEach((li, i) => {
+    li.setAttribute('aria-selected', String(i === active));
+    if (i === active) { input.setAttribute('aria-activedescendant', li.id); li.scrollIntoView({ block: 'nearest' }); }
+  });
+  const render = (msg) => {
+    list.innerHTML = msg
+      ? `<li class="biz-suggest-msg">${esc(msg)}</li>`
+      : items.map((it, i) => `<li role="option" id="${list.id}-${i}" data-i="${i}"><b>${esc(it.name)}</b><span>${esc(it.detail)}</span></li>`).join('');
+    list.style.top = `${input.offsetTop + input.offsetHeight + 4}px`;
+    list.hidden = false; input.setAttribute('aria-expanded', 'true'); active = -1;
+  };
+  const pick = (it) => {
+    input.value = it.detail ? `${it.name}, ${it.detail}` : it.name;
+    input.dataset.placeId = it.placeId; input.dataset.session = session;
+    session = newSession(); close(); onPick?.(it);
+  };
+  const search = async (q) => {
+    const my = ++seq;
+    try {
+      const r = await api('/api/places/suggest', { q, session });
+      if (my !== seq) return;
+      items = r.suggestions || [];
+      render(items.length ? '' : 'No matches yet. Try adding the city, or paste a Google Maps link.');
+    } catch (e) { if (my === seq) { items = []; render(e.message); } }
+  };
+  input.addEventListener('input', () => {
+    delete input.dataset.placeId; delete input.dataset.session;
+    clearTimeout(timer); seq++;
+    const q = input.value.trim();
+    if (q.length < 3 || looksLikeLink(q)) return close();
+    timer = setTimeout(() => search(q), 250);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (list.hidden || !items.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); active = (active + 1) % items.length; mark(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); active = (active - 1 + items.length) % items.length; mark(); }
+    else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); pick(items[active]); }
+    else if (e.key === 'Escape') close();
+  });
+  // pointerdown fires before the input loses focus, so the tap isn't lost to blur.
+  list.addEventListener('pointerdown', (e) => { const li = e.target.closest('li[data-i]'); if (li) { e.preventDefault(); pick(items[Number(li.dataset.i)]); } });
+  input.addEventListener('blur', () => setTimeout(close, 150));
+}
+
 export function b64ToBytes(b64) { return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); }
 export function bytesToB64(bytes) { let s = ''; for (const b of bytes) s += String.fromCharCode(b); return btoa(s); }
 

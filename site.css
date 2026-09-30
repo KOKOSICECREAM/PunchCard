@@ -321,3 +321,12 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .wallet-row img { width: 32px; height: 32px; border-radius: 8px; }
 .wallet-dot { width: 32px; height: 32px; border-radius: 8px; background: var(--sol); flex: none; }
 .wallet-close { justify-self: end; }
+
+/* ---------- Business search suggestions (launchpad/lp.js) ---------- */
+.field.has-suggest { position: relative; }
+.biz-suggest { position: absolute; z-index: 20; left: 0; right: 0; list-style: none; margin: 0; padding: 0.3rem; background: var(--paper); border: 1px solid var(--border-mid); border-radius: 8px; box-shadow: var(--shadow-md); max-height: 320px; overflow-y: auto; }
+.biz-suggest li[role="option"] { display: grid; gap: 0.1rem; padding: 0.6rem 0.75rem; border-radius: 6px; cursor: pointer; min-width: 0; }
+.biz-suggest li[role="option"] b { font-weight: 600; }
+.biz-suggest li[role="option"] span { font-size: 0.82rem; color: var(--ink-faded); overflow-wrap: anywhere; }
+.biz-suggest li[role="option"]:hover, .biz-suggest li[aria-selected="true"] { background: var(--sol-pale); }
+.biz-suggest-msg { padding: 0.6rem 0.75rem; font-size: 0.88rem; color: var(--ink-mid); }
