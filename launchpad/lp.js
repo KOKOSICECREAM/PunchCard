@@ -164,7 +164,7 @@ export function businessSearch(input, onPick) {
       const r = await api('/api/places/suggest', { q, session });
       if (my !== seq) return;
       items = r.suggestions || [];
-      render(items.length ? '' : 'No matches yet. Try adding the city, or paste a Google Maps link.');
+      render(items.length ? '' : 'No matches yet. Try adding the city. Or find the business on Google Maps, tap Share, copy the link and paste it here.');
     } catch (e) { if (my === seq) { items = []; render(e.message); } }
   };
   input.addEventListener('input', () => {
