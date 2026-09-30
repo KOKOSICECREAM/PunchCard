@@ -1,0 +1,11 @@
+{
+  "name": "PC Test",
+  "symbol": "PCTEST",
+  "description": "Devnet test token for rehearsing a launch. Not PunchCard's token. No value.",
+  "image": "https://punchcard.club/punch/test/pctest.png",
+  "showName": true,
+  "createdOn": "https://punchcard.club",
+  "website": "https://punchcard.club/",
+  "twitter": "",
+  "telegram": ""
+}
