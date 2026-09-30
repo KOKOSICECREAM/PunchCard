@@ -119,6 +119,21 @@ export async function connectWallet() {
 }
 
 function need() { if (!active) throw new Error('Connect a wallet first.'); return active; }
+
+// Some wallets' in-app browsers (e.g. Phantom on phones) fail on the Wallet Standard path but
+// work through their older injected provider, so signing falls back to it for the same wallet.
+const LEGACY_BY_NAME = { phantom: () => window.phantom?.solana, solflare: () => window.solflare, backpack: () => window.backpack };
+const isRejection = (e) => e?.code === 4001 || /reject|cancel|denied|declined/i.test(e?.message || '');
+async function legacyFor(w) {
+  const p = (LEGACY_BY_NAME[w.name.toLowerCase()] || (() => null))() || window.solana;
+  if (!p || typeof p.signTransaction !== 'function') return null;
+  if (!p.publicKey) await p.connect();
+  return p.publicKey?.toString() === w.address ? p : null;
+}
+function walletError(w, e) {
+  const detail = [e?.code, e?.message || String(e)].filter((x) => x !== undefined && x !== '').join(': ');
+  return new Error(`${w.name} couldn't sign (${detail || 'no details'}). Make sure it's on Solana devnet (testnet mode), then try again.`);
+}
 const chainFor = (w) => (w.std.chains || []).includes(`solana:${CLUSTER}`) ? `solana:${CLUSTER}` : undefined;
 
 // ---------- Business search ----------
@@ -193,26 +208,36 @@ export function bytesToB64(bytes) { let s = ''; for (const b of bytes) s += Stri
 export async function signTx(b64) {
   const w = need();
   const bytes = b64ToBytes(b64);
-  if (w.std) {
+  const viaLegacy = async (p) => bytesToB64((await p.signTransaction(window.solanaWeb3.VersionedTransaction.deserialize(bytes))).serialize());
+  if (!w.std) return viaLegacy(w.legacy);
+  try {
     const [out] = await w.std.features['solana:signTransaction'].signTransaction({ transaction: bytes, account: w.account, chain: chainFor(w) });
     return bytesToB64(out.signedTransaction);
+  } catch (e) {
+    if (isRejection(e)) throw e;
+    const p = await legacyFor(w).catch(() => null);
+    if (!p) throw walletError(w, e);
+    try { return await viaLegacy(p); } catch (e2) { if (isRejection(e2)) throw e2; throw walletError(w, e2); }
   }
-  const signed = await w.legacy.signTransaction(window.solanaWeb3.VersionedTransaction.deserialize(bytes));
-  return bytesToB64(signed.serialize());
 }
 
 /** Ask the wallet to sign a text message; returns the signature as base64. */
 export async function signMessage(text) {
   const w = need();
   const message = new TextEncoder().encode(text);
-  if (w.std) {
-    const f = w.std.features['solana:signMessage'];
-    if (!f) throw new Error(`${w.name} can't sign messages. Try Phantom, Solflare or Backpack.`);
+  const viaLegacy = async (p) => { const r = await p.signMessage(message, 'utf8'); return bytesToB64(r.signature || r); };
+  if (!w.std) return viaLegacy(w.legacy);
+  const f = w.std.features['solana:signMessage'];
+  try {
+    if (!f) throw new Error('no message signing');
     const [out] = await f.signMessage({ account: w.account, message });
     return bytesToB64(out.signature);
+  } catch (e) {
+    if (isRejection(e)) throw e;
+    const p = await legacyFor(w).catch(() => null);
+    if (!p || typeof p.signMessage !== 'function') throw walletError(w, e);
+    try { return await viaLegacy(p); } catch (e2) { if (isRejection(e2)) throw e2; throw walletError(w, e2); }
   }
-  const r = await w.legacy.signMessage(message, 'utf8');
-  return bytesToB64(r.signature || r);
 }
 
 export function countdown(untilSecs) {
