@@ -1,11 +1,11 @@
 {
   "name": "PunchCard",
   "symbol": "PUNCH",
-  "description": "The PunchCard protocol token. PunchCard is building a fair community launchpad for the businesses you love: anyone can launch a token for a local business, its creator fees are held for the owner, and no dev scams. Try it now on the test network at punchcard.club/launchpad. PUNCH's creator fees fund PunchCard's development and audit. Holding PUNCH does not give a share of any fees.",
+  "description": "The PunchCard protocol token. PunchCard is a fair community launchpad for the businesses you love: anyone can launch a token for a local business, and its creator fees are held for the owner. Built by a dev with integrity. https://punchcard.club/ PUNCH's creator fees fund PunchCard's development, audits and operations. Holding PUNCH does not give a share of any fees.",
   "image": "https://punchcard.club/punch/punch-token.png",
   "showName": true,
   "createdOn": "https://punchcard.club",
-  "website": "https://punchcard.club/launchpad/",
+  "website": "https://punchcard.club/",
   "twitter": "https://x.com/punchcard_club",
   "telegram": ""
 }
