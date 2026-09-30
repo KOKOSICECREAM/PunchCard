@@ -288,3 +288,23 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .chips-row span::before { content: '✳ '; color: var(--terra); }
 .doors-2 { max-width: 1140px; margin: 2.75rem auto 0; }
 @media (max-width: 760px) { .pitch-steps { grid-template-columns: 1fr; } }
+
+/* ---------- Home page: PUNCH teaser ---------- */
+.teaser { max-width: 900px; margin: 0.5rem auto 2.25rem; padding: 1.75rem; display: flex; align-items: center; gap: 2rem; background: var(--ink); color: var(--paper); border-radius: 18px; box-shadow: 0 14px 40px rgba(28,24,18,0.25); }
+.teaser-logo { position: relative; width: 150px; height: 150px; flex: none; }
+.teaser-logo img { width: 100%; height: 100%; filter: blur(9px) grayscale(0.4) brightness(0.8); transform: scale(0.92); border-radius: 22px; }
+.teaser-logo span { position: absolute; inset: 0; display: grid; place-items: center; font-family: 'Special Elite', cursive; font-size: 5.5rem; color: #f4d9a7; text-shadow: 0 4px 18px rgba(0,0,0,0.5); animation: qpulse 1.8s ease-in-out infinite; }
+@keyframes qpulse { 0%,100% { transform: scale(1) rotate(-4deg); } 50% { transform: scale(1.12) rotate(4deg); } }
+.teaser-body { min-width: 0; }
+.teaser-tag { font-family: 'Courier Prime', monospace; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: #f4d9a7; }
+.teaser h2 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.6rem, 3.6vw, 2.4rem); line-height: 1.1; margin: 0.35rem 0 1rem; }
+.teaser h2 em { font-style: normal; color: #f4a57a; }
+.countdown { display: flex; gap: 0.75rem; }
+.countdown div { background: rgba(248,244,236,0.08); border: 1px solid rgba(248,244,236,0.18); border-radius: 10px; padding: 0.55rem 0.9rem; text-align: center; min-width: 4.6rem; }
+.countdown b { display: block; font-family: 'Courier Prime', monospace; font-size: 2rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.countdown small { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(248,244,236,0.6); }
+.teaser-note { margin-top: 1rem; font-size: 0.85rem; color: rgba(248,244,236,0.7); }
+.teaser-note a { color: #f4a57a; }
+.teaser-live { font-family: 'Special Elite', cursive; font-size: 1.4rem; color: #f4d9a7; }
+@media (max-width: 640px) { .teaser { flex-direction: column; text-align: center; margin: 0.5rem 1.25rem 2rem; } .countdown { justify-content: center; } }
+@media (prefers-reduced-motion: reduce) { .teaser-logo span { animation: none; } }
