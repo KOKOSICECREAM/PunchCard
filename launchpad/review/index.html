@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Review Queue — PunchCard</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
+</head>
+<body>
+<div class="testnet-bar">Review queue <span>· team only · every action is signed by your wallet</span></div>
+<main class="app-wrap">
+  <div>
+    <h1>Review <em>queue</em></h1>
+    <p class="lede">Owner claims under review and reports. Normal claims finish on their own; you only act on the ones that need it.</p>
+  </div>
+  <section class="panel" id="signin">
+    <p>Sign in with the guardian wallet. With a Ledger, approve the sign-in on the device (it's a transaction that is never sent).</p>
+    <div class="btn-row"><button class="btn-primary sol" id="go" type="button">Connect and sign in</button><span class="status-line" id="st" role="status"></span></div>
+  </section>
+  <div id="queue" hidden></div>
+</main>
+<script type="module">
+import { $, esc, api as _api, API, CLUSTER, connectWallet, signMessage, signTx, bytesToB64, short, explorer } from '/launchpad/lp.js';
+const { Connection, PublicKey, TransactionInstruction, TransactionMessage, VersionedTransaction } = window.solanaWeb3;
+let token = null, wallet = null;
+const call = async (p, body) => {
+  const r = await fetch(API + p, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `Request failed (${r.status})`);
+  return j;
+};
+const loginMessage = (w, t) => ['PunchCard review queue sign-in', `Wallet: ${w}`, `Time: ${t}`].join('\n');
+$('go').addEventListener('click', async () => {
+  const st = $('st');
+  try {
+    wallet = await connectWallet();
+    const signedAt = Math.floor(Date.now() / 1000), text = loginMessage(wallet, signedAt);
+    st.textContent = 'Approve the sign-in in your wallet…';
+    let res;
+    try { res = await call('/api/admin/login', { wallet, signedAt, signature: await signMessage(text) }); }
+    catch (e) {
+      if (/reject|cancel|denied/i.test(e.message)) throw e;
+      // Hardware wallets: sign a memo transaction instead (never sent).
+      st.textContent = 'Your wallet could not sign a message; approve the sign-in transaction instead (it is not sent)…';
+      const rpc = CLUSTER === 'devnet' ? 'https://api.devnet.solana.com' : 'https://api.mainnet-beta.solana.com';
+      const { blockhash } = await new Connection(rpc).getLatestBlockhash();
+      const ix = new TransactionInstruction({ programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'), keys: [], data: new TextEncoder().encode(text) });
+      const vtx = new VersionedTransaction(new TransactionMessage({ payerKey: new PublicKey(wallet), recentBlockhash: blockhash, instructions: [ix] }).compileToV0Message());
+      res = await call('/api/admin/login', { wallet, signedAt, signedTx: await signTx(bytesToB64(vtx.serialize())) });
+    }
+    token = res.token; st.textContent = '';
+    $('signin').hidden = true; await load();
+  } catch (e) { st.textContent = e.message; }
+});
+const when = (s) => new Date(s * 1000).toLocaleString();
+async function load() {
+  const q = await call('/api/admin/queue');
+  const claims = q.claims.map((c) => `
+    <section class="panel">
+      <h2>${esc(c.business_name)} <span class="status-line">$${esc(c.ticker)}</span></h2>
+      ${c.flags.length ? `<ul class="punch-list">${c.flags.map((f) => `<li>${f.strong ? '<b>Flag:</b>' : 'Note:'} ${esc(f.detail)}</li>`).join('')}</ul>` : '<p class="status-line">No flags: finishes on its own.</p>'}
+      <p class="status-line">Owner wallet <span class="mono">${esc(c.owner)}</span> · verified via ${esc(c.method)} on ${esc(c.host)}${c.email ? ' · ' + esc(c.email) : ''}<br>Review ends ${when(c.holdEndsAt)} · <a href="/launchpad/coin/?mint=${esc(c.mint)}" target="_blank">coin page</a> · <a href="${explorer('token', c.mint)}" target="_blank" rel="noopener">Solscan</a></p>
+      <div class="btn-row">
+        <button class="btn-secondary" data-act="approve" data-mint="${esc(c.mint)}" type="button">Approve (finish at the normal time)</button>
+        <button class="btn-primary" data-act="cancel" data-mint="${esc(c.mint)}" type="button">Cancel claim</button>
+        <span class="status-line" id="s-${esc(c.mint)}"></span>
+      </div>
+    </section>`).join('') || '<section class="panel"><p>No claims under review right now.</p></section>';
+  const reports = q.reports.map((r) => `<li><a href="/launchpad/coin/?mint=${esc(r.mint)}" target="_blank"><span><b>${esc(r.business_name)}</b> · ${esc(r.note)}</span><span class="status-line">${when(r.at)}</span></a></li>`).join('');
+  $('queue').innerHTML = `<p class="status-line">Signed in as ${esc(short(q.you))}</p>${claims}<section class="panel"><h2>Reports (last 30 days)</h2><ul class="coin-list">${reports || '<li class="status-line">None.</li>'}</ul></section>`;
+  $('queue').hidden = false;
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const { act, mint } = b.dataset, s = $('s-' + mint);
+  if (act === 'cancel' && !b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Tap again to cancel this claim'; return; }
+  b.disabled = true;
+  try {
+    s.textContent = 'Approve in your wallet…';
+    const { tx } = await call('/api/admin/tx', { mint, action: act });
+    const signed = await signTx(tx);
+    s.textContent = 'Sending…';
+    const r = await call('/api/admin/send', { tx: signed, mint, action: act });
+    s.innerHTML = `Done · <a href="${explorer('tx', r.sig)}" target="_blank" rel="noopener">transaction</a>`;
+    setTimeout(load, 2500);
+  } catch (err) { s.textContent = err.message; b.disabled = false; }
+});
+</script>
+</body>
+</html>
