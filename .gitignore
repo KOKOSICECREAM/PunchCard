@@ -16,3 +16,7 @@ broadcast/
 
 # Secrets
 .env
+
+# Staged handoff scratch — a fork run writes one indistinguishable from a live run.
+# See deploy/staged/README.md.
+deploy/staged/*.json

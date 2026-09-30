@@ -1,0 +1,17 @@
+{
+  "name": "kokos-burn",
+  "private": true,
+  "description": "Solana Pay transaction request: hands a customer's wallet a KOKOS burn for a KOKOS Ice Cream POS payment.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "^4.143.0"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.3"
+  }
+}

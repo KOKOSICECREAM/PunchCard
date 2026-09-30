@@ -1,0 +1,15 @@
+{
+  "_note": "Throwaway LPLockerPilot for the live locker test. Never SKOOP's real locker.",
+  "locker": "0x196Fead686d6cA56119C92690493337FA6c1Cedb",
+  "owner": "0x7Fe79Bc539d3e8a1B4b14e6788A8D80f3B0510Fd",
+  "usdcNft": 6101973,
+  "ethNft": 6101969,
+  "sourcify": "exact_match (2026-09-26)",
+  "status": "complete - evacuated and bricked",
+  "lifecycle": {
+    "setup": "2026-09-26, blocks 51832266-51832273: NFTs in, 50 SKOOP reserve, initializeLP, activate",
+    "collectFees": "tx 0x20b1ed9b96728da4c356586ed67fccb676aeaafb9f373c458fe17cc3a1e5cf2f block 51837607: 12286932987 wei WETH -> 0x6588, 0.020618 SKOOP burned, positions and reserve untouched",
+    "evacuateLP": "tx 0x996c33b5c4f6233616a93eac7c04675e1ce9e3ebfc1a40d5c3cb2cd6325b02a4 block 51837772: 2022.732446 SKOOP, 0.980052 USDC, 0.00037424 WETH to the owner; 427,223 gas of a 1,000,000 limit",
+    "after": "both positions liquidity 0; locker holds nothing; lpPermanentlyLocked, frozen, released; second evacuateLP reverts \"Evacuation window closed\", collectFees reverts \"Frozen\""
+  }
+}

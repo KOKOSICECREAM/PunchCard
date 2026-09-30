@@ -5,14 +5,17 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 /// @title MerchantToken
-/// @notice A single merchant's loyalty token. One of these is deployed per merchant.
-/// @dev This is the template, not a network token — there is no PunchCard-issued token and
-///      PunchCard holds no allocation of any merchant's supply. Each deployment carries the
-///      merchant's own name, symbol and metadata hash.
-/// @dev Fixed supply — entire supply minted to factory at deployment.
+/// @notice Fixed-supply ERC-20 blueprint for one merchant's PunchCard rewards program.
+/// @dev Each deployment is a merchant-specific token with its own name, symbol and
+///      metadata hash. PunchCard does not issue one shared network token and holds no
+///      built-in allocation of any merchant's supply.
+/// @dev Fixed supply — entire supply minted once to the constructor recipient.
+///      In the factory path, that recipient is the factory. In the manual path, it may be
+///      the merchant owner wallet, which funds the suite by hand before registration.
 ///      No mint function. Supply can only decrease via ERC20Burnable.burn().
 ///      6 decimals network standard.
-///      All allocation distribution handled by factory after deployment.
+///      Allocation distribution happens after deployment, either by the factory or by the
+///      owner on a manually admitted token such as SKOOP.
 ///      Fully permissionless after deployment — no owner, no pause, no access control.
 ///      ERC20Burnable enables burn() calls from suite contracts holding tokens
 ///      (RewardEscrow, TreasuryTimelock, VestingWallet, LPLocker) — no allowance needed.
@@ -30,25 +33,23 @@ contract MerchantToken is ERC20, ERC20Burnable {
 
     /// @param name_        Token name — e.g. "Frothy Monkey Rewards"
     /// @param symbol_      Token symbol — e.g. "FROTHY"
-    /// @param totalSupply_ Fixed supply — 100_000_000 * 1e6, set by factory
-    /// @param factory_     Receives entire supply for distribution to suite contracts
+    /// @param totalSupply_ Fixed supply — normally 100_000_000 * 1e6
+    /// @param mintTo_      Receives the entire supply at deployment
     /// @param ipfsHash_    IPFS hash of merchant metadata (name, symbol, logo)
     constructor(
         string memory name_,
         string memory symbol_,
         uint256 totalSupply_,
-        address factory_,
+        address mintTo_,
         bytes32 ipfsHash_
     ) ERC20(name_, symbol_) {
-        require(factory_     != address(0), "Invalid factory");
+        require(mintTo_      != address(0), "Invalid recipient");
         require(totalSupply_  > 0,          "Invalid supply");
         require(ipfsHash_    != bytes32(0), "Invalid IPFS hash");
 
         ipfsHash = ipfsHash_;
 
-        // Mint entire fixed supply to factory
-        // Factory distributes to suite contracts in deploy sequence
-        _mint(factory_, totalSupply_);
+        _mint(mintTo_, totalSupply_);
     }
 
     // ── OVERRIDES ─────────────────────────────────────────────────────────────

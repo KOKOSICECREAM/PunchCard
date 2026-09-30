@@ -1,0 +1,61 @@
+{
+  "_note": "Progress of the SKOOP suite launch (option B). Written by script/deploy/skoop/*.sh.",
+  "suite": {
+    "escrow": "0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2",
+    "vesting": "0xD19FE22eFF97BC574b19E5EB16FD2a9dA3902590",
+    "treasury": "0x01933BfBf85905fD780157abee79bebAcFfCB7cB",
+    "locker": "0x74ed636C959e92dF6c779F0EdcB759077cFBd908",
+    "deployBlock": 51846210,
+    "deployTxs": [
+      "0xf5def43ab582cf7bb289a3784cc4e5f9ac109a90d76edc7de89ddb06e446fc23",
+      "0xefd842de97ebc6bd20ada43ff3727e888a70726481951d1e6a37ac97d9a35ecc",
+      "0x3e5c178d9c349ec4badca869120bc03ba79fdd5938d189cc22d9cfc64bb8a2f2",
+      "0xd0763ae3dfac7c8427ece0ff876e217ff67afc783a35a535e3802368e39ff6ff"
+    ],
+    "_verified": "2026-09-26: all four status 1; constructor values read back and matching; runtime bytecode identical to a replay of this repo on a fork at block 51846209."
+  },
+  "progress": {
+    "sourcify": "yes",
+    "activated": "yes",
+    "approved": "yes",
+    "verified": "yes",
+    "funded": "yes",
+    "registered": "yes"
+  },
+  "starter": {
+    "usdc": 6102819,
+    "eth": 6102820,
+    "_verified": "2026-09-26 step 5 live: #6102819 (USDC, liquidity 31528108) and #6102820 (ETH, liquidity 653384896985) owned by the locker; reserve 26,997,938.699785 SKOOP in the locker (tx 0x9247d19d...eef0, block 51846727); real #6100109/#6100112 still in the LP wallet with their original liquidity. The LP wallet's unlimited Uniswap-app approvals were replaced by small ones as a side effect."
+  },
+  "activation": {
+    "initializeLP": "0x16ff1fef6db4842225a184eb8f240aabfbed1ee365b111ffa219f75a77bbfe6e (block 51846820)",
+    "activatedAt": {
+      "escrow": 1790482995,
+      "vesting": 1790483005,
+      "treasury": 1790483015,
+      "locker": 1790483025
+    },
+    "_note": "2026-09-26 23:23 CT. Vesting cliff 2026-10-26, fully vested 2028-10-25. Escrow emission running (~24,657/day) but unfunded until step 4; spendable is 0 until then. Locker initialised with the starter positions and reserve 26,997,938.699785, evacuation open."
+  },
+  "approvals": {
+    "_note": "2026-09-26: governance (Ledger #41) approved the five live codehashes and appointed registrar #43; all six txs status 1; governance nonce 0 -> 6. Verifier (pre-funding) PASSED with the expected warnings: escrow/vesting/treasury empty, owner still holding 69,544,083, reserve short 2,061.30.",
+    "MERCHANT_TOKEN": "0x4a357882aa4f82a333e31a3ae8bc06358adf2b7d4ce9a8e275f0f0a4f1078ce5",
+    "REWARD_ESCROW": "0xa752e1dc47f4d5b282e559de4e5753083d313f990e3ac18a011bc3e851bab07c",
+    "VESTING_WALLET": "0xe6617865ea49d2e2538410e9b2ab6d56f8013c7fa8fe4df47ef0a447e962a955",
+    "TREASURY_TIMELOCK": "0xaf3277b609a86c399e86be3a6158748d3df8d2bc97f2176ab230f2b09e156dbd",
+    "LP_LOCKER": "0xa576300f0e8c4edf227099e1425d6255e98dda19e16ac2c38105eb12f9a0578d",
+    "registrar": "0x3B44CF955Db742aEbCDC3260cb2599eE209E90dC"
+  },
+  "funding": {
+    "escrow": "45000000 - tx 0xe6d338b4...5a66 block 51847025",
+    "vesting": "15000000 - tx 0x40fd7c70...9280 block 51847029",
+    "treasury": "9544083 - tx 0xc4a33508...785e block 51847068",
+    "_note": "2026-09-26, funded last (after activation, approvals and a passing verifier). Owner and LP wallets hold 0 SKOOP. Verifier after funding: PASSED with the two documented warnings (treasury short 455,917; reserve short 2,061.30)."
+  },
+  "registration": {
+    "tx": "0xf8083e18d2fb56a0ce5a6200c8fcae2585ab17d0afef80f4bf5aefb0c6368a8d",
+    "block": 51847179,
+    "registrar": "0x3B44CF955Db742aEbCDC3260cb2599eE209E90dC",
+    "_verified": "2026-09-26: status 1; SuiteRegistered + ManualSuiteRegistered emitted; isRegistered(SKOOP) true; getSuite returns the four suite contracts; PunchCardRouter.getPoolFeeTiers(SKOOP) = 10000/10000."
+  }
+}

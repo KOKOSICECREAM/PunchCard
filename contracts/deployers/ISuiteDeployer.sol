@@ -20,14 +20,16 @@ interface ISuiteDeployer {
         address teamWallet,
         address windDownController,
         uint256 cliffDuration,
-        uint256 vestDuration
+        uint256 vestDuration,
+        address activator
     ) external returns (address);
 
     function deployTreasury(
         address token,
         address ownerWallet,
         address windDownController,
-        uint256 timelockDuration
+        uint256 timelockDuration,
+        address activator
     ) external returns (address);
 
     function deployEscrow(
@@ -37,6 +39,7 @@ interface ISuiteDeployer {
         address windDownController,
         uint256 rewardsAllocation,
         uint256 perTxFloor,
-        uint256 perTxMax
+        uint256 perTxMax,
+        address activator
     ) external returns (address);
 }

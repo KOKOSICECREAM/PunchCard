@@ -24,7 +24,42 @@ contract WindDownController is IWindDownController {
     /// @notice How long a proposed factory change must wait before it can be executed.
     uint256 public constant FACTORY_TIMELOCK = 48 hours;
 
-    address public immutable multisig;
+    /// @notice Governs admission to the network: registrars, approved codehashes, factory
+    ///         authorisation and wind-down initiation.
+    ///
+    /// @dev **Mutable, deliberately, and only through propose → wait → accept.**
+    ///
+    ///      It was `immutable`, which meant the address chosen on deploy day governed the
+    ///      network forever — a beta launched from an EOA could never move to a Safe
+    ///      without redeploying the whole network and orphaning every merchant already
+    ///      registered under the old controller.
+    ///
+    ///      The transfer is deliberately not a single call. Two properties are load-bearing:
+    ///
+    ///      1. **The new multisig must accept.** A one-way `transferMultisig(addr)` to a
+    ///         typo, or to a Safe that has not been deployed yet, permanently ends the
+    ///         network's ability to approve a codehash or set a registrar. That is the
+    ///         exact failure this change exists to prevent, so it must not be reintroduced
+    ///         by the fix. `acceptMultisig()` proves the key exists and is controlled
+    ///         before any power moves.
+    ///
+    ///      2. **It waits.** While this was immutable, a compromised key was *shared* — the
+    ///         attacker had it and so did you, and you could still act. Mutable and
+    ///         instant, a compromised key becomes *exclusive* in one transaction. The
+    ///         48-hour delay and the loud `MultisigProposed` event are the window in which
+    ///         that gets noticed and cancelled. Same reasoning, same constant, as
+    ///         `FACTORY_TIMELOCK` above.
+    address public multisig;
+
+    /// @notice Proposed next multisig. Holds no power until it calls `acceptMultisig()`.
+    address public pendingMultisig;
+
+    /// @notice When the pending multisig becomes able to accept. Zero when none is pending.
+    uint256 public multisigAcceptableAt;
+
+    event MultisigProposed(address indexed current, address indexed proposed, uint256 acceptableAt, uint256 timestamp);
+    event MultisigTransferCancelled(address indexed cancelledBy, address indexed wasProposed, uint256 timestamp);
+    event MultisigTransferred(address indexed from, address indexed to, uint256 timestamp);
 
     /// @notice The factory set at construction. Kept for provenance; authorisation is read
     ///         from `authorizedFactories`, which this address starts out in.
@@ -46,6 +81,55 @@ contract WindDownController is IWindDownController {
     /// @notice Timestamp a proposed authorisation change becomes executable. 0 = none.
     mapping(address => uint256) public factoryProposedAt;
     mapping(address => bool)    public factoryProposalIsAuthorize;
+
+    // ── MANUAL ADMISSION ──────────────────────────────────────────────────────
+
+    /// @notice Addresses permitted to admit a hand-assembled merchant.
+    /// @dev The factory path is the standard and this is the exception. It exists because a
+    ///      merchant may be assembled outside a factory — the network's own first token,
+    ///      launched by hand so its liquidity and allocations stay movable while unaudited
+    ///      code is proven — and because bending the factory to allow that would put
+    ///      exceptions inside the thing whose whole value is having none.
+    ///
+    ///      **This is weaker than the factory path and must stay rarer.** A factory
+    ///      guarantees a suite was CREATED by known code. This guarantees only that the
+    ///      code is known NOW, which `registerManual` enforces by comparing every
+    ///      contract's `codehash` against an implementation the multisig has approved.
+    ///      Without that comparison it would be a signature saying "trust me", which is not
+    ///      a guarantee at all.
+    mapping(address => bool) public registrars;
+
+    /// @notice Runtime code hashes the multisig accepts for each suite role.
+    /// @dev `keccak256(role) => codehash => allowed`. Several may be allowed per role: a
+    ///      locker lineage differs between production, beta and pilot, and all three are
+    ///      legitimate for different merchants.
+    ///
+    ///      **Approval is per DEPLOYMENT, not per implementation.** Solidity writes
+    ///      immutables into runtime bytecode, so two escrows compiled from identical source
+    ///      with different owner wallets have different codehashes. There is no way to
+    ///      approve "the RewardEscrow" once and cover every merchant.
+    ///
+    ///      That makes the guarantee narrower than it first looks, and worth stating
+    ///      exactly. It is **not** "this suite is built from known-good code" proven
+    ///      automatically. It is: *the registrar can admit only contracts the multisig has
+    ///      already looked at and approved by hash.* Two different keys, one reviewing and
+    ///      one admitting, and no way for the second to act alone.
+    ///
+    ///      Which is why publishing source is load-bearing rather than cosmetic. Approving
+    ///      the codehash of a contract nobody has verified is a rubber stamp. Approving one
+    ///      whose source is published and matches its bytecode is an attestation, and the
+    ///      order matters: **verify the source, then approve the hash.**
+    mapping(bytes32 => mapping(bytes32 => bool)) public approvedCode;
+
+    bytes32 public constant ROLE_TOKEN    = keccak256("MERCHANT_TOKEN");
+    bytes32 public constant ROLE_ESCROW   = keccak256("REWARD_ESCROW");
+    bytes32 public constant ROLE_VESTING  = keccak256("VESTING_WALLET");
+    bytes32 public constant ROLE_TREASURY = keccak256("TREASURY_TIMELOCK");
+    bytes32 public constant ROLE_LOCKER   = keccak256("LP_LOCKER");
+
+    event RegistrarSet(address indexed registrar, bool allowed, uint256 timestamp);
+    event CodeApproved(bytes32 indexed role, bytes32 indexed codehash, bool allowed, uint256 timestamp);
+    event ManualSuiteRegistered(address indexed merchantToken, address indexed registrar, uint256 timestamp);
 
     mapping(address => WindDownSuite) private _suites;
     mapping(address => bool) private _registered;
@@ -93,9 +177,97 @@ contract WindDownController is IWindDownController {
         else           emit FactoryDisabled(newFactory, block.timestamp);
     }
 
+    // ── MULTISIG TRANSFER ─────────────────────────────────────────────────────
+
+    /// @notice Propose a new multisig. Current multisig only. Nothing changes yet.
+    /// @dev Re-proposing overwrites any pending proposal and restarts the clock.
+    function proposeMultisig(address newMultisig) external onlyMultisig {
+        require(newMultisig != address(0), "Invalid multisig");
+        require(newMultisig != multisig,    "Already the multisig");
+        pendingMultisig      = newMultisig;
+        multisigAcceptableAt = block.timestamp + FACTORY_TIMELOCK;
+        emit MultisigProposed(multisig, newMultisig, multisigAcceptableAt, block.timestamp);
+    }
+
+    /// @notice Abandon a pending transfer. Current multisig only.
+    /// @dev The response to noticing a proposal you did not make.
+    function cancelMultisigTransfer() external onlyMultisig {
+        require(pendingMultisig != address(0), "No pending transfer");
+        address was = pendingMultisig;
+        pendingMultisig      = address(0);
+        multisigAcceptableAt = 0;
+        emit MultisigTransferCancelled(msg.sender, was, block.timestamp);
+    }
+
+    /// @notice Take over as multisig. Callable only by the proposed address, only after the
+    ///         timelock, and the only way the role ever moves.
+    function acceptMultisig() external {
+        require(msg.sender == pendingMultisig,            "Not pending multisig");
+        require(multisigAcceptableAt != 0,                "No pending transfer");
+        require(block.timestamp >= multisigAcceptableAt,  "Timelock active");
+
+        address old          = multisig;
+        multisig             = pendingMultisig;
+        pendingMultisig      = address(0);
+        multisigAcceptableAt = 0;
+        emit MultisigTransferred(old, multisig, block.timestamp);
+    }
+
     modifier onlyMultisig() {
         require(msg.sender == multisig, "Not multisig");
         _;
+    }
+
+    // ── MANUAL ADMISSION ──────────────────────────────────────────────────────
+
+    function setRegistrar(address who, bool allowed) external onlyMultisig {
+        require(who != address(0), "Invalid registrar");
+        registrars[who] = allowed;
+        emit RegistrarSet(who, allowed, block.timestamp);
+    }
+
+    /// @notice Approve a runtime code hash for one suite role. Multisig only.
+    /// @dev Approving code is the whole security of the manual path. A registrar can admit
+    ///      any suite built from approved code and nothing else, so this is the list that
+    ///      decides what "a PunchCard merchant" can be made of.
+    function setApprovedCode(bytes32 role, bytes32 codehash, bool allowed) external onlyMultisig {
+        require(codehash != bytes32(0), "Invalid codehash");
+        approvedCode[role][codehash] = allowed;
+        emit CodeApproved(role, codehash, allowed, block.timestamp);
+    }
+
+    /// @notice Admit a hand-assembled merchant whose contracts are all approved code.
+    /// @dev Deliberately does NOT check balances, pools or liquidity. Those are the
+    ///      registrar's job, done off-chain with a verification script, and encoding them
+    ///      here would rebuild the factory inside the controller — which is the thing this
+    ///      path exists to avoid. What it does check is the one thing a human review cannot
+    ///      do reliably by eye: that every contract is bytecode nobody has altered.
+    function registerManual(
+        address merchantToken,
+        address rewardEscrow,
+        address vestingWallet,
+        address treasuryTimelock,
+        address lpLocker
+    ) external {
+        require(registrars[msg.sender], "Not registrar");
+        require(!_registered[merchantToken], "Already registered");
+
+        _requireApproved(ROLE_TOKEN,    merchantToken,    "token");
+        _requireApproved(ROLE_ESCROW,   rewardEscrow,     "escrow");
+        _requireApproved(ROLE_VESTING,  vestingWallet,    "vesting");
+        _requireApproved(ROLE_TREASURY, treasuryTimelock, "treasury");
+        _requireApproved(ROLE_LOCKER,   lpLocker,         "locker");
+
+        _record(merchantToken, rewardEscrow, vestingWallet, treasuryTimelock, lpLocker);
+        emit ManualSuiteRegistered(merchantToken, msg.sender, block.timestamp);
+    }
+
+    /// @dev Reverts naming the role, because "not approved code" on its own would leave an
+    ///      operator diffing five addresses to find which one.
+    function _requireApproved(bytes32 role, address target, string memory what) private view {
+        require(target != address(0), string.concat("Invalid ", what));
+        require(target.code.length > 0, string.concat("No code at ", what));
+        require(approvedCode[role][target.codehash], string.concat("Unapproved ", what, " code"));
     }
 
     modifier onlyFactory() {
@@ -122,6 +294,21 @@ contract WindDownController is IWindDownController {
         require(treasuryTimelock != address(0), "Invalid treasury");
         require(lpLocker         != address(0), "Invalid locker");
 
+        _record(merchantToken, rewardEscrow, vestingWallet, treasuryTimelock, lpLocker);
+    }
+
+    /// @dev The registry write itself, shared by both admission paths so they cannot come to
+    ///      mean different things. Everything above it differs — a factory proves how a
+    ///      suite was built, a registrar proves what its code is now — but what lands in the
+    ///      registry is identical, and the router cannot tell the two apart. That is
+    ///      deliberate: a merchant is a merchant.
+    function _record(
+        address merchantToken,
+        address rewardEscrow,
+        address vestingWallet,
+        address treasuryTimelock,
+        address lpLocker
+    ) private {
         _registered[merchantToken] = true;
         _suites[merchantToken] = WindDownSuite({
             rewardEscrow:     rewardEscrow,

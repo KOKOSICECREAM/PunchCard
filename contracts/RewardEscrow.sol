@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IRewardEscrow.sol";
+import "./Activatable.sol";
 
 /// @title RewardEscrow
 /// @notice Holds a merchant's reward pool and meters it out through two independent
@@ -35,7 +36,7 @@ import "./interfaces/IRewardEscrow.sol";
 ///      Everything the owner can do is rate-limiting or halting. No function here moves
 ///      tokens to an address the caller chooses except distributeReward, which is bounded
 ///      by both limits above.
-contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
+contract RewardEscrow is IRewardEscrow, Activatable, ReentrancyGuard {
 
     using SafeERC20 for IERC20;
 
@@ -68,7 +69,6 @@ contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
 
     /// @notice Total rewards allocation this schedule emits
     uint256 public immutable REWARDS_ALLOCATION;
-    uint256 public immutable emissionStart;
 
     /// @notice Emission per day, and the derived ceilings
     uint256 public immutable emissionPerDay;
@@ -96,8 +96,9 @@ contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
         address _windDownController,
         uint256 _rewardsAllocation,
         uint256 _perTxFloor,
-        uint256 _perTxMax
-    ) {
+        uint256 _perTxMax,
+        address _activator
+    ) Activatable(_activator) {
         require(_token              != address(0), "Invalid token");
         require(_initialOperator    != address(0), "Invalid operator");
         require(_ownerWallet        != address(0), "Invalid owner");
@@ -108,7 +109,7 @@ contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
         ownerWallet        = _ownerWallet;
         windDownController = _windDownController;
         REWARDS_ALLOCATION = _rewardsAllocation;
-        emissionStart      = block.timestamp;
+        // Emission starts at activate(), not here — see Activatable.
 
         uint256 perDay = (_rewardsAllocation * 1 days) / EMISSION_PERIOD;
         // Drawer bookkeeping is uint128. The bound holds comfortably for any sane
@@ -155,6 +156,7 @@ contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
     }
 
     modifier active() {
+        require(activatedAt != 0,                "Not activated");
         require(!_frozen,                        "Frozen");
         require(block.timestamp >= pausedUntil,  "Paused");
         _;
@@ -162,9 +164,20 @@ contract RewardEscrow is IRewardEscrow, ReentrancyGuard {
 
     // ── EMISSION ──────────────────────────────────────────────────────────────
 
+    /// @notice When emission began: the instant the merchant went live, or 0 while staged.
+    /// @dev Kept as an accessor because it was a public immutable before staging existed,
+    ///      so anything reading it off-chain keeps working.
+    function emissionStart() public view returns (uint256) {
+        return activatedAt;
+    }
+
     /// @inheritdoc IRewardEscrow
+    /// @dev Zero until activation. A suite that sat staged for a month must not open with a
+    ///      month of rewards already unlocked — bufferCap is 30 days of emission, so that
+    ///      would have opened the escrow at its full spendable ceiling on day one.
     function emitted() public view override returns (uint256) {
-        uint256 elapsed = block.timestamp - emissionStart;
+        if (activatedAt == 0) return 0;
+        uint256 elapsed = block.timestamp - activatedAt;
         if (elapsed >= EMISSION_PERIOD) return REWARDS_ALLOCATION;
         return (REWARDS_ALLOCATION * elapsed) / EMISSION_PERIOD;
     }

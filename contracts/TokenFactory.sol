@@ -11,8 +11,21 @@ import "./interfaces/INonfungiblePositionManager.sol";
 import "./interfaces/IWETH.sol";
 import "./interfaces/IEthUsdOracle.sol";
 import "./libraries/LaunchPricing.sol";
+import "./Activatable.sol";
 
 /// @title TokenFactory
+///
+/// @notice **REFERENCE ONLY. THIS CANNOT DEPLOY A MERCHANT ON BASE.**
+///
+///         `deploy()` costs 17,325,962 gas and Base refuses any transaction above
+///         16,777,216 — a chain-level per-transaction cap, identical across every RPC and
+///         exactly 2^24. The most aggressive compiler settings save 38k of the 549k needed,
+///         so this is not a tuning problem. Use `StagedTokenFactory`.
+///
+///         Kept because it is the readable version of what the three stages do, and
+///         because it is the oracle the staged tests compare against. No script and no
+///         runbook may present it as a Base deployment path.
+///
 /// @notice Deploys full PunchCard merchant suite in a single transaction.
 /// @dev Deployer hot wallet executes after off-chain PunchCard review.
 ///      Multisig updates deployer if compromised.
@@ -73,8 +86,21 @@ contract TokenFactory {
     uint256 public constant EMISSION_PER_DAY  = REWARDS_ALLOC / EMISSION_DAYS;
     uint256 public constant MAX_DRAWER_DAYS   = 14;
     uint256 public constant MAX_PER_TX        = EMISSION_PER_DAY * MAX_DRAWER_DAYS;
-    uint256 public constant CLIFF_DURATION    = 180 days;
-    uint256 public constant VEST_DURATION     = 1080 days;
+    /// @notice Team vesting: a 30-day cliff, then linear over 730 days.
+    /// @dev Changed 2026-09-15, from 180 + 1080. The old curve was a long-term lockup; the
+    ///      intent here is launch protection — a short cliff that stops an immediate dump,
+    ///      then a steady two-year release. Full unlock at day 760 rather than day 1260.
+    ///
+    ///      The SHAPE is deliberately not KOKOS's. Its live TeamVesting accrues from the
+    ///      start timestamp and uses the cliff only to gate claiming, so 12.3% is claimable
+    ///      the instant the cliff passes. `VestingWallet` starts accrual AT the cliff, so
+    ///      nothing at all is claimable on day 30. Same two words, different money.
+    ///
+    ///      `constant`, so this is the schedule for every merchant on the network and not a
+    ///      term pSKOOP negotiated. Changing it was clean only because no merchant had
+    ///      launched yet.
+    uint256 public constant CLIFF_DURATION    = 30 days;
+    uint256 public constant VEST_DURATION     = 730 days;
     uint256 public constant TIMELOCK_DURATION = 90 days;
 
     int24 private constant MIN_TICK = -887272;
@@ -298,9 +324,9 @@ contract TokenFactory {
             tokenAddr = sd.deployToken(p.name, p.symbol, TOTAL_SUPPLY, address(this), p.ipfsHash);
             token     = IERC20(tokenAddr);
 
-            vesting  = sd.deployVesting(tokenAddr, p.teamWallet, windDownController, CLIFF_DURATION, VEST_DURATION);
-            treasury = sd.deployTreasury(tokenAddr, p.ownerWallet, windDownController, TIMELOCK_DURATION);
-            escrow   = sd.deployEscrow(tokenAddr, p.operator, p.ownerWallet, windDownController, REWARDS_ALLOC, p.perTxFloor, p.perTxMax);
+            vesting  = sd.deployVesting(tokenAddr, p.teamWallet, windDownController, CLIFF_DURATION, VEST_DURATION, address(this));
+            treasury = sd.deployTreasury(tokenAddr, p.ownerWallet, windDownController, TIMELOCK_DURATION, address(this));
+            escrow   = sd.deployEscrow(tokenAddr, p.operator, p.ownerWallet, windDownController, REWARDS_ALLOC, p.perTxFloor, p.perTxMax, address(this));
 
             // `factory` is this contract, so initializeLP() below passes onlyFactory.
             locker = ILockerDeployer(lockerDeployer).deployLocker(
@@ -452,7 +478,16 @@ contract TokenFactory {
 
         ILPLocker(locker).initializeLP(usdcTokenId, ethTokenId, p.usdcFeeTier, p.ethFeeTier);
 
-        // ── STEP 11: Register suite ───────────────────────────────────────────
+        // ── STEP 11: Activate, then register ──────────────────────────────────
+        // The suite contracts are built inert and every schedule in them starts here. In
+        // this atomic factory that is the same instant as construction, so nothing about a
+        // merchant deployed through deploy() changes. It matters for the staged path,
+        // where construction happens in an earlier transaction: see Activatable.
+
+        IActivatable(escrow).activate();
+        IActivatable(vesting).activate();
+        IActivatable(treasury).activate();
+        IActivatable(locker).activate();
 
         IWindDownController(windDownController).register(
             tokenAddr,

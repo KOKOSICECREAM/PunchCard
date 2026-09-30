@@ -1,0 +1,223 @@
+{
+  "merchant": "SKOOP",
+  "status": "registered",
+  "_status_values": "token-deployed | suite-deployed | funded | verified | registered",
+  "_path_note": "Hand-assembled and admitted through WindDownController.registerManual, NOT through a factory. See docs/skoop-launch-plan.md and docs/staged-rollout.md.",
+  "token": {
+    "address": "0xBa147713adF122A8Fc224e52Cb431D7919831939",
+    "name": "SKOOP PunchCard",
+    "symbol": "SKOOP",
+    "decimals": 6,
+    "totalSupply": "100000000000000",
+    "ipfsHash": "0x31308a8763f929446f17aaca38cc9538ff0380a5d36fe6c5cffa5e1f7787c6bb",
+    "metadataCid": "QmPhJXCg7snZNMCzgSLME8eujLZ6KvcJT3nwJnLMftwv8k",
+    "logoCid": "QmNoS9wwGj3zb2rz1Z2AMbZMBfh6VMjijSAon5xUt6mXfV",
+    "deployTx": "0xe8a7c4068ed227bfbc6e2803bb8c088629a87acd6ab0b63786ce29e7f3f0e020",
+    "block": 51432107,
+    "deployedAt": "2026-09-17",
+    "basescanVerified": true,
+    "_redeploy_note": "Redeployed with cleaned verified source comments and constructor naming. This is the SKOOP address to use going forward."
+  },
+  "supersededTokens": [
+    {
+      "address": "0x38bdc0f357455C49486cb3871a3AA218aAd10D2B",
+      "deployTx": "0x3af6fbf1ed5fcd6714ad969d55566973e287c050fdc9c44e366fd610dc3444c1",
+      "block": 51430716,
+      "reason": "First SKOOP PunchCard deploy used correct bytecode behavior but stale/misleading verified-source comments inherited from the factory path.",
+      "disposalTx": "0xe1acba279c2ab35d1ad11d164e2446a734ac9b5fa87b007ce5baab5768827bc1",
+      "disposal": "sent-to-dead-address",
+      "_disposal_note": "NOT burned. The disposal tx is transfer(0x000...dEaD, 100000000e6), selector 0xa9059cbb — verified on-chain 2026-09-19. totalSupply() on the superseded token still reads 100,000,000.000000 and always will, so Basescan shows it as a live token with one holder. The supply is unrecoverable because nobody holds the dead address's key, but it was never destroyed. MerchantToken is ERC20Burnable and burn() would have set supply to zero; it is no longer callable because the owner wallet no longer holds the tokens."
+    }
+  ],
+  "basescanProfile": {
+    "status": "source-verified",
+    "_status_values": "source-verified | token-info-submitted | token-info-approved",
+    "_note": "Logo/profile update must be submitted through the logged-in BaseScan Token Update flow after claiming contract ownership."
+  },
+  "wallets": {
+    "_fill_note": "Every value below is required before step 2 or step 3 can run. The permanence column is the point: several of these can never be changed after the contract that takes them is deployed, and the suite is deployed one contract at a time precisely so each can be checked before the next.",
+    "owner": "0x5426E59b783cd3b5083Ccc8cB571AA36e9f4a3be",
+    "_owner_note": "Holds the entire supply. Becomes ownerWallet on the escrow, treasury and locker - immutable in all three - and is the only address that can ever call evacuateLP(). Highest-stakes key in the system.",
+    "team": "0xa40A4893051ebC62718579c23e7ED0F4044cdA0f",
+    "_team_note": "IMMUTABLE FOREVER on VestingWallet - no update function exists anywhere. Receives the 15M team allocation over 730 days after a 30-day cliff. Wrong value here is only fixable by abandoning the vesting contract and redeploying, which is free before step 11 and impossible after.",
+    "operator": "0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B",
+    "_operator_note": "The first POS kiosk signer on RewardEscrow. NOT immutable - addOperator / removeOperator / setDrawerAllowance are all onlyOwner, which is the un-rotatable-key problem PunchCard fixed relative to live SKOOP. Safe to set provisionally.",
+    "multisig": "0x5478bab8986eb652D3083Db6bbb34FA3188AB9cb",
+    "_multisig_note": "PunchCard governance. Changed 2026-09-26 from 0x25CB3b3c06fD821136d66b03A2cF02CfC754ADDb (provided 2026-09-21, never used) to this key: Ledger account 41, path m/44'/60'/41'/0/0, verified on the device. An EOA, not a multisig contract - the parameter is only named multisig. Governs WindDownController and PunchCardRouter: codehash approval, registrars, factory authorisation, router params, and wind-down initiation. Transferable by proposeMultisig -> 48h -> acceptMultisig on both contracts; nothing enforces they agree, so move both together. Needs ETH for gas from step 7 (codehash approvals).",
+    "registrar": "0x3B44CF955Db742aEbCDC3260cb2599eE209E90dC",
+    "_registrar_note": "The only address that can call registerManual at step 11. Set on the controller via setRegistrar, so it is changeable right up until it is used. Not needed until step 11.",
+    "feeRecipient": "0x6588A99071e0e988071dA4252e9499ddFc752dd1",
+    "_feeRecipient_note": "PunchCard fees, provided 2026-09-21, checksummed from 0x6588a99071e0e988071da4252e9499ddfc752dd1. EOA, nonce 0. Receives the network fee. IMMUTABLE on LPLockerPilot - cannot be redirected after step 3. Mutable on PunchCardRouter via setRouterParams.",
+    "deployerActivator": "0x5426E59b783cd3b5083Ccc8cB571AA36e9f4a3be",
+    "_deployerActivator_note": "Decided 2026-09-26: the owner wallet, Ledger #40, is also the activator. Its only powers are activate() once per suite contract and initializeLP() once on the locker, both spent at launch step 5b; afterwards it can do nothing. The 2026-09-20 plan for a separate fresh hot key assumed the activator had to outlive launch (to initialise a locker later) and that the owner key was not a hardware wallet. Under option B the locker is initialised at launch, and the owner is on a Ledger - so a new hot key would only add a key to guard.",
+    "factoryDeployer": "0xEfafE621247fe74B269c6177665eB36C91f6C48b",
+    "_factoryDeployer_note": "PunchCard deploy wallet - the PC_DEPLOYER argument at step 2, which is a DIFFERENT role from SKOOP's activator. It is written into approvedDeployers on StagedTokenFactoryBeta and authorises staging FUTURE merchants; approval is grantable and revocable by the multisig afterwards, so this one is not a permanent commitment. Same wallet that deployed the token. Fine here precisely because it is revocable.",
+    "_multisig_decision": "Decided 2026-09-26: the beta runs with this Ledger key as governance, knowingly an EOA. Since c8b046e the controller and router hand governance over by propose -> 48h -> accept, so a move to a Safe later needs no redeploy. What that key can do once SKOOP is registered: approve codehashes, set registrars, authorise factories, and initiate a 365-day wind-down of a registered merchant, which freezes its rewards and treasury at once and cannot be cancelled. That last power is the reason to revisit this before production.",
+    "_factoryDeployer_signer": "0xEfaf... signs with a Trezor (not the Ledger). Unchanged 2026-09-26.",
+    "_owner_decision": "Confirmed 2026-09-26: 0x5426... (Ledger account 40, m/44'/60'/40'/0/0) is SKOOP's admin wallet - ownerWallet on RewardEscrow, TreasuryTimelock and LPLockerPilot, immutable on all three. It adds/removes till operators, sets drawer allowances and per-reward bounds, pauses the escrow, requests treasury releases, and is the only key that can evacuate the LP.",
+    "_operator_decision": "Decided 2026-09-26: the live POS signer is the escrow's first till operator for now. Changeable by the owner (addOperator/removeOperator).",
+    "_registrar_decision": "Decided 2026-09-26: Ledger account 43 (m/44'/60'/43'/0/0), read from the device. Separate from governance (#41) so reviewing (codehash approval) and admitting are two keys. Needs ~0.0003 ETH for registerManual.",
+    "_team_decision": "Decided 2026-09-26: Ledger account 42 (m/44'/60'/42'/0/0), the founder's own. Read from the device by cast and confirmed by the user on the Ledger's screen. IMMUTABLE on VestingWallet: receives the 15M team allocation, nothing for 30 days after activation, then linearly over 730 days."
+  },
+  "verifiedOnChain": {
+    "supply": "100,000,000.000000 to the owner, nothing elsewhere",
+    "noMintFunction": true,
+    "noOwner": true,
+    "noPause": true,
+    "poolsAtDeploy": "all eight clear - USDC and WETH across 100/500/3000/10000"
+  },
+  "lpPositions": {
+    "_comment": "Settled by the fork rehearsal in test/SkoopLaunchSimulation.t.sol, 2026-09-20.",
+    "adoptsExistingPositions": true,
+    "_adopts_note": "LPLockerPilot.initializeLP does NOT mint. It only reads positions(tokenId) and records tokenId, feeTier, initialLiquidity and merchantIsToken0. So the pools can be seeded from a wallet and the two NFTs transferred into the locker afterwards - which is exactly what the manual path needs. No contract change is required.",
+    "initializeLpIsOnceOnly": true,
+    "_once_note": "require(!_usdcPosition.initialized) - a locker is permanently bound to the first two token IDs it is given. A locker tested to destruction by evacuateLP cannot be reused, and a locker initialised with small test positions can never adopt the real ones.",
+    "ownershipIsNotCheckedOnChain": true,
+    "_ownership_note": "initializeLP does not verify the locker owns the NFTs. In the factory path it cannot fail to, because the factory transfers and initialises in one transaction it controls. By hand, paste the wrong token IDs or forget to transfer and the locker reports isInitialized true while the liquidity sits in a wallet. VerifyManualSuite MUST confirm ownerOf(tokenId) == locker for BOTH positions before registerManual is called. 'The LP is in the locker' is the claim the whole product rests on.",
+    "orderMatters": "mint positions -> transfer NFTs to locker -> send the full reserve -> initializeLP -> activate. initializeLP snapshots _reserveTokens from the locker's balance at that instant; initialise first and it records zero permanently.",
+    "_optionB_decision": "Decided 2026-09-26 (option B): SKOOP registers with two small STARTER positions (~$1 each - changed from $10 on 2026-09-26, full range, SKOOP's own 1% pools, minted by the LP wallet) plus the remaining LP-wallet SKOOP as reserve in its LPLockerPilot. The real launch positions #6100109 and #6100112 STAY in the LP wallet: KOKOS keeps their fees and can withdraw any amount. registerManual checks codehashes, not liquidity amounts, and PunchCardRouter reads only the fee tier from the locker and trades against the whole pool - so routed swaps use all SKOOP liquidity (rehearsal: 1,000 SKOOP sold via the router for $0.99, same as with everything in the locker). Their liquidity can move in later through locker.addLiquidity (reserve + the owner's USDC/WETH); the NFTs themselves cannot, as initializeLP binds the first two token ids forever. Verifier warns 'reserve short' by exactly the SKOOP in the starter positions (~2.1k)."
+  },
+  "notDoneYet": [
+    "point the POS rewards at the RewardEscrow (the POS signer 0x4eCc is its first operator)",
+    "site copy: SKOOP may now be described as PunchCard-registered / network-admitted (never factory-standard)",
+    "the PunchCard Terminal (docs/terminal-design.md)"
+  ],
+  "doNot": [
+    "Publish the token address until the pools are seeded. Anyone can open a pool at a price they choose.",
+    "Call lockLP() yet. SKOOP keeps LP recoverability with no deadline while the network is in beta - decided 2026-09-16. Closing it is the intent once the system has proven itself, not a decision against ever closing it. lockLP() is one-way; after it the pilot locker behaves identically to production. evacuationOpen() is the on-chain source of truth and every surface must read it rather than assert a state.",
+    "Describe it as factory-standard. PunchCard-registered, bytecode-reviewed, network-admitted."
+  ],
+  "escrowParams": {
+    "_comment": "RewardEscrow bounds on a single reward. NOT immutable - setPerTxBounds(floor, max) is onlyOwner and works until wind-down freezes the escrow. An earlier note here called them immutable; that was wrong. The contract says why they are adjustable: both are denominated in tokens, and a fixed floor set at launch becomes a $1 minimum reward if the token appreciates a hundredfold.",
+    "perTxFloor": "1",
+    "_perTxFloor_note": "Smallest reward a kiosk may issue, in base units (6dp). Must be > 0. A floor of 1 is 0.000001 SKOOP - effectively no floor, which is a reasonable default.",
+    "perTxMax": "50000000000",
+    "_perTxMax_note": "Largest single reward, in base units (6dp). Must be >= perTxFloor and <= 345205479444. Adjustable later via setPerTxBounds.",
+    "rewardsAllocation": "45000000000000",
+    "emissionDays": 1825,
+    "_ceiling_note": "The real constraint is NOT a 500,000 dailyCap. That figure appears in deploy/network/base-mainnet.json and deploy/merchants/_template.json and corresponds to no constant in any contract - grep DAILY_CAP returns nothing. The actual check is require(_perTxMax <= perDay * MAX_DRAWER_DAYS). With a 45,000,000 allocation over EMISSION_PERIOD = 1825 days, perDay = 24,657,534,246 base units (24,657.53 SKOOP) and MAX_DRAWER_DAYS = 14, so the ceiling is 345,205,479,444 base units = 345,205.48 SKOOP. A perTxMax of 500,000 SKOOP reverts at construction with 'Max above drawer ceiling'.",
+    "perTxCeilingBaseUnits": "345205479444",
+    "_settled_note": "Settled 2026-09-21. perTxFloor 1 = 0.000001 SKOOP, effectively no floor. perTxMax 50000000000 = 50,000 SKOOP, well clear of the 345,205.48 ceiling. Both adjustable via setPerTxBounds until wind-down, so these are starting values rather than commitments - unlike teamWallet and the suite addresses, which are permanent."
+  },
+  "preLaunchSpend": {
+    "_note": "Everything the owner wallet sent before the suite existed, read from every Transfer out of 0x5426... since the token's deploy block (51432107). 16 transfers; 100,000,000 - 30,455,917 = 69,544,083 remaining, which is what funds the suite.",
+    "liquidityWallet": {
+      "to": "0x6A9Ad1cE8d6256acd28fd8C50A6C72e0043C221F",
+      "amount": "30000000",
+      "block": 51797570,
+      "purpose": "the LP allocation: 3M seeded into the 1% pools 2026-09-25, 27M reserve for the locker"
+    },
+    "airdrops": {
+      "_note": "Compensation to old KOKOS SKOOPS holders, 2026-09-25, blocks 51802176-51802692. Treasury-type spend made before the treasury existed.",
+      "total": "355917",
+      "count": 14,
+      "recipients": [
+        {
+          "to": "0x86C60670fb693364d4abE1028662F52b98F9a79e",
+          "amount": "110238",
+          "block": 51802176,
+          "tx": "0xd101fcbbc75af9c4ab3d43ca6deedc2ada4fa5080e36d70668f80e15ddb17cf2"
+        },
+        {
+          "to": "0x8631A7Fe663ce6856756B8E12578341B8598C95e",
+          "amount": "101819",
+          "block": 51802257,
+          "tx": "0x27f3b27dcfcf43e52b1ac49eb2a3d58c614a436df40e10fb34c954f3de04c4cd"
+        },
+        {
+          "to": "0xa2471C84429819A7818c8615164d21Db789cB45b",
+          "amount": "56152",
+          "block": 51802290,
+          "tx": "0x9289e3ee3693ce078139060bad25401be6dfdecddc52035e7b2ee3b55d9ca811"
+        },
+        {
+          "to": "0x1FE392a95BDf927f385c3e63B978D92b269281e4",
+          "amount": "29822",
+          "block": 51802324,
+          "tx": "0xfeb125de1802aed0c0c44d5e18fb70d7ce7f1c5018e4cb16a65b009044a02586"
+        },
+        {
+          "to": "0xf580283D9bE13500cFe129e2f07EDeFDB5495f47",
+          "amount": "16764",
+          "block": 51802352,
+          "tx": "0x32ccdbac5e1d84897eb585436f01c2bffbcd33118c19a40bf340da9cc6c1d5bb"
+        },
+        {
+          "to": "0xd62c9C14fE1f4338AdDA902DCdCb5370939726C0",
+          "amount": "14358",
+          "block": 51802391,
+          "tx": "0x021a3646671aafb0fe09a2c836f11f9e86b06a990ff52cf10134c00fe856d01e"
+        },
+        {
+          "to": "0x7FB1fad795ddD0AcD186e523b34804D6419Bc77f",
+          "amount": "12577",
+          "block": 51802417,
+          "tx": "0x191e420f64c9f56075aa66d65449ff0c16797dbc4afb781072613e46a68f267f"
+        },
+        {
+          "to": "0xa22675c629743a126E136a80244ddd2c3b2A4b12",
+          "amount": "5074",
+          "block": 51802451,
+          "tx": "0x88228a6cd7cc21ef8a537b0b11717ed937d61060e7af5bd6a8cd7cfd4573d600"
+        },
+        {
+          "to": "0x6a946262897717613FEB0e1f7C98f6C66dF3619e",
+          "amount": "2622",
+          "block": 51802489,
+          "tx": "0xa2099e1c71f50616d64f223751bc73966331d8ca2e7a0fd21d6b27766bc03e9b"
+        },
+        {
+          "to": "0xbAcDf1f8a63D50BFB62c6b113049F44E1F231DB4",
+          "amount": "2398",
+          "block": 51802534,
+          "tx": "0x58c4f82de5f510843d039bc065a90b1cc3e5777dff10b0079e841cb06c8a7fde"
+        },
+        {
+          "to": "0x2Af040c15CEb2b35e9b7D96864C59C02958cdC20",
+          "amount": "1600",
+          "block": 51802569,
+          "tx": "0xe72f7290d96e36a9ede4f7a37ea0c78e7777387422fa59e15953b031a74018d0"
+        },
+        {
+          "to": "0xB671a3520BBC0C96AB9223a7A08bb987F2530cA3",
+          "amount": "1520",
+          "block": 51802649,
+          "tx": "0x91adc42c5ebcce600e8b164c798ee8b97efef72dc85c09f8438618d12fdcf1ba"
+        },
+        {
+          "to": "0xDe4f8Cc75529932ED7BEbE3190559476Fda9E3Ce",
+          "amount": "828",
+          "block": 51802660,
+          "tx": "0x05f9f1fb35cdb4581b9b61000fd28b092c0b7939e66e289e5eb5001288c3d8a9"
+        },
+        {
+          "to": "0x9F900dB8e1522c35F498B50e60d5031eEc4196D9",
+          "amount": "145",
+          "block": 51802692,
+          "tx": "0x0128c12a1934be449c03773cebf807a5eb8e40d3e159322a136e3e927487c330"
+        }
+      ]
+    },
+    "posFloat": {
+      "to": "0x4eCc3f03c018208Ae5932eAB91bbD82F37F56D9B",
+      "amount": "100000",
+      "block": 51804551,
+      "purpose": "reward float for the interim KOKOS POS (legacy V3), which pays rewards by plain transfer"
+    }
+  },
+  "treasuryFunding": {
+    "decided": "2026-09-26",
+    "amount": "9544083",
+    "target": "10000000",
+    "short": "455917",
+    "_note": "Accepted: the treasury starts at 9,544,083 - what remains after escrow 45M and vesting 15M. The 455,917 gap is exactly the pre-launch spend above (355,917 airdrops + 100,000 POS float), all of it discretionary, treasury-type spending made before the treasury existed. VerifyManualSuite reports it as a pilot-mode warning; topping up from the 27M LP reserve would only move the warning to the locker."
+  },
+  "suite": {
+    "rewardEscrow": "0xEFe813AAb7421534f0f59678e9Ef390CAB9086d2",
+    "vestingWallet": "0xD19FE22eFF97BC574b19E5EB16FD2a9dA3902590",
+    "treasuryTimelock": "0x01933BfBf85905fD780157abee79bebAcFfCB7cB",
+    "lpLockerPilot": "0x74ed636C959e92dF6c779F0EdcB759077cFBd908",
+    "registeredAt": "2026-09-26, block 51847179, tx 0xf8083e18d2fb56a0ce5a6200c8fcae2585ab17d0afef80f4bf5aefb0c6368a8d",
+    "_details": "deploy/merchants/skoop-suite.json"
+  }
+}

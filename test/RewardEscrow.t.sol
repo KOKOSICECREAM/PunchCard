@@ -26,7 +26,8 @@ contract RewardEscrowTest is Test {
 
     function setUp() public {
         token  = new MockToken();
-        escrow = new RewardEscrow(address(token), KIOSK_1, OWNER, WINDDOWN, ALLOC, 1e6, 20_000 * 1e6);
+        escrow = new RewardEscrow(address(token), KIOSK_1, OWNER, WINDDOWN, ALLOC, 1e6, 20_000 * 1e6, address(this));
+        escrow.activate();
         token.mint(address(escrow), ALLOC);
         vm.warp(block.timestamp + 60 days);   // let some emission accrue
     }
@@ -91,10 +92,11 @@ contract RewardEscrowTest is Test {
         _drainDrawer(KIOSK_1);
         assertEq(escrow.drawerAvailable(KIOSK_1), 0);
 
-        // Warp to absolute times. Chaining `block.timestamp + N` across warps is unsafe
-        // under via_ir — the second read can be constant-folded to the pre-warp value,
-        // so both warps land on the same timestamp and the test silently checks 12h twice.
-        uint256 t0 = block.timestamp;
+        // Warp to absolute times. Under via_ir a cached `block.timestamp` local can be
+        // folded back into a fresh timestamp read across vm.warp(), turning absolute warps
+        // into relative ones. Read through the cheatcode so the 24h boundary below is really
+        // 24h after the drawer was drained, not 36h.
+        uint256 t0 = vm.getBlockTimestamp();
         vm.warp(t0 + 12 hours);
         assertApproxEqRel(escrow.drawerAvailable(KIOSK_1), allowance / 2, 1e15, "half back after 12h");
         vm.warp(t0 + 24 hours);

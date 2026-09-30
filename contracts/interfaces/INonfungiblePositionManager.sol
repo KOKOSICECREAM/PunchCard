@@ -89,4 +89,17 @@ interface INonfungiblePositionManager {
 
     function collect(CollectParams calldata params)
         external returns (uint256 amount0, uint256 amount1);
+
+    /// @notice The Uniswap v3 factory this position manager mints against.
+    /// @dev Used to ask whether a pool already exists. `createAndInitializePoolIfNecessary`
+    ///      is deliberately tolerant of one that does, which is wrong for a staged launch:
+    ///      between staging a token and seeding its pools, anyone can create the pool at a
+    ///      price of their choosing and the launch mint would land inside it.
+    function factory() external view returns (address);
+
+    function transferFrom(address from, address to, uint256 tokenId) external;
+}
+
+interface IUniswapV3Factory {
+    function getPool(address tokenA, address tokenB, uint24 fee) external view returns (address);
 }

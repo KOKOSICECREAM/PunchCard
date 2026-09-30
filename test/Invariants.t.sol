@@ -175,9 +175,10 @@ contract InvariantsTest is Test {
         pm = new PM();
         wdc = new WindDownController(address(0xA1), address(0xFAC7));
 
-        escrow   = new RewardEscrow(address(token), handlerOperator(), handlerOwner(), address(wdc), REWARDS, 1e6, 20_000*1e6);
-        vesting  = new VestingWallet(address(token), address(0x7EA3), address(wdc), 180 days, 1080 days);
-        treasury = new TreasuryTimelock(address(token), handlerOwner(), address(wdc), 90 days);
+        escrow   = new RewardEscrow(address(token), handlerOperator(), handlerOwner(), address(wdc), REWARDS, 1e6, 20_000*1e6, address(this));
+        vesting  = new VestingWallet(address(token), address(0x7EA3), address(wdc), 30 days, 730 days, address(this));
+        treasury = new TreasuryTimelock(address(token), handlerOwner(), address(wdc), 90 days, address(this));
+        escrow.activate(); vesting.activate(); treasury.activate();
         locker   = new LPLocker(address(token), handlerOwner(), address(wdc), address(pm), address(0xFAC7),
                                 address(usdc), address(weth), address(0xFEE5));
 

@@ -1,0 +1,159 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "forge-std/Script.sol";
+import "../contracts/StagedTokenFactory.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+/// @title StageMerchant — one step of a merchant launch per run
+///
+/// @notice `PC_STAGE` selects which:
+///
+///             1  stageSuite        deploy token and suite, distribute allocations
+///             2  fundAndMintLP     pull the seed, create both pools, mint LP
+///             3  activateMerchant  hand LP over, start the clocks, register
+///             0  abortStaging      abandon before activation, return the seed
+///
+///         Deliberately one step per invocation rather than a loop. Between them the
+///         assembly is inspectable, and the whole reason for staging is that it can be
+///         looked at before it becomes a merchant. A script that ran all three in sequence
+///         would be the atomic factory again, with extra steps and no inspection.
+///
+/// @dev Stage 2 pulls USDC from the MERCHANT's wallet, not the broadcaster's, so the
+///      merchant must approve the factory themselves first — same rule the atomic
+///      DeployMerchant.s.sol had, and the same reason: the broadcaster is PunchCard's hot
+///      wallet and the capital is the merchant's.
+///
+///      **Addresses are handed between stages in a file, not by hand.** Stage 1 writes
+///      `deploy/staged/<chainid>-latest.json`; stages 2, 3 and abort read the token back
+///      out of it. `PC_TOKEN` still overrides, for running two stagings at once or for
+///      picking up one from a previous session — but the default path removes a
+///      copy-paste an operator would otherwise do between transactions, under time
+///      pressure, from terminal scrollback.
+contract StageMerchant is Script {
+    function run() external {
+        address factoryAddr = vm.envAddress("PC_FACTORY");
+        uint256 stage       = vm.envUint("PC_STAGE");
+        StagedTokenFactory f = StagedTokenFactory(payable(factoryAddr));
+
+        if (stage == 1) {
+            vm.startBroadcast();
+            address staged = f.stageSuite(StagedTokenFactory.StageParams({
+                name:        vm.envString("MERCHANT_NAME"),
+                symbol:      vm.envString("MERCHANT_SYMBOL"),
+                ipfsHash:    keccak256(bytes(vm.envString("MERCHANT_IPFS"))),
+                ownerWallet: vm.envAddress("MERCHANT_OWNER"),
+                teamWallet:  vm.envAddress("MERCHANT_TEAM"),
+                operator:    vm.envAddress("MERCHANT_OPERATOR"),
+                perTxFloor:  vm.envUint("MERCHANT_PER_TX_FLOOR"),
+                perTxMax:    vm.envUint("MERCHANT_PER_TX_MAX")
+            }));
+            vm.stopBroadcast();
+
+            (, , , , address e, address v, address tr, address l,,,,,,,) = f.suites(staged);
+
+            string memory out = "staged";
+            vm.serializeUint(out,    "chainId",  block.chainid);
+            vm.serializeAddress(out, "factory",  factoryAddr);
+            vm.serializeAddress(out, "token",    staged);
+            vm.serializeAddress(out, "escrow",   e);
+            vm.serializeAddress(out, "vesting",  v);
+            vm.serializeAddress(out, "treasury", tr);
+            vm.serializeAddress(out, "locker",   l);
+            vm.serializeString(out,  "symbol",   vm.envString("MERCHANT_SYMBOL"));
+            string memory json = vm.serializeUint(out, "stagedAt", block.timestamp);
+            vm.writeJson(json, _handoffPath());
+
+            console2.log("STAGED - not a merchant yet, not registered, no clocks running.");
+            console2.log("merchantToken ", staged);
+            console2.log("escrow        ", e);
+            console2.log("vesting       ", v);
+            console2.log("treasury      ", tr);
+            console2.log("locker        ", l);
+            console2.log("");
+            console2.log("Written to", _handoffPath());
+            console2.log("Stages 2 and 3 read it from there - no need to pass PC_TOKEN.");
+            return;
+        }
+
+        address token = _token(factoryAddr);
+
+        if (stage == 2) {
+            uint256 usdcSeed = vm.envUint("MERCHANT_USDC_SEED");
+            uint256 ethSeed  = vm.envUint("MERCHANT_ETH_SEED");
+            address usdc     = vm.envAddress("PC_USDC");
+            (, address owner,,,,,,,,,,,,,) = f.suites(token);
+
+            require(
+                IERC20(usdc).allowance(owner, factoryAddr) >= usdcSeed,
+                "ownerWallet has not approved the factory for the USDC seed. The MERCHANT must approve it from their own wallet - deploy pulls from them, not from the broadcaster."
+            );
+
+            vm.startBroadcast();
+            f.fundAndMintLP{value: ethSeed}(StagedTokenFactory.FundParams({
+                token:          token,
+                usdcFeeTier:    uint24(vm.envUint("MERCHANT_USDC_FEE_TIER")),
+                ethFeeTier:     uint24(vm.envUint("MERCHANT_ETH_FEE_TIER")),
+                usdcPairAmount: usdcSeed,
+                ethPairAmount:  ethSeed
+            }));
+            vm.stopBroadcast();
+
+            console2.log("FUNDED - pools created, LP held by the factory, still not a merchant.");
+            console2.log("Inspect everything, then run stage 3.");
+            return;
+        }
+
+        if (stage == 3) {
+            vm.startBroadcast();
+            f.activateMerchant(token);
+            vm.stopBroadcast();
+            console2.log("ACTIVE - registered, clocks started, LP handed to the locker.");
+            console2.log("This is now a PunchCard merchant. It cannot be un-activated.");
+            return;
+        }
+
+        if (stage == 0) {
+            require(
+                vm.envOr("PC_CONFIRM_ABORT", false),
+                "abortStaging is terminal: the token can never be staged again. Set PC_CONFIRM_ABORT=true."
+            );
+            vm.startBroadcast();
+            f.abortStaging(token);
+            vm.stopBroadcast();
+            console2.log("ABORTED - seed returned to the merchant, token left dead and unregistered.");
+            return;
+        }
+
+        revert("PC_STAGE must be 1, 2, 3, or 0 to abort");
+    }
+
+    // ── handoff ───────────────────────────────────────────────────────────────
+
+    function _handoffPath() internal view returns (string memory) {
+        return string.concat("deploy/staged/", vm.toString(block.chainid), "-latest.json");
+    }
+
+    /// @dev PC_TOKEN wins when set. Otherwise read stage 1's file, and check it belongs to
+    ///      the factory being driven — a stale handoff from another network would
+    ///      otherwise send stage 2 at a token this factory has never heard of, and the
+    ///      revert ("Not staged") would say nothing about why.
+    function _token(address factoryAddr) internal view returns (address) {
+        address override_ = vm.envOr("PC_TOKEN", address(0));
+        if (override_ != address(0)) return override_;
+
+        string memory path = _handoffPath();
+        require(
+            vm.exists(path),
+            string.concat("No staged handoff at ", path, " - run PC_STAGE=1 first, or set PC_TOKEN explicitly.")
+        );
+
+        string memory json = vm.readFile(path);
+        address fileFactory = vm.parseJsonAddress(json, ".factory");
+        require(
+            fileFactory == factoryAddr,
+            "The staged handoff file belongs to a different factory. Check PC_FACTORY, or set PC_TOKEN explicitly."
+        );
+        return vm.parseJsonAddress(json, ".token");
+    }
+}
