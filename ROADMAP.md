@@ -15,7 +15,7 @@ Last updated 2026-09-14.
 | Deployment | Network + merchant deployed end to end on a Base Sepolia fork, with a reward issued and a swap executed |
 | Coverage | **Not currently reproducible.** `forge coverage` fails — see the auditor note |
 | Audit | None |
-| Customer dapp | Template builds and routes through PunchCardRouter. **KOKOS still runs its own untemplated copy — cutover frozen pending the SKOOP relaunch decision.** The prototype at punchcard.club/dapp is mock data |
+| Customer dapp | Template builds and routes through PunchCardRouter. **KOKOS still runs its own untemplated copy — cutover frozen pending the SKOOP relaunch decision.** The old mock-data prototype at punchcard.club/dapp was retired on 2026-09-29 and now redirects to punchcard.club/app |
 | POS | KOKOS only, bespoke |
 | Merchant dashboard | Does not exist |
 | Revenue plumbing | Network fee + router fee built, and the dapp now routes through them. No keeper, no deployment fee |
