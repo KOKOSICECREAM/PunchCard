@@ -41,6 +41,19 @@
 </header>
 
 <main>
+  <section class="teaser" aria-labelledby="teaserH">
+    <div class="teaser-logo" aria-hidden="true"><img src="/punch/punch-token.png" alt=""><span>?</span></div>
+    <div class="teaser-body">
+      <div class="teaser-tag">The PunchCard token</div>
+      <h2 id="teaserH">Official CA: <em>coming very soon.</em></h2>
+      <div class="countdown" id="countdown" role="timer" aria-live="off">
+        <div><b id="cdH">--</b><small>hours</small></div>
+        <div><b id="cdM">--</b><small>min</small></div>
+        <div><b id="cdS">--</b><small>sec</small></div>
+      </div>
+      <p class="teaser-note">Only trust the CA posted here and on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a>.</p>
+    </div>
+  </section>
   <section class="boxes" aria-label="Choose one">
 
     <a class="box loyalty" href="/loyalty/">
@@ -86,5 +99,23 @@
   </div>
 </footer>
 
+<script>
+// Teaser countdown: 24 hours from when it was posted (the launch lands somewhere inside it).
+(function () {
+  var target = Date.UTC(2026, 9, 1, 3, 0, 0);
+  var h = document.getElementById('cdH'), m = document.getElementById('cdM'), sec = document.getElementById('cdS');
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function tick() {
+    var left = Math.max(0, Math.floor((target - Date.now()) / 1000));
+    if (left === 0) {
+      document.getElementById('countdown').outerHTML = '<p class="teaser-live">Any moment now…</p>';
+      return;
+    }
+    h.textContent = pad(Math.floor(left / 3600)); m.textContent = pad(Math.floor(left % 3600 / 60)); sec.textContent = pad(left % 60);
+    setTimeout(tick, 1000);
+  }
+  tick();
+})();
+</script>
 </body>
 </html>
