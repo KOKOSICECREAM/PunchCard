@@ -66,6 +66,7 @@
       <button class="btn-secondary" id="connect" type="button">Connect wallet</button>
       <button class="btn-primary sol" id="launch" type="button" disabled>Launch token</button>
     </div>
+    <p class="status-line" id="feeLine">Launch fee: <b id="feeAmt">0.02</b> SOL to PunchCard, plus about 0.03 SOL in network costs and any first buy. The business keeps 100% of the creator fees.</p>
     <p class="status-line" id="tapLine" hidden>Need test SOL to launch? <button class="btn-secondary" id="tap" type="button" style="padding:0.4rem 0.9rem;margin-left:0.4rem">Get 0.1 test SOL</button></p>
     <p class="status-line" id="launchStatus" role="status"></p>
   </section>
@@ -166,6 +167,8 @@ $('launch').addEventListener('click', async () => {
     $('launch').disabled = false;
   }
 });
+
+api('/api/fees').then((f) => { if (f.launchFeeLamports != null) $('feeAmt').textContent = String(f.launchFeeLamports / 1e9); }).catch(() => {});
 
 api('/api/coins').then((r) => {
   $('recent').innerHTML = r.coins.length
