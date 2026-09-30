@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claim Your Business — PunchCard Launchpad</title>
+<meta name="description" content="Someone launched a token for your business? Its creator fees are waiting for you. Claim them in about ten minutes.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://punchcard.club/launchpad/owners/">
+<meta property="og:title" content="Your fans made you a token — PunchCard">
+<meta property="og:description" content="Its creator fees are waiting for you. Claim them in about ten minutes.">
+<meta property="og:image" content="https://punchcard.club/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f8f4ec">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
+  <ul class="nav-links">
+    <li><a href="/launchpad/how/">How it works</a></li>
+    <li><a href="/launchpad/owners/" aria-current="page">Owners</a></li>
+    <li><a href="/launchpad/launch/">Launch</a></li>
+  </ul>
+</nav>
+
+<main>
+  <header class="pitch">
+    <div class="edition-line">For business owners</div>
+    <h1 class="hero-title">Your fans made you <em>a token.</em></h1>
+    <p class="pitch-sub">Its creator fees are waiting for you. Claim them in about ten minutes. It costs nothing.</p>
+  </header>
+
+  <div class="app-wrap" style="padding-top:0.5rem">
+    <section class="panel" aria-labelledby="findH">
+      <h2 id="findH">Find your business's token</h2>
+      <div class="field">
+        <label for="maps">Your Google Maps link</label>
+        <input id="maps" placeholder="Open your business on Google Maps, tap Share, paste the link" autocomplete="off">
+      </div>
+      <div class="btn-row"><button class="btn-primary sol" id="find" type="button">Find it</button><span class="status-line" id="st" role="status"></span></div>
+      <div id="result" hidden></div>
+    </section>
+  </div>
+
+  <ol class="pitch-steps" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+    <li><b>Find your token</b><span>Paste your Google Maps link above.</span></li>
+    <li><b>Prove it's yours</b><span>Add a short code to the website on your Google listing.</span></li>
+    <li><b>Pick your wallet</b><span>Choose where the fees go. This is permanent.</span></li>
+    <li><b>Get paid</b><span>After a 24-hour check, everything held is sent to you. Then pump.fun pays you directly.</span></li>
+  </ol>
+
+  <section>
+    <div class="section-wrap">
+      <div class="section-label">Good to know</div>
+      <div class="faq">
+        <details><summary>How long do I have?</summary><p>Claim within 30 days of the token's launch and you get everything collected so far, plus every future fee. After 30 days, the token's holders share the fees until you claim; claim any time after that and every fee from that day on is yours.</p></details>
+        <details><summary>My Google listing has no website</summary><p>Add your business's own website to your Google Business Profile, then come back. Pages on Facebook, Instagram or similar sites can't be used, because other people can post there.</p></details>
+        <details><summary>Where do I put the code?</summary><p>Anywhere on your homepage (the footer is fine), or in a file called punchcard.txt on your site, or as a DNS TXT record. You can remove it once you're verified.</p></details>
+        <details><summary>Can I change my payout wallet later?</summary><p>No. Once your claim goes through, pump.fun pays that wallet permanently. Use one you'll keep, ideally a hardware wallet or a multisig for the business.</p></details>
+        <details><summary>Someone else claimed my business</summary><p>Report it on the token's page during the 24-hour check and we can stop it.</p></details>
+        <details><summary>Do I have to run the token or promote it?</summary><p>No. You don't have to do anything except claim. A token isn't an endorsement: fans launched it, and you're free to ignore it.</p></details>
+        <details><summary>Want a rewards program for your customers too?</summary><p>That's a separate PunchCard product: <a href="/loyalty/#apply" style="color:var(--terra)">ask to join the curated PunchCard Network</a>.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span></a>
+    <ul class="footer-links">
+      <li><a href="/launchpad/">Launchpad</a></li>
+      <li><a href="/launchpad/how/">How it works</a></li>
+      <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li>
+    </ul>
+    <div class="footer-meta">punchcard.club · Community Launchpad · © 2026</div>
+  </div>
+</footer>
+
+<script type="module">
+import { $, esc, api } from '/launchpad/lp.js';
+$('find').addEventListener('click', async () => {
+  const maps = $('maps').value.trim();
+  if (!maps) return ($('st').textContent = 'Paste your Google Maps link first.');
+  $('find').disabled = true; $('st').textContent = 'Looking it up…';
+  const out = $('result');
+  try {
+    const r = await api('/api/business', { maps });
+    const name = esc(r.business.name);
+    if (r.alreadyLaunched && r.mint) {
+      out.innerHTML = `<div class="notice ok"><b>${name} has a token.</b> Its creator fees are being held for you.</div>
+        <div class="btn-row" style="margin-top:0.75rem"><a class="btn-primary sol" href="/launchpad/claim/?mint=${esc(r.mint)}">Claim it →</a><a class="btn-secondary" href="/launchpad/coin/?mint=${esc(r.mint)}">See the token</a></div>`;
+    } else {
+      out.innerHTML = `<div class="notice warn"><b>No token for ${name} yet.</b> Want one? You can launch it yourself: you'll still claim the fees as the owner.</div>
+        <div class="btn-row" style="margin-top:0.75rem"><a class="btn-primary sol" href="/launchpad/launch/">Launch one →</a></div>`;
+    }
+    if (!r.ownerCanVerifyVia) out.insertAdjacentHTML('beforeend', `<div class="notice warn" style="margin-top:0.75rem">Your Google listing has no website of its own yet. Add one to your Google Business Profile so you can verify.</div>`);
+    out.hidden = false; $('st').textContent = '';
+  } catch (e) { $('st').textContent = e.message; }
+  finally { $('find').disabled = false; }
+});
+</script>
+</body>
+</html>
