@@ -44,14 +44,21 @@ const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } cat
 let coin = null, claim = null, wallet = null;
 
 // Must match the backend's claimMessage() exactly.
-const claimMessage = (w) => ['PunchCard owner claim', `Business: ${coin.business.name}`, `Coin: ${mint}`, `Pay creator fees to: ${w}`, `Claim ID: ${claim.claimId}`].join('\n');
+const claimMessage = (w, communityBps, shareReserve) => {
+  const pct = communityBps / 100;
+  return ['PunchCard owner claim', `Business: ${coin.business.name}`, `Coin: ${mint}`, `Pay creator fees to: ${w}`,
+    `Share with this coin's holders: ${pct}% of my part, permanently${pct ? (shareReserve ? ' (future fees and the fees held now)' : ' (future fees only)') : ''}`,
+    `Claim ID: ${claim.claimId}`].join('\n');
+};
 
 function render() {
   const held = BigInt(coin.feesInVaultLamports) + BigInt(coin.feesPendingAtPumpLamports);
+  const platformPct = (coin.platformBps || 0) / 100;
+  const yours = (held * BigInt(10000 - (coin.platformBps || 0))) / 10000n;
   $('main').innerHTML = `
     <div>
       <h1>Claim <em>${esc(coin.business.name)}</em></h1>
-      <p class="lede">${sol(held)} SOL in creator fees from <b>$${esc(coin.ticker)}</b> ${coin.deadline && Date.now() / 1000 >= coin.deadline ? 'will go to you from now on (the 30-day window has passed, so earlier fees stay with holders)' : 'is waiting for you'}.</p>
+      <p class="lede">${sol(held)} SOL in creator fees from <b>$${esc(coin.ticker)}</b> ${coin.deadline && Date.now() / 1000 >= coin.deadline ? 'will go to you from now on (the 30-day window has passed, so earlier fees stay with holders)' : 'is waiting for you'}.${platformPct ? ` Your share is ${100 - platformPct}% (about ${sol(yours)} SOL); PunchCard keeps a ${platformPct}% service fee.` : ''}</p>
     </div>
     <section class="panel">
       <h2><span class="step-num">1</span>Prove you run the website</h2>
@@ -72,8 +79,12 @@ function render() {
       <h2><span class="step-num">2</span>Choose where the fees go</h2>
       <p>Connect the Solana wallet that should receive this business’s creator fees.</p>
       <div class="btn-row"><button class="btn-secondary" id="connect" type="button">Connect wallet</button><span class="status-line" id="walletLine"></span></div>
-      <div class="notice warn"><b>This is permanent.</b> Once your claim goes through, pump.fun pays this token’s creator fees to this wallet forever. It can’t be changed later. Use a wallet you’ll keep, ideally a hardware wallet or a multisig for your business.</div>
+      <div class="notice warn"><b>This is permanent.</b> Once your claim goes through, pump.fun pays your share of this token’s creator fees to this wallet forever. It can’t be changed later. Use a wallet you’ll keep, ideally a hardware wallet or a multisig for your business.</div>
       <label class="check"><input type="checkbox" id="agree"> I understand this wallet can’t be changed later, and I run ${esc(coin.business.name)}.</label>
+      <div class="field"><label for="community">Share with your token’s holders <span class="hint">(optional)</span></label>
+        <select id="community"><option value="0">0%: keep all of my part</option><option value="500">5%</option><option value="1000">10%</option><option value="1500">15%</option><option value="2000">20%</option><option value="2500">25%</option></select>
+        <span class="hint">A permanent thank-you to your fans: this share of your part goes to the token’s holders, and it’s shown on the token page. It can’t be changed later.</span></div>
+      <label class="check"><input type="checkbox" id="shareReserve" disabled> Also share the fees held now (otherwise future fees only)</label>
       <div class="field"><label for="email">Email <span class="hint">(optional, for updates about your claim)</span></label><input id="email" type="email" placeholder="you@yourbusiness.com"></div>
     </section>
     <section class="panel" id="verifyPanel" hidden>
@@ -99,6 +110,7 @@ function render() {
   $('main').addEventListener('click', (e) => { if (e.target.id === 'code') navigator.clipboard?.writeText(claim.code).then(() => ($('codeStatus').textContent = 'Code copied.'), () => {}); });
   const ready = () => { $('verify').disabled = !(wallet && $('agree').checked); };
   $('agree').addEventListener('change', ready);
+  $('community').addEventListener('change', () => { const on = Number($('community').value) > 0; $('shareReserve').disabled = !on; if (!on) $('shareReserve').checked = false; });
   $('connect').addEventListener('click', async () => {
     try { wallet = await connectWallet(); $('walletLine').textContent = `Fees will go to ${short(wallet)}`; $('connect').textContent = 'Use a different wallet'; }
     catch (e) { $('walletLine').textContent = e.message; }
@@ -109,15 +121,16 @@ function render() {
     $('verify').disabled = true;
     try {
       s.textContent = 'Sign the message in your wallet…';
-      const signature = await signMessage(claimMessage(wallet));
+      const communityBps = Number($('community').value), shareReserve = $('shareReserve').checked;
+      const signature = await signMessage(claimMessage(wallet, communityBps, shareReserve));
       s.textContent = `Checking ${claim.host} for your code…`;
-      const r = await api('/api/claims/check', { claimId: claim.claimId, wallet, signature, email: $('email').value.trim() });
+      const r = await api('/api/claims/check', { claimId: claim.claimId, wallet, signature, email: $('email').value.trim(), communityBps, shareReserve });
       const when = r.payoutAfter ? new Date(r.payoutAfter * 1000).toLocaleString() : 'after the 24-hour check';
       $('main').innerHTML = `
         <div><h1>Verified. <em>Welcome aboard.</em></h1>
         <p class="lede">${esc(coin.business.name)} is claimed to ${esc(short(wallet))}.</p></div>
         <section class="panel">
-          <p>There’s a 24-hour check before the first payout, in case anyone contests the claim. After it ends (${esc(when)}), ${r.inTime === false ? 'this token’s future creator fees' : 'everything held for you'} is sent to your wallet automatically, and from then on pump.fun pays you directly.</p>
+          <p>There’s a 24-hour check before the first payout, in case anyone contests the claim. After it ends (${esc(when)}), ${r.inTime === false ? 'your share of this token’s future creator fees' : 'your share of everything held'} is sent to your wallet automatically, and from then on pump.fun pays you directly.</p>
           <div class="btn-row"><a class="btn-primary sol" href="/launchpad/coin/?mint=${esc(mint)}">See your token</a></div>
         </section>`;
     } catch (e) {

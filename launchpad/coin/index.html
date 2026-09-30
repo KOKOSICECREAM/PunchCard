@@ -97,7 +97,7 @@ async function load() {
       <p class="status-line">Token <span class="mono">${esc(mint)}</span></p>
       <p class="status-line">Launched by <span class="mono">${esc(short(c.launcher))}</span>${c.launchedAt ? ' on ' + new Date(c.launchedAt * 1000).toLocaleDateString() : ''}${c.deadline ? ` · claim deadline ${new Date(c.deadline * 1000).toLocaleString()}` : ''}</p>
       ${c.description ? `<p>${esc(c.description)}</p>` : ''}
-      <p class="status-line">Creator fees only. pump.fun keeps its own trading fees. Community tokens are tradable and can lose value.</p>
+      <p class="status-line">Creator fee split: ${c.platformBps ? `${(10000 - c.platformBps) / 100}% for the business${c.communityBps ? ` (the owner shares ${c.communityBps / 100}% of it with holders${c.shareReserve ? ', including the fees held at claim' : ''})` : ''} · ${c.platformBps / 100}% PunchCard service fee` : '100% for the business (launched before the service fee)'}. pump.fun keeps its own trading fees. Community tokens are tradable and can lose value.</p>
     </section>`;
 
   if (st.ends && st.ends > now()) { const tick = () => { const el = $('cd'); if (el) el.textContent = `· ${countdown(st.ends)} left`; }; tick(); setInterval(tick, 1000); }

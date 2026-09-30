@@ -68,7 +68,7 @@
       <div class="cost-row"><span>Network and account-creation costs <small>estimate</small></span><b>~<span id="costNet">0.015</span> SOL</b></div>
       <div class="cost-row"><span>Your first buy <small>optional</small></span><b><span id="costBuy">0</span> SOL</b></div>
       <div class="cost-row total"><span>Total</span><b>~<span id="costTotal">0.035</span> SOL</b></div>
-      <p class="cost-note">The PunchCard launch fee is charged only if the launch succeeds. Network transaction fees may still apply. PunchCard takes no cut of creator fees; verified businesses receive them under the <a href="/launchpad/how/#rules">published claim rules</a>.</p>
+      <p class="cost-note">The PunchCard launch fee is charged only if the launch succeeds. Network transaction fees may still apply. PunchCard's service fee is 10% of creator fees; verified businesses receive the other 90% under the <a href="/launchpad/how/#rules">published claim rules</a>.</p>
     </div>
     <div class="btn-row">
       <button class="btn-secondary" id="connect" type="button">Connect wallet</button>
@@ -116,7 +116,7 @@ $('find').addEventListener('click', async () => {
       n.innerHTML = `<b>${esc(r.business.name)} already has a community token.</b> ${r.mint ? `<a href="/launchpad/coin/?mint=${esc(r.mint)}">See it here</a>.` : ''}`;
     } else if (r.ownerCanVerifyVia === null) {
       n.className = 'notice warn';
-      n.innerHTML = `<b>Heads up:</b> this business's Google listing has no website of its own, so its owner can't verify yet. If nobody claims within 30 days, the token's creator fees go to its holders instead.`;
+      n.innerHTML = `<b>Heads up:</b> this business's Google listing has no website of its own, so its owner can't verify yet. If nobody claims within 30 days, the business's share of the creator fees goes to the token's holders instead.`;
     } else if (r.ownerCanVerifyVia) {
       n.className = 'notice ok';
       n.innerHTML = `The owner can claim the fees by verifying <b>${esc(r.ownerCanVerifyVia)}</b>, the website on this Google listing.`;
