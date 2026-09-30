@@ -366,3 +366,4 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .punch-ca { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
 .punch-ca code { font-family: 'Courier Prime', monospace; font-size: 1rem; background: var(--paper); border: 1px dashed var(--sol); border-radius: 8px; padding: 0.7rem 0.9rem; overflow-wrap: anywhere; min-width: 0; flex: 1 1 18rem; user-select: all; }
 .punch-list { padding-left: 1.2rem; display: grid; gap: 0.5rem; }
+.punch-page a:not([class]) { color: var(--sol); }
