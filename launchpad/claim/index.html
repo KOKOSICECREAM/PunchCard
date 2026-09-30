@@ -58,7 +58,7 @@ function render() {
   $('main').innerHTML = `
     <div>
       <h1>Claim <em>${esc(coin.business.name)}</em></h1>
-      <p class="lede">${sol(held)} SOL in creator fees from <b>$${esc(coin.ticker)}</b> ${coin.deadline && Date.now() / 1000 >= coin.deadline ? 'will go to you from now on (the 30-day window has passed, so earlier fees stay with holders)' : 'is waiting for you'}.${platformPct ? ` Your share is ${100 - platformPct}% (about ${sol(yours)} SOL); PunchCard keeps a ${platformPct}% service fee.` : ''}</p>
+      <p class="lede">${sol(held)} SOL in creator fees from <b>$${esc(coin.ticker)}</b> ${coin.deadline && Date.now() / 1000 >= coin.deadline ? 'will go to you from now on (the 30-day window has passed, so earlier fees stay with holders)' : 'is waiting for you'}.${platformPct ? ` Your share is ${100 - platformPct}% (about ${sol(yours)} SOL); PunchCard's ${platformPct}% service fee is what keeps launching affordable for your fans.` : ''}</p>
     </div>
     <section class="panel">
       <h2><span class="step-num">1</span>Prove you run the website</h2>
