@@ -330,3 +330,15 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .biz-suggest li[role="option"] span { font-size: 0.82rem; color: var(--ink-faded); overflow-wrap: anywhere; }
 .biz-suggest li[role="option"]:hover, .biz-suggest li[aria-selected="true"] { background: var(--sol-pale); }
 .biz-suggest-msg { padding: 0.6rem 0.75rem; font-size: 0.88rem; color: var(--ink-mid); }
+
+/* ---------- Itemized launch cost (launch page) ---------- */
+.cost-box { border: 1px solid var(--border-mid); border-radius: 10px; padding: 0.9rem 1rem; display: grid; gap: 0.45rem; background: var(--paper); }
+.cost-h { font-weight: 600; font-size: 0.9rem; }
+.cost-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 0.9rem; }
+.cost-row > span { min-width: 0; }
+.cost-row small { display: block; font-size: 0.76rem; color: var(--ink-faded); }
+.cost-row small a { color: var(--sol); }
+.cost-row b { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cost-row.total { border-top: 1px solid var(--border-mid); padding-top: 0.45rem; font-weight: 700; }
+.cost-note { font-size: 0.8rem; color: var(--ink-faded); }
+.cost-note a { color: var(--sol); }

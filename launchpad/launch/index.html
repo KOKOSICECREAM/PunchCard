@@ -62,12 +62,19 @@
   <section class="panel" aria-labelledby="s3" id="launchPanel" hidden>
     <h2 id="s3"><span class="step-num">3</span>Launch</h2>
     <p id="walletLine" class="status-line">Connect the Solana wallet that will launch and pay: Phantom, Solflare, Backpack or any other.</p>
+<div class="cost-box" aria-labelledby="costH">
+      <div class="cost-h" id="costH">What this launch costs you</div>
+      <div class="cost-row"><span>PunchCard launch fee <small>to <a id="treasuryLink" href="https://solscan.io/account/68hgosDBh71MePvcCxiBtpauEhSFXSEuveJf8gsqCLDi?cluster=devnet" target="_blank" rel="noopener">68hg…CLDi</a>, read from the contract</small></span><b><span id="costFee">0.02</span> SOL</b></div>
+      <div class="cost-row"><span>Network and account-creation costs <small>estimate</small></span><b>~<span id="costNet">0.015</span> SOL</b></div>
+      <div class="cost-row"><span>Your first buy <small>optional</small></span><b><span id="costBuy">0</span> SOL</b></div>
+      <div class="cost-row total"><span>Total</span><b>~<span id="costTotal">0.035</span> SOL</b></div>
+      <p class="cost-note">The PunchCard launch fee is charged only if the launch succeeds. Network transaction fees may still apply. PunchCard takes no cut of creator fees; verified businesses receive them under the <a href="/launchpad/how/#rules">published claim rules</a>.</p>
+    </div>
     <div class="btn-row">
       <button class="btn-secondary" id="connect" type="button">Connect wallet</button>
       <button class="btn-primary sol" id="launch" type="button" disabled>Launch token</button>
     </div>
-    <p class="status-line" id="feeLine">Launch fee: <b id="feeAmt">0.02</b> SOL to PunchCard, plus about 0.03 SOL in network costs and any first buy. The business keeps 100% of the creator fees.</p>
-    <p class="status-line" id="tapLine" hidden>Need test SOL to launch? <button class="btn-secondary" id="tap" type="button" style="padding:0.4rem 0.9rem;margin-left:0.4rem">Get 0.1 test SOL</button></p>
+        <p class="status-line" id="tapLine" hidden>Need test SOL to launch? <button class="btn-secondary" id="tap" type="button" style="padding:0.4rem 0.9rem;margin-left:0.4rem">Get 0.1 test SOL</button></p>
     <p class="status-line" id="launchStatus" role="status"></p>
   </section>
 
@@ -86,7 +93,7 @@
 </footer>
 
 <script type="module">
-import { $, esc, api, connectWallet, signTx, imageToPng, short, businessSearch, businessQuery } from '/launchpad/lp.js';
+import { $, esc, api, connectWallet, signTx, imageToPng, short, explorer, businessSearch, businessQuery } from '/launchpad/lp.js';
 
 let business = null, wallet = null;
 
@@ -168,7 +175,21 @@ $('launch').addEventListener('click', async () => {
   }
 });
 
-api('/api/fees').then((f) => { if (f.launchFeeLamports != null) $('feeAmt').textContent = String(f.launchFeeLamports / 1e9); }).catch(() => {});
+// Itemized cost: PunchCard's fee and treasury come from the contract; network costs are measured.
+const cost = { fee: 0.02, net: 0.015 };
+const fmt = (v) => String(Math.round(v * 10000) / 10000);
+function showCost() {
+  const buy = Math.min(Math.max(Number($('devbuy').value || 0), 0), 0.5);
+  $('costFee').textContent = fmt(cost.fee); $('costNet').textContent = fmt(cost.net);
+  $('costBuy').textContent = fmt(buy); $('costTotal').textContent = fmt(cost.fee + cost.net + buy);
+}
+$('devbuy').addEventListener('input', showCost);
+api('/api/fees').then((f) => {
+  if (f.launchFeeLamports != null) cost.fee = f.launchFeeLamports / 1e9;
+  if (f.networkCostLamports != null) cost.net = f.networkCostLamports / 1e9;
+  if (f.treasury) { $('treasuryLink').textContent = short(f.treasury); $('treasuryLink').href = explorer('account', f.treasury); }
+  showCost();
+}).catch(showCost);
 
 api('/api/coins').then((r) => {
   $('recent').innerHTML = r.coins.length
