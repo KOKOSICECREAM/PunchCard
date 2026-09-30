@@ -137,7 +137,7 @@ function walletError(w, e) {
   if (CLUSTER === 'devnet' && isMobile() && /phantom/i.test(w.name)) {
     return new Error(`Phantom's phone app can't sign launch transactions on the test network yet (${detail || 'no details'}). Please use Phantom on a computer, or Solflare on your phone, for test launches.`);
   }
-  return new Error(`${w.name} couldn't sign (${detail || 'no details'}). Make sure it's on Solana devnet (testnet mode). Using a Ledger? Open the Solana app on the Ledger, go to Settings and turn on Blind signing, then try again.`);
+  return new Error(`${w.name} couldn't sign (${detail || 'no details'}). Make sure it's on Solana ${CLUSTER === 'devnet' ? 'devnet (testnet mode on)' : 'mainnet (testnet mode off)'}. Using a Ledger? Open the Solana app on the Ledger, go to Settings and turn on Blind signing, then try again.`);
 }
 const chainFor = (w) => (w.std.chains || []).includes(`solana:${CLUSTER}`) ? `solana:${CLUSTER}` : undefined;
 
