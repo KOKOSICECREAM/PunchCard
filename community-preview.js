@@ -9,7 +9,7 @@
     const visual = document.createElement('span');
     visual.setAttribute('aria-hidden', 'true');
     visual.innerHTML = original;
-    const walker = document.createTreeWalker(visual, NodeFilter.SHOW_TEXT);
+    const walker = document.createTreeWalker(visual.querySelector('[data-pc-typewriter-line]'), NodeFilter.SHOW_TEXT);
     const nodes = [];
     while (walker.nextNode()) nodes.push(walker.currentNode);
     const letters = [];
@@ -36,7 +36,7 @@
       if (index) letters[index - 1].classList.remove('pc-letter-current');
       if (index === letters.length) { finish(); return; }
       letters[index].className = 'pc-letter-current'; index++;
-      timer = setTimeout(type, 65);
+      timer = setTimeout(type, 140);
     }
     motion.addEventListener('change', finish);
     type();
