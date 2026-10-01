@@ -1,0 +1,89 @@
+/* Scoped presentation-only community preview. */
+.pc-community{max-width:1140px;margin:0 auto;padding:2rem 3rem 4rem}
+.pc-board-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;border-top:1px solid var(--border-mid);padding-top:2.5rem}
+.pc-eyebrow{font:700 .68rem 'Courier Prime',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--sol);margin-bottom:.8rem}
+.pc-board-head h2{font:400 clamp(2rem,4.8vw,3.5rem)/1.13 'Special Elite',cursive}
+.pc-board-head h2 em{font-style:normal;color:var(--terra)}
+.pc-soon{flex:none;border:2px solid var(--terra);color:var(--terra);padding:.6rem .9rem;transform:rotate(5deg);font:700 .82rem 'Courier Prime',monospace;text-transform:uppercase}
+.pc-intro{font:italic 1.1rem/1.65 'Lora',serif;color:var(--ink-mid);max-width:60ch;margin:1rem 0}
+.pc-demo-note{font-size:.8rem;color:var(--ink-mid);background:var(--paper-warm);padding:.7rem 1rem;border-left:3px solid var(--terra);margin:1.3rem 0}
+.pc-board-grid{display:grid;grid-template-columns:1.65fr 1fr;gap:1.3rem}
+.pc-rank-card{background:var(--paper-card);border:1px solid var(--border-mid);border-radius:12px;padding:1.4rem;min-width:0}
+.pc-card-heading{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;align-items:center}
+.pc-card-heading h3,.pc-next-heading h3{font:600 1.2rem 'Lora',serif}
+.pc-card-heading>span{font:.7rem 'Courier Prime',monospace;color:var(--ink-mid)}
+.pc-filters{display:flex;flex-wrap:wrap;gap:.4rem;margin:1.1rem 0 .7rem}
+.pc-filters button{font:600 .73rem 'Inter',sans-serif;padding:.6rem .7rem;border-radius:5px;border:1px solid var(--border-mid);background:transparent;color:var(--ink-mid);cursor:pointer;min-height:40px}
+.pc-filters button[aria-pressed=true]{background:var(--sol);border-color:var(--sol);color:var(--paper)}
+.pc-filters button:focus-visible{outline:3px solid var(--terra);outline-offset:3px}
+.pc-metric{font-size:.75rem;color:var(--ink-mid);min-height:3.3em}
+.pc-ranks{list-style:none}
+.pc-ranks li{display:flex;gap:.7rem;align-items:center;padding:1.1rem 0;border-bottom:1px solid var(--border)}
+.pc-position{font:700 .85rem 'Courier Prime',monospace;color:var(--terra)}
+.pc-avatar{display:grid;place-items:center;flex:none;background:var(--paper-warm);border-radius:10px;width:42px;height:42px;font-size:1.35rem}
+.pc-business{min-width:0;flex:1}
+.pc-business b{display:block;font-size:.85rem}
+.pc-business small,.pc-score small{display:block;font-size:.67rem;color:var(--ink-mid)}
+.pc-score{text-align:right;flex:none}
+.pc-score b{font:700 1.12rem 'Courier Prime',monospace;color:var(--sol)}
+.pc-method{margin-top:1rem;font-size:.76rem;color:var(--ink-mid)}
+.pc-method summary{cursor:pointer}
+.pc-method p{margin-top:.6rem}
+.pc-spotlight{background:var(--sol);color:var(--paper);padding:1.4rem;border-radius:12px;overflow:hidden}
+.pc-spotlight .pc-eyebrow{color:#e3d8b5}
+.pc-shop-art{position:relative;margin:1.3rem auto;width:185px;height:135px;border:2px solid #eedfc3;background:#f2ece0;border-radius:3px;color:var(--sol);transform:rotate(-3deg);box-shadow:8px 8px 0 #243f32}
+.pc-awning{height:22px;background:repeating-linear-gradient(90deg,#a83a20 0 18px,#f2ece0 18px 36px);border-bottom:3px solid #a83a20}
+.pc-shop-sign{text-align:center;letter-spacing:.12em;font:700 .8rem 'Courier Prime',monospace;padding:8px}
+.pc-shop-window{position:absolute;left:14px;bottom:12px;width:90px;height:54px;display:grid;place-items:center;border:3px solid var(--sol);background:#e0c995;font-size:1.9rem}
+.pc-shop-door{position:absolute;right:16px;bottom:0;width:38px;height:66px;background:var(--sol);border:4px solid #e0c995}
+.pc-spotlight-label{font:italic .9rem 'Lora',serif;color:#e3d8b5}
+.pc-spotlight h3{font:400 1.7rem/1.2 'Special Elite',cursive;margin:.5rem 0}
+.pc-spotlight>p:not(.pc-spotlight-label){font-size:.85rem;color:#eee9df}
+.pc-outline-tag{display:inline-block;border:1px dashed currentColor;border-radius:4px;font:.68rem 'Courier Prime',monospace;padding:.45rem .6rem;margin-top:1rem}
+.pc-next-heading{display:flex;justify-content:space-between;gap:1rem;align-items:baseline;margin:2rem 0 1rem}
+.pc-next-heading>span{font-size:.8rem;color:var(--ink-mid)}
+.pc-milestones{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.pc-milestones article{border:1px solid var(--border-mid);border-radius:10px;padding:1.4rem;background:var(--paper-card)}
+.pc-feature-icon{font-size:2rem;color:var(--terra)}
+.pc-milestones h4{font:600 1rem 'Lora',serif;margin-bottom:.6rem}
+.pc-milestones article>p:not(.pc-eyebrow){font-size:.83rem;color:var(--ink-mid)}
+.pc-stamps{display:flex;gap:.4rem;margin:.8rem 0 .3rem}
+.pc-stamps span{width:28px;height:28px;border:1px dashed var(--terra);border-radius:50%;display:grid;place-items:center;color:var(--terra)}
+.pc-milestones small,.pc-footnote{font-size:.7rem;color:var(--ink-mid)}
+.pc-footnote{margin-top:1.3rem;text-align:center}
+.pc-letter-pending{visibility:hidden}
+.pc-typing-word{white-space:nowrap}
+.pc-letter-current{position:relative}
+.pc-letter-current::after{content:'';position:absolute;right:-.05em;top:.08em;height:.9em;border-right:2px solid var(--terra)}
+
+@media(max-width:900px){.pc-community{padding:1rem 1.25rem 3rem}
+.pc-board-grid{grid-template-columns:1fr}
+.pc-spotlight{padding:1.5rem}
+.pc-milestones{grid-template-columns:1fr}
+.pc-next-heading{display:block}
+.pc-next-heading>span{display:block;margin-top:.4rem}
+}
+
+@media(max-width:480px){.pc-board-head{align-items:flex-start}
+.pc-soon{font-size:.65rem;padding:.4rem}
+.pc-rank-card{padding:1rem}
+.pc-avatar{width:32px;height:36px}
+.pc-ranks li{gap:.45rem}
+.pc-business b{font-size:.78rem}
+.pc-business small{font-size:.6rem}
+.pc-score b{font-size:1rem}
+.pc-score small{font-size:.6rem}
+}
+
+@media(prefers-reduced-motion:reduce){.pc-letter-pending{visibility:visible}
+.pc-letter-current::after{display:none}
+}
+
+/* Keep the existing navigation usable on very narrow phones. */
+@media(max-width:360px){nav{padding-left:.65rem;padding-right:.65rem;gap:.4rem}
+.nav-links{gap:.5rem}
+.nav-links a{font-size:.68rem}
+.nav-logo{font-size:1.05rem}
+.nav-logo .brand-mark{margin-right:.25rem}
+}
+
