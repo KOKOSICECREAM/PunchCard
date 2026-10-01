@@ -70,10 +70,12 @@
       <div class="cost-row total"><span>Total</span><b>~<span id="costTotal">0.035</span> SOL</b></div>
       <p class="cost-note">The PunchCard launch fee is charged only if the launch succeeds. Network transaction fees may still apply. PunchCard's 10% service fee on creator fees is what keeps this launch fee low; verified businesses receive the other 90% under the <a href="/launchpad/how/#rules">published claim rules</a>.</p>
     </div>
+    <label class="check"><input type="checkbox" id="terms"> I agree to the <a href="/terms/" target="_blank">Terms and Launch Rules</a>. I have the rights to this name, ticker, description and image, and I won’t suggest the business or PunchCard is behind this token.</label>
     <div class="btn-row">
       <button class="btn-secondary" id="connect" type="button">Connect wallet</button>
       <button class="btn-primary sol" id="launch" type="button" disabled>Launch token</button>
     </div>
+    <p class="legal-note">Community tokens are launched by users, not by PunchCard or the businesses they name. A token isn’t affiliated with a business unless its owner has claimed it, and launchers are responsible for having the rights to any name, logo or image they use. <a href="/terms/">Terms</a>.</p>
         <p class="status-line" id="tapLine" hidden>Need test SOL to launch? <button class="btn-secondary" id="tap" type="button" style="padding:0.4rem 0.9rem;margin-left:0.4rem">Get 0.1 test SOL</button></p>
     <p class="status-line" id="launchStatus" role="status"></p>
   </section>
@@ -87,7 +89,7 @@
 <footer>
   <div class="footer-inner">
     <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span></a>
-    <ul class="footer-links"><li><a href="/launchpad/how/">How the launchpad works</a></li><li><a href="/loyalty/">Tokenized Loyalty Rewards</a></li> <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li></ul>
+    <ul class="footer-links"><li><a href="/launchpad/how/">How the launchpad works</a></li><li><a href="/loyalty/">Tokenized Loyalty Rewards</a></li> <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li><li><a href="/terms/">Terms</a></li></ul>
     <div class="footer-meta">punchcard.club · Community Launchpad (test network) · © 2026</div>
   </div>
 </footer>
@@ -96,6 +98,9 @@
 import { $, esc, api, connectWallet, signTx, imageToPng, short, explorer, businessSearch, businessQuery } from '/launchpad/lp.js';
 
 let business = null, wallet = null;
+const TERMS_VERSION = '2026-10-01';
+const canLaunch = () => { $('launch').disabled = !(wallet && $('terms').checked); };
+$('terms').addEventListener('change', canLaunch);
 
 businessSearch($('maps'), () => $('find').click());
 
@@ -138,7 +143,7 @@ $('connect').addEventListener('click', async () => {
     wallet = await connectWallet();
     $('walletLine').textContent = `Connected: ${short(wallet)}. This wallet signs and pays for the launch.`;
     $('connect').textContent = 'Switch wallet';
-    $('launch').disabled = false;
+    canLaunch();
     $('tapLine').hidden = false;
   } catch (e) { $('walletLine').textContent = e.message; }
 });
@@ -155,13 +160,14 @@ $('launch').addEventListener('click', async () => {
   const s = $('launchStatus');
   const devBuySol = Number($('devbuy').value || 0);
   if (!(devBuySol >= 0 && devBuySol <= 0.5)) return (s.textContent = 'Your first buy must be between 0 and 0.5 SOL.');
+  if (!$('terms').checked) return (s.textContent = 'Please agree to the Terms and Launch Rules first.');
   $('launch').disabled = true;
   try {
     s.textContent = 'Preparing your launch…';
     const imageBase64 = await imageToPng($('img').files[0]);
     const prep = await api('/api/launch/prepare', {
       maps: businessQuery($('maps')).maps, coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
-      description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64,
+      description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION,
     });
     s.textContent = 'Approve the launch in your wallet…';
     const signed = await signTx(prep.tx);
@@ -171,7 +177,7 @@ $('launch').addEventListener('click', async () => {
     location.href = `/launchpad/coin/?mint=${encodeURIComponent(res.mint)}&new=1`;
   } catch (e) {
     s.textContent = /reject|cancel/i.test(e.message) ? 'Cancelled in the wallet. Nothing was launched.' : e.message;
-    $('launch').disabled = false;
+    canLaunch();
   }
 });
 

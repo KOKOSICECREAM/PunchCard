@@ -342,3 +342,14 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .cost-row.total { border-top: 1px solid var(--border-mid); padding-top: 0.45rem; font-weight: 700; }
 .cost-note { font-size: 0.8rem; color: var(--ink-faded); }
 .cost-note a { color: var(--sol); }
+
+/* ---------- Legal notes and Terms page ---------- */
+.legal-note { font-size: 0.8rem; line-height: 1.5; color: var(--ink-faded); max-width: 62ch; }
+.legal-note a { color: var(--sol); }
+.pitch-legal { margin: 0.9rem auto 0; text-align: center; }
+.boxes-note.legal-note { max-width: 760px; margin: -2.5rem auto 3rem; }
+.owner-legal { margin-bottom: 1rem; }
+.legal-block { max-width: 760px; margin: 0 auto 2rem; padding-top: 0; }
+.legal-block ul, .legal ul { padding-left: 1.2rem; display: grid; gap: 0.45rem; color: var(--ink-mid); }
+.legal .panel p { color: var(--ink-mid); }
+.legal a { color: var(--sol); }
