@@ -1,0 +1,4 @@
+{
+  "_about": "PUNCH buybacks and burns by the PunchCard wallet, newest first. Each entry: date (YYYY-MM-DD), kind (buyback | burn), sol, punch, tx (Solana signature), note.",
+  "entries": []
+}

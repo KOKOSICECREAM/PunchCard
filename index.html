@@ -41,17 +41,20 @@
 </header>
 
 <main>
-  <section class="teaser" aria-labelledby="teaserH">
-    <div class="teaser-logo" aria-hidden="true"><img src="/punch/punch-token.png" alt=""><span>?</span></div>
+  <section class="teaser live" aria-labelledby="teaserH">
+    <div class="teaser-logo" aria-hidden="true"><img src="/punch/punch-token.png" alt=""></div>
     <div class="teaser-body">
-      <div class="teaser-tag">The PunchCard token</div>
-      <h2 id="teaserH">Official CA: <em>coming very soon.</em></h2>
-      <div class="countdown" id="countdown" role="timer" aria-live="off">
-        <div><b id="cdH">--</b><small>hours</small></div>
-        <div><b id="cdM">--</b><small>min</small></div>
-        <div><b id="cdS">--</b><small>sec</small></div>
+      <div class="teaser-tag">The PunchCard token · live on pump.fun</div>
+      <h2 id="teaserH">$PUNCH <em>is live.</em></h2>
+      <div class="ca-row">
+        <code class="ca" id="punchCa">8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx</code>
+        <button class="ca-copy" id="copyCa" type="button">Copy CA</button>
       </div>
-      <p class="teaser-note">Only trust the CA posted here and on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a>.</p>
+      <div class="teaser-actions">
+        <a class="teaser-btn" href="https://pump.fun/coin/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx" target="_blank" rel="noopener">View on pump.fun →</a>
+        <a class="teaser-link" href="/punch/">Where PUNCH fees go</a>
+      </div>
+      <p class="teaser-note">This is the only official CA. Only trust the CA posted here and on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a>.</p>
     </div>
   </section>
   <section class="boxes" aria-label="Choose one">
@@ -102,21 +105,14 @@
 </footer>
 
 <script>
-// Teaser countdown: 24 hours from when it was posted (the launch lands somewhere inside it).
+// Copy the official PUNCH CA.
 (function () {
-  var target = Date.UTC(2026, 9, 1, 16, 0, 0);
-  var h = document.getElementById('cdH'), m = document.getElementById('cdM'), sec = document.getElementById('cdS');
-  function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function tick() {
-    var left = Math.max(0, Math.floor((target - Date.now()) / 1000));
-    if (left === 0) {
-      document.getElementById('countdown').outerHTML = '<p class="teaser-live">Any moment now…</p>';
-      return;
-    }
-    h.textContent = pad(Math.floor(left / 3600)); m.textContent = pad(Math.floor(left % 3600 / 60)); sec.textContent = pad(left % 60);
-    setTimeout(tick, 1000);
-  }
-  tick();
+  var btn = document.getElementById('copyCa'), ca = document.getElementById('punchCa');
+  btn.addEventListener('click', function () {
+    var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy CA'; }, 1500); };
+    var pick = function () { var r = document.createRange(); r.selectNodeContents(ca); var s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Selected: copy it'; };
+    if (navigator.clipboard) navigator.clipboard.writeText(ca.textContent.trim()).then(done, pick); else pick();
+  });
 })();
 </script>
 </body>

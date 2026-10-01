@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUNCH — The PunchCard Token</title>
+<meta name="description" content="PUNCH is the PunchCard token on pump.fun. The official CA, and where its creator fees go.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://punchcard.club/punch/">
+<meta property="og:title" content="PUNCH — The PunchCard token">
+<meta property="og:description" content="The official CA, and where PUNCH creator fees go.">
+<meta property="og:image" content="https://punchcard.club/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@punchcard_club">
+<meta name="theme-color" content="#f8f4ec">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
+  <ul class="nav-links">
+    <li><a href="/loyalty/">Loyalty Rewards</a></li>
+    <li><a href="/launchpad/">Launchpad</a></li>
+  </ul>
+</nav>
+
+<main class="app-wrap punch-page">
+  <div>
+    <h1>$PUNCH, <em>the PunchCard token.</em></h1>
+    <p class="lede">Launched on pump.fun, on Solana. Here's the official CA and exactly where its creator fees go.</p>
+  </div>
+
+  <section class="panel" aria-labelledby="caH">
+    <h2 id="caH">Official CA</h2>
+    <div class="punch-ca"><code id="punchCa">8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx</code><button class="btn-secondary" id="copyCa" type="button">Copy</button></div>
+    <div class="btn-row">
+      <a class="btn-primary sol" href="https://pump.fun/coin/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx" target="_blank" rel="noopener">View on pump.fun →</a>
+      <a class="btn-secondary" href="https://solscan.io/token/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx" target="_blank" rel="noopener">View on Solscan</a>
+    </div>
+    <p class="status-line">Only trust the CA posted here and on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a>. Anything else is not PUNCH.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="feesH">
+    <h2 id="feesH">Where PUNCH fees go</h2>
+    <p>Every PUNCH trade pays pump.fun's creator fee. For PUNCH, those fees go to the PunchCard wallet, <a class="mono" href="https://solscan.io/account/7ubEhFxjS8s6p7W5K6LxS9zcfy6wvNoz2HrAUfP8PTmW" target="_blank" rel="noopener">7ubE…PTmW</a>, a hardware wallet. Anyone can check it on-chain.</p>
+    <ul class="punch-list">
+      <li><b>Building PunchCard.</b> Development, hosting and the security audit for the Community Launchpad.</li>
+      <li><b>Buybacks and burns, from time to time.</b> PunchCard may use part of these fees, and of the Community Launchpad's service fees, to buy PUNCH and burn it. That's at our discretion, with no schedule and no set amount. It's not a promise, and nobody should expect it or buy PUNCH because of it. Every one is listed below with its transaction.</li>
+    </ul>
+    <p class="status-line">At launch, the PunchCard wallet made a 0.5 SOL first buy in the same transaction that created the token.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="logH">
+    <h2 id="logH">Buybacks and burns</h2>
+    <ul class="coin-list" id="log"><li class="status-line">None yet. Each one will be listed here with its transaction.</li></ul>
+  </section>
+
+  <section class="panel" aria-labelledby="noexpH">
+    <h2 id="noexpH">No advice, no expectations</h2>
+    <ul class="punch-list">
+      <li><b>Not financial advice.</b> Nothing here or from PunchCard is investment advice. Do your own research.</li>
+      <li><b>Not an investment.</b> Holding PUNCH isn't an investment in PunchCard and gives no ownership, equity, profit share, dividend, voting or other rights.</li>
+      <li><b>No expected returns.</b> Don't buy PUNCH expecting to make money. We make no promise of any price increase, buyback, burn or listing; any buybacks are at our discretion and may never happen.</li>
+      <li><b>You can lose everything.</b> PUNCH is a speculative community token and can lose all its value. Only use money you can afford to lose. See the <a href="/terms/">Terms</a>.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span></a>
+    <ul class="footer-links">
+      <li><a href="/">PunchCard home</a></li>
+      <li><a href="/launchpad/">Community Launchpad</a></li>
+      <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li>
+    </ul>
+    <div class="footer-meta">punchcard.club · © 2026</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var btn = document.getElementById('copyCa'), ca = document.getElementById('punchCa');
+  btn.addEventListener('click', function () {
+    var pick = function () { var r = document.createRange(); r.selectNodeContents(ca); var s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Selected'; };
+    if (navigator.clipboard) navigator.clipboard.writeText(ca.textContent.trim()).then(function () { btn.textContent = 'Copied'; }, pick); else pick();
+  });
+  var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  fetch('/punch/buybacks.json').then(function (r) { return r.json(); }).then(function (d) {
+    if (!d.entries || !d.entries.length) return;
+    document.getElementById('log').innerHTML = d.entries.map(function (e) {
+      var what = e.kind === 'burn' ? 'Burned ' + esc(e.punch) + ' PUNCH' : 'Bought back ' + esc(e.punch) + ' PUNCH for ' + esc(e.sol) + ' SOL';
+      return '<li><a href="https://solscan.io/tx/' + encodeURIComponent(e.tx) + '" target="_blank" rel="noopener"><span><b>' + what + '</b>' + (e.note ? ' · ' + esc(e.note) : '') + '</span><span class="status-line">' + esc(e.date) + '</span></a></li>';
+    }).join('');
+  }).catch(function () {});
+})();
+</script>
+</body>
+</html>
