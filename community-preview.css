@@ -1,0 +1,56 @@
+/* Scoped presentation-only community preview. */
+.pc-community{max-width:1140px;margin:0 auto;padding:2rem 3rem 4rem}
+.pc-board-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;border-top:1px solid var(--border-mid);padding-top:2.5rem}
+.pc-eyebrow{font:700 .68rem 'Courier Prime',monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--sol);margin-bottom:.8rem}
+.pc-board-head h2{font:400 clamp(2rem,4.8vw,3.5rem)/1.13 'Special Elite',cursive}
+.pc-board-head h2 em{font-style:normal;color:var(--terra)}
+.pc-soon{flex:none;border:2px solid var(--terra);color:var(--terra);padding:.6rem .9rem;transform:rotate(5deg);font:700 .82rem 'Courier Prime',monospace;text-transform:uppercase}
+.pc-demo-note{font-size:.8rem;color:var(--ink-mid);background:var(--paper-warm);padding:.7rem 1rem;border-left:3px solid var(--terra);margin:1.3rem 0}
+.pc-board-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.3rem}
+.pc-rank-card{background:var(--paper-card);border:1px solid var(--border-mid);border-radius:12px;padding:1.4rem;min-width:0}
+.pc-card-heading{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;align-items:center}
+.pc-card-heading>span{font:.7rem 'Courier Prime',monospace;color:var(--ink-mid)}
+.pc-ranks{list-style:none}
+.pc-ranks li{display:flex;gap:.7rem;align-items:center;padding:1.1rem 0;border-bottom:1px solid var(--border)}
+.pc-position{font:700 .85rem 'Courier Prime',monospace;color:var(--terra)}
+.pc-avatar{display:grid;place-items:center;flex:none;background:var(--paper-warm);border-radius:10px;width:42px;height:42px;font-size:1.35rem}
+.pc-business{min-width:0;flex:1}
+.pc-business b{display:block;font-size:.85rem}
+.pc-business small,.pc-score small{display:block;font-size:.67rem;color:var(--ink-mid)}
+.pc-score{text-align:right;flex:none}
+.pc-score b{font:700 1.12rem 'Courier Prime',monospace;color:var(--sol)}
+.pc-letter-pending{visibility:hidden}
+.pc-typing-word{white-space:nowrap}
+
+
+
+@media(max-width:900px){.pc-community{padding:1rem 1.25rem 3rem}
+.pc-board-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:480px){.pc-board-head{align-items:flex-start}
+.pc-soon{font-size:.65rem;padding:.4rem}
+.pc-rank-card{padding:1rem}
+.pc-avatar{width:32px;height:36px}
+.pc-ranks li{gap:.45rem}
+.pc-business b{font-size:.78rem}
+.pc-business small{font-size:.6rem}
+.pc-score b{font-size:1rem}
+.pc-score small{font-size:.6rem}
+}
+
+@media(prefers-reduced-motion:reduce){.pc-letter-pending{visibility:visible}
+
+}
+
+/* Keep the existing navigation usable on very narrow phones. */
+@media(max-width:360px){nav{padding-left:.65rem;padding-right:.65rem;gap:.4rem}
+.nav-links{gap:.5rem}
+.nav-links a{font-size:.68rem}
+.nav-logo{font-size:1.05rem}
+.nav-logo .brand-mark{margin-right:.25rem}
+}
+
+
+.pc-ranks li{position:relative;flex-wrap:wrap}.pc-progress{flex-basis:100%;height:4px;background:var(--paper-warm);border-radius:4px;margin-left:2rem;overflow:hidden}.pc-progress>span{display:block;height:100%;background:var(--sol)}.pc-avatar{font:700 1.1rem "Courier Prime",monospace;color:var(--sol)}
+.pc-card-heading h3{font:600 1.2rem 'Lora',serif}
