@@ -70,11 +70,19 @@ async function load() {
         <span class="status-line" id="s-${esc(c.mint)}"></span>
       </div>
     </section>`).join('') || '<section class="panel"><p>No claims under review right now.</p></section>';
-  const reports = q.reports.map((r) => `<li><a href="/launchpad/coin/?mint=${esc(r.mint)}" target="_blank"><span><b>${esc(r.business_name)}</b> · ${esc(r.note)}</span><span class="status-line">${when(r.at)}</span></a></li>`).join('');
+  const reports = q.reports.map((r) => `<li><a href="/launchpad/coin/?mint=${esc(r.mint)}" target="_blank"><span><b>${esc(r.business_name)}</b> · ${esc(r.note)}</span><span class="status-line">${when(r.at)}</span></a>
+      <div class="btn-row" style="margin-top:0.4rem"><button class="btn-secondary" data-hide="${r.hidden ? 0 : 1}" data-mint="${esc(r.mint)}" type="button">${r.hidden ? 'Restore to PunchCard listings' : 'Remove from PunchCard listings'}</button><span class="status-line" id="h-${esc(r.mint)}"></span></div></li>`).join('');
   $('queue').innerHTML = `<p class="status-line">Signed in as ${esc(short(q.you))}</p>${claims}<section class="panel"><h2>Reports (last 30 days)</h2><ul class="coin-list">${reports || '<li class="status-line">None.</li>'}</ul></section>`;
   $('queue').hidden = false;
 }
 document.addEventListener('click', async (e) => {
+  const h = e.target.closest('button[data-hide]');
+  if (h) { // listings only: the token itself can't be deleted
+    h.disabled = true;
+    try { await call('/api/admin/hide', { mint: h.dataset.mint, hidden: h.dataset.hide === '1' }); $('h-' + h.dataset.mint).textContent = 'Done.'; setTimeout(load, 1200); }
+    catch (err) { $('h-' + h.dataset.mint).textContent = err.message; h.disabled = false; }
+    return;
+  }
   const b = e.target.closest('button[data-act]'); if (!b) return;
   const { act, mint } = b.dataset, s = $('s-' + mint);
   if (act === 'cancel' && !b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Tap again to cancel this claim'; return; }
