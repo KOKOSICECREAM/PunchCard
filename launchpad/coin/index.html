@@ -62,8 +62,10 @@ async function load() {
   document.title = `${c.coinName} ($${c.ticker}) — PunchCard`;
   const st = statusOf(c);
   const newNote = params.get('new') ? `<div class="notice ok"><b>It’s live.</b> Share this page with ${esc(c.business.name)} so the owner can claim their fees. <button class="btn-secondary" id="copyLink" type="button" style="margin-left:0.5rem">Copy link</button></div>` : '';
+  const removedNote = c.hidden ? `<div class="notice warn"><b>Removed from PunchCard’s listings.</b> This token no longer appears on PunchCard (for example, at the business’s request). It still exists and may still trade on pump.fun; PunchCard can’t delete or change it.</div>` : '';
+  const retiredNote = c.retired ? `<div class="notice warn"><b>Retired.</b> This business’s slot was released so a legitimate token can launch for it. This token still exists on pump.fun; any fees it holds still follow the published rules.</div>` : '';
   $('main').innerHTML = `
-    ${newNote}
+    ${removedNote}${retiredNote}${newNote}
     <div class="coin-head">
       <img src="${API}/img/${esc(mint)}" alt="" onerror="this.style.visibility='hidden'">
       <div><h1 style="font-size:clamp(1.6rem,4vw,2.3rem)">${esc(c.coinName)} <em>$${esc(c.ticker)}</em></h1>
@@ -84,14 +86,14 @@ async function load() {
       </div>
       <p class="status-line" id="payoutStatus" role="status"></p>
     </section>
-    ${c.status === 'Attested' ? `
     <section class="panel">
-      <h2>Is this claim wrong?</h2>
-      <p>If you own ${esc(c.business.name)} and didn’t make this claim, tell us now. We can stop it during the 24-hour check.</p>
+      ${c.status === 'Attested'
+        ? `<h2>Is this claim wrong?</h2><p>If you own ${esc(c.business.name)} and didn’t make this claim, tell us now. We can stop it while it’s under review.</p>`
+        : `<h2>Report this token</h2><p class="status-line">Is it using your business, brand or image without permission? Tell us and we’ll review it. We can remove it from PunchCard’s listings and stop any claim under review, but we can’t delete it from pump.fun.</p>`}
       <div class="field"><label for="reason">What’s wrong?</label><textarea id="reason" maxlength="1000"></textarea></div>
       <div class="field"><label for="contact">How can we reach you?</label><input id="contact" maxlength="200" placeholder="Email or phone"></div>
-      <div class="btn-row"><button class="btn-primary" id="report" type="button">Report this claim</button><span class="status-line" id="reportStatus"></span></div>
-    </section>` : ''}
+      <div class="btn-row"><button class="${c.status === 'Attested' ? 'btn-primary' : 'btn-secondary'}" id="report" type="button">${c.status === 'Attested' ? 'Report this claim' : 'Report this token'}</button><span class="status-line" id="reportStatus"></span></div>
+    </section>
     <section class="panel">
       <h2>Details</h2>
       <p class="status-line">${esc(c.business.address || '')}${c.business.website ? ` · <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(c.business.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>` : ''}</p>
@@ -114,7 +116,7 @@ async function load() {
   });
   $('report')?.addEventListener('click', async () => {
     $('report').disabled = true;
-    try { await api(`/api/coins/${mint}/report`, { reason: $('reason').value, contact: $('contact').value }); $('reportStatus').textContent = 'Thanks. We’ve been alerted and will review it within the 24-hour window.'; }
+    try { await api(`/api/coins/${mint}/report`, { reason: $('reason').value, contact: $('contact').value }); $('reportStatus').textContent = 'Thanks. We’ve been alerted and will review it.'; }
     catch (e) { $('reportStatus').textContent = e.message; $('report').disabled = false; }
   });
 }
