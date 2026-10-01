@@ -53,8 +53,8 @@
 .pc-footnote{margin-top:1.3rem;text-align:center}
 .pc-letter-pending{visibility:hidden}
 .pc-typing-word{white-space:nowrap}
-.pc-letter-current{position:relative}
-.pc-letter-current::after{content:'';position:absolute;right:-.05em;top:.08em;height:.9em;border-right:2px solid var(--terra)}
+
+
 
 @media(max-width:900px){.pc-community{padding:1rem 1.25rem 3rem}
 .pc-board-grid{grid-template-columns:1fr}
@@ -76,7 +76,7 @@
 }
 
 @media(prefers-reduced-motion:reduce){.pc-letter-pending{visibility:visible}
-.pc-letter-current::after{display:none}
+
 }
 
 /* Keep the existing navigation usable on very narrow phones. */

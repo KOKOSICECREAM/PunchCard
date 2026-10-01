@@ -33,9 +33,8 @@
     let index = 0, timer;
     function finish() { clearTimeout(timer); title.innerHTML = original; title.removeAttribute('aria-label'); motion.removeEventListener('change', finish); }
     function type() {
-      if (index) letters[index - 1].classList.remove('pc-letter-current');
       if (index === letters.length) { finish(); return; }
-      letters[index].className = 'pc-letter-current'; index++;
+      letters[index].classList.remove('pc-letter-pending'); index++;
       timer = setTimeout(type, 140);
     }
     motion.addEventListener('change', finish);
