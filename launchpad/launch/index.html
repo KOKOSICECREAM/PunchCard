@@ -15,7 +15,7 @@
 <script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
 </head>
 <body>
-<div class="testnet-bar">Test network (Solana devnet) <span>· no real money · coins here are for testing only</span></div>
+<div class="testnet-bar">Test network (Solana devnet) <span>· no real money · test launches work on a computer for now (not phone wallets)</span></div>
 <nav>
   <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
   <ul class="nav-links">
@@ -76,7 +76,7 @@
       <button class="btn-primary sol" id="launch" type="button" disabled>Launch token</button>
     </div>
     <p class="legal-note">Community tokens are launched by users, not by PunchCard or the businesses they name. A token isn’t affiliated with a business unless its owner has claimed it, and launchers are responsible for having the rights to any name, logo or image they use. <a href="/terms/">Terms</a>.</p>
-        <p class="status-line" id="tapLine" hidden>Need test SOL to launch? <button class="btn-secondary" id="tap" type="button" style="padding:0.4rem 0.9rem;margin-left:0.4rem">Get 0.1 test SOL</button></p>
+        <p class="status-line" id="tapLine">Need test SOL to launch? <button class="btn-secondary" id="tap" type="button" style="padding:0.4rem 0.9rem;margin-left:0.4rem">Get 0.1 free test SOL</button> <span class="hint">or use <a href="https://faucet.solana.com" target="_blank" rel="noopener">faucet.solana.com</a> (choose Devnet)</span></p>
     <p class="status-line" id="launchStatus" role="status"></p>
   </section>
 
@@ -144,16 +144,21 @@ $('connect').addEventListener('click', async () => {
     $('walletLine').textContent = `Connected: ${short(wallet)}. This wallet signs and pays for the launch.`;
     $('connect').textContent = 'Switch wallet';
     canLaunch();
-    $('tapLine').hidden = false;
   } catch (e) { $('walletLine').textContent = e.message; }
 });
 
 $('tap').addEventListener('click', async () => {
   $('tap').disabled = true;
   try {
+    if (!wallet) { // connect first, so the test SOL goes to the wallet that will launch
+      wallet = await connectWallet();
+      $('walletLine').textContent = `Connected: ${short(wallet)}. This wallet signs and pays for the launch.`;
+      $('connect').textContent = 'Switch wallet';
+      canLaunch();
+    }
     await api('/api/faucet', { wallet });
     $('tapLine').textContent = 'Sent 0.1 test SOL to your wallet. It has no real value; it’s just for trying the launchpad.';
-  } catch (e) { $('tapLine').textContent = e.message; }
+  } catch (e) { $('tapLine').textContent = e.message; $('tap').disabled = false; }
 });
 
 $('launch').addEventListener('click', async () => {
