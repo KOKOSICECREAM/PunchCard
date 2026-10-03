@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>Daily KOKOS burn — KOKOS Ice Cream</title>
+<title>Daily PUNCH burn — KOKOS Ice Cream</title>
 <link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,8 +43,8 @@
 <body>
 <header><img src="/brand/punchcard.svg" alt=""><b>PunchCard</b><span>KOKOS Ice Cream · owner</span></header>
 <main>
-  <h1>Daily KOKOS burn</h1>
-  <p class="sub">KOKOS paid at the POS since the last daily burn. Burning it removes it from the supply for good.</p>
+  <h1>Daily PUNCH burn</h1>
+  <p class="sub">PUNCH paid at the POS since the last daily burn. Burning it removes it from the supply for good.</p>
   <div class="card">
     <div class="stats">
       <div class="stat"><div class="k">Payments</div><div class="v" id="count">—</div></div>
@@ -55,15 +55,15 @@
   </div>
   <div id="actions"></div>
   <div id="status"></div>
-  <p class="note">Only transfers carrying the POS's “KOKOS POS payment” memo are counted — any other KOKOS in this wallet is never burned here. Each daily burn records the date, the number of payments and the total in its own memo, and marks where the next count starts.</p>
+  <p class="note">Only transfers carrying the POS's “PUNCH POS payment” memo are counted — any other PUNCH in this wallet is never burned here. Each daily burn records the date, the number of payments and the total in its own memo, and marks where the next count starts.</p>
 </main>
 
 <script>
 const W = window.solanaWeb3, K = window.KokosBurn;
 const CFG = {
   BURN_WALLET: 'BV8BAAFRakZxjfyR1X4ZvYtKe2Z3F6K51kFCQJSjkVJA',
-  BURN_ATA: 'Eq9T8yv6LTag24EtdJXHzocGLGgvtiNqUY1BWzcPRcpw',
-  POS_MEMO: 'KOKOS POS payment',
+  BURN_ATA: 'EjSKouu6ujsvX6AdVMDiKPbLBL4wrzn5vpzZVMNgJ5sx',
+  POS_MEMO: 'PUNCH POS payment',
   DAILY_MEMO: 'KOKOS Ice Cream · daily burn',
   MAX_PAGES: 10,
 };
@@ -91,7 +91,7 @@ const receivedIn = tx => [...(tx.transaction.message.instructions || []), ...((t
     && ix.parsed.info.destination === CFG.BURN_ATA)
   .reduce((t, ix) => t + BigInt(ix.parsed.info.tokenAmount?.amount ?? ix.parsed.info.amount ?? 0), 0n);
 
-// Walk the KOKOS account's history newest-first until the last daily burn, adding up POS payments.
+// Walk the PUNCH account's history newest-first until the last daily burn, adding up POS payments.
 async function scan() {
   const items = []; let total = 0n, before, reachedLastBurn = false;
   for (let page = 0; page < CFG.MAX_PAGES && !reachedLastBurn; page++) {
@@ -122,7 +122,7 @@ async function load() {
     $('count').textContent = pending.items.length;
     $('total').textContent = fmtK(pending.total);
     $('list').innerHTML = pending.items.length
-      ? pending.items.map(i => `<div class="row"><span>${i.time ? new Date(i.time * 1000).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'} · <a href="https://solscan.io/tx/${i.sig}" target="_blank" rel="noopener">${i.sig.slice(0, 8)}…</a></span><span class="amt">${fmtK(i.amt)} KOKOS</span></div>`).join('')
+      ? pending.items.map(i => `<div class="row"><span>${i.time ? new Date(i.time * 1000).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'} · <a href="https://solscan.io/tx/${i.sig}" target="_blank" rel="noopener">${i.sig.slice(0, 8)}…</a></span><span class="amt">${fmtK(i.amt)} PUNCH</span></div>`).join('')
       : '<div class="empty">No POS payments since the last daily burn.</div>';
     renderActions();
   } catch (e) { $('list').innerHTML = '<div class="empty">Could not read the burn wallet — reload to retry.</div>'; }
@@ -144,7 +144,7 @@ function renderActions() {
     return;
   }
   if (!owner) { $('actions').innerHTML = `<button class="btn primary" id="connectBtn">Connect the burn wallet</button>`; $('connectBtn').onclick = connect; return; }
-  $('actions').innerHTML = `<button class="btn primary" id="burnBtn" ${pending.total > 0n ? '' : 'disabled'}>Burn ${fmtK(pending.total)} KOKOS</button>`;
+  $('actions').innerHTML = `<button class="btn primary" id="burnBtn" ${pending.total > 0n ? '' : 'disabled'}>Burn ${fmtK(pending.total)} PUNCH</button>`;
   $('burnBtn').onclick = burn;
 }
 async function connect() {
@@ -164,7 +164,7 @@ async function burn() {
     const conn = new W.Connection(RPCS[0], 'confirmed');
     const { blockhash } = await conn.getLatestBlockhash('confirmed');
     const day = new Date().toISOString().slice(0, 10);
-    const memo = `${CFG.DAILY_MEMO} · ${day} · ${pending.items.length} payments · ${fmtK(pending.total)} KOKOS`;
+    const memo = `${CFG.DAILY_MEMO} · ${day} · ${pending.items.length} payments · ${fmtK(pending.total)} PUNCH`;
     const tx = K.buildBurnTx(W, { owner, source: new W.PublicKey(CFG.BURN_ATA), amount: pending.total, reference: null, memo, blockhash });
     let sig;
     if (provider.signAndSendTransaction) { const r = await provider.signAndSendTransaction(tx); sig = r.signature || r; }
@@ -176,7 +176,7 @@ async function burn() {
       if (st && (st.confirmationStatus === 'confirmed' || st.confirmationStatus === 'finalized')) break;
       await new Promise(r => setTimeout(r, 1500));
     }
-    $('status').innerHTML = `<div class="msg ok">Burned ${fmtK(pending.total)} KOKOS — <a href="https://solscan.io/tx/${sig}" target="_blank" rel="noopener">view on Solscan ↗</a></div>`;
+    $('status').innerHTML = `<div class="msg ok">Burned ${fmtK(pending.total)} PUNCH — <a href="https://solscan.io/tx/${sig}" target="_blank" rel="noopener">view on Solscan ↗</a></div>`;
     await load();
   } catch (e) {
     const m = String(e?.message || e);
