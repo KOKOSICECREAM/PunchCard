@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>Pay with KOKOS — KOKOS Ice Cream</title>
+<title>Pay with PUNCH — KOKOS Ice Cream</title>
 <link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,15 +51,15 @@
 <header><img src="/brand/punchcard.svg" alt=""><b>PunchCard</b></header>
 <main>
   <div class="card" id="payCard">
-    <div class="who"><img src="/kokos-skoop/kokos.png" alt=""><div><div class="k">Paying</div><div class="n">KOKOS Ice Cream</div></div><span class="chip">KOKOS · Solana</span></div>
+    <div class="who"><img src="/punch/punch-token.png" alt=""><div><div class="k">Paying</div><div class="n">KOKOS Ice Cream</div></div><span class="chip">PUNCH · Solana</span></div>
     <div class="amt"><div class="usd" id="usd">—</div><div class="tok" id="tok">—</div></div>
     <div class="rows">
       <div class="row"><span>Expires in</span><span id="exp">—</span></div>
       <div class="row"><span>Your wallet</span><span id="wallet">not connected</span></div>
-      <div class="row"><span>Your KOKOS</span><span id="bal">—</span></div>
+      <div class="row"><span>Your PUNCH</span><span id="bal">—</span></div>
     </div>
   </div>
-  <div class="burn-note">This payment <b>burns</b> your KOKOS — it is destroyed on-chain, not sent to anyone, and cannot be refunded.</div>
+  <div class="burn-note">This payment <b>burns</b> your PUNCH — it is destroyed on-chain, not sent to anyone, and cannot be refunded.</div>
   <div id="actions"></div>
   <div id="status"></div>
   <p class="hint">Works with Phantom, Coinbase Wallet, Solflare and Backpack.</p>
@@ -129,16 +129,16 @@ async function refreshBalance() {
   const need = BigInt(P.amount);
   try {
     const { src, total } = await withRpc(c => K.findSource(c, W, owner, need));
-    $('bal').textContent = fmtK(total) + ' KOKOS';
+    $('bal').textContent = fmtK(total) + ' PUNCH';
     if (!src) {
-      $('actions').innerHTML = `<button class="btn primary" disabled>Not enough KOKOS</button>`;
-      fail(`You need ${fmtK(need)} KOKOS; this wallet has ${fmtK(total)}.`);
+      $('actions').innerHTML = `<button class="btn primary" disabled>Not enough PUNCH</button>`;
+      fail(`You need ${fmtK(need)} PUNCH; this wallet has ${fmtK(total)}.`);
       return;
     }
-    $('actions').innerHTML = `<button class="btn primary" id="burnBtn">Burn ${fmtK(need)} KOKOS &amp; pay</button>`;
+    $('actions').innerHTML = `<button class="btn primary" id="burnBtn">Burn ${fmtK(need)} PUNCH &amp; pay</button>`;
     $('burnBtn').onclick = () => pay(src);
     $('status').innerHTML = '';
-  } catch (e) { fail('Could not read your KOKOS balance — check your connection and reload.'); }
+  } catch (e) { fail('Could not read your PUNCH balance — check your connection and reload.'); }
 }
 
 // ── pay: one burn, found by the POS through the reference key ──────────────
@@ -168,7 +168,7 @@ async function pay(src) {
     }
     done(sig, true);
   } catch (e) {
-    sending = false; btn.disabled = false; btn.textContent = `Burn ${fmtK(P.amount)} KOKOS & pay`;
+    sending = false; btn.disabled = false; btn.textContent = `Burn ${fmtK(P.amount)} PUNCH & pay`;
     const m = String(e?.message || e);
     fail(/reject|cancel|denied/i.test(m) ? 'You cancelled in your wallet — nothing was burned.' : 'Payment did not go through: ' + m.slice(0, 120));
   }
@@ -176,8 +176,8 @@ async function pay(src) {
 function done(sig, pending) {
   $('payCard').outerHTML = `<div class="card"><div class="done">
     <div class="tick"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1e7443" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-    <h1>${pending ? 'Burn sent' : 'Paid — KOKOS burned'}</h1><p>Show this screen to the cashier.</p>
-    <div class="big">${fmtK(P.amount)} KOKOS</div><p>$${(P.cents / 100).toFixed(2)} at KOKOS Ice Cream</p>
+    <h1>${pending ? 'Burn sent' : 'Paid — PUNCH burned'}</h1><p>Show this screen to the cashier.</p>
+    <div class="big">${fmtK(P.amount)} PUNCH</div><p>$${(P.cents / 100).toFixed(2)} at KOKOS Ice Cream</p>
     <p style="margin-top:12px"><a href="https://solscan.io/tx/${sig}" target="_blank" rel="noopener">View on Solscan ↗</a></p></div></div>`;
   $('actions').innerHTML = ''; document.querySelector('.burn-note').remove(); $('status').innerHTML = '';
 }
@@ -186,7 +186,7 @@ function done(sig, pending) {
 (function start() {
   if (!validRequest()) { $('actions').innerHTML = ''; fail('This payment link is not valid. Ask the cashier for a new QR.'); return; }
   $('usd').textContent = '$' + (P.cents / 100).toFixed(2);
-  $('tok').textContent = fmtK(P.amount) + ' KOKOS';
+  $('tok').textContent = fmtK(P.amount) + ' PUNCH';
   tick(); setInterval(tick, 1000);
   provider = findProvider();
   if (!provider) { renderOpenIn(); return; }

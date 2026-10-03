@@ -1,10 +1,10 @@
-// Shared by the customer burn page and its tests: build the one transaction a KOKOS payment is.
-// A Token-2022 BurnChecked from the payer's KOKOS account, with the POS's payment reference as an
+// Shared by the customer burn page and its tests: build the one transaction a PUNCH payment is.
+// A Token-2022 BurnChecked from the payer's PUNCH account, with the POS's payment reference as an
 // extra read-only key (the Solana Pay convention: the POS finds the transaction by that key), and
 // a memo naming the shop. Needs `solanaWeb3` (browser global) or require('@solana/web3.js').
 (function (root) {
   const KOKOS = {
-    MINT: 'XrR9rqzFCBEcYoeyKrHV2uYFmEkwPCh6cxB3KuPCGd5',
+    MINT: '8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx',
     DECIMALS: 6,
     TOKEN_2022: 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
     MEMO: 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr',
@@ -15,7 +15,7 @@
       [owner.toBuffer(), new W.PublicKey(KOKOS.TOKEN_2022).toBuffer(), new W.PublicKey(KOKOS.MINT).toBuffer()],
       new W.PublicKey(ATA_PROGRAM))[0];
   }
-  // The payer's KOKOS account. Wallets and pump.fun keep KOKOS in the owner's associated account,
+  // The payer's PUNCH account. Wallets and pump.fun keep PUNCH in the owner's associated account,
   // which is derived — no indexed RPC call. Only if that one is short do we list all their accounts.
   async function findSource(conn, W, owner, amount) {
     const a = ata(W, owner);
