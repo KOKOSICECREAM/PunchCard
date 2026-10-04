@@ -1,7 +1,7 @@
 // Shared helpers for the Community Launchpad pages: API, wallet, formatting.
 // Wallets only SIGN; our backend submits, so the wallet's network setting doesn't matter.
-export const API = 'https://punchcard-launchpad-devnet.quiet-mode-468e.workers.dev';
-export const CLUSTER = 'devnet';
+export const API = 'https://punchcard-launchpad.quiet-mode-468e.workers.dev';
+export const CLUSTER = 'mainnet';
 
 export const $ = (id) => document.getElementById(id);
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
