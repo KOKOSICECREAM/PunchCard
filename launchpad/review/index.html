@@ -22,6 +22,12 @@
     <div class="btn-row"><button class="btn-primary sol" id="go" type="button">Connect and sign in</button><span class="status-line" id="st" role="status"></span></div>
   </section>
   <div id="queue" hidden></div>
+  <section class="panel" id="emergency" hidden>
+    <h2>Emergency pause</h2>
+    <p>Stops new launches, claim approvals, handovers to owners, holder payouts and fee collection. Funds stay where they are. Cancelling claims still works. <b>Only the Squad can unpause.</b></p>
+    <p class="status-line" id="pauseState">Checking…</p>
+    <div class="btn-row"><button class="btn-primary" id="pauseBtn" type="button" style="background:var(--terra)">Pause PunchCard</button><span class="status-line" id="pauseSt" role="status"></span></div>
+  </section>
 </main>
 <script type="module">
 import { $, esc, api as _api, API, CLUSTER, connectWallet, signMessage, signTx, bytesToB64, short, explorer } from '/launchpad/lp.js';
@@ -74,6 +80,10 @@ async function load() {
       <div class="btn-row" style="margin-top:0.4rem"><button class="btn-secondary" data-hide="${r.hidden ? 0 : 1}" data-mint="${esc(r.mint)}" type="button">${r.hidden ? 'Restore to PunchCard listings' : 'Remove from PunchCard listings'}</button><span class="status-line" id="h-${esc(r.mint)}"></span></div></li>`).join('');
   $('queue').innerHTML = `<p class="status-line">Signed in as ${esc(short(q.you))}</p>${claims}<section class="panel"><h2>Reports (last 30 days)</h2><ul class="coin-list">${reports || '<li class="status-line">None.</li>'}</ul></section>`;
   $('queue').hidden = false;
+  $('emergency').hidden = false;
+  const h = await call('/api/health').catch(() => null);
+  $('pauseState').textContent = h?.paused ? 'Status: PAUSED. Unpausing needs a Squad proposal (see the cheat sheet).' : 'Status: running.';
+  $('pauseBtn').hidden = !!h?.paused;
 }
 document.addEventListener('click', async (e) => {
   const h = e.target.closest('button[data-hide]');
@@ -81,6 +91,21 @@ document.addEventListener('click', async (e) => {
     h.disabled = true;
     try { await call('/api/admin/hide', { mint: h.dataset.mint, hidden: h.dataset.hide === '1' }); $('h-' + h.dataset.mint).textContent = 'Done.'; setTimeout(load, 1200); }
     catch (err) { $('h-' + h.dataset.mint).textContent = err.message; h.disabled = false; }
+    return;
+  }
+  if (e.target.id === 'pauseBtn') {
+    const p = e.target, st = $('pauseSt');
+    if (!p.dataset.sure) { p.dataset.sure = '1'; p.textContent = 'Tap again to PAUSE everything'; return; }
+    p.disabled = true;
+    try {
+      st.textContent = 'Approve in your wallet…';
+      const { tx } = await call('/api/admin/tx', { action: 'pause' });
+      const signed = await signTx(tx);
+      st.textContent = 'Sending…';
+      const r = await call('/api/admin/send', { tx: signed, action: 'pause' });
+      st.innerHTML = `Paused · <a href="${explorer('tx', r.sig)}" target="_blank" rel="noopener">transaction</a>`;
+      setTimeout(load, 2500);
+    } catch (err) { st.textContent = err.message; p.disabled = false; }
     return;
   }
   const b = e.target.closest('button[data-act]'); if (!b) return;
