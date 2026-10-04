@@ -15,7 +15,6 @@
 <script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
 </head>
 <body>
-<div class="testnet-bar">Test network (Solana devnet) <span>· no real money · test launches work on a computer for now (not phone wallets)</span></div>
 <nav>
   <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
   <ul class="nav-links">
@@ -26,6 +25,7 @@
 </nav>
 
 <main class="app-wrap">
+  <div class="notice warn">Launches are opening in stages: right now the first businesses are launched by the PunchCard team. Follow <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> for when launching opens to everyone.</div>
   <div>
     <h1>Launch a token for a business <em>you love.</em></h1>
     <p class="lede">Every trade helps the business: its creator fees are held for the owner until they claim them.</p>
@@ -64,7 +64,7 @@
     <p id="walletLine" class="status-line">Connect the Solana wallet that will launch and pay: Phantom, Solflare, Backpack or any other.</p>
 <div class="cost-box" aria-labelledby="costH">
       <div class="cost-h" id="costH">What this launch costs you</div>
-      <div class="cost-row"><span>PunchCard launch fee <small>to <a id="treasuryLink" href="https://solscan.io/account/68hgosDBh71MePvcCxiBtpauEhSFXSEuveJf8gsqCLDi?cluster=devnet" target="_blank" rel="noopener">68hg…CLDi</a>, read from the contract</small></span><b><span id="costFee">0.02</span> SOL</b></div>
+      <div class="cost-row"><span>PunchCard launch fee <small>to <a id="treasuryLink" href="https://solscan.io/account/68hgosDBh71MePvcCxiBtpauEhSFXSEuveJf8gsqCLDi" target="_blank" rel="noopener">68hg…CLDi</a>, read from the contract</small></span><b><span id="costFee">0.02</span> SOL</b></div>
       <div class="cost-row"><span>Network and account-creation costs <small>estimate</small></span><b>~<span id="costNet">0.015</span> SOL</b></div>
       <div class="cost-row"><span>Your first buy <small>optional</small></span><b><span id="costBuy">0</span> SOL</b></div>
       <div class="cost-row total"><span>Total</span><b>~<span id="costTotal">0.035</span> SOL</b></div>
@@ -76,7 +76,6 @@
       <button class="btn-primary sol" id="launch" type="button" disabled>Launch token</button>
     </div>
     <p class="legal-note">Community tokens are launched by users, not by PunchCard or the businesses they name. A token isn’t affiliated with a business unless its owner has claimed it, and launchers are responsible for having the rights to any name, logo or image they use. <a href="/terms/">Terms</a>.</p>
-        <p class="status-line" id="tapLine">Need test SOL to launch? <button class="btn-secondary" id="tap" type="button" style="padding:0.4rem 0.9rem;margin-left:0.4rem">Get 0.1 free test SOL</button> <span class="hint">or use <a href="https://faucet.solana.com" target="_blank" rel="noopener">faucet.solana.com</a> (choose Devnet)</span></p>
     <p class="status-line" id="launchStatus" role="status"></p>
   </section>
 
@@ -90,7 +89,7 @@
   <div class="footer-inner">
     <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span></a>
     <ul class="footer-links"><li><a href="/launchpad/how/">How the launchpad works</a></li><li><a href="/loyalty/">Tokenized Loyalty Rewards</a></li> <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li><li><a href="/terms/">Terms</a></li></ul>
-    <div class="footer-meta">punchcard.club · Community Launchpad (test network) · © 2026</div>
+    <div class="footer-meta">punchcard.club · Community Launchpad · © 2026</div>
   </div>
 </footer>
 
@@ -147,19 +146,6 @@ $('connect').addEventListener('click', async () => {
   } catch (e) { $('walletLine').textContent = e.message; }
 });
 
-$('tap').addEventListener('click', async () => {
-  $('tap').disabled = true;
-  try {
-    if (!wallet) { // connect first, so the test SOL goes to the wallet that will launch
-      wallet = await connectWallet();
-      $('walletLine').textContent = `Connected: ${short(wallet)}. This wallet signs and pays for the launch.`;
-      $('connect').textContent = 'Switch wallet';
-      canLaunch();
-    }
-    await api('/api/faucet', { wallet });
-    $('tapLine').textContent = 'Sent 0.1 test SOL to your wallet. It has no real value; it’s just for trying the launchpad.';
-  } catch (e) { $('tapLine').textContent = e.message; $('tap').disabled = false; }
-});
 
 $('launch').addEventListener('click', async () => {
   const s = $('launchStatus');
