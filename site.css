@@ -392,3 +392,17 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 @media (max-width: 560px) { .featured-head { flex-direction: column; text-align: center; } .featured-head img { width: 112px; height: 112px; } }
 .punch-page [hidden] { display: none !important; }
 .punch-page a.mono { color: var(--sol); }
+
+/* Home: upcoming launchpad launches */
+.upcoming { max-width: 900px; margin: 0 auto 2.5rem; padding-inline: 1.25rem; }
+.upcoming-h { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.4rem, 3.5vw, 1.9rem); text-align: center; margin-bottom: 1rem; text-wrap: balance; }
+.upcoming-h em { font-style: normal; color: var(--terra); }
+.upcoming-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 1rem; }
+.upcoming-card { display: flex; gap: 1rem; align-items: center; padding: 1rem 1.1rem; background: var(--paper-card); border: 1px solid var(--border-mid); border-radius: 12px; text-decoration: none; color: var(--ink); transition: box-shadow .15s, transform .15s; }
+.upcoming-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.upcoming-card img { flex: none; border-radius: 50%; }
+.upcoming-card span { display: grid; gap: 0.15rem; min-width: 0; }
+.upcoming-card b { font-family: 'Lora', serif; font-size: 1.1rem; }
+.upcoming-card small { color: var(--ink-mid); font-size: 0.88rem; }
+.upcoming-card em { font-style: normal; color: var(--terra); font-size: 0.85rem; font-weight: 600; }
+.upcoming-note { text-align: center; font-size: 0.82rem; color: var(--ink-faded); margin-top: 0.75rem; }
