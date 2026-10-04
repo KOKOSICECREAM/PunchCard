@@ -11,13 +11,14 @@
 <script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
 </head>
 <body>
-<div class="testnet-bar">Test network (Solana devnet) <span>· signing only · nothing is sent, no SOL moves</span></div>
+<div class="testnet-bar">Wallet check <span>· signing only · nothing is sent, no SOL moves</span></div>
 <main class="app-wrap">
   <div>
     <h1>Wallet <em>check</em></h1>
-    <p class="lede">Asks your wallet to sign four test transactions, from simple to launch-like. Nothing is sent to the network.</p>
+    <p class="lede">Asks your wallet to sign four test transactions, from simple to launch-like. Nothing is sent to the network and no SOL moves.</p>
   </div>
   <section class="panel">
+    <p class="status-line">On a phone, open this page inside your wallet app's browser (in Phantom: the browser tab, then punchcard.club/launchpad/wallet-check).</p>
     <div class="btn-row"><button class="btn-secondary" id="connect" type="button">Connect wallet</button><button class="btn-primary sol" id="run" type="button" disabled>Run the check</button></div>
     <p class="status-line" id="who"></p>
     <ul class="coin-list" id="out"></ul>
@@ -25,36 +26,23 @@
   </section>
 </main>
 <script type="module">
-import { $, esc, connectWallet, signTx, bytesToB64 } from '/launchpad/lp.js';
-const { Connection, PublicKey, Keypair, SystemProgram, TransactionInstruction, TransactionMessage, VersionedTransaction, Transaction } = window.solanaWeb3;
-const conn = new Connection('https://api.devnet.solana.com', 'confirmed');
-const ALT = new PublicKey('Fm4nBfmnFAPKNbwisSg2MNaEqd6JT9zE4mmMgCb8hwy4');       // the launchpad's lookup table
-const IN_ALT = new PublicKey('68hgosDBh71MePvcCxiBtpauEhSFXSEuveJf8gsqCLDi');    // an address stored in it
-const MEMO = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
+import { $, esc, api, connectWallet, signTx, CLUSTER } from '/launchpad/lp.js';
 let me = null;
 $('connect').addEventListener('click', async () => {
-  try { me = new PublicKey(await connectWallet()); $('who').textContent = 'Connected ' + me.toBase58(); $('run').disabled = false; }
+  try { me = await connectWallet(); $('who').textContent = `Connected ${me} · Solana ${CLUSTER}`; $('run').disabled = false; }
   catch (e) { $('who').textContent = e.message; }
 });
-const memo = (text, signers = []) => new TransactionInstruction({ programId: MEMO, keys: signers.map((k) => ({ pubkey: k, isSigner: true, isWritable: false })), data: new TextEncoder().encode(text) });
 $('run').addEventListener('click', async () => {
   $('run').disabled = true; $('out').innerHTML = '';
-  const { blockhash } = await conn.getLatestBlockhash();
-  const table = (await conn.getAddressLookupTable(ALT)).value;
-  const extra = Keypair.generate();
-  const touchAlt = SystemProgram.transfer({ fromPubkey: me, toPubkey: IN_ALT, lamports: 0 });
-  const tests = [
-    ['1. Simple (legacy)', () => { const t = new Transaction({ feePayer: me, recentBlockhash: blockhash }).add(memo('punchcard check 1')); return new VersionedTransaction(t.compileMessage()); }],
-    ['2. Versioned, no lookup table', () => new VersionedTransaction(new TransactionMessage({ payerKey: me, recentBlockhash: blockhash, instructions: [memo('punchcard check 2'), touchAlt] }).compileToV0Message())],
-    ['3. Versioned, with lookup table', () => new VersionedTransaction(new TransactionMessage({ payerKey: me, recentBlockhash: blockhash, instructions: [memo('punchcard check 3'), touchAlt] }).compileToV0Message([table]))],
-    ['4. Lookup table + another signer (like a launch)', () => { const v = new VersionedTransaction(new TransactionMessage({ payerKey: me, recentBlockhash: blockhash, instructions: [memo('punchcard check 4', [extra.publicKey]), touchAlt] }).compileToV0Message([table])); v.sign([extra]); return v; }],
-  ];
-  for (const [name, build] of tests) {
-    const li = document.createElement('li'); li.innerHTML = `<a><span><b>${esc(name)}</b></span><span class="status-line">signing…</span></a>`; $('out').appendChild(li);
-    const status = li.querySelector('.status-line');
-    try { await signTx(bytesToB64(build().serialize())); status.textContent = 'OK'; }
-    catch (e) { status.textContent = 'FAILED: ' + e.message; }
-  }
+  try {
+    const { txs } = await api('/api/wallet-check', { wallet: me });
+    for (const t of txs) {
+      const li = document.createElement('li'); li.innerHTML = `<a><span><b>${esc(t.name)}</b></span><span class="status-line">signing…</span></a>`; $('out').appendChild(li);
+      const status = li.querySelector('.status-line');
+      try { await signTx(t.tx); status.textContent = 'OK'; } // signed only; never sent
+      catch (e) { status.textContent = 'FAILED: ' + e.message; }
+    }
+  } catch (e) { $('who').textContent = e.message; }
   $('run').disabled = false;
 });
 </script>
