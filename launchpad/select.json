@@ -1,7 +1,25 @@
 {
   "note": "PunchCard Select: business-approved launches. One entry per business. Leave mint/ticker empty until launch; the cards then switch to live data automatically.",
   "businesses": [
-    { "slug": "kokos", "name": "KOKOS Ice Cream", "tagline": "Plant-based ice cream", "city": "Nashville, TN", "logo": "/launchpad/img/kokos.png", "logoBg": "#fff", "page": "/kokos/", "mint": "", "ticker": "" },
-    { "slug": "aloha-fish", "name": "Aloha Fish Company", "tagline": "Fresh fish and poke", "city": "Nashville, TN", "logo": "/launchpad/img/aloha-fish-co.png", "page": "/aloha-fish/", "mint": "", "ticker": "" }
+    {
+      "slug": "kokos",
+      "name": "KOKOS Ice Cream",
+      "tagline": "Plant-based ice cream",
+      "city": "Nashville, TN",
+      "logo": "/kokos/cream.png",
+      "page": "/kokos/",
+      "mint": "B2WCxWps69JzPMfjXE4MKpMkgiTgLcat1JGGpYzpXVjX",
+      "ticker": "CREAM"
+    },
+    {
+      "slug": "aloha-fish",
+      "name": "Aloha Fish Company",
+      "tagline": "Fresh fish and poke",
+      "city": "Nashville, TN",
+      "logo": "/launchpad/img/aloha-fish-co.png",
+      "page": "/aloha-fish/",
+      "mint": "",
+      "ticker": ""
+    }
   ]
 }
