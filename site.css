@@ -406,3 +406,23 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .upcoming-card small { color: var(--ink-mid); font-size: 0.88rem; }
 .upcoming-card em { font-style: normal; color: var(--terra); font-size: 0.85rem; font-weight: 600; }
 .upcoming-note { text-align: center; font-size: 0.82rem; color: var(--ink-faded); margin-top: 0.75rem; }
+
+/* PunchCard Select list (home strip + launchpad) */
+.select-sec { max-width: 980px; margin: 2rem auto 2.5rem; padding-inline: 1.25rem; }
+.select-head { text-align: center; display: grid; gap: 0.35rem; margin-bottom: 1rem; }
+.select-head h2 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.4rem, 3.5vw, 1.9rem); text-wrap: balance; }
+.select-head h2 em { font-style: normal; color: var(--terra); }
+.select-head p { color: var(--ink-mid); max-width: 60ch; margin: 0 auto; line-height: 1.55; }
+.select-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1rem; }
+.sel-card { display: flex; gap: 0.9rem; align-items: center; padding: 1rem 1.1rem; background: var(--paper-card); border: 1px solid var(--border-mid); border-radius: 12px; text-decoration: none; color: var(--ink); transition: box-shadow .15s, transform .15s; }
+.sel-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.sel-card img { flex: none; border-radius: 50%; }
+.sel-card > span { display: grid; gap: 0.25rem; min-width: 0; }
+.sel-card b { font-family: 'Lora', serif; font-size: 1.05rem; }
+.sel-card small { color: var(--ink-mid); font-size: 0.86rem; }
+.sel-badge { justify-self: start; font-family: 'Courier Prime', monospace; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.2rem 0.55rem; border-radius: 999px; background: var(--paper-warm); border: 1px solid var(--border-mid); color: var(--ink-mid); }
+.sel-badge.ok { background: var(--sol-pale); border-color: var(--sol); color: var(--sol); font-weight: 700; }
+.sel-badge.soon { color: var(--terra); border-color: var(--terra-pale); background: var(--terra-pale); }
+.sel-stats { font-variant-numeric: tabular-nums; }
+.select-foot { text-align: center; font-size: 0.82rem; color: var(--ink-faded); margin-top: 0.85rem; line-height: 1.5; }
+.select-foot a { color: var(--terra); }
