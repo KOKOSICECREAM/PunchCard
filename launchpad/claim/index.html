@@ -36,7 +36,7 @@
 </footer>
 
 <script type="module">
-import { $, esc, api, sol, short, connectWallet, signMessage } from '/launchpad/lp.js';
+import { $, esc, api, sol, short, connectWallet, signMessage, signTextAsTx } from '/launchpad/lp.js';
 
 const mint = new URLSearchParams(location.search).get('mint') || '';
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } } };
@@ -123,9 +123,17 @@ function render() {
     try {
       s.textContent = 'Sign the message in your wallet…';
       const communityBps = Number($('community').value), shareReserve = $('shareReserve').checked;
-      const signature = await signMessage(claimMessage(wallet, communityBps, shareReserve));
+      const text = claimMessage(wallet, communityBps, shareReserve);
+      let proof;
+      try { proof = { signature: await signMessage(text) }; }
+      catch (e) {
+        if (/reject|cancel|denied/i.test(e.message)) throw e;
+        // Ledger and some wallets can't sign text: sign the same text as a transaction that is never sent.
+        s.textContent = 'Your wallet could not sign a message. Approve the claim as a transaction instead (it is never sent and costs nothing)…';
+        proof = { signedTx: await signTextAsTx(wallet, text) };
+      }
       s.textContent = `Checking ${claim.host} for your code…`;
-      const r = await api('/api/claims/check', { claimId: claim.claimId, wallet, signature, email: $('email').value.trim(), communityBps, shareReserve, termsVersion: '2026-10-01' });
+      const r = await api('/api/claims/check', { claimId: claim.claimId, wallet, ...proof, email: $('email').value.trim(), communityBps, shareReserve, termsVersion: '2026-10-01' });
       const when = r.payoutAfter ? new Date(r.payoutAfter * 1000).toLocaleString() : 'after the 24-hour check';
       $('main').innerHTML = `
         <div><h1>Verified. <em>Welcome aboard.</em></h1>

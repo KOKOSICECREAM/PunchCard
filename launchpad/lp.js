@@ -210,6 +210,16 @@ export function b64ToBytes(b64) { return Uint8Array.from(atob(b64), (c) => c.cha
 export function bytesToB64(bytes) { let s = ''; for (const b of bytes) s += String.fromCharCode(b); return btoa(s); }
 
 /** Ask the wallet to sign a base64 v0 transaction we built; returns the signed tx as base64. */
+/**
+ * Hardware wallets (Ledger) often can't sign text messages. This signs the same text as a memo in a
+ * transaction that is never sent (built by the backend, since public RPCs block browsers).
+ * Returns the signed transaction (base64) for the backend to check.
+ */
+export async function signTextAsTx(wallet, text) {
+  const { tx } = await api('/api/memo-tx', { wallet, text });
+  return signTx(tx);
+}
+
 export async function signTx(b64) {
   const w = need();
   const bytes = b64ToBytes(b64);

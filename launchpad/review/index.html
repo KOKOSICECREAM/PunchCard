@@ -30,7 +30,7 @@
   </section>
 </main>
 <script type="module">
-import { $, esc, api as _api, API, CLUSTER, connectWallet, signMessage, signTx, bytesToB64, short, explorer } from '/launchpad/lp.js';
+import { $, esc, api as _api, API, CLUSTER, connectWallet, signMessage, signTx, signTextAsTx, bytesToB64, short, explorer } from '/launchpad/lp.js';
 const { Connection, PublicKey, TransactionInstruction, TransactionMessage, VersionedTransaction } = window.solanaWeb3;
 let token = null, wallet = null;
 const call = async (p, body) => {
@@ -52,11 +52,7 @@ $('go').addEventListener('click', async () => {
       if (/reject|cancel|denied/i.test(e.message)) throw e;
       // Hardware wallets: sign a memo transaction instead (never sent).
       st.textContent = 'Your wallet could not sign a message; approve the sign-in transaction instead (it is not sent)…';
-      const rpc = CLUSTER === 'devnet' ? 'https://api.devnet.solana.com' : 'https://api.mainnet-beta.solana.com';
-      const { blockhash } = await new Connection(rpc).getLatestBlockhash();
-      const ix = new TransactionInstruction({ programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'), keys: [], data: new TextEncoder().encode(text) });
-      const vtx = new VersionedTransaction(new TransactionMessage({ payerKey: new PublicKey(wallet), recentBlockhash: blockhash, instructions: [ix] }).compileToV0Message());
-      res = await call('/api/admin/login', { wallet, signedAt, signedTx: await signTx(bytesToB64(vtx.serialize())) });
+      res = await call('/api/admin/login', { wallet, signedAt, signedTx: await signTextAsTx(wallet, text) });
     }
     token = res.token; st.textContent = '';
     $('signin').hidden = true; await load();
