@@ -426,3 +426,8 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .sel-stats { font-variant-numeric: tabular-nums; }
 .select-foot { text-align: center; font-size: 0.82rem; color: var(--ink-faded); margin-top: 0.85rem; line-height: 1.5; }
 .select-foot a { color: var(--terra); }
+
+/* Featured page: who doesn't count for holder payouts */
+.excl { margin-top: 0.75rem; font-size: 0.9rem; }
+.excl summary { cursor: pointer; color: var(--ink-mid); }
+.excl-list { columns: 2 14rem; padding-left: 1.1rem; font-size: 0.85rem; margin: 0.3rem 0 0.6rem; }

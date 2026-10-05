@@ -27,6 +27,19 @@ if (launched) {
   load().catch(() => { $('fees').innerHTML = '<p class="status-line">Live details are unavailable right now. Try again in a minute.</p>'; });
 }
 
+// Who doesn't count for holder payouts, and why (published so anyone can check).
+async function showExcluded() {
+  const x = await fetch(`${API}/api/excluded?mint=${encodeURIComponent(mint)}`).then((r) => (r.ok ? r.json() : Promise.reject()));
+  const early = x.launchWindowBuyers || [];
+  const list = (arr) => arr.map((w) => `<li>${acct(w)}</li>`).join('');
+  $('excluded').innerHTML = `<details class="excl"><summary>Not counted for holder payouts: the launcher${early.length ? `, ${early.length} wallets that bought in the first minute` : ''}${x.taintedTokens.length ? `, and tokens moved from them to ${x.taintedTokens.length} other wallet(s)` : ''}</summary>
+    <p class="status-line">${esc(x.rules)}</p>
+    <p><b>Launcher</b></p><ul class="excl-list"><li>${acct(x.launcher)}</li></ul>
+    ${early.length ? `<p><b>Bought in the first ${x.launchWindowSecs} seconds</b></p><ul class="excl-list">${list(early)}</ul>` : ''}
+    ${x.taintedTokens.length ? `<p><b>Holding tokens moved directly from those wallets</b> (only that amount doesn't count)</p><ul class="excl-list">${x.taintedTokens.map((t) => `<li>${acct(t.wallet)} · ${(Number(t.notCounted) / 1e6).toLocaleString()} not counted</li>`).join('')}</ul>` : ''}
+  </details>`;
+}
+
 async function load() {
   const [c, r] = await Promise.all([
     fetch(`${API}/api/coins/${mint}`).then((x) => x.json()),
@@ -47,5 +60,7 @@ async function load() {
       ${holders ? `<li><b>${esc(ticker)} holders: ${holderPart}%</b>, chosen by the shop as a thank-you. Paid automatically to holders by time held${paidRounds.length ? ` · ${paidRounds.length} round(s), ${sol(paidHolders)} SOL so far` : ''}. <a href="/launchpad/how/#rules">How it's shared</a></li>` : ''}
       <li><b>PunchCard: ${c.platformBps / 100}%</b> service fee, which keeps launching at 0.02 SOL.</li>
     </ul>
-    <p class="status-line">Launched ${new Date(c.launchedAt * 1000).toLocaleDateString()} by PunchCard's launcher ${acct(c.launcher)}, which gets no creator fees. <a href="/launchpad/coin/?mint=${encodeURIComponent(mint)}">Full token details</a></p>`;
+    <p class="status-line">Launched ${new Date(c.launchedAt * 1000).toLocaleDateString()} by PunchCard's launcher ${acct(c.launcher)}, which gets no creator fees. <a href="/launchpad/coin/?mint=${encodeURIComponent(mint)}">Full token details</a></p>
+    <div id="excluded"></div>`;
+  if (holders) showExcluded().catch(() => {});
 }
