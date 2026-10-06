@@ -114,11 +114,41 @@ async function checkMembership() {
     const m = await api(`/api/membership?wallet=${encodeURIComponent(wallet)}`);
     if (!m.requiredUsd) { member = true; $('memberBox').hidden = true; return; }
     $('memberUsd').textContent = m.requiredUsd;
-    const held = `$${(m.usd || 0).toFixed(2)}`;
-    if (m.member) { member = true; line.className = 'member-status ok'; line.innerHTML = `<b>✓ You're a member.</b> This wallet holds ${held} of PUNCH.`; }
-    else if (m.price === null) line.innerHTML = '<b>We couldn\'t check the PUNCH price right now.</b> Try again in a few minutes.';
-    else line.innerHTML = `<b>Not a member yet.</b> This wallet holds ${held} of PUNCH; Membership needs $${m.requiredUsd} (about ${Number(m.punchNeeded).toLocaleString()} PUNCH at today's price). <a href="https://pump.fun/coin/${PUNCH}" target="_blank" rel="noopener">Get PUNCH →</a><br><small>Only buy PUNCH using the official CA: <span class="mono">${PUNCH}</span></small> <button type="button" class="btn-secondary member-recheck" id="recheck">Check again</button>`;
+    const money = (v) => `$${Number(v || 0).toFixed(2)}`;
+    const holes = (n) => `<div class="ticket-holes" aria-hidden="true">${Array.from({ length: 10 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>`;
+    if (m.member) {
+      member = true; line.className = 'member-status ticket-wrap';
+      line.innerHTML = `<div class="ticket is-member">
+        <div class="ticket-main">
+          <div class="ticket-kicker">PunchCard · Launchpad pass</div>
+          <div class="ticket-title">Congratulations! <em>You're a PunchCard Member.</em></div>
+          <div class="ticket-meta"><span>Wallet <b class="mono">${short(wallet)}</b></span><span>Holding <b>${money(m.usd)}</b> of PUNCH</span></div>
+          ${holes(10)}
+        </div>
+        <div class="ticket-stub"><small>Admit one</small><b>Launch</b><span class="ticket-stamp">Member</span></div>
+      </div>
+      <p class="ticket-foot">You're all set to launch from this wallet. Keep $${m.requiredUsd}+ of PUNCH in it when you launch.</p>`;
+    } else if (m.price === null) line.innerHTML = '<b>We couldn\'t check the PUNCH price right now.</b> Try again in a few minutes. <button type="button" class="btn-secondary member-recheck" id="recheck">Check again</button>';
+    else {
+      const gap = Math.max(0, m.requiredUsd - (m.usd || 0)), pct = Math.min(100, ((m.usd || 0) / m.requiredUsd) * 100);
+      const morePunch = Math.ceil(gap / m.price * 1.02); // a little extra for price moves
+      line.className = 'member-status ticket-wrap';
+      line.innerHTML = `<div class="ticket is-pending">
+        <div class="ticket-main">
+          <div class="ticket-kicker">PunchCard · Launchpad pass</div>
+          <div class="ticket-title">You're not a member <em>yet.</em></div>
+          <div class="ticket-meta"><span>Wallet <b class="mono">${short(wallet)}</b></span><span>Holding <b>${money(m.usd)}</b> of $${m.requiredUsd}</span></div>
+          <div class="ticket-bar" role="progressbar" aria-valuenow="${Math.round(pct)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct.toFixed(1)}%"></span></div>
+          ${holes(Math.floor(pct / 10))}
+        </div>
+        <div class="ticket-stub"><small>Admit one</small><b>Launch</b><span class="ticket-stamp">Not yet</span></div>
+      </div>
+      <p class="ticket-foot">Hold <b>$${m.requiredUsd} of PUNCH</b> in this wallet to become a member. You need about <b>${money(gap)} more</b> (≈ ${morePunch.toLocaleString()} PUNCH at today's price).</p>
+      <div class="btn-row ticket-actions"><a class="btn-primary sol" href="https://pump.fun/coin/${PUNCH}" target="_blank" rel="noopener">Buy PUNCH →</a><button type="button" class="btn-secondary" id="recheck">I bought it, check again</button></div>
+      <p class="ticket-ca">Only buy PUNCH using the official CA: <span class="mono">${PUNCH}</span></p>`;
+    }
     $('recheck')?.addEventListener('click', checkMembership);
+    line.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   } catch (e) { line.textContent = e.message; }
   finally { canLaunch(); }
 }
