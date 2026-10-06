@@ -431,3 +431,8 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .excl { margin-top: 0.75rem; font-size: 0.9rem; }
 .excl summary { cursor: pointer; color: var(--ink-mid); }
 .excl-list { columns: 2 14rem; padding-left: 1.1rem; font-size: 0.85rem; margin: 0.3rem 0 0.6rem; }
+
+/* Open Doors banner */
+.od-banner { max-width: 980px; margin: 1rem auto; margin-inline: max(1.25rem, calc((100% - 980px) / 2)); padding: 0.9rem 1.1rem; border-radius: 12px; background: var(--sol); color: #fff; text-align: center; line-height: 1.5; font-size: 0.98rem; }
+.od-banner a { color: #fff; font-weight: 700; }
+.app-wrap .od-banner { margin-inline: 0; }
