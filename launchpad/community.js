@@ -35,13 +35,13 @@ async function openDoors() {
   if (!st || st.mode !== 'open-doors') { // no date yet: optional "coming soon" teaser (launchpad/open-doors.json)
     const t = await fetch('/launchpad/open-doors.json').then((r) => r.json()).catch(() => null);
     if (!t?.tease || st?.mode === 'public') return;
-    for (const el of els) { el.innerHTML = `<b>Coming soon: Open Doors.</b> For 24 hours, anyone can launch a token for a local business they love. ${t.cap || 100} spots. Date announced on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> and <a href="https://t.me/punchcardclub" target="_blank" rel="noopener">Telegram</a>.`; el.hidden = false; }
+    for (const el of els) { el.innerHTML = `<b>Coming soon: Open Doors.</b> For 24 hours, any PunchCard member can launch a token for a local business they love. ${t.cap || 100} spots. Date announced on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> and <a href="https://t.me/punchcardclub" target="_blank" rel="noopener">Telegram</a>.`; el.hidden = false; }
     return;
   }
   const now = Math.floor(Date.now() / 1000);
   let html;
-  if (now < st.opensAt) html = `<b>Open Doors:</b> for 24 hours, anyone can launch a token for a local business they love. ${st.cap} spots. Starts in <b>${until(st.opensAt)}</b> (${new Date(st.opensAt * 1000).toLocaleString()}).`;
-  else if (st.open) html = `<b>Open Doors is on!</b> Anyone can launch for a local business: <b>${st.remaining} of ${st.cap} spots left</b> · closes in ${until(st.closesAt)}. <a href="/launchpad/launch/">Launch a token →</a>`;
+  if (now < st.opensAt) html = `<b>Open Doors:</b> for 24 hours, any PunchCard member can launch a token for a local business they love. ${st.cap} spots. Starts in <b>${until(st.opensAt)}</b> (${new Date(st.opensAt * 1000).toLocaleString()}).`;
+  else if (st.open) html = `<b>Open Doors is on!</b> Any PunchCard member can launch for a local business: <b>${st.remaining} of ${st.cap} spots left</b> · closes in ${until(st.closesAt)}. <a href="/launchpad/launch/">Launch a token →</a>`;
   else if (now < st.closesAt) html = `<b>Open Doors:</b> all ${st.cap} spots are taken. Thank you! Follow <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> for the next one.`;
   else return;
   for (const el of els) { el.innerHTML = html; el.hidden = false; }

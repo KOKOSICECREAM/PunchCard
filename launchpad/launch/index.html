@@ -57,12 +57,17 @@
       <div class="field"><label for="img">Image <span class="hint">(optional, square works best)</span></label><input id="img" type="file" accept="image/*"></div>
       <div class="field"><label for="devbuy">Your first buy (SOL)</label><input id="devbuy" type="number" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span></div>
     </div>
-    <div class="notice ok"><b>Fair launch.</b> You get no share of the fees. Your first buy is capped at 3 SOL, and your wallet is left out of holder rewards. One token per business.</div>
+    <div class="notice ok"><b>Fair launch.</b> Launching takes a <a href="/launchpad/how/#membership">PunchCard Membership</a>. You get no share of the fees. Your first buy is capped at 3 SOL, and your wallet is left out of holder rewards. One token per business.</div>
   </section>
 
   <section class="panel" aria-labelledby="s3" id="launchPanel" hidden>
     <h2 id="s3"><span class="step-num">3</span>Launch</h2>
     <p id="walletLine" class="status-line">Connect the Solana wallet that will launch and pay: Phantom, Solflare, Backpack or any other.</p>
+    <div class="member-box" id="memberBox">
+      <div class="member-h">🎟️ PunchCard Membership required</div>
+      <p>Every launch on PunchCard needs a Membership. To be a member, hold at least <b>$<span id="memberUsd">50</span> worth of PUNCH</b> in the wallet you launch from. We check it automatically when you connect. Nothing is charged or locked: your PUNCH stays in your wallet.</p>
+      <p class="member-status" id="memberLine" role="status" hidden></p>
+    </div>
 <div class="cost-box" aria-labelledby="costH">
       <div class="cost-h" id="costH">What this launch costs you</div>
       <div class="cost-row"><span>PunchCard launch fee <small>to <a id="treasuryLink" href="https://solscan.io/account/68hgosDBh71MePvcCxiBtpauEhSFXSEuveJf8gsqCLDi" target="_blank" rel="noopener">68hg…CLDi</a>, read from the contract</small></span><b><span id="costFee">0.02</span> SOL</b></div>
@@ -99,7 +104,24 @@ import { $, esc, api, connectWallet, signTx, imageToPng, short, explorer, busine
 
 let business = null, wallet = null;
 const TERMS_VERSION = '2026-10-01';
-const canLaunch = () => { $('launch').disabled = !(wallet && $('terms').checked); };
+let member = false;
+const canLaunch = () => { $('launch').disabled = !(wallet && member && $('terms').checked); };
+const PUNCH = '8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx';
+async function checkMembership() {
+  const line = $('memberLine');
+  member = false; line.hidden = false; line.className = 'member-status'; line.textContent = 'Checking your Membership…';
+  try {
+    const m = await api(`/api/membership?wallet=${encodeURIComponent(wallet)}`);
+    if (!m.requiredUsd) { member = true; $('memberBox').hidden = true; return; }
+    $('memberUsd').textContent = m.requiredUsd;
+    const held = `$${(m.usd || 0).toFixed(2)}`;
+    if (m.member) { member = true; line.className = 'member-status ok'; line.innerHTML = `<b>✓ You're a member.</b> This wallet holds ${held} of PUNCH.`; }
+    else if (m.price === null) line.innerHTML = '<b>We couldn\'t check the PUNCH price right now.</b> Try again in a few minutes.';
+    else line.innerHTML = `<b>Not a member yet.</b> This wallet holds ${held} of PUNCH; Membership needs $${m.requiredUsd} (about ${Number(m.punchNeeded).toLocaleString()} PUNCH at today's price). <a href="https://pump.fun/coin/${PUNCH}" target="_blank" rel="noopener">Get PUNCH →</a><br><small>Only buy PUNCH using the official CA: <span class="mono">${PUNCH}</span></small> <button type="button" class="btn-secondary member-recheck" id="recheck">Check again</button>`;
+    $('recheck')?.addEventListener('click', checkMembership);
+  } catch (e) { line.textContent = e.message; }
+  finally { canLaunch(); }
+}
 $('terms').addEventListener('change', canLaunch);
 
 businessSearch($('maps'), () => $('find').click());
@@ -144,6 +166,7 @@ $('connect').addEventListener('click', async () => {
     $('walletLine').textContent = `Connected: ${short(wallet)}. This wallet signs and pays for the launch.`;
     $('connect').textContent = 'Switch wallet';
     canLaunch();
+    checkMembership();
   } catch (e) { $('walletLine').textContent = e.message; }
 });
 
