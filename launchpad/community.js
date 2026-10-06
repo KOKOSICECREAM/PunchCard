@@ -32,7 +32,12 @@ async function openDoors() {
   const els = document.querySelectorAll('[data-open-doors]');
   if (!els.length) return;
   const st = await fetch(`${API}/api/launch/status`).then((r) => r.json()).catch(() => null);
-  if (!st || st.mode !== 'open-doors') return;
+  if (!st || st.mode !== 'open-doors') { // no date yet: optional "coming soon" teaser (launchpad/open-doors.json)
+    const t = await fetch('/launchpad/open-doors.json').then((r) => r.json()).catch(() => null);
+    if (!t?.tease || st?.mode === 'public') return;
+    for (const el of els) { el.innerHTML = `<b>Coming soon: Open Doors.</b> For 24 hours, anyone can launch a token for a local business they love. ${t.cap || 100} spots. Date announced on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> and <a href="https://t.me/punchcardclub" target="_blank" rel="noopener">Telegram</a>.`; el.hidden = false; }
+    return;
+  }
   const now = Math.floor(Date.now() / 1000);
   let html;
   if (now < st.opensAt) html = `<b>Open Doors:</b> for 24 hours, anyone can launch a token for a local business they love. ${st.cap} spots. Starts in <b>${until(st.opensAt)}</b> (${new Date(st.opensAt * 1000).toLocaleString()}).`;

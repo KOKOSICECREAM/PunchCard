@@ -1,0 +1,5 @@
+{
+  "note": "Open Doors teaser before a date is set. When the backend has an Open Doors window, the live countdown replaces this automatically.",
+  "tease": true,
+  "cap": 100
+}
