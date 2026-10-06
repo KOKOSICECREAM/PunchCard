@@ -62,12 +62,18 @@ async function load() {
   let milestones = '';
   if (raisedUsd !== null) {
     const next = MILESTONES.find((m) => raisedUsd < m);
-    const prev = [...MILESTONES].reverse().find((m) => raisedUsd >= m) || 0;
-    const pct = next ? Math.min(100, ((raisedUsd - prev) / (next - prev)) * 100) : 100;
+    const ni = next ? MILESTONES.indexOf(next) : MILESTONES.length;
+    // Milestones sit evenly along the bar (centre of each column); the fill runs to where the shop is.
+    const at = (i) => ((i + 0.5) / MILESTONES.length) * 100;
+    const from = ni === 0 ? 0 : at(ni - 1), to = next ? at(ni) : 100;
+    const lo = ni === 0 ? 0 : MILESTONES[ni - 1];
+    const pct = next ? from + ((raisedUsd - lo) / (next - lo)) * (to - from) : 100;
     milestones = `<div class="ms">
       <div class="ms-head"><span>Milestones for ${esc(business)}</span><span>${next ? `${usdFmt(next - raisedUsd)} to go to ${usdFmt(next)}` : 'Every milestone reached!'}</span></div>
-      <div class="ms-bar" role="progressbar" aria-valuenow="${Math.round(pct)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct.toFixed(1)}%"></span></div>
-      <ol class="ms-tiers">${MILESTONES.map((m) => `<li class="${raisedUsd >= m ? 'done' : m === next ? 'next' : ''}">${raisedUsd >= m ? '✓ ' : ''}${usdFmt(m)}${m === 100000 ? '+' : ''}</li>`).join('')}</ol>
+      <div class="ms-track" role="progressbar" aria-label="Raised for ${esc(business)}" aria-valuenow="${Math.round(raisedUsd)}" aria-valuemin="0" aria-valuemax="${MILESTONES.at(-1)}">
+        <div class="ms-bar"><span style="width:${pct.toFixed(1)}%"></span></div>
+        <ol class="ms-tiers" style="--n:${MILESTONES.length}">${MILESTONES.map((m) => `<li class="${raisedUsd >= m ? 'done' : m === next ? 'next' : ''}"><i></i>${usdFmt(m)}${m === MILESTONES.at(-1) ? '+' : ''}</li>`).join('')}</ol>
+      </div>
     </div>`;
   }
 
