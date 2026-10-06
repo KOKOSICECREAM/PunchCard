@@ -55,9 +55,9 @@
     <div class="field"><label for="desc">Description <span class="hint">(optional)</span></label><textarea id="desc" maxlength="500" placeholder="Why this place matters to you."></textarea></div>
     <div class="row2">
       <div class="field"><label for="img">Image <span class="hint">(optional, square works best)</span></label><input id="img" type="file" accept="image/*"></div>
-      <div class="field"><label for="devbuy">Your first buy (SOL)</label><input id="devbuy" type="number" min="0" max="0.5" step="0.01" value="0"><span class="hint">0 to 0.5 SOL</span></div>
+      <div class="field"><label for="devbuy">Your first buy (SOL)</label><input id="devbuy" type="number" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span></div>
     </div>
-    <div class="notice ok"><b>Fair launch.</b> You get no share of the fees. Your first buy is capped at 0.5 SOL, and your wallet is left out of holder rewards. One token per business.</div>
+    <div class="notice ok"><b>Fair launch.</b> You get no share of the fees. Your first buy is capped at 3 SOL, and your wallet is left out of holder rewards. One token per business.</div>
   </section>
 
   <section class="panel" aria-labelledby="s3" id="launchPanel" hidden>
@@ -151,7 +151,7 @@ $('connect').addEventListener('click', async () => {
 $('launch').addEventListener('click', async () => {
   const s = $('launchStatus');
   const devBuySol = Number($('devbuy').value || 0);
-  if (!(devBuySol >= 0 && devBuySol <= 0.5)) return (s.textContent = 'Your first buy must be between 0 and 0.5 SOL.');
+  if (!(devBuySol >= 0 && devBuySol <= 3)) return (s.textContent = 'Your first buy must be between 0 and 3 SOL.');
   if (!$('terms').checked) return (s.textContent = 'Please agree to the Terms and Launch Rules first.');
   $('launch').disabled = true;
   try {
@@ -177,7 +177,7 @@ $('launch').addEventListener('click', async () => {
 const cost = { fee: 0.02, net: 0.015 };
 const fmt = (v) => String(Math.round(v * 10000) / 10000);
 function showCost() {
-  const buy = Math.min(Math.max(Number($('devbuy').value || 0), 0), 0.5);
+  const buy = Math.min(Math.max(Number($('devbuy').value || 0), 0), 3);
   $('costFee').textContent = fmt(cost.fee); $('costNet').textContent = fmt(cost.net);
   $('costBuy').textContent = fmt(buy); $('costTotal').textContent = fmt(cost.fee + cost.net + buy);
 }
