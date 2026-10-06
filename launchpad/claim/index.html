@@ -47,7 +47,7 @@ const claimMessage = (w, communityBps, shareReserve) => {
   const pct = communityBps / 100;
   return ['PunchCard owner claim', `Business: ${coin.business.name}`, `Coin: ${mint}`, `Pay creator fees to: ${w}`,
     `Share with this coin's holders: ${pct}% of my part, permanently${pct ? (shareReserve ? ' (future fees and the fees held now)' : ' (future fees only)') : ''}`,
-    `Claim ID: ${claim.claimId}`].join('\n');
+    `Claim ID: ${claim.claimId}`].join(' | '); // one line, so hardware wallets can display it
 };
 
 function render() {
