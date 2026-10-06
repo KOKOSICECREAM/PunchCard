@@ -86,7 +86,6 @@ async function load() {
           <em>${handedOver ? 'Straight to the shop\'s wallet' : 'Held for the shop until its review hold ends'}</em></div>
         ${c.communityShares ? `<div class="dash-tile"><span>Shared with the ${esc(ticker)} community</span>${money(c.feesCommunityLamports || 0, usd)}
           <em>${esc(business)}'s thank-you to holders · ${Number(c.feesCommunityPaidLamports || 0) > 0 ? `${(Number(c.feesCommunityPaidLamports) / 1e9).toLocaleString(undefined, { maximumFractionDigits: 3 })} SOL paid out so far` : 'paid automatically in weekly rounds'}</em></div>` : ''}
-        <div class="dash-tile"><span>PunchCard service fee</span>${money(c.feesPlatformLamports || 0, usd)}<em>Keeps launching at 0.02 SOL</em></div>
       </div>
       ${milestones}
       <p class="dash-note">Read live from the Solana blockchain and updated every few minutes${usd ? `. Dollar amounts at today's SOL price ($${usd.toFixed(2)})` : ''}. ${c.communityShares ? `<a href="/launchpad/how/#rules">How the community share works</a>` : ''}</p>
