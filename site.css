@@ -464,3 +464,14 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .ms-tiers li.next { color: var(--terra); font-weight: 700; }
 .ms-tiers li.next i { border-color: var(--terra); }
 .dash-note { font-size: 0.8rem; color: var(--ink-faded); margin: 0; }
+
+/* Launch page: Membership */
+.member-box { display: grid; gap: 0.5rem; margin: 0.75rem 0 1rem; padding: 0.9rem 1rem; border: 1px solid var(--sol); border-radius: 10px; background: var(--sol-pale); }
+.member-h { font-weight: 700; }
+.member-box p { margin: 0; line-height: 1.55; }
+.member-status { padding: 0.6rem 0.75rem; border-radius: 8px; background: var(--paper); border: 1px solid var(--border-mid); overflow-wrap: anywhere; }
+.member-status.ok { border-color: var(--sol); color: var(--sol); }
+.member-status small { color: var(--ink-faded); }
+.member-recheck { margin-top: 0.5rem; padding: 0.35rem 0.8rem; font-size: 0.85rem; }
+.member-box a { color: var(--sol); font-weight: 700; }
+.member-h { display: flex; gap: 0.4rem; align-items: center; }
