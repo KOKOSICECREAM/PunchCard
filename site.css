@@ -475,3 +475,41 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .member-recheck { margin-top: 0.5rem; padding: 0.35rem 0.8rem; font-size: 0.85rem; }
 .member-box a { color: var(--sol); font-weight: 700; }
 .member-h { display: flex; gap: 0.4rem; align-items: center; }
+
+/* Launch page: Membership ticket */
+.member-status.ticket-wrap { padding: 0; background: none; border: 0; display: grid; gap: 0.75rem; }
+.ticket { --notch: var(--sol-pale); position: relative; display: grid; grid-template-columns: 1fr auto; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-md); }
+.ticket::before, .ticket::after { content: ''; position: absolute; right: calc(var(--stub-w) - 11px); width: 22px; height: 22px; border-radius: 50%; background: var(--notch); }
+.ticket::before { top: -11px; } .ticket::after { bottom: -11px; }
+.ticket { --stub-w: 104px; }
+.ticket-main { display: grid; gap: 0.55rem; padding: 1rem 1.1rem; min-width: 0; }
+.ticket-kicker { font-family: 'Courier Prime', monospace; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
+.ticket-title { font-family: 'Special Elite', cursive; font-size: clamp(1.25rem, 4.6vw, 1.6rem); line-height: 1.2; text-wrap: balance; }
+.ticket-title em { font-style: normal; display: block; }
+.ticket-meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1.1rem; font-size: 0.88rem; }
+.ticket-holes { display: flex; gap: 6px; flex-wrap: wrap; }
+.ticket-holes i { width: 14px; height: 14px; border-radius: 50%; border: 2px dashed currentColor; opacity: 0.45; }
+.ticket-holes i.on { border-style: solid; background: var(--notch); opacity: 1; }
+.ticket-stub { width: var(--stub-w); display: grid; place-content: center; justify-items: center; gap: 0.2rem; padding: 0.75rem 0.5rem; border-left: 2px dashed rgba(255,255,255,0.55); text-align: center; }
+.ticket-stub small { font-family: 'Courier Prime', monospace; font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.ticket-stub b { font-family: 'Special Elite', cursive; font-weight: 400; font-size: 1.15rem; }
+.ticket-stamp { margin-top: 0.35rem; padding: 0.15rem 0.45rem; border: 2px solid currentColor; border-radius: 4px; font-family: 'Courier Prime', monospace; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; transform: rotate(-8deg); }
+.ticket.is-member { background: linear-gradient(135deg, var(--sol), #2f4a3b); color: #fff; }
+.ticket.is-member .ticket-stub { background: var(--terra); }
+.ticket.is-member .ticket-holes i.on { border-color: rgba(255,255,255,0.8); }
+.ticket.is-pending { background: var(--paper); color: var(--ink); border: 2px dashed var(--border-mid); box-shadow: none; }
+.ticket.is-pending .ticket-stub { border-left-color: var(--border-mid); color: var(--ink-faded); }
+.ticket.is-pending .ticket-holes i.on { background: var(--terra); border-color: var(--terra); }
+.ticket-bar { height: 8px; border-radius: 999px; background: var(--paper-warm); overflow: hidden; }
+.ticket-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--sol), var(--terra)); }
+.ticket-foot { margin: 0; line-height: 1.55; }
+.ticket-actions { margin: 0; }
+.ticket-actions a.btn-primary { text-decoration: none; color: #fff; }
+.ticket-ca { margin: 0; font-size: 0.8rem; color: var(--ink-faded); overflow-wrap: anywhere; }
+@media (max-width: 420px) { .ticket { --stub-w: 78px; } .ticket-stub b { font-size: 1rem; } .ticket-holes { gap: 4px; } .ticket-holes i { width: 10px; height: 10px; } }
+@media (prefers-reduced-motion: no-preference) {
+  .ticket.is-member { animation: ticket-in 0.5s cubic-bezier(.2,1.4,.4,1) both; }
+  .ticket.is-member .ticket-stamp { animation: stamp-in 0.35s 0.35s cubic-bezier(.2,1.6,.4,1) both; }
+}
+@keyframes ticket-in { from { opacity: 0; transform: translateY(8px) scale(0.97); } }
+@keyframes stamp-in { from { opacity: 0; transform: rotate(-8deg) scale(1.8); } }
