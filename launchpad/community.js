@@ -15,14 +15,16 @@ function card(c) {
   return `<a class="sel-card" href="/launchpad/coin/?mint=${encodeURIComponent(c.mint)}">
     <img src="${API}/img/${encodeURIComponent(c.mint)}" alt="" width="64" height="64" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
     <span><b>${esc(c.ticker)} · ${esc(c.business_name)}</b><small>${esc([c.city, c.country].filter(Boolean).join(', '))}</small>${badge}
-    <small class="sel-stats">${c.holders ? `${Number(c.holders).toLocaleString()} holders` : 'New'}</small></span></a>`;
+    <small class="sel-stats">${c.holders ? `${Number(c.holders).toLocaleString()} holders` : 'New'}${c.burnTier ? ` · <span class="honour h-${c.burnTier.key}">${c.burnTier.emoji} ${c.burnTier.name}</span>` : ''}</small></span></a>`;
 }
 
 async function communityLists() {
   const lists = document.querySelectorAll('[data-community-list]');
   if (!lists.length) return;
   const { coins = [] } = await fetch(`${API}/api/coins`).then((r) => r.json()).catch(() => ({}));
-  const community = coins.filter((c) => !c.team).sort((a, b) => (b.holders || 0) - (a.holders || 0) || b.launched_at - a.launched_at);
+  // Blaze and Inferno launches (2+ SOL committed to the burn) get top placement; then by holders.
+  const top = (c) => (c.burnTier?.rank >= 3 ? c.burnTier.rank : 0);
+  const community = coins.filter((c) => !c.team).sort((a, b) => top(b) - top(a) || (b.holders || 0) - (a.holders || 0) || b.launched_at - a.launched_at);
   if (!community.length) return; // sections stay hidden
   document.querySelectorAll('[data-community-section]').forEach((s) => { s.hidden = false; });
   for (const el of lists) el.innerHTML = community.slice(0, el.dataset.communityList === 'strip' ? 3 : 60).map(card).join('');

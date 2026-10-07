@@ -91,7 +91,7 @@ async function load() {
       <p class="dash-note">Read live from the Solana blockchain and updated every few minutes${usd ? `. Dollar amounts at today's SOL price ($${usd.toFixed(2)})` : ''}. ${c.communityShares ? `<a href="/launchpad/how/#rules">How the community share works</a>` : ''}</p>
     </div>
     <p class="status-line">Launched ${new Date(c.launchedAt * 1000).toLocaleDateString()} by PunchCard's launcher ${acct(c.launcher)}, which gets no creator fees. <a href="/launchpad/coin/?mint=${encodeURIComponent(mint)}">Full token details</a></p>
-    ${Number(c.launchBurnTokens || 0) > 0 ? `<p class="status-line">🔥 <b>Fair launch:</b> the launcher's ${(c.firstBuyLamports / 1e9).toLocaleString()} SOL first buy was capped at 0.5% of the supply; <b>${Math.round(Number(c.launchBurnTokens) / 1e6).toLocaleString()} tokens were burned</b> at launch.${c.burnBadge ? ' <span class="burn-badge">🔥 Burn Badge</span>' : ''}</p>` : ''}
+    ${Number(c.launchBurnTokens || 0) > 0 ? `<p class="status-line">🔥 <b>Fair launch:</b> the launcher's ${(c.firstBuyLamports / 1e9).toLocaleString()} SOL first buy was capped at 0.5% of the supply; <b>${Math.round(Number(c.launchBurnTokens) / 1e6).toLocaleString()} tokens were burned</b> at launch.${c.burnTier ? ` <span class="honour h-${c.burnTier.key}">${c.burnTier.emoji} ${c.burnTier.name}</span>` : ''}</p>` : ''}
     <div id="excluded"></div>`;
   if (c.communityShares) showExcluded().catch(() => {});
 }

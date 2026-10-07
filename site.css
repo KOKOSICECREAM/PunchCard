@@ -524,4 +524,8 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .box.bring { background: var(--ink); }
 .box.bring:hover { transform: translateY(-4px) rotate(-0.4deg); }
 
+.honour { display: inline-block; padding: .05rem .5rem; border-radius: 999px; background: var(--terra-pale); color: var(--terra); font-weight: 700; font-size: .78rem; white-space: nowrap; }
+.honour.h-blaze { background: #f6dcd2; }
+.honour.h-inferno { background: linear-gradient(90deg, #f7d774, #e9a93a); color: #4a2c00; box-shadow: 0 0 0 1px rgba(201,136,30,.5); }
 .burn-badge { display: inline-block; margin-left: .35rem; padding: .1rem .5rem; border-radius: 999px; background: var(--terra-pale); color: var(--terra); font-weight: 700; font-size: .8rem; white-space: nowrap; }
+.next-honour { color: var(--ink-faded); }

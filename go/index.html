@@ -177,6 +177,8 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
   }
+  .burn-line.inferno { background: linear-gradient(90deg, #f7d774, #e9a93a); color: #4a2c00; box-shadow: 0 0 0 2px rgba(233,169,58,.35); }
+  .next-honour { color: var(--ink-faded); }
   .burn-line { margin: 0; justify-self: center; padding: .35rem .8rem; border-radius: 999px; background: var(--terra-pale); color: var(--terra); font-size: .9rem; animation: rise .6s .3s var(--ease) both; }
   .badges { margin: 0; font-size: .9rem; color: var(--ink-mid); }
   [hidden] { display: none !important; }
@@ -394,7 +396,12 @@ async function checkMembership() {
     const usd = `$${Number(m.usd || 0).toFixed(2)}`;
     if (m.member) {
       st.member = true; $('toWhere').hidden = false; buzz([12, 40, 18]);
-      api(`/api/launcher?wallet=${encodeURIComponent(st.wallet)}`).then((l) => { if (l.launches) line.insertAdjacentHTML('beforeend', `<p class="badges">${l.launches} launch${l.launches === 1 ? '' : 'es'}${l.burnBadges ? ` · ${'🔥'.repeat(Math.min(l.burnBadges, 5))} ${l.burnBadges} Burn Badge${l.burnBadges === 1 ? '' : 's'}` : ''}</p>`); }).catch(() => {});
+      api(`/api/launcher?wallet=${encodeURIComponent(st.wallet)}`).then((l) => {
+        if (!l.launches) return;
+        const names = { inferno: '👑🔥 Inferno', blaze: '🔥🔥🔥 Blaze', flame: '🔥🔥 Flame', ember: '🔥 Ember' };
+        const hon = ['inferno', 'blaze', 'flame', 'ember'].filter((k) => l.honours?.[k]).map((k) => `${l.honours[k]}× ${names[k]}`).join(' · ');
+        line.insertAdjacentHTML('beforeend', `<p class="badges">${l.launches} launch${l.launches === 1 ? '' : 'es'}${l.businessesJoined ? ` · ${l.businessesJoined} joined` : ''}${hon ? ` · ${hon}` : ''} · <a href="/launchpad/ambassadors/">Leaderboard</a></p>`);
+      }).catch(() => {});
       line.innerHTML = `<div class="ticket is-member"><div class="ticket-main"><div class="ticket-kicker">PunchCard · Launchpad pass</div>
         <div class="ticket-title">You're a <em>PunchCard Member.</em></div><div class="ticket-meta"><span>Holding <b>${usd}</b> of PUNCH</span></div></div>
         <div class="ticket-stub"><small>Admit one</small><b>Launch</b><span class="ticket-stamp">Member</span></div></div>`;
@@ -482,8 +489,8 @@ function burnPreview(el, buy, f) {
   const keepSol = f.keepSolLamports / 1e9, pct = f.launcherKeepBps / 100;
   if (!(buy > 0)) { el.textContent = `You keep up to ${pct}% of the supply from a first buy (about ${keepSol.toFixed(2)} SOL); anything above that is burned at launch.`; return; }
   if (buy <= keepSol) { el.textContent = `All of it stays in your wallet (under ${pct}% of the supply).`; return; }
-  const badge = buy * 1e9 >= (f.burnBadgeMinLamports || 5e8);
-  el.innerHTML = `🔥 You keep ${pct}% of the supply; about <b>${Math.round((1 - keepSol / buy) * 100)}%</b> of this buy is burned at launch.${badge ? ' <b>Earns the Burn Badge.</b>' : ''}`;
+  const h = [[3, '👑🔥 Inferno, the highest honour'], [2, '🔥🔥🔥 Blaze'], [1, '🔥🔥 Flame'], [0.5, '🔥 Ember']].find(([min]) => buy >= min);
+  el.innerHTML = `🔥 You keep ${pct}% of the supply; about <b>${Math.round((1 - keepSol / buy) * 100)}%</b> of this buy is burned at launch.${h ? ` Earns <b>${h[1]}</b>.` : ''}${buy < 3 ? ' <span class="next-honour">3 SOL earns 👑🔥 Inferno.</span>' : ''}`;
 }
 $('devbuy').addEventListener('input', showCost);
 api('/api/fees').then((f) => { cost.f = f; if (f.launchFeeLamports != null) cost.fee = f.launchFeeLamports / 1e9; if (f.networkCostLamports) cost.net = f.networkCostLamports / 1e9; showCost(); }).catch(() => {});
@@ -600,7 +607,8 @@ function done() {
   const tokenUrl = `${SITE}/launchpad/coin/?mint=${st.mint}`, claimUrl = `${SITE}/launchpad/claim/?mint=${st.mint}`;
   $('doneTicker').textContent = `$${$('ticker').value.trim()}`;
   $('doneBiz').textContent = `A community token for ${st.business.name}.`;
-  if (st.burned > 0) { $('doneBurn').innerHTML = `🔥 ${Math.round(st.burned / 1e6).toLocaleString()} tokens burned at launch${st.firstBuy >= 0.5 ? ' · <b>Burn Badge earned!</b>' : ''}`; $('doneBurn').hidden = false; } else $('doneBurn').hidden = true;
+  const h = st.burned > 0 && [[3, '👑🔥 Inferno'], [2, '🔥🔥🔥 Blaze'], [1, '🔥🔥 Flame'], [0.5, '🔥 Ember']].find(([min]) => st.firstBuy >= min);
+  if (st.burned > 0) { $('doneBurn').innerHTML = `🔥 ${Math.round(st.burned / 1e6).toLocaleString()} tokens burned at launch${h ? ` · <b>${h[1]} earned!</b>` : ''}`; $('doneBurn').classList.toggle('inferno', st.firstBuy >= 3); $('doneBurn').hidden = false; } else $('doneBurn').hidden = true;
   qrImg(tokenUrl).then((u) => reveal($('qrToken'), $('qrToken').closest('.qr'), u));
   $('openToken').href = tokenUrl;
   $('ownerH').textContent = st.business.name;

@@ -250,8 +250,8 @@ function burnPreview(el, buy, f) {
   const keepSol = f.keepSolLamports / 1e9, pct = f.launcherKeepBps / 100;
   if (!(buy > 0)) { el.textContent = `You keep up to ${pct}% of the supply from a first buy (about ${keepSol.toFixed(2)} SOL); anything above that is burned at launch.`; return; }
   if (buy <= keepSol) { el.textContent = `All of it stays in your wallet (under ${pct}% of the supply).`; return; }
-  const badge = buy * 1e9 >= (f.burnBadgeMinLamports || 5e8);
-  el.innerHTML = `🔥 You keep ${pct}% of the supply; about <b>${Math.round((1 - keepSol / buy) * 100)}%</b> of this buy is burned at launch.${badge ? ' <b>Earns the Burn Badge.</b>' : ''}`;
+  const h = [[3, '👑🔥 Inferno, the highest honour'], [2, '🔥🔥🔥 Blaze'], [1, '🔥🔥 Flame'], [0.5, '🔥 Ember']].find(([min]) => buy >= min);
+  el.innerHTML = `🔥 You keep ${pct}% of the supply; about <b>${Math.round((1 - keepSol / buy) * 100)}%</b> of this buy is burned at launch.${h ? ` Earns <b>${h[1]}</b>.` : ''}${buy < 3 ? ' <span class="next-honour">3 SOL earns 👑🔥 Inferno.</span>' : ''}`;
 }
 $('devbuy').addEventListener('input', showCost);
 api('/api/fees').then((f) => {
