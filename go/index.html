@@ -59,6 +59,8 @@
   .done-hero { text-align: center; display: grid; gap: 0.4rem; }
   .done-hero .tick { font-size: 2.6rem; }
   .qr-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .qr-pair.one { grid-template-columns: minmax(0, 220px); justify-content: center; }
+  .owner-card .big { width: 100%; }
   .qr { display: grid; gap: 0.4rem; justify-items: center; padding: 0.75rem; border-radius: 12px; background: #fff; border: 1px solid var(--border-mid); text-align: center; }
   .qr img { width: 100%; max-width: 180px; height: auto; image-rendering: pixelated; }
   .qr b { font-size: 0.85rem; color: #1c1812; }
@@ -66,6 +68,15 @@
   .wallet-links { display: grid; gap: 0.6rem; }
   .ticket { --notch: var(--paper); }
   .go .member-status { padding: 0; background: none; border: 0; }
+  .btn-primary.terra { background: var(--terra); border-color: var(--terra); }
+  .owner-view { position: fixed; inset: 0; z-index: 50; background: #fff; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 1rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1rem); overflow-y: auto; }
+  .owner-card { width: 100%; max-width: 420px; display: grid; gap: 0.7rem; justify-items: center; text-align: center; color: #1c1812; }
+  .owner-kicker { margin: 0; font-family: 'Courier Prime', monospace; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6b6255; }
+  .owner-card h2 { margin: 0; font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.6rem, 7vw, 2.1rem); line-height: 1.15; text-wrap: balance; }
+  .owner-card img { width: min(78vw, 340px); height: auto; image-rendering: pixelated; }
+  .owner-big { margin: 0; font-weight: 700; font-size: 1.15rem; }
+  .owner-small { margin: 0; color: #4a4438; line-height: 1.5; font-size: 0.95rem; }
+  .owner-url { margin: 0; font-family: 'Courier Prime', monospace; font-size: 0.75rem; color: #8c8070; overflow-wrap: anywhere; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -144,15 +155,27 @@
   <!-- 5. Done -->
   <section id="s-done" hidden aria-labelledby="h-done">
     <div class="done-hero"><div class="tick">🎉</div><h1 id="h-done"><span id="doneTicker"></span> <em>is live!</em></h1><p class="lede" id="doneBiz"></p></div>
-    <div class="qr-pair">
+    <div class="qr-pair one">
       <div class="qr"><img id="qrToken" alt="QR code for the token page"><b>Fans: the token</b><small>Scan to see it and buy</small></div>
-      <div class="qr"><img id="qrClaim" alt="QR code for the owner's claim page"><b>Owner: claim fees</b><small>Scan to start getting paid</small></div>
     </div>
-    <p class="muted">Show the owner the right-hand code. When they claim and verify, they get 90% of the creator fees, and you earn your Bring them in reward.</p>
+    <button class="btn-primary terra big" id="showOwner" type="button">👋 Show the owner</button>
+    <p class="muted">The owner scans it with their phone camera, no app needed. It opens the claim page on punchcard.club. When they verify, they get 90% of the creator fees, and you earn your Bring them in reward.</p>
     <div class="row"><button class="btn-secondary big" id="share" type="button">Share</button><a class="btn-secondary big" id="openToken" href="#">Open page</a></div>
     <button class="btn-primary sol big" id="again" type="button">Launch another</button>
   </section>
 </main>
+
+<div class="owner-view" id="ownerView" hidden role="dialog" aria-modal="true" aria-labelledby="ownerH">
+  <div class="owner-card">
+    <p class="owner-kicker">For the owner of</p>
+    <h2 id="ownerH"></h2>
+    <img id="qrOwner" alt="QR code for the claim page">
+    <p class="owner-big">📷 Scan with your phone camera</p>
+    <p class="owner-small">Your customers made a token for your business. Every trade earns creator fees, and <b>90% are yours</b> once you verify. It takes a few minutes: you’ll add a short code to your website.</p>
+    <p class="owner-url" id="ownerUrl"></p>
+    <button class="btn-secondary big" id="closeOwner" type="button">Done</button>
+  </div>
+</div>
 
 <script type="module">
 import { $, esc, api, connectWallet, signTx, imageToPng, short, businessSearch, businessQuery, hasWallet, CLUSTER } from '/launchpad/lp.js';
@@ -317,14 +340,24 @@ function done() {
   const tokenUrl = `${SITE}/launchpad/coin/?mint=${st.mint}`, claimUrl = `${SITE}/launchpad/claim/?mint=${st.mint}`;
   $('doneTicker').textContent = `$${$('ticker').value.trim()}`;
   $('doneBiz').textContent = `A community token for ${st.business.name}.`;
-  $('qrToken').src = qrImg(tokenUrl); $('qrClaim').src = qrImg(claimUrl);
+  $('qrToken').src = qrImg(tokenUrl);
   $('openToken').href = tokenUrl;
+  $('ownerH').textContent = st.business.name;
+  $('qrOwner').src = qrImg(claimUrl);
+  $('ownerUrl').textContent = claimUrl.replace('https://', '');
   $('share').onclick = async () => {
     const data = { title: `$${$('ticker').value.trim()} on PunchCard`, text: `A community token for ${st.business.name}. Every trade helps the business.`, url: tokenUrl };
     try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(tokenUrl); $('share').textContent = 'Link copied'; } } catch { /* dismissed */ }
   };
   show('s-done');
 }
+// Full-screen QR for the owner; keeps the screen awake while it's up (where the phone allows).
+let wake = null;
+$('showOwner').addEventListener('click', async () => {
+  $('ownerView').hidden = false;
+  try { wake = await navigator.wakeLock?.request('screen'); } catch { /* not allowed here */ }
+});
+$('closeOwner').addEventListener('click', () => { $('ownerView').hidden = true; wake?.release?.().catch(() => {}); wake = null; });
 $('again').addEventListener('click', () => {
   Object.assign(st, { place: null, business: null, image: null, mint: null });
   for (const id of ['name', 'ticker', 'desc', 'maps']) $(id).value = '';
