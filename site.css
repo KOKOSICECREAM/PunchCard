@@ -543,3 +543,4 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .hmark.lg i { width: 11px; height: 11px; }
 .hmark.gold i { background: radial-gradient(circle at 45% 40%, #ffd98a 0 14%, #d4561a 42%, #4a0f04 100%); box-shadow: 0 0 4px rgba(212,86,26,.9), inset 0 0 0 1px rgba(74,15,4,.35); }
 .status-line .ico, .burn-line .ico, #burnHint .ico, .gostat .ico { color: var(--terra); width: 1.05em; height: 1.05em; }
+.boxes-note a { color: var(--sol); font-weight: 600; }
