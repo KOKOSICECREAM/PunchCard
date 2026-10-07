@@ -81,14 +81,125 @@
   .owner-big { margin: 0; font-weight: 700; font-size: 1.15rem; }
   .owner-small { margin: 0; color: #4a4438; line-height: 1.5; font-size: 0.95rem; }
   .owner-url { margin: 0; font-family: 'Courier Prime', monospace; font-size: 0.75rem; color: #8c8070; overflow-wrap: anywhere; }
+  /* ===== Motion system ===== */
+  :root { --ease: cubic-bezier(.2,.9,.2,1); --spring: cubic-bezier(.34,1.56,.64,1); }
+  body { background: radial-gradient(120% 60% at 50% -10%, rgba(61,90,74,0.10), transparent 60%), radial-gradient(90% 50% at 110% 110%, rgba(168,58,32,0.08), transparent 60%), var(--paper); background-attachment: fixed; }
+  .go { position: relative; }
+  .go section { will-change: transform, opacity; }
+  .go .big { transition: transform .18s var(--ease), box-shadow .25s var(--ease), filter .2s; }
+  .go .big:active:not(:disabled) { transform: scale(.97); }
+  .go .btn-primary.big:not(:disabled) { box-shadow: 0 10px 24px -12px rgba(28,24,18,.55); }
+  .go .btn-primary.sheen { position: relative; overflow: hidden; }
+  .go .btn-primary.sheen:not(:disabled)::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.28) 50%, transparent 65%); transform: translateX(-100%); animation: sheen 3.2s 1s infinite; }
+  @keyframes sheen { 0%, 60% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+  /* header: back button + punch-hole progress */
+  .go-back { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border-mid); background: var(--paper-card); color: var(--ink); font-size: 1.1rem; display: grid; place-items: center; cursor: pointer; transition: transform .2s var(--ease), opacity .25s; }
+  .go-back:active { transform: scale(.9); }
+  .go-back { overflow: hidden; transition: transform .2s var(--ease), opacity .25s, width .3s var(--ease), margin .3s var(--ease), border-width .3s; }
+  .go-back[aria-hidden="true"] { opacity: 0; pointer-events: none; width: 0; border-width: 0; margin-right: -0.5rem; }
+  .go-left { display: flex; align-items: center; gap: 0.5rem; }
+  .go-track { position: relative; display: flex; gap: 10px; align-items: center; padding: 0 2px; }
+  .go-track::before { content: ''; position: absolute; left: 6px; right: 6px; top: 50%; height: 2px; background: var(--border-mid); transform: translateY(-50%); }
+  .go-track .fill { position: absolute; left: 6px; top: 50%; height: 2px; background: var(--sol); transform: translateY(-50%); width: 0; transition: width .5s var(--ease); }
+  .go-track i { position: relative; width: 12px; height: 12px; border-radius: 50%; background: var(--paper); border: 2px solid var(--border-mid); transition: border-color .3s, background .3s; }
+  .go-track i.on { background: var(--sol); border-color: var(--sol); animation: punch .45s var(--spring); }
+  .go-track i.on.last { background: #93c2a4; border-color: #93c2a4; }
+  @keyframes punch { 0% { transform: scale(.4); } 60% { transform: scale(1.35); } 100% { transform: scale(1); } }
+  /* busy indicator: four holes punching in turn */
+  .punch-load { display: inline-flex; gap: 4px; vertical-align: -1px; margin-right: 0.45rem; }
+  .punch-load i { width: 8px; height: 8px; border-radius: 50%; background: var(--sol); opacity: .25; animation: hole 1s infinite; }
+  .punch-load i:nth-child(2) { animation-delay: .12s; } .punch-load i:nth-child(3) { animation-delay: .24s; } .punch-load i:nth-child(4) { animation-delay: .36s; background: #93c2a4; }
+  @keyframes hole { 0%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1.15); } }
+  .places li { animation: rise .5s var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+  .places button { transition: transform .18s var(--ease), border-color .2s, background .2s; }
+  .places button:active { transform: scale(.98); }
+  .biz-card, #bizPicked { animation: rise .45s var(--ease) both; }
+  .photo { transition: transform .3s var(--spring), border-color .3s; }
+  .photo:active { transform: scale(.96); }
+  .photo.has { animation: pop .5s var(--spring); }
+  @keyframes pop { 0% { transform: scale(.85); } 100% { transform: scale(1); } }
+  .qr img, .owner-card #qrOwner { opacity: 0; transform: scale(.92); transition: opacity .6s var(--ease), transform .7s var(--spring); }
+  .qr img.in, .owner-card #qrOwner.in { opacity: 1; transform: none; }
+  .qr { position: relative; overflow: hidden; }
+  .qr.sweep::after, .owner-qr.sweep::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.75) 48%, transparent 66%); transform: translateX(-120%); animation: sweep 1.1s .25s var(--ease) forwards; pointer-events: none; }
+  @keyframes sweep { to { transform: translateX(120%); } }
+  .owner-qr { position: relative; overflow: hidden; border-radius: 18px; }
+  .owner-view { animation: fadein .35s var(--ease); }
+  .owner-card > * { animation: rise .55s var(--ease) both; }
+  .owner-card > *:nth-child(2) { animation-delay: .05s; } .owner-card > *:nth-child(3) { animation-delay: .1s; } .owner-card > *:nth-child(4) { animation-delay: .15s; } .owner-card > *:nth-child(n+5) { animation-delay: .25s; }
+  .owner-card #qrOwner.in { animation: glow 2.6s 1.2s ease-in-out infinite; }
+  @keyframes glow { 50% { box-shadow: 6px 6px 0 #a83a20, 0 0 0 8px rgba(147,194,164,.35); } }
+  @keyframes fadein { from { opacity: 0; } }
+  /* ===== Splash ===== */
+  .splash { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: radial-gradient(80% 60% at 50% 45%, #fbf8f2, #efe8db); }
+  .splash-inner { display: grid; justify-items: center; gap: 1.1rem; }
+  .splash .pc-logo { width: 132px; height: 132px; overflow: visible; filter: drop-shadow(0 18px 30px rgba(28,24,18,.25)); }
+  .pc-card { transform-origin: 256px 256px; animation: card-in .7s var(--spring) both; }
+  @keyframes card-in { from { transform: scale(.55) rotate(-10deg); opacity: 0; } }
+  .pc-hole { fill: #f6efe2; transform-box: fill-box; transform-origin: center; animation: hole-in .42s var(--spring) both; animation-delay: calc(.45s + var(--k) * .13s); }
+  .pc-hole.last { animation-name: hole-in, go-green; animation-duration: .42s, .4s; animation-delay: calc(.45s + 3 * .13s), 1.05s; animation-fill-mode: both, forwards; }
+  @keyframes hole-in { from { transform: scale(0); } 70% { transform: scale(1.25); } }
+  @keyframes go-green { to { fill: #93c2a4; } }
+  .pc-p { animation: p-in .6s .8s var(--ease) both; }
+  @keyframes p-in { from { opacity: 0; transform: translateY(40px); } }
+  .splash-ring { position: absolute; width: 132px; height: 132px; border-radius: 28px; border: 2px solid rgba(61,90,74,.5); animation: ring 1s 1.15s var(--ease) both; }
+  @keyframes ring { from { transform: scale(1); opacity: .9; } to { transform: scale(2.1); opacity: 0; } }
+  .splash-word { display: flex; gap: 0.35rem; align-items: baseline; font-family: 'Special Elite', cursive; font-size: 1.9rem; color: var(--ink); overflow: hidden; }
+  .splash-word > * { display: inline-block; animation: word-in .55s var(--ease) both; }
+  .splash-word b { color: var(--terra); font-weight: 400; animation-delay: 1.02s; } .splash-word span:first-child { animation-delay: .95s; }
+  .splash-word .go-word { font-family: 'Courier Prime', monospace; font-weight: 700; font-size: 1rem; letter-spacing: .14em; color: #fff; background: var(--sol); padding: .2rem .55rem; border-radius: 999px; animation-delay: 1.18s; align-self: center; }
+  @keyframes word-in { from { opacity: 0; transform: translateY(110%); } }
+  .splash-tag { font-family: 'Lora', serif; font-style: italic; color: var(--ink-mid); animation: rise .6s 1.3s var(--ease) both; }
+  .splash.out { animation: splash-out .55s var(--ease) forwards; }
+  @keyframes splash-out { to { opacity: 0; transform: scale(1.06); filter: blur(6px); visibility: hidden; } }
+  /* ===== Launch sequence ===== */
+  .lx { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: radial-gradient(70% 50% at 50% 40%, #2a2419, #14110c 70%); color: #f6efe2; animation: fadein .35s var(--ease); }
+  .lx-inner { display: grid; justify-items: center; gap: 1.4rem; text-align: center; padding: 1.5rem; max-width: 420px; }
+  .lx .pc-logo { width: 150px; height: 150px; overflow: visible; filter: drop-shadow(0 0 40px rgba(179,71,43,.45)); animation: breathe 2.4s ease-in-out infinite; }
+  .lx .pc-card, .lx .pc-p { animation: none; }
+  .lx .pc-hole { animation: none; fill: rgba(246,239,226,.16); transition: fill .3s; }
+  .lx .pc-hole.on { fill: #f6efe2; animation: hole-in .5s var(--spring); }
+  .lx .pc-hole.last.on { fill: #93c2a4; }
+  @keyframes breathe { 50% { transform: scale(1.04); } }
+  .lx-phase { font-family: 'Special Elite', cursive; font-size: 1.55rem; min-height: 2.2em; display: grid; place-items: center; }
+  .lx-phase span { animation: phase .45s var(--ease) both; }
+  @keyframes phase { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } }
+  .lx-sub { font-family: 'Courier Prime', monospace; font-size: .8rem; letter-spacing: .08em; color: rgba(246,239,226,.6); min-height: 1.2em; }
+  .lx-bar { width: 220px; height: 3px; border-radius: 3px; background: rgba(246,239,226,.12); overflow: hidden; }
+  .lx-bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #b3472b, #93c2a4); transition: width .8s var(--ease); }
+  .lx.out { animation: splash-out .6s var(--ease) forwards; }
+  .confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 95; pointer-events: none; }
+  .done-hero .tick { animation: pop .6s var(--spring) both; }
+  .done-hero h1 { animation: rise .6s .1s var(--ease) both; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+  }
   [hidden] { display: none !important; }
 </style>
 </head>
 <body>
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="splash-inner">
+    <div class="splash-ring"></div>
+    <svg class="pc-logo " viewBox="0 0 512 512" aria-hidden="true">
+      <defs><mask id="sp-notch"><rect width="512" height="512" fill="#fff"/><circle cx="512" cy="258" r="36" fill="#000"/></mask></defs>
+      <rect class="pc-card" width="512" height="512" rx="60" fill="#b3472b" mask="url(#sp-notch)"/>
+      <circle class="pc-hole" style="--k:0" cx="88" cy="108" r="36"/><circle class="pc-hole" style="--k:1" cx="88" cy="206" r="36"/>
+      <circle class="pc-hole" style="--k:2" cx="88" cy="303" r="36"/><circle class="pc-hole last" style="--k:3" cx="88" cy="406" r="36"/>
+      <path class="pc-p" fill="#f6efe2" fill-rule="evenodd" d="M170 92a18 18 0 0 1 18-18H300a121 121 0 0 1 0 242H258V430a18 18 0 0 1-18 18H188a18 18 0 0 1-18-18Z M297 148a50 50 0 1 0 0.01 0Z"/>
+    </svg>
+    <div class="splash-word"><span>Punch</span><b>Card</b><span class="go-word">GO</span></div>
+    <div class="splash-tag">Support the businesses you love.</div>
+  </div>
+</div>
 <main class="go">
   <div class="go-top">
-    <a class="go-brand" href="/go/"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> Go</span></a>
-    <div class="go-dots" aria-hidden="true" id="dots"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="go-left">
+      <button class="go-back" id="back" type="button" aria-label="Back" aria-hidden="true" tabindex="-1">‹</button>
+      <a class="go-brand" href="/go/"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> Go</span></a>
+    </div>
+    <div class="go-track" aria-hidden="true" id="dots"><span class="fill"></span><i></i><i></i><i></i><i></i><i class="last"></i></div>
   </div>
   <div class="go-net" id="netBanner" hidden>TEST NETWORK · devnet · not real money</div>
 
@@ -151,7 +262,7 @@
       <div class="total"><span>Total from your wallet</span><b>~<span id="costTotal">0.035</span> SOL</b></div>
     </div>
     <label class="check"><input type="checkbox" id="terms"> I agree to PunchCard’s <a href="/terms/" target="_blank">Terms and Launch Rules</a> and pump.fun’s <a href="https://pump.fun/docs/terms-and-conditions" target="_blank" rel="noopener">Terms of Use</a>. I have the rights to this name, ticker, description and image, and I won’t suggest the business or PunchCard is behind this token.</label>
-    <button class="btn-primary sol big" id="launch" type="button" disabled>🚀 Launch token</button>
+    <button class="btn-primary sol big sheen" id="launch" type="button" disabled>🚀 Launch token</button>
     <p class="gostat" id="launchStatus" role="status"></p>
     <p class="muted">Community tokens are launched by users, not by PunchCard or the businesses they name. A token isn’t affiliated with a business until its owner claims it.</p>
   </section>
@@ -162,19 +273,35 @@
     <div class="qr-pair one">
       <div class="qr"><img id="qrToken" alt="QR code for the token page"><b>Fans: the token</b><small>Scan to see it and buy</small></div>
     </div>
-    <button class="btn-primary terra big" id="showOwner" type="button">👋 Show the owner</button>
+    <button class="btn-primary terra big sheen" id="showOwner" type="button">👋 Show the owner</button>
     <p class="muted">The owner scans it with their phone camera, no app needed. It opens the claim page on punchcard.club. When they verify, they get 90% of the creator fees, and you earn your Bring them in reward.</p>
     <div class="row"><button class="btn-secondary big" id="share" type="button">Share</button><a class="btn-secondary big" id="openToken" href="#">Open page</a></div>
     <button class="btn-primary sol big" id="again" type="button">Launch another</button>
   </section>
 </main>
 
+<div class="lx" id="lx" hidden role="status" aria-live="polite">
+  <div class="lx-inner">
+    <svg class="pc-logo " viewBox="0 0 512 512" aria-hidden="true">
+      <defs><mask id="lx-notch"><rect width="512" height="512" fill="#fff"/><circle cx="512" cy="258" r="36" fill="#000"/></mask></defs>
+      <rect class="pc-card" width="512" height="512" rx="60" fill="#b3472b" mask="url(#lx-notch)"/>
+      <circle class="pc-hole" style="--k:0" cx="88" cy="108" r="36"/><circle class="pc-hole" style="--k:1" cx="88" cy="206" r="36"/>
+      <circle class="pc-hole" style="--k:2" cx="88" cy="303" r="36"/><circle class="pc-hole last" style="--k:3" cx="88" cy="406" r="36"/>
+      <path class="pc-p" fill="#f6efe2" fill-rule="evenodd" d="M170 92a18 18 0 0 1 18-18H300a121 121 0 0 1 0 242H258V430a18 18 0 0 1-18 18H188a18 18 0 0 1-18-18Z M297 148a50 50 0 1 0 0.01 0Z"/>
+    </svg>
+    <div class="lx-phase" id="lxPhase"></div>
+    <div class="lx-bar"><span id="lxBar"></span></div>
+    <div class="lx-sub" id="lxSub"></div>
+  </div>
+</div>
+<canvas class="confetti" id="confetti" hidden></canvas>
+
 <div class="owner-view" id="ownerView" hidden role="dialog" aria-modal="true" aria-labelledby="ownerH">
   <div class="owner-card">
     <div class="owner-brand"><img src="/brand/punchcard.svg" alt="" width="34" height="34"><span>Punch<b>Card</b></span></div>
     <p class="owner-kicker">For the owner of</p>
     <h2 id="ownerH"></h2>
-    <img id="qrOwner" alt="QR code for the claim page">
+    <div class="owner-qr" id="ownerQr"><img id="qrOwner" alt="QR code for the claim page"></div>
     <p class="owner-big">📷 Scan with your phone camera</p>
     <p class="owner-tag">Support the businesses you love.</p>
     <p class="owner-small">Your customers made a token for your business. Every trade earns creator fees, and <b>90% are yours</b> once you verify. It takes a few minutes: you’ll add a short code to your website.</p>
@@ -192,12 +319,46 @@ const STEPS = ['s-open', 's-wallet', 's-where', 's-token', 's-launch', 's-done']
 const st = { wallet: null, member: false, place: null, business: null, image: null, mint: null };
 
 $('netBanner').hidden = CLUSTER !== 'devnet';
-function show(id) {
-  for (const s of STEPS) $(s).hidden = s !== id;
-  const n = Math.max(0, STEPS.indexOf(id) - 1);
-  [...$('dots').children].forEach((d, i) => d.classList.toggle('on', i <= n && id !== 's-open'));
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const buzz = (p) => { try { navigator.vibrate?.(p); } catch { /* not supported */ } };
+const busy = (el, text) => { el.className = 'gostat'; el.innerHTML = `<span class="punch-load" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${esc(text)}`; };
+
+// Screens slide and fade; children cascade in. Forward slides left, back slides right.
+let current = null;
+const trail = [];
+const BACKABLE = new Set(['s-where', 's-token', 's-launch']);
+function show(id, { back = false } = {}) {
+  if (id === current) return;
+  const from = current ? $(current) : null, to = $(id), dir = back ? -1 : 1;
+  if (current && !back && id !== 's-open') trail.push(current);
+  current = id;
+  const enter = () => {
+    if (current !== id) return; // a newer screen change won
+    for (const s of STEPS) $(s).hidden = s !== id;
+    window.scrollTo({ top: 0 });
+    if (!RM && !document.hidden) { // never leave a screen half-faded while the app is in the background
+      to.animate([{ opacity: 0, transform: `translateX(${28 * dir}px)`, filter: 'blur(3px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }], { duration: 420, easing: 'cubic-bezier(.2,.9,.2,1)' });
+      [...to.children].forEach((c, i) => c.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 60 + i * 45, easing: 'cubic-bezier(.2,.9,.2,1)', fill: 'backwards' }));
+    }
+  };
+  if (from && !from.hidden && !RM && !document.hidden) from.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-20 * dir}px)` }], { duration: 170, easing: 'ease-in' }).finished.then(enter);
+  else enter();
+  // header: punch-hole progress + back button
+  const n = Math.max(-1, STEPS.indexOf(id) - 1), holes = [...$('dots').querySelectorAll('i')];
+  holes.forEach((d, i) => { const on = i <= n && id !== 's-open'; if (on && !d.classList.contains('on')) d.style.animationDelay = `${(i - (n - 1)) * 60}ms`; d.classList.toggle('on', on); });
+  $('dots').querySelector('.fill').style.width = id === 's-open' || n <= 0 ? '0' : `calc(${(n / 4) * 100}% - ${(n / 4) * 12}px)`;
+  const canBack = BACKABLE.has(id) && trail.length > 0;
+  $('back').setAttribute('aria-hidden', String(!canBack)); $('back').tabIndex = canBack ? 0 : -1;
 }
+$('back').addEventListener('click', () => { const prev = trail.pop(); if (prev) { buzz(8); show(prev, { back: true }); } });
+
+// Splash: the PunchCard card drops in, its holes get punched, then the app glides in.
+const splashDone = new Promise((res) => {
+  const sp = $('splash'), t0 = performance.now(), MIN = RM ? 300 : 1750;
+  const finish = () => { if (sp.classList.contains('out')) return; sp.classList.add('out'); setTimeout(() => { sp.remove(); res(); }, RM ? 0 : 420); };
+  sp.addEventListener('click', finish); // tap to skip
+  setTimeout(finish, MIN);
+});
 
 // ---------- 0. Inside a wallet? ----------
 const here = location.href.split('#')[0];
@@ -209,7 +370,7 @@ const browse = {
 $('walletLinks').innerHTML = Object.entries(browse).map(([n, u]) => `<a class="btn-secondary big" href="${esc(u)}">Open in ${n}</a>`).join('')
   + (CLUSTER === 'devnet' ? '<p class="muted">On the test network, use Solflare: Phantom’s phone app can’t sign test-network launches yet.</p>' : '');
 $('tryHere').addEventListener('click', (e) => { e.preventDefault(); show('s-wallet'); });
-setTimeout(() => show(hasWallet() ? 's-wallet' : 's-open'), 600); // wallets can register a moment after load
+splashDone.then(() => show(hasWallet() ? 's-wallet' : 's-open')); // wallets register during the splash
 
 // ---------- 1. Rep wallet + Membership ----------
 $('connect').addEventListener('click', async () => {
@@ -221,14 +382,14 @@ $('connect').addEventListener('click', async () => {
   } catch (e) { $('walletStatus').textContent = e.message; }
 });
 async function checkMembership() {
-  const line = $('memberLine'); line.hidden = false; line.textContent = 'Checking your Membership…';
+  const line = $('memberLine'); line.hidden = false; busy(line, 'Checking your Membership…');
   st.member = false; $('toWhere').hidden = true;
   try {
     const m = await api(`/api/membership?wallet=${encodeURIComponent(st.wallet)}`);
     if (!m.requiredUsd) { st.member = true; line.hidden = true; $('toWhere').hidden = false; return; }
     const usd = `$${Number(m.usd || 0).toFixed(2)}`;
     if (m.member) {
-      st.member = true; $('toWhere').hidden = false;
+      st.member = true; $('toWhere').hidden = false; buzz([12, 40, 18]);
       line.innerHTML = `<div class="ticket is-member"><div class="ticket-main"><div class="ticket-kicker">PunchCard · Launchpad pass</div>
         <div class="ticket-title">You're a <em>PunchCard Member.</em></div><div class="ticket-meta"><span>Holding <b>${usd}</b> of PUNCH</span></div></div>
         <div class="ticket-stub"><small>Admit one</small><b>Launch</b><span class="ticket-stamp">Member</span></div></div>`;
@@ -245,11 +406,11 @@ async function checkMembership() {
     $('recheck')?.addEventListener('click', checkMembership);
   } catch (e) { line.innerHTML = `<p class="gostat bad">${esc(e.message)}</p>`; }
 }
-$('toWhere').addEventListener('click', () => show('s-where'));
+$('toWhere').addEventListener('click', () => { buzz(8); show('s-where'); });
 
 // ---------- 2. Where are you? ----------
 const pickPlace = async (maps, label) => {
-  $('whereStatus').className = 'gostat'; $('whereStatus').textContent = `Checking ${label || 'the business'}…`;
+  busy($('whereStatus'), `Checking ${label || 'the business'}…`);
   $('bizPicked').hidden = true;
   try {
     const r = await api('/api/business', { maps });
@@ -268,12 +429,12 @@ const pickPlace = async (maps, label) => {
 };
 $('locate').addEventListener('click', () => {
   if (!navigator.geolocation) { $('whereStatus').textContent = 'Location isn’t available here. Search by name below.'; return; }
-  $('whereStatus').className = 'gostat'; $('whereStatus').textContent = 'Finding where you are…';
+  busy($('whereStatus'), 'Finding where you are…');
   navigator.geolocation.getCurrentPosition(async (p) => {
     try {
       const r = await api('/api/places/nearby', { lat: p.coords.latitude, lng: p.coords.longitude });
-      $('nearby').innerHTML = (r.places || []).map((x, i) => `<li><button type="button" data-i="${i}"><b>${esc(x.name)}</b><span>${esc(x.detail)}</span></button></li>`).join('');
-      $('nearby').onclick = (e) => { const b = e.target.closest('button'); if (b) { const x = r.places[b.dataset.i]; pickPlace(x.placeId, x.name); } };
+      $('nearby').innerHTML = (r.places || []).map((x, i) => `<li style="--i:${i}"><button type="button" data-i="${i}"><b>${esc(x.name)}</b><span>${esc(x.detail)}</span></button></li>`).join('');
+      $('nearby').onclick = (e) => { const b = e.target.closest('button'); if (b) { buzz(8); const x = r.places[b.dataset.i]; pickPlace(x.placeId, x.name); } };
       $('whereStatus').textContent = r.places?.length ? 'Tap the business you’re in:' : 'Nothing found right here. Search by name below.';
     } catch (e) { $('whereStatus').className = 'gostat bad'; $('whereStatus').textContent = e.message; }
   }, () => { $('whereStatus').textContent = 'Couldn’t get your location (allow it for this page, or search by name below).'; }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
@@ -283,7 +444,7 @@ $('maps').addEventListener('keydown', (e) => { if (e.key === 'Enter' && $('maps'
 $('toToken').addEventListener('click', () => {
   if (!$('name').value) $('name').value = `${st.business.name} Fans`.slice(0, 32);
   if (!$('ticker').value) $('ticker').value = st.business.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
-  show('s-token');
+  buzz(8); show('s-token');
 });
 
 // ---------- 3. The token ----------
@@ -299,7 +460,7 @@ $('toLaunch').addEventListener('click', () => {
   if (!/^[A-Z0-9]{2,10}$/.test(ticker)) return ($('tokenStatus').textContent = 'The ticker needs 2 to 10 letters or numbers.');
   $('tokenStatus').textContent = '';
   $('sumName').textContent = `${name} · $${ticker}`; $('sumBiz').textContent = st.business.name;
-  show('s-launch');
+  buzz(8); show('s-launch');
 });
 
 // ---------- 4. Launch ----------
@@ -318,22 +479,26 @@ $('launch').addEventListener('click', async () => {
   const devBuySol = Number($('devbuy').value || 0);
   if (!(devBuySol >= 0 && devBuySol <= 3)) return (s.textContent = 'The first buy must be between 0 and 3 SOL.');
   $('launch').disabled = true;
+  const lx = launchSequence();
   try {
-    s.textContent = 'Preparing the launch…';
+    s.textContent = '';
+    lx.phase(0, 'Preparing your launch', 'packing name · ticker · photo');
     const imageBase64 = st.image ? await imageToPng(st.image) : undefined;
     let res;
     for (let attempt = 1; ; attempt++) {
       const prep = await api('/api/launch/prepare', { maps: st.place, coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
         description: $('desc').value.trim(), launcher: st.wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION });
-      s.textContent = attempt > 1 ? 'That took a little long. Please approve the fresh launch in your wallet…' : 'Approve the launch in your wallet…';
+      lx.phase(1, attempt > 1 ? 'Approve the fresh launch' : 'Approve in your wallet', `mint ${short(prep.mint)}`);
       const signed = await signTx(prep.tx);
-      s.textContent = 'Launching on Solana… (10–30 seconds)';
+      lx.phase(2, 'Launching on Solana', 'registering · creating · usually 10–30 seconds');
       try { res = await api('/api/launch/submit', { mint: prep.mint, tx: signed }); break; }
       catch (e) { if (attempt < 2 && /blockhash|expired|block height/i.test(e.message)) continue; throw e; }
     }
     st.mint = res.mint;
+    await lx.live();
     done();
   } catch (e) {
+    lx.close();
     s.className = 'gostat bad';
     s.textContent = /reject|cancel/i.test(e.message) ? 'Cancelled in the wallet. Nothing was launched.' : e.message;
     canLaunch();
@@ -371,25 +536,67 @@ async function qrImg(text, px = 720) {
   if (img) g.drawImage(img, bx + cell * 0.6, bx + cell * 0.6, box - cell * 1.2, box - cell * 1.2);
   return c.toDataURL('image/png');
 }
+// Full-screen launch sequence: the holes get punched as each phase completes.
+function launchSequence() {
+  const el = $('lx'), holes = [...el.querySelectorAll('.pc-hole')];
+  el.hidden = false; el.classList.remove('out');
+  holes.forEach((h) => h.classList.remove('on'));
+  const set = (k, text, sub) => {
+    holes.forEach((h, i) => h.classList.toggle('on', i <= k));
+    $('lxPhase').innerHTML = `<span>${esc(text)}</span>`; $('lxSub').textContent = sub || '';
+    $('lxBar').style.width = `${((k + 1) / 4) * 100}%`;
+  };
+  return {
+    phase(k, text, sub) { buzz(10); set(k, text, sub); },
+    async live() {
+      set(3, 'It’s live!', 'on Solana · pump.fun'); buzz([20, 50, 30]);
+      await new Promise((r) => setTimeout(r, RM ? 200 : 1100));
+      el.classList.add('out'); setTimeout(() => { el.hidden = true; }, 600);
+    },
+    close() { el.hidden = true; },
+  };
+}
+function confetti() {
+  if (RM || document.hidden) return;
+  const c = $('confetti'), g = c.getContext('2d'), dpr = devicePixelRatio || 1;
+  c.hidden = false; c.width = innerWidth * dpr; c.height = innerHeight * dpr; g.scale(dpr, dpr);
+  const colors = ['#b3472b', '#3d5a4a', '#93c2a4', '#f6efe2', '#1c1812'];
+  const bits = Array.from({ length: 140 }, () => ({ x: innerWidth / 2 + (Math.random() - 0.5) * 60, y: innerHeight * 0.32, vx: (Math.random() - 0.5) * 12, vy: -Math.random() * 13 - 4,
+    r: 4 + Math.random() * 6, c: colors[Math.floor(Math.random() * colors.length)], round: Math.random() < 0.5, spin: Math.random() * 6, vs: (Math.random() - 0.5) * 0.4 }));
+  const t0 = performance.now();
+  (function frame(t) {
+    const age = (t - t0) / 1000; g.clearRect(0, 0, innerWidth, innerHeight);
+    for (const b of bits) {
+      b.vy += 0.38; b.vx *= 0.99; b.x += b.vx; b.y += b.vy; b.spin += b.vs;
+      g.save(); g.globalAlpha = Math.max(0, 1 - age / 2.4); g.translate(b.x, b.y); g.rotate(b.spin); g.fillStyle = b.c;
+      if (b.round) { g.beginPath(); g.arc(0, 0, b.r / 2, 0, Math.PI * 2); g.fill(); } else g.fillRect(-b.r / 2, -b.r / 4, b.r, b.r / 2);
+      g.restore();
+    }
+    if (age < 2.4) requestAnimationFrame(frame); else c.hidden = true;
+  })(t0);
+}
+const reveal = (img, wrap, url) => { img.classList.remove('in'); wrap?.classList.remove('sweep'); img.onload = () => { img.classList.add('in'); void wrap?.offsetWidth; wrap?.classList.add('sweep'); }; img.src = url; };
 function done() {
   const tokenUrl = `${SITE}/launchpad/coin/?mint=${st.mint}`, claimUrl = `${SITE}/launchpad/claim/?mint=${st.mint}`;
   $('doneTicker').textContent = `$${$('ticker').value.trim()}`;
   $('doneBiz').textContent = `A community token for ${st.business.name}.`;
-  qrImg(tokenUrl).then((u) => { $('qrToken').src = u; });
+  qrImg(tokenUrl).then((u) => reveal($('qrToken'), $('qrToken').closest('.qr'), u));
   $('openToken').href = tokenUrl;
   $('ownerH').textContent = st.business.name;
-  qrImg(claimUrl).then((u) => { $('qrOwner').src = u; });
+  qrImg(claimUrl).then((u) => { $('qrOwner').dataset.url = u; });
   $('ownerUrl').textContent = claimUrl.replace('https://', '');
   $('share').onclick = async () => {
     const data = { title: `$${$('ticker').value.trim()} on PunchCard`, text: `A community token for ${st.business.name}. Every trade helps the business.`, url: tokenUrl };
     try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(tokenUrl); $('share').textContent = 'Link copied'; } } catch { /* dismissed */ }
   };
   show('s-done');
+  setTimeout(confetti, 120);
 }
 // Full-screen QR for the owner; keeps the screen awake while it's up (where the phone allows).
 let wake = null;
 $('showOwner').addEventListener('click', async () => {
-  $('ownerView').hidden = false;
+  $('ownerView').hidden = false; buzz(10);
+  if ($('qrOwner').dataset.url) reveal($('qrOwner'), $('ownerQr'), $('qrOwner').dataset.url);
   try { wake = await navigator.wakeLock?.request('screen'); } catch { /* not allowed here */ }
 });
 $('closeOwner').addEventListener('click', () => { $('ownerView').hidden = true; wake?.release?.().catch(() => {}); wake = null; });
@@ -399,6 +606,7 @@ $('again').addEventListener('click', () => {
   $('devbuy').value = '0'; $('terms').checked = false; $('launch').disabled = true; $('img').value = '';
   $('photo').style.backgroundImage = ''; $('photo').classList.remove('has');
   $('nearby').innerHTML = ''; $('bizPicked').hidden = true; $('launchStatus').textContent = '';
+  trail.length = 0; trail.push('s-wallet');
   show('s-where');
 });
 
