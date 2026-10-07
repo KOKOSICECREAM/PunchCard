@@ -133,21 +133,23 @@
   @keyframes fadein { from { opacity: 0; } }
   /* ===== Splash ===== */
   .splash { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: radial-gradient(80% 60% at 50% 45%, #fbf8f2, #efe8db); }
-  .splash-inner { display: grid; justify-items: center; gap: 1.1rem; }
+  .splash-inner { position: relative; display: grid; justify-items: center; gap: 1.1rem; }
+  .splash-mark { position: relative; width: 132px; height: 132px; }
+  .splash-mark .pc-logo { display: block; width: 100%; height: 100%; }
   .splash .pc-logo { width: 132px; height: 132px; overflow: visible; filter: drop-shadow(0 18px 30px rgba(28,24,18,.25)); }
-  .pc-card { transform-origin: 256px 256px; animation: card-in .9s var(--spring) both; }
+  .pc-card { transform-box: fill-box; transform-origin: center; animation: card-in .9s var(--spring) both; }
   @keyframes card-in { from { transform: scale(.55) rotate(-10deg); opacity: 0; } }
   .pc-hole { fill: #f6efe2; transform-box: fill-box; transform-origin: center; animation: hole-in .5s var(--spring) both; animation-delay: calc(.7s + var(--k) * .22s); }
   .pc-hole.last { animation-name: hole-in, go-green; animation-duration: .5s, .5s; animation-delay: calc(.7s + 3 * .22s), 1.6s; animation-fill-mode: both, forwards; }
   @keyframes hole-in { from { transform: scale(0); } 70% { transform: scale(1.25); } }
   @keyframes go-green { to { fill: #93c2a4; } }
-  .pc-p { animation: p-in .8s 1.15s var(--ease) both; }
+  .pc-p { transform-box: fill-box; animation: p-in .8s 1.15s var(--ease) both; }
   @keyframes p-in { from { opacity: 0; transform: translateY(40px); } }
-  .splash-ring { position: absolute; width: 132px; height: 132px; border-radius: 28px; border: 2px solid rgba(61,90,74,.5); animation: ring 1.2s 1.75s var(--ease) both; }
+  .splash-ring { position: absolute; inset: 0; border-radius: 28px; transform-origin: center; border: 2px solid rgba(61,90,74,.5); animation: ring 1.2s 1.75s var(--ease) both; }
   @keyframes ring { from { transform: scale(1); opacity: .9; } to { transform: scale(2.1); opacity: 0; } }
   .splash-word { display: flex; gap: 0.35rem; align-items: baseline; font-family: 'Special Elite', cursive; font-size: 1.9rem; color: var(--ink); overflow: hidden; }
   .splash-word > * { display: inline-block; animation: word-in .7s var(--ease) both; }
-  .splash-word b { color: var(--terra); font-weight: 400; animation-delay: 1.72s; } .splash-word span:first-child { animation-delay: 1.6s; }
+  .splash-word b { color: var(--terra); font-weight: 400; } .splash-word .wm { animation-delay: 1.6s; }
   .splash-word .go-word { font-family: 'Courier Prime', monospace; font-weight: 700; font-size: 1rem; letter-spacing: .14em; color: #fff; background: var(--sol); padding: .2rem .55rem; border-radius: 999px; animation-delay: 1.95s; align-self: center; }
   @keyframes word-in { from { opacity: 0; transform: translateY(110%); } }
   .splash-tag { font-family: 'Lora', serif; font-style: italic; color: var(--ink-mid); animation: rise .8s 2.15s var(--ease) both; }
@@ -181,15 +183,15 @@
 <body>
 <div class="splash" id="splash" aria-hidden="true">
   <div class="splash-inner">
-    <div class="splash-ring"></div>
+    <div class="splash-mark"><div class="splash-ring"></div>
     <svg class="pc-logo " viewBox="0 0 512 512" aria-hidden="true">
       <defs><mask id="sp-notch"><rect width="512" height="512" fill="#fff"/><circle cx="512" cy="258" r="36" fill="#000"/></mask></defs>
       <rect class="pc-card" width="512" height="512" rx="60" fill="#b3472b" mask="url(#sp-notch)"/>
       <circle class="pc-hole" style="--k:0" cx="88" cy="108" r="36"/><circle class="pc-hole" style="--k:1" cx="88" cy="206" r="36"/>
       <circle class="pc-hole" style="--k:2" cx="88" cy="303" r="36"/><circle class="pc-hole last" style="--k:3" cx="88" cy="406" r="36"/>
       <path class="pc-p" fill="#f6efe2" fill-rule="evenodd" d="M170 92a18 18 0 0 1 18-18H300a121 121 0 0 1 0 242H258V430a18 18 0 0 1-18 18H188a18 18 0 0 1-18-18Z M297 148a50 50 0 1 0 0.01 0Z"/>
-    </svg>
-    <div class="splash-word"><span>Punch</span><b>Card</b><span class="go-word">GO</span></div>
+    </svg></div>
+    <div class="splash-word"><span class="wm">Punch<b>Card</b></span><span class="go-word">GO</span></div>
     <div class="splash-tag">Support the businesses you love.</div>
   </div>
 </div>
@@ -516,7 +518,12 @@ async function qrImg(text, px = 720) {
   const g = c.getContext('2d');
   const INK = '#1c1812', RED = '#a83a20', GREEN = '#3d5a4a';
   g.fillStyle = '#ffffff'; g.fillRect(0, 0, size, size);
-  const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); g.fill(); };
+  const rr = (x, y, w, h, r) => { // roundRect is missing on iOS 15 and older: draw the corners by hand there
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x, y, w, h, r);
+    else { r = Math.min(r, w / 2, h / 2); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+    g.fill();
+  };
   const inEye = (r, k) => (r < 7 && k < 7) || (r < 7 && k >= n - 7) || (r >= n - 7 && k < 7);
   const mid = n / 2, hole = Math.ceil(n * 0.24) / 2; // centre area kept clear for the logo
   g.fillStyle = INK;
