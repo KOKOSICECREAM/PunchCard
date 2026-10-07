@@ -1,7 +1,15 @@
 // Shared helpers for the Community Launchpad pages: API, wallet, formatting.
 // Wallets only SIGN; our backend submits, so the wallet's network setting doesn't matter.
-export const API = 'https://punchcard-launchpad.quiet-mode-468e.workers.dev';
-export const CLUSTER = 'mainnet';
+// PunchCard Go (/go/) can be tried on the test network with ?net=devnet (remembered for the tab).
+const GO_DEVNET = (() => {
+  try {
+    if (!location.pathname.startsWith('/go/')) return false;
+    if (new URLSearchParams(location.search).get('net') === 'devnet') sessionStorage.setItem('pc-go-net', 'devnet');
+    return sessionStorage.getItem('pc-go-net') === 'devnet';
+  } catch { return false; }
+})();
+export const API = GO_DEVNET ? 'https://punchcard-launchpad-devnet.quiet-mode-468e.workers.dev' : 'https://punchcard-launchpad.quiet-mode-468e.workers.dev';
+export const CLUSTER = GO_DEVNET ? 'devnet' : 'mainnet';
 
 export const $ = (id) => document.getElementById(id);
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -46,6 +54,9 @@ const LEGACY = [
   ['Backpack', () => window.backpack],
   ['Solana wallet', () => window.solana],
 ];
+
+/** True once any Solana wallet is available on this page (injected or Wallet Standard). */
+export const hasWallet = () => listWallets().length > 0;
 
 function listWallets() {
   const out = standardWallets.map((w) => ({ name: w.name, icon: w.icon, std: w }));
