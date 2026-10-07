@@ -513,3 +513,13 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 }
 @keyframes ticket-in { from { opacity: 0; transform: translateY(8px) scale(0.97); } }
 @keyframes stamp-in { from { opacity: 0; transform: rotate(-8deg) scale(1.8); } }
+
+/* Launchpad: four steps, three doors */
+.pitch-steps.four { grid-template-columns: repeat(4, 1fr); max-width: 1140px; }
+@media (max-width: 980px) { .pitch-steps.four { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .pitch-steps.four { grid-template-columns: 1fr; } }
+.pitch-steps span a { color: var(--sol); }
+.boxes.doors-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 980px) { .boxes.doors-3 { grid-template-columns: 1fr; } }
+.box.bring { background: var(--ink); }
+.box.bring:hover { transform: translateY(-4px) rotate(-0.4deg); }
