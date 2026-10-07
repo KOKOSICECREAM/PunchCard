@@ -523,3 +523,5 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 @media (max-width: 980px) { .boxes.doors-3 { grid-template-columns: 1fr; } }
 .box.bring { background: var(--ink); }
 .box.bring:hover { transform: translateY(-4px) rotate(-0.4deg); }
+
+.burn-badge { display: inline-block; margin-left: .35rem; padding: .1rem .5rem; border-radius: 999px; background: var(--terra-pale); color: var(--terra); font-weight: 700; font-size: .8rem; white-space: nowrap; }

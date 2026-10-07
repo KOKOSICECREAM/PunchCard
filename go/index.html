@@ -177,6 +177,8 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
   }
+  .burn-line { margin: 0; justify-self: center; padding: .35rem .8rem; border-radius: 999px; background: var(--terra-pale); color: var(--terra); font-size: .9rem; animation: rise .6s .3s var(--ease) both; }
+  .badges { margin: 0; font-size: .9rem; color: var(--ink-mid); }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -245,7 +247,7 @@
   <section id="s-token" hidden aria-labelledby="h-token">
     <h1 id="h-token">Make it <em>theirs.</em></h1>
     <label class="photo" id="photo">Tap to take a photo<br>of the shop or logo<input id="img" type="file" accept="image/*" capture="environment"></label>
-    <div class="field"><label for="name">Token name</label><input id="name" maxlength="32" placeholder="Rosie's Bagels Fans"></div>
+    <div class="field"><label for="name">Token name</label><input id="name" maxlength="24" placeholder="Rosie's Bagels Fans"></div>
     <div class="field"><label for="ticker">Ticker</label><input id="ticker" maxlength="10" placeholder="ROSIE" autocapitalize="characters"></div>
     <div class="field"><label for="desc">A line about the place <span class="hint">(optional)</span></label><textarea id="desc" maxlength="500" rows="3" placeholder="Best bagels on the block since 1998."></textarea></div>
     <button class="btn-primary sol big" id="toLaunch" type="button">Next →</button>
@@ -256,7 +258,7 @@
   <section id="s-launch" hidden aria-labelledby="h-launch">
     <h1 id="h-launch">Ready to <em>launch.</em></h1>
     <div class="biz-card"><b id="sumName"></b><span id="sumBiz"></span></div>
-    <div class="field"><label for="devbuy">Your first buy (SOL, optional)</label><input id="devbuy" type="number" inputmode="decimal" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span></div>
+    <div class="field"><label for="devbuy">Your first buy (SOL, optional)</label><input id="devbuy" type="number" inputmode="decimal" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span><span class="hint" id="burnHint"></span></div>
     <div class="cost">
       <div><span>PunchCard launch fee</span><b><span id="costFee">0.02</span> SOL</b></div>
       <div><span>Network costs (estimate)</span><b>~<span id="costNet">0.015</span> SOL</b></div>
@@ -271,7 +273,7 @@
 
   <!-- 5. Done -->
   <section id="s-done" hidden aria-labelledby="h-done">
-    <div class="done-hero"><div class="tick">🎉</div><h1 id="h-done"><span id="doneTicker"></span> <em>is live!</em></h1><p class="lede" id="doneBiz"></p></div>
+    <div class="done-hero"><div class="tick">🎉</div><h1 id="h-done"><span id="doneTicker"></span> <em>is live!</em></h1><p class="lede" id="doneBiz"></p><p class="burn-line" id="doneBurn" hidden></p></div>
     <div class="qr-pair one">
       <div class="qr"><img id="qrToken" alt="QR code for the token page"><b>Fans: the token</b><small>Scan to see it and buy</small></div>
     </div>
@@ -392,6 +394,7 @@ async function checkMembership() {
     const usd = `$${Number(m.usd || 0).toFixed(2)}`;
     if (m.member) {
       st.member = true; $('toWhere').hidden = false; buzz([12, 40, 18]);
+      api(`/api/launcher?wallet=${encodeURIComponent(st.wallet)}`).then((l) => { if (l.launches) line.insertAdjacentHTML('beforeend', `<p class="badges">${l.launches} launch${l.launches === 1 ? '' : 'es'}${l.burnBadges ? ` · ${'🔥'.repeat(Math.min(l.burnBadges, 5))} ${l.burnBadges} Burn Badge${l.burnBadges === 1 ? '' : 's'}` : ''}</p>`); }).catch(() => {});
       line.innerHTML = `<div class="ticket is-member"><div class="ticket-main"><div class="ticket-kicker">PunchCard · Launchpad pass</div>
         <div class="ticket-title">You're a <em>PunchCard Member.</em></div><div class="ticket-meta"><span>Holding <b>${usd}</b> of PUNCH</span></div></div>
         <div class="ticket-stub"><small>Admit one</small><b>Launch</b><span class="ticket-stamp">Member</span></div></div>`;
@@ -471,9 +474,19 @@ const fmt = (v) => String(Math.round(v * 10000) / 10000);
 const showCost = () => {
   const buy = Math.min(Math.max(Number($('devbuy').value || 0), 0), 3);
   $('costFee').textContent = fmt(cost.fee); $('costNet').textContent = fmt(cost.net); $('costBuy').textContent = fmt(buy); $('costTotal').textContent = fmt(cost.fee + cost.net + buy);
+  burnPreview($('burnHint'), buy, cost.f);
 };
+// Fair launch preview: the launcher keeps at most keepBps of the supply; the rest of the first buy is burned.
+function burnPreview(el, buy, f) {
+  if (!el || !f || f.launcherKeepBps == null || !f.keepSolLamports) { if (el) el.textContent = ''; return; }
+  const keepSol = f.keepSolLamports / 1e9, pct = f.launcherKeepBps / 100;
+  if (!(buy > 0)) { el.textContent = `You keep up to ${pct}% of the supply from a first buy (about ${keepSol.toFixed(2)} SOL); anything above that is burned at launch.`; return; }
+  if (buy <= keepSol) { el.textContent = `All of it stays in your wallet (under ${pct}% of the supply).`; return; }
+  const badge = buy * 1e9 >= (f.burnBadgeMinLamports || 5e8);
+  el.innerHTML = `🔥 You keep ${pct}% of the supply; about <b>${Math.round((1 - keepSol / buy) * 100)}%</b> of this buy is burned at launch.${badge ? ' <b>Earns the Burn Badge.</b>' : ''}`;
+}
 $('devbuy').addEventListener('input', showCost);
-api('/api/fees').then((f) => { if (f.launchFeeLamports != null) cost.fee = f.launchFeeLamports / 1e9; if (f.networkCostLamports) cost.net = f.networkCostLamports / 1e9; showCost(); }).catch(() => {});
+api('/api/fees').then((f) => { cost.f = f; if (f.launchFeeLamports != null) cost.fee = f.launchFeeLamports / 1e9; if (f.networkCostLamports) cost.net = f.networkCostLamports / 1e9; showCost(); }).catch(() => {});
 const canLaunch = () => { $('launch').disabled = !(st.wallet && st.member && $('terms').checked); };
 $('terms').addEventListener('change', canLaunch);
 $('launch').addEventListener('click', async () => {
@@ -496,7 +509,7 @@ $('launch').addEventListener('click', async () => {
       try { res = await api('/api/launch/submit', { mint: prep.mint, tx: signed }); break; }
       catch (e) { if (attempt < 2 && /blockhash|expired|block height/i.test(e.message)) continue; throw e; }
     }
-    st.mint = res.mint;
+    st.mint = res.mint; st.burned = Number(res.burnTokens || 0); st.firstBuy = devBuySol;
     await lx.live();
     done();
   } catch (e) {
@@ -587,6 +600,7 @@ function done() {
   const tokenUrl = `${SITE}/launchpad/coin/?mint=${st.mint}`, claimUrl = `${SITE}/launchpad/claim/?mint=${st.mint}`;
   $('doneTicker').textContent = `$${$('ticker').value.trim()}`;
   $('doneBiz').textContent = `A community token for ${st.business.name}.`;
+  if (st.burned > 0) { $('doneBurn').innerHTML = `🔥 ${Math.round(st.burned / 1e6).toLocaleString()} tokens burned at launch${st.firstBuy >= 0.5 ? ' · <b>Burn Badge earned!</b>' : ''}`; $('doneBurn').hidden = false; } else $('doneBurn').hidden = true;
   qrImg(tokenUrl).then((u) => reveal($('qrToken'), $('qrToken').closest('.qr'), u));
   $('openToken').href = tokenUrl;
   $('ownerH').textContent = st.business.name;

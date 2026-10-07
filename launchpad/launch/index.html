@@ -49,16 +49,16 @@
   <section class="panel" aria-labelledby="s2" id="coinPanel" hidden>
     <h2 id="s2"><span class="step-num">2</span>Your community token</h2>
     <div class="row2">
-      <div class="field"><label for="name">Token name</label><input id="name" maxlength="32" placeholder="Rosie's Bagels Fans"></div>
+      <div class="field"><label for="name">Token name</label><input id="name" maxlength="24" placeholder="Rosie's Bagels Fans"></div>
       <div class="field"><label for="ticker">Ticker</label><input id="ticker" maxlength="10" placeholder="ROSIE"></div>
     </div>
     <div class="field"><label for="desc">Description <span class="hint">(optional)</span></label><textarea id="desc" maxlength="500" placeholder="Why this place matters to you."></textarea></div>
     <div class="row2">
       <div class="field"><label for="img">Image <span class="hint">(optional, square works best)</span></label><input id="img" type="file" accept="image/*"></div>
-      <div class="field"><label for="devbuy">Your first buy (SOL)</label><input id="devbuy" type="number" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span></div>
+      <div class="field"><label for="devbuy">Your first buy (SOL)</label><input id="devbuy" type="number" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span><span class="hint" id="burnHint"></span></div>
     </div>
     <div class="notice ok"><b>Bring them in.</b> If the business claims your token, your launch wallet earns 10% of PunchCard's fee from it for as long as it trades. <a href="/launchpad/how/#bring-them-in">How it works</a></div>
-    <div class="notice ok"><b>Fair launch.</b> Launching takes a <a href="/launchpad/how/#membership">PunchCard Membership</a>. You get no share of the fees. Your first buy is capped at 3 SOL, and your wallet is left out of holder rewards. One token per business.</div>
+    <div class="notice ok"><b>Fair launch.</b> Launching takes a <a href="/launchpad/how/#membership">PunchCard Membership</a>. You get no share of the fees. Your first buy is capped at 3 SOL and you keep at most 0.5% of the supply: anything above that is burned at launch (first buys of 0.5 SOL or more earn the 🔥 Burn Badge), and your wallet is left out of holder rewards. One token per business.</div>
   </section>
 
   <section class="panel" aria-labelledby="s3" id="launchPanel" hidden>
@@ -242,9 +242,20 @@ function showCost() {
   const buy = Math.min(Math.max(Number($('devbuy').value || 0), 0), 3);
   $('costFee').textContent = fmt(cost.fee); $('costNet').textContent = fmt(cost.net);
   $('costBuy').textContent = fmt(buy); $('costTotal').textContent = fmt(cost.fee + cost.net + buy);
+  burnPreview($('burnHint'), buy, cost.f);
+}
+// Fair launch preview: the launcher keeps at most keepBps of the supply; the rest of the first buy is burned.
+function burnPreview(el, buy, f) {
+  if (!el || !f || f.launcherKeepBps == null || !f.keepSolLamports) { if (el) el.textContent = ''; return; }
+  const keepSol = f.keepSolLamports / 1e9, pct = f.launcherKeepBps / 100;
+  if (!(buy > 0)) { el.textContent = `You keep up to ${pct}% of the supply from a first buy (about ${keepSol.toFixed(2)} SOL); anything above that is burned at launch.`; return; }
+  if (buy <= keepSol) { el.textContent = `All of it stays in your wallet (under ${pct}% of the supply).`; return; }
+  const badge = buy * 1e9 >= (f.burnBadgeMinLamports || 5e8);
+  el.innerHTML = `🔥 You keep ${pct}% of the supply; about <b>${Math.round((1 - keepSol / buy) * 100)}%</b> of this buy is burned at launch.${badge ? ' <b>Earns the Burn Badge.</b>' : ''}`;
 }
 $('devbuy').addEventListener('input', showCost);
 api('/api/fees').then((f) => {
+  cost.f = f;
   if (f.launchFeeLamports != null) cost.fee = f.launchFeeLamports / 1e9;
   if (f.networkCostLamports != null) cost.net = f.networkCostLamports / 1e9;
   if (f.treasury) { $('treasuryLink').textContent = short(f.treasury); $('treasuryLink').href = explorer('account', f.treasury); }
