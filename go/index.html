@@ -172,11 +172,19 @@
   .lx-bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #b3472b, #93c2a4); transition: width .8s var(--ease); }
   .lx.out { animation: splash-out .6s var(--ease) forwards; }
   .confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 95; pointer-events: none; }
-  .done-hero .tick { animation: pop .6s var(--spring) both; }
+  .done-hero .tick { animation: pop .6s var(--spring) both; display: grid; justify-items: center; }
+  .done-mark { width: 76px; height: 76px; filter: drop-shadow(0 10px 18px rgba(28,24,18,.22)); }
+  .done-mark .dh { fill: #f6efe2; transform-box: fill-box; transform-origin: center; animation: hole-in .45s var(--spring) both; animation-delay: calc(.2s + var(--k) * .12s); }
+  .done-mark .dh.last { animation-name: hole-in, go-green; animation-duration: .45s, .4s; animation-delay: .56s, .8s; animation-fill-mode: both, forwards; }
+  .go .btn-primary .ico, .owner-big .ico { width: 1.25em; height: 1.25em; }
   .done-hero h1 { animation: rise .6s .1s var(--ease) both; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
   }
+  .burn-line.inferno { background: linear-gradient(90deg, #f7d774, #e9a93a); color: #4a2c00; box-shadow: 0 0 0 2px rgba(233,169,58,.35); }
+  .next-honour { color: var(--ink-faded); }
+  .burn-line { margin: 0; justify-self: center; padding: .35rem .8rem; border-radius: 999px; background: var(--terra-pale); color: var(--terra); font-size: .9rem; animation: rise .6s .3s var(--ease) both; }
+  .badges { margin: 0; font-size: .9rem; color: var(--ink-mid); }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -227,7 +235,7 @@
   <!-- 2. Where are you? -->
   <section id="s-where" hidden aria-labelledby="h-where">
     <h1 id="h-where">Where <em>are you?</em></h1>
-    <button class="btn-primary sol big" id="locate" type="button">📍 Find businesses around me</button>
+    <button class="btn-primary sol big" id="locate" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg> Find businesses around me</button>
     <ul class="places" id="nearby"></ul>
     <div class="field">
       <label for="maps">Or search by name</label>
@@ -245,7 +253,7 @@
   <section id="s-token" hidden aria-labelledby="h-token">
     <h1 id="h-token">Make it <em>theirs.</em></h1>
     <label class="photo" id="photo">Tap to take a photo<br>of the shop or logo<input id="img" type="file" accept="image/*" capture="environment"></label>
-    <div class="field"><label for="name">Token name</label><input id="name" maxlength="32" placeholder="Rosie's Bagels Fans"></div>
+    <div class="field"><label for="name">Token name</label><input id="name" maxlength="24" placeholder="Rosie's Bagels Fans"></div>
     <div class="field"><label for="ticker">Ticker</label><input id="ticker" maxlength="10" placeholder="ROSIE" autocapitalize="characters"></div>
     <div class="field"><label for="desc">A line about the place <span class="hint">(optional)</span></label><textarea id="desc" maxlength="500" rows="3" placeholder="Best bagels on the block since 1998."></textarea></div>
     <button class="btn-primary sol big" id="toLaunch" type="button">Next →</button>
@@ -256,7 +264,7 @@
   <section id="s-launch" hidden aria-labelledby="h-launch">
     <h1 id="h-launch">Ready to <em>launch.</em></h1>
     <div class="biz-card"><b id="sumName"></b><span id="sumBiz"></span></div>
-    <div class="field"><label for="devbuy">Your first buy (SOL, optional)</label><input id="devbuy" type="number" inputmode="decimal" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span></div>
+    <div class="field"><label for="devbuy">Your first buy (SOL, optional)</label><input id="devbuy" type="number" inputmode="decimal" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span><span class="hint" id="burnHint"></span></div>
     <div class="cost">
       <div><span>PunchCard launch fee</span><b><span id="costFee">0.02</span> SOL</b></div>
       <div><span>Network costs (estimate)</span><b>~<span id="costNet">0.015</span> SOL</b></div>
@@ -264,18 +272,18 @@
       <div class="total"><span>Total from your wallet</span><b>~<span id="costTotal">0.035</span> SOL</b></div>
     </div>
     <label class="check"><input type="checkbox" id="terms"> I agree to PunchCard’s <a href="/terms/" target="_blank">Terms and Launch Rules</a> and pump.fun’s <a href="https://pump.fun/docs/terms-and-conditions" target="_blank" rel="noopener">Terms of Use</a>. I have the rights to this name, ticker, description and image, and I won’t suggest the business or PunchCard is behind this token.</label>
-    <button class="btn-primary sol big sheen" id="launch" type="button" disabled>🚀 Launch token</button>
+    <button class="btn-primary sol big sheen" id="launch" type="button" disabled><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="11" rx="2.5"/><circle cx="7" cy="14" r=".6"/><circle cx="7" cy="17.5" r=".6"/><path d="M14 17.5V3m-4 4 4-4 4 4"/></svg> Launch token</button>
     <p class="gostat" id="launchStatus" role="status"></p>
     <p class="muted">Community tokens are launched by users, not by PunchCard or the businesses they name. A token isn’t affiliated with a business until its owner claims it.</p>
   </section>
 
   <!-- 5. Done -->
   <section id="s-done" hidden aria-labelledby="h-done">
-    <div class="done-hero"><div class="tick">🎉</div><h1 id="h-done"><span id="doneTicker"></span> <em>is live!</em></h1><p class="lede" id="doneBiz"></p></div>
+    <div class="done-hero"><div class="tick"><svg class="pc-logo done-mark" viewBox="0 0 512 512" aria-hidden="true"><defs><mask id="dn-notch"><rect width="512" height="512" fill="#fff"/><circle cx="512" cy="258" r="36" fill="#000"/></mask></defs><rect width="512" height="512" rx="60" fill="#b3472b" mask="url(#dn-notch)"/><circle class="dh" style="--k:0" cx="88" cy="108" r="36"/><circle class="dh" style="--k:1" cx="88" cy="206" r="36"/><circle class="dh" style="--k:2" cx="88" cy="303" r="36"/><circle class="dh last" style="--k:3" cx="88" cy="406" r="36"/><path fill="#f6efe2" fill-rule="evenodd" d="M170 92a18 18 0 0 1 18-18H300a121 121 0 0 1 0 242H258V430a18 18 0 0 1-18 18H188a18 18 0 0 1-18-18Z M297 148a50 50 0 1 0 0.01 0Z"/></svg></div><h1 id="h-done"><span id="doneTicker"></span> <em>is live!</em></h1><p class="lede" id="doneBiz"></p><p class="burn-line" id="doneBurn" hidden></p></div>
     <div class="qr-pair one">
       <div class="qr"><img id="qrToken" alt="QR code for the token page"><b>Fans: the token</b><small>Scan to see it and buy</small></div>
     </div>
-    <button class="btn-primary terra big sheen" id="showOwner" type="button">👋 Show the owner</button>
+    <button class="btn-primary terra big sheen" id="showOwner" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM21 14v.01M14 21h.01M17 21h4v-3"/></svg> Show the owner</button>
     <p class="muted">The owner scans it with their phone camera, no app needed. It opens the claim page on punchcard.club. When they verify, they get 90% of the creator fees, and you earn your Bring them in reward.</p>
     <div class="row"><button class="btn-secondary big" id="share" type="button">Share</button><a class="btn-secondary big" id="openToken" href="#">Open page</a></div>
     <button class="btn-primary sol big" id="again" type="button">Launch another</button>
@@ -304,7 +312,7 @@
     <p class="owner-kicker">For the owner of</p>
     <h2 id="ownerH"></h2>
     <div class="owner-qr" id="ownerQr"><img id="qrOwner" alt="QR code for the claim page"></div>
-    <p class="owner-big">📷 Scan with your phone camera</p>
+    <p class="owner-big"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="14" r="3.5"/></svg> Scan with your phone camera</p>
     <p class="owner-tag">Support the businesses you love.</p>
     <p class="owner-small">Your customers made a token for your business. Every trade earns creator fees, and <b>90% are yours</b> once you verify. It takes a few minutes: you’ll add a short code to your website.</p>
     <p class="owner-url" id="ownerUrl"></p>
@@ -313,6 +321,7 @@
 </div>
 
 <script type="module">
+import { honourFor, honourPill, honourMark, HONOURS, ICONS } from '/launchpad/icons.js';
 import { $, esc, api, connectWallet, signTx, imageToPng, short, businessSearch, businessQuery, hasWallet, CLUSTER } from '/launchpad/lp.js';
 
 const TERMS_VERSION = '2026-10-01';
@@ -392,6 +401,11 @@ async function checkMembership() {
     const usd = `$${Number(m.usd || 0).toFixed(2)}`;
     if (m.member) {
       st.member = true; $('toWhere').hidden = false; buzz([12, 40, 18]);
+      api(`/api/launcher?wallet=${encodeURIComponent(st.wallet)}`).then((l) => {
+        if (!l.launches) return;
+        const hon = HONOURS.filter((h) => l.honours?.[h.key]).map((h) => `${l.honours[h.key]}× ${honourPill(h)}`).join(' · ');
+        line.insertAdjacentHTML('beforeend', `<p class="badges">${l.launches} launch${l.launches === 1 ? '' : 'es'}${l.businessesJoined ? ` · ${l.businessesJoined} joined` : ''}${hon ? ` · ${hon}` : ''} · <a href="/launchpad/ambassadors/">Leaderboard</a></p>`);
+      }).catch(() => {});
       line.innerHTML = `<div class="ticket is-member"><div class="ticket-main"><div class="ticket-kicker">PunchCard · Launchpad pass</div>
         <div class="ticket-title">You're a <em>PunchCard Member.</em></div><div class="ticket-meta"><span>Holding <b>${usd}</b> of PUNCH</span></div></div>
         <div class="ticket-stub"><small>Admit one</small><b>Launch</b><span class="ticket-stamp">Member</span></div></div>`;
@@ -471,9 +485,19 @@ const fmt = (v) => String(Math.round(v * 10000) / 10000);
 const showCost = () => {
   const buy = Math.min(Math.max(Number($('devbuy').value || 0), 0), 3);
   $('costFee').textContent = fmt(cost.fee); $('costNet').textContent = fmt(cost.net); $('costBuy').textContent = fmt(buy); $('costTotal').textContent = fmt(cost.fee + cost.net + buy);
+  burnPreview($('burnHint'), buy, cost.f);
 };
+// Fair launch preview: the launcher keeps at most keepBps of the supply; the rest of the first buy is burned.
+function burnPreview(el, buy, f) {
+  if (!el || !f || f.launcherKeepBps == null || !f.keepSolLamports) { if (el) el.textContent = ''; return; }
+  const keepSol = f.keepSolLamports / 1e9, pct = f.launcherKeepBps / 100;
+  if (!(buy > 0)) { el.textContent = `You keep up to ${pct}% of the supply from a first buy (about ${keepSol.toFixed(2)} SOL); anything above that is burned at launch.`; return; }
+  if (buy <= keepSol) { el.textContent = `All of it stays in your wallet (under ${pct}% of the supply).`; return; }
+  const h = honourFor(buy);
+  el.innerHTML = `${ICONS.flame} You keep ${pct}% of the supply; about <b>${Math.round((1 - keepSol / buy) * 100)}%</b> of this buy is burned at launch.${h ? ` Earns ${honourPill(h)}${h.rank === 4 ? ', the highest honour' : ''}.` : ''}${buy < 3 ? ` <span class="next-honour">3 SOL earns ${honourPill(HONOURS[0])}.</span>` : ''}`;
+}
 $('devbuy').addEventListener('input', showCost);
-api('/api/fees').then((f) => { if (f.launchFeeLamports != null) cost.fee = f.launchFeeLamports / 1e9; if (f.networkCostLamports) cost.net = f.networkCostLamports / 1e9; showCost(); }).catch(() => {});
+api('/api/fees').then((f) => { cost.f = f; if (f.launchFeeLamports != null) cost.fee = f.launchFeeLamports / 1e9; if (f.networkCostLamports) cost.net = f.networkCostLamports / 1e9; showCost(); }).catch(() => {});
 const canLaunch = () => { $('launch').disabled = !(st.wallet && st.member && $('terms').checked); };
 $('terms').addEventListener('change', canLaunch);
 $('launch').addEventListener('click', async () => {
@@ -496,7 +520,7 @@ $('launch').addEventListener('click', async () => {
       try { res = await api('/api/launch/submit', { mint: prep.mint, tx: signed }); break; }
       catch (e) { if (attempt < 2 && /blockhash|expired|block height/i.test(e.message)) continue; throw e; }
     }
-    st.mint = res.mint;
+    st.mint = res.mint; st.burned = Number(res.burnTokens || 0); st.firstBuy = devBuySol;
     await lx.live();
     done();
   } catch (e) {
@@ -587,6 +611,8 @@ function done() {
   const tokenUrl = `${SITE}/launchpad/coin/?mint=${st.mint}`, claimUrl = `${SITE}/launchpad/claim/?mint=${st.mint}`;
   $('doneTicker').textContent = `$${$('ticker').value.trim()}`;
   $('doneBiz').textContent = `A community token for ${st.business.name}.`;
+  const h = st.burned > 0 && honourFor(st.firstBuy);
+  if (st.burned > 0) { $('doneBurn').innerHTML = `${ICONS.flame} ${Math.round(st.burned / 1e6).toLocaleString()} tokens burned at launch${h ? ` · ${honourPill(h)} earned!` : ''}`; $('doneBurn').classList.toggle('inferno', st.firstBuy >= 3); $('doneBurn').hidden = false; } else $('doneBurn').hidden = true;
   qrImg(tokenUrl).then((u) => reveal($('qrToken'), $('qrToken').closest('.qr'), u));
   $('openToken').href = tokenUrl;
   $('ownerH').textContent = st.business.name;

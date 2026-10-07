@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ambassador Leaderboard — PunchCard</title>
+<meta name="description" content="PunchCard ambassadors ranked by what they've committed to fair launches and the local businesses they've brought in.">
+<meta name="theme-color" content="#f8f4ec">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+  .lb { max-width: 920px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; display: grid; gap: 1.5rem; }
+  .lb h1 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(2rem, 7vw, 3rem); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .lb h1 em { color: var(--terra); font-style: normal; }
+  .lb .lede { color: var(--ink-mid); max-width: 62ch; margin: 0; line-height: 1.6; }
+  .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; }
+  .tier { padding: 0.8rem 0.9rem; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--paper-card); display: grid; gap: 0.15rem; }
+  .tier b { font-size: 1rem; display: flex; align-items: center; gap: .5rem; }
+  .tier small { color: var(--ink-faded); font-size: 0.8rem; line-height: 1.4; }
+  .tier.inferno { background: linear-gradient(135deg, #fbe7a6, #f0b54a); border-color: #c9881e; color: #3d2400; }
+  .tier.inferno small { color: #5c3a00; }
+  .board { display: grid; gap: 0.5rem; list-style: none; margin: 0; padding: 0; counter-reset: r; }
+  .board li { counter-increment: r; display: grid; grid-template-columns: 2.4rem 1fr auto; gap: 0.75rem; align-items: center; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--paper-card); }
+  .board li::before { content: counter(r); font-family: 'Special Elite', cursive; font-size: 1.4rem; color: var(--sol); text-align: center; }
+  .board li:nth-child(1)::before { color: #fff; background: linear-gradient(135deg, #f7d774, #c9881e); border-radius: 50%; width: 2rem; height: 2rem; display: grid; place-items: center; font-size: 1.1rem; justify-self: center; }
+  .board .who { min-width: 0; display: grid; gap: 0.2rem; }
+  .board .who b { font-family: 'Courier Prime', monospace; overflow-wrap: anywhere; }
+  .board .who span { color: var(--ink-faded); font-size: 0.82rem; }
+  .board .sol { text-align: right; font-variant-numeric: tabular-nums; }
+  .board .sol b { display: block; font-size: 1.1rem; }
+  .board .sol small { color: var(--ink-faded); font-size: 0.75rem; }
+  .empty { padding: 1.2rem; border-radius: 12px; border: 1px dashed var(--border-mid); text-align: center; color: var(--ink-mid); }
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
+  <ul class="nav-links">
+    <li><a href="/launchpad/how/">How it works</a></li>
+    <li><a href="/launchpad/owners/">Owners</a></li>
+    <li><a href="/launchpad/launch/">Launch</a></li>
+  </ul>
+</nav>
+<main class="lb">
+  <div>
+    <h1>Ambassador <em>leaderboard.</em></h1>
+    <p class="lede">PunchCard ambassadors launch tokens for the local spots they love and bring the owners in. Ranked by what they’ve committed to fair launches: every first buy above 0.5% of a token’s supply is burned at launch, so a bigger first buy is a bigger commitment to the fans.</p>
+  </div>
+  <div class="tiers" aria-label="Burn honours">
+    <div class="tier inferno"><b><span class="hmark r4 gold lg" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Inferno</b><small>3 SOL first buy, the highest honour. Top placement and a 15% Bring them in reward.</small></div>
+    <div class="tier"><b><span class="hmark r3 lg" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Blaze</b><small>2 SOL+. Top placement and a 12% reward.</small></div>
+    <div class="tier"><b><span class="hmark r2 lg" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Flame</b><small>1 SOL+ first buy.</small></div>
+    <div class="tier"><b><span class="hmark r1 lg" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Ember</b><small>0.5 SOL+ first buy.</small></div>
+  </div>
+  <ol class="board" id="board"><li class="empty" style="display:block">Loading…</li></ol>
+  <p class="legal-note">Honours and rankings recognise launches made under the published fair-launch rules; they aren’t endorsements of any token or person. Rewards come from PunchCard’s service fee only, start once a business claims its token, and may be small or zero. <a href="/launchpad/how/#bring-them-in">How rewards work</a>.</p>
+</main>
+<script type="module">
+import { API, esc, short } from '/launchpad/lp.js';
+import { HONOURS, honourPill } from '/launchpad/icons.js';
+const board = document.getElementById('board');
+try {
+  const { ambassadors = [] } = await fetch(`${API}/api/ambassadors`).then((r) => r.json());
+  board.innerHTML = ambassadors.length ? ambassadors.map((a) => {
+    const hon = HONOURS.filter((h) => a.honours?.[h.key]).map((h) => `${a.honours[h.key]}× ${honourPill(h)}`).join(' · ');
+    return `<li><div class="who"><b>${esc(short(a.wallet))}</b><span>${a.launches} launch${a.launches === 1 ? '' : 'es'} · ${a.businessesJoined} business${a.businessesJoined === 1 ? '' : 'es'} joined${hon ? ` · ${hon}` : ''}</span></div>
+      <div class="sol"><b>${a.burnSolCommitted.toLocaleString(undefined, { maximumFractionDigits: 2 })} SOL</b><small>committed to burns</small></div></li>`;
+  }).join('') : '<li class="empty" style="display:block">No community launches yet. When the launchpad opens to everyone, the first ambassadors show up here.</li>';
+} catch { board.innerHTML = '<li class="empty" style="display:block">The leaderboard is unavailable right now. Try again in a minute.</li>'; }
+</script>
+</body>
+</html>
