@@ -62,18 +62,22 @@
   .qr-pair.one { grid-template-columns: minmax(0, 220px); justify-content: center; }
   .owner-card .big { width: 100%; }
   .qr { display: grid; gap: 0.4rem; justify-items: center; padding: 0.75rem; border-radius: 12px; background: #fff; border: 1px solid var(--border-mid); text-align: center; }
-  .qr img { width: 100%; max-width: 180px; height: auto; image-rendering: pixelated; }
+  .qr img { width: 100%; max-width: 200px; height: auto; border-radius: 12px; }
   .qr b { font-size: 0.85rem; color: #1c1812; }
   .qr small { font-size: 0.75rem; color: #6b6255; }
   .wallet-links { display: grid; gap: 0.6rem; }
   .ticket { --notch: var(--paper); }
   .go .member-status { padding: 0; background: none; border: 0; }
   .btn-primary.terra { background: var(--terra); border-color: var(--terra); }
-  .owner-view { position: fixed; inset: 0; z-index: 50; background: #fff; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 1rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1rem); overflow-y: auto; }
+  .owner-view { position: fixed; inset: 0; z-index: 50; background: #f8f4ec; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 1rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 1rem); overflow-y: auto; }
   .owner-card { width: 100%; max-width: 420px; display: grid; gap: 0.7rem; justify-items: center; text-align: center; color: #1c1812; }
   .owner-kicker { margin: 0; font-family: 'Courier Prime', monospace; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6b6255; }
   .owner-card h2 { margin: 0; font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.6rem, 7vw, 2.1rem); line-height: 1.15; text-wrap: balance; }
-  .owner-card img { width: min(78vw, 340px); height: auto; image-rendering: pixelated; }
+  .owner-card #qrOwner { width: min(78vw, 340px); height: auto; border-radius: 18px; border: 3px solid #1c1812; box-shadow: 6px 6px 0 #a83a20; background: #fff; }
+  .owner-brand { display: flex; align-items: center; gap: 0.5rem; font-family: 'Special Elite', cursive; font-size: 1.6rem; color: #1c1812; }
+  .owner-brand b { color: #a83a20; font-weight: 400; }
+  .owner-tag { margin: 0; font-family: 'Lora', serif; font-style: italic; color: #3d5a4a; }
+  .owner-view .btn-secondary { border-color: #1c1812; }
   .owner-big { margin: 0; font-weight: 700; font-size: 1.15rem; }
   .owner-small { margin: 0; color: #4a4438; line-height: 1.5; font-size: 0.95rem; }
   .owner-url { margin: 0; font-family: 'Courier Prime', monospace; font-size: 0.75rem; color: #8c8070; overflow-wrap: anywhere; }
@@ -167,10 +171,12 @@
 
 <div class="owner-view" id="ownerView" hidden role="dialog" aria-modal="true" aria-labelledby="ownerH">
   <div class="owner-card">
+    <div class="owner-brand"><img src="/brand/punchcard.svg" alt="" width="34" height="34"><span>Punch<b>Card</b></span></div>
     <p class="owner-kicker">For the owner of</p>
     <h2 id="ownerH"></h2>
     <img id="qrOwner" alt="QR code for the claim page">
     <p class="owner-big">📷 Scan with your phone camera</p>
+    <p class="owner-tag">Support the businesses you love.</p>
     <p class="owner-small">Your customers made a token for your business. Every trade earns creator fees, and <b>90% are yours</b> once you verify. It takes a few minutes: you’ll add a short code to your website.</p>
     <p class="owner-url" id="ownerUrl"></p>
     <button class="btn-secondary big" id="closeOwner" type="button">Done</button>
@@ -335,15 +341,44 @@ $('launch').addEventListener('click', async () => {
 });
 
 // ---------- 5. Done ----------
-const qrImg = (text) => { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createDataURL(6, 2); };
+// PunchCard-branded QR: softly rounded modules in ink, corner eyes in PunchCard red and green, and the
+// PunchCard logo in the middle. Error correction H keeps it scannable with the logo covering the centre.
+const logo = new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = '/brand/punchcard.svg'; });
+async function qrImg(text, px = 720) {
+  const q = qrcode(0, 'H'); q.addData(text); q.make();
+  const n = q.getModuleCount(), quiet = 3, cell = Math.floor(px / (n + quiet * 2)), size = cell * (n + quiet * 2), o = quiet * cell;
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d');
+  const INK = '#1c1812', RED = '#a83a20', GREEN = '#3d5a4a';
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, size, size);
+  const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); g.fill(); };
+  const inEye = (r, k) => (r < 7 && k < 7) || (r < 7 && k >= n - 7) || (r >= n - 7 && k < 7);
+  const mid = n / 2, hole = Math.ceil(n * 0.24) / 2; // centre area kept clear for the logo
+  g.fillStyle = INK;
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) {
+    if (!q.isDark(r, k) || inEye(r, k)) continue;
+    if (Math.abs(r + 0.5 - mid) < hole && Math.abs(k + 0.5 - mid) < hole) continue;
+    rr(o + k * cell, o + r * cell, cell, cell, cell * 0.25); // softly rounded; rounder modules stop scanning reliably (tested)
+  }
+  for (const [r, k] of [[0, 0], [0, n - 7], [n - 7, 0]]) { // corner eyes
+    const x = o + k * cell, y = o + r * cell;
+    g.fillStyle = RED; rr(x, y, 7 * cell, 7 * cell, cell * 2);
+    g.fillStyle = '#ffffff'; rr(x + cell, y + cell, 5 * cell, 5 * cell, cell * 1.4);
+    g.fillStyle = GREEN; rr(x + 2 * cell, y + 2 * cell, 3 * cell, 3 * cell, cell);
+  }
+  const img = await logo, box = hole * 2 * cell, bx = o + mid * cell - box / 2;
+  g.fillStyle = '#ffffff'; rr(bx, bx, box, box, cell * 1.5);
+  if (img) g.drawImage(img, bx + cell * 0.6, bx + cell * 0.6, box - cell * 1.2, box - cell * 1.2);
+  return c.toDataURL('image/png');
+}
 function done() {
   const tokenUrl = `${SITE}/launchpad/coin/?mint=${st.mint}`, claimUrl = `${SITE}/launchpad/claim/?mint=${st.mint}`;
   $('doneTicker').textContent = `$${$('ticker').value.trim()}`;
   $('doneBiz').textContent = `A community token for ${st.business.name}.`;
-  $('qrToken').src = qrImg(tokenUrl);
+  qrImg(tokenUrl).then((u) => { $('qrToken').src = u; });
   $('openToken').href = tokenUrl;
   $('ownerH').textContent = st.business.name;
-  $('qrOwner').src = qrImg(claimUrl);
+  qrImg(claimUrl).then((u) => { $('qrOwner').src = u; });
   $('ownerUrl').textContent = claimUrl.replace('https://', '');
   $('share').onclick = async () => {
     const data = { title: `$${$('ticker').value.trim()} on PunchCard`, text: `A community token for ${st.business.name}. Every trade helps the business.`, url: tokenUrl };
