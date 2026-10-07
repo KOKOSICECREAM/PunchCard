@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PunchCard Go</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="Launch a token for a local business, right from your phone.">
+<meta name="theme-color" content="#3d5a4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PunchCard Go">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/go/manifest.webmanifest">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
+<style>
+  body { background: var(--paper); }
+  .go { max-width: 480px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top, 0px) + 0.75rem) 1rem calc(env(safe-area-inset-bottom, 0px) + 1.25rem); gap: 1rem; }
+  .go-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .go-brand { display: flex; align-items: center; gap: 0.45rem; font-family: 'Special Elite', cursive; font-size: 1.25rem; color: var(--ink); text-decoration: none; }
+  .go-brand b { color: var(--terra); font-weight: 400; }
+  .go-dots { display: flex; gap: 5px; }
+  .go-dots i { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--sol); opacity: 0.35; }
+  .go-dots i.on { background: var(--sol); opacity: 1; }
+  .go-net { background: var(--terra); color: #fff; text-align: center; font-family: 'Courier Prime', monospace; font-size: 0.78rem; letter-spacing: 0.08em; padding: 0.35rem; border-radius: 8px; }
+  .go section { display: grid; gap: 0.9rem; }
+  .go h1 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.7rem, 8vw, 2.2rem); line-height: 1.12; text-wrap: balance; margin: 0.25rem 0 0; }
+  .go h1 em { color: var(--terra); font-style: normal; }
+  .go .lede { color: var(--ink-mid); margin: 0; line-height: 1.5; }
+  .go .big { width: 100%; min-height: 3.4rem; font-size: 1.05rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none; }
+  .go .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .go .muted { color: var(--ink-faded); font-size: 0.85rem; margin: 0; line-height: 1.5; }
+  .go .gostat { min-height: 1.3em; color: var(--ink-mid); margin: 0; }
+  .go .gostat:empty { display: none; }
+  .go .gostat.bad { color: var(--terra); }
+  .go a:not(.btn-primary):not(.btn-secondary):not(.go-brand) { color: var(--sol); }
+  .go .ticket { --stub-w: 86px; }
+  .go .ticket-stamp { white-space: nowrap; font-size: 0.62rem; letter-spacing: 0.05em; padding: 0.12rem 0.35rem; }
+  .places { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  .places button { width: 100%; text-align: left; display: grid; gap: 0.1rem; padding: 0.8rem 0.95rem; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--paper-card); color: var(--ink); font: inherit; cursor: pointer; }
+  .places button b { font-weight: 600; }
+  .places button span { color: var(--ink-faded); font-size: 0.85rem; }
+  .places button:active { border-color: var(--sol); background: var(--sol-pale); }
+  .biz-card { padding: 0.9rem 1rem; border-radius: 12px; background: var(--sol-pale); border: 1px solid var(--sol); display: grid; gap: 0.15rem; }
+  .biz-card b { font-family: 'Lora', serif; font-size: 1.1rem; }
+  .biz-card span { color: var(--ink-mid); font-size: 0.88rem; }
+  .photo { display: grid; place-items: center; aspect-ratio: 1; max-width: 220px; width: 60%; margin: 0 auto; border-radius: 50%; border: 2px dashed var(--border-mid); background: var(--paper-card) center/cover no-repeat; color: var(--ink-faded); font-size: 0.9rem; text-align: center; cursor: pointer; overflow: hidden; }
+  .photo.has { border-style: solid; border-color: var(--sol); color: transparent; }
+  .photo input { display: none; }
+  .go .field input, .go .field textarea { font-size: 16px; } /* no zoom on iPhone */
+  .cost { display: grid; gap: 0.3rem; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--paper-card); font-size: 0.92rem; }
+  .cost div { display: flex; justify-content: space-between; gap: 0.5rem; }
+  .cost .total { border-top: 1px solid var(--border-mid); padding-top: 0.35rem; font-weight: 700; }
+  .done-hero { text-align: center; display: grid; gap: 0.4rem; }
+  .done-hero .tick { font-size: 2.6rem; }
+  .qr-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .qr { display: grid; gap: 0.4rem; justify-items: center; padding: 0.75rem; border-radius: 12px; background: #fff; border: 1px solid var(--border-mid); text-align: center; }
+  .qr img { width: 100%; max-width: 180px; height: auto; image-rendering: pixelated; }
+  .qr b { font-size: 0.85rem; color: #1c1812; }
+  .qr small { font-size: 0.75rem; color: #6b6255; }
+  .wallet-links { display: grid; gap: 0.6rem; }
+  .ticket { --notch: var(--paper); }
+  .go .member-status { padding: 0; background: none; border: 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="go">
+  <div class="go-top">
+    <a class="go-brand" href="/go/"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> Go</span></a>
+    <div class="go-dots" aria-hidden="true" id="dots"><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="go-net" id="netBanner" hidden>TEST NETWORK · devnet · not real money</div>
+
+  <!-- 0. Open inside a wallet -->
+  <section id="s-open" hidden aria-labelledby="h-open">
+    <h1 id="h-open">Launch a token <em>in the shop.</em></h1>
+    <p class="lede">PunchCard Go runs inside your wallet app, where connecting and approving just work. Pick yours:</p>
+    <div class="wallet-links" id="walletLinks"></div>
+    <p class="muted">Already in a wallet's browser or on a computer with a wallet extension? <a href="#" id="tryHere">Continue here</a>.</p>
+    <p class="muted">Tip: open it once in your wallet, then add it to your home screen or wallet favorites.</p>
+  </section>
+
+  <!-- 1. Rep wallet + Membership -->
+  <section id="s-wallet" hidden aria-labelledby="h-wallet">
+    <h1 id="h-wallet">Hi! Let's get <em>you</em> connected.</h1>
+    <p class="lede">You launch from your own wallet. You'll need a PunchCard Membership, and you earn the <a href="/launchpad/how/#bring-them-in">Bring them in</a> reward when the owner claims.</p>
+    <button class="btn-primary sol big" id="connect" type="button">Connect my wallet</button>
+    <div class="member-status" id="memberLine" hidden></div>
+    <button class="btn-primary sol big" id="toWhere" type="button" hidden>Next: find the business →</button>
+    <p class="gostat" id="walletStatus" role="status"></p>
+  </section>
+
+  <!-- 2. Where are you? -->
+  <section id="s-where" hidden aria-labelledby="h-where">
+    <h1 id="h-where">Where <em>are you?</em></h1>
+    <button class="btn-primary sol big" id="locate" type="button">📍 Find businesses around me</button>
+    <ul class="places" id="nearby"></ul>
+    <div class="field">
+      <label for="maps">Or search by name</label>
+      <input id="maps" placeholder="Business name and city" autocomplete="off">
+    </div>
+    <p class="gostat" id="whereStatus" role="status"></p>
+    <div id="bizPicked" hidden>
+      <div class="biz-card"><b id="bizName"></b><span id="bizAddr"></span></div>
+      <p class="muted" id="bizNote"></p>
+      <button class="btn-primary sol big" id="toToken" type="button">This is it →</button>
+    </div>
+  </section>
+
+  <!-- 3. The token -->
+  <section id="s-token" hidden aria-labelledby="h-token">
+    <h1 id="h-token">Make it <em>theirs.</em></h1>
+    <label class="photo" id="photo">Tap to take a photo<br>of the shop or logo<input id="img" type="file" accept="image/*" capture="environment"></label>
+    <div class="field"><label for="name">Token name</label><input id="name" maxlength="32" placeholder="Rosie's Bagels Fans"></div>
+    <div class="field"><label for="ticker">Ticker</label><input id="ticker" maxlength="10" placeholder="ROSIE" autocapitalize="characters"></div>
+    <div class="field"><label for="desc">A line about the place <span class="hint">(optional)</span></label><textarea id="desc" maxlength="500" rows="3" placeholder="Best bagels on the block since 1998."></textarea></div>
+    <button class="btn-primary sol big" id="toLaunch" type="button">Next →</button>
+    <p class="gostat" id="tokenStatus" role="status"></p>
+  </section>
+
+  <!-- 4. Launch -->
+  <section id="s-launch" hidden aria-labelledby="h-launch">
+    <h1 id="h-launch">Ready to <em>launch.</em></h1>
+    <div class="biz-card"><b id="sumName"></b><span id="sumBiz"></span></div>
+    <div class="field"><label for="devbuy">Your first buy (SOL, optional)</label><input id="devbuy" type="number" inputmode="decimal" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span></div>
+    <div class="cost">
+      <div><span>PunchCard launch fee</span><b><span id="costFee">0.02</span> SOL</b></div>
+      <div><span>Network costs (estimate)</span><b>~<span id="costNet">0.015</span> SOL</b></div>
+      <div><span>First buy</span><b><span id="costBuy">0</span> SOL</b></div>
+      <div class="total"><span>Total from your wallet</span><b>~<span id="costTotal">0.035</span> SOL</b></div>
+    </div>
+    <label class="check"><input type="checkbox" id="terms"> I agree to PunchCard’s <a href="/terms/" target="_blank">Terms and Launch Rules</a> and pump.fun’s <a href="https://pump.fun/docs/terms-and-conditions" target="_blank" rel="noopener">Terms of Use</a>. I have the rights to this name, ticker, description and image, and I won’t suggest the business or PunchCard is behind this token.</label>
+    <button class="btn-primary sol big" id="launch" type="button" disabled>🚀 Launch token</button>
+    <p class="gostat" id="launchStatus" role="status"></p>
+    <p class="muted">Community tokens are launched by users, not by PunchCard or the businesses they name. A token isn’t affiliated with a business until its owner claims it.</p>
+  </section>
+
+  <!-- 5. Done -->
+  <section id="s-done" hidden aria-labelledby="h-done">
+    <div class="done-hero"><div class="tick">🎉</div><h1 id="h-done"><span id="doneTicker"></span> <em>is live!</em></h1><p class="lede" id="doneBiz"></p></div>
+    <div class="qr-pair">
+      <div class="qr"><img id="qrToken" alt="QR code for the token page"><b>Fans: the token</b><small>Scan to see it and buy</small></div>
+      <div class="qr"><img id="qrClaim" alt="QR code for the owner's claim page"><b>Owner: claim fees</b><small>Scan to start getting paid</small></div>
+    </div>
+    <p class="muted">Show the owner the right-hand code. When they claim and verify, they get 90% of the creator fees, and you earn your Bring them in reward.</p>
+    <div class="row"><button class="btn-secondary big" id="share" type="button">Share</button><a class="btn-secondary big" id="openToken" href="#">Open page</a></div>
+    <button class="btn-primary sol big" id="again" type="button">Launch another</button>
+  </section>
+</main>
+
+<script type="module">
+import { $, esc, api, connectWallet, signTx, imageToPng, short, businessSearch, businessQuery, hasWallet, CLUSTER } from '/launchpad/lp.js';
+
+const TERMS_VERSION = '2026-10-01';
+const SITE = 'https://punchcard.club';
+const STEPS = ['s-open', 's-wallet', 's-where', 's-token', 's-launch', 's-done'];
+const st = { wallet: null, member: false, place: null, business: null, image: null, mint: null };
+
+$('netBanner').hidden = CLUSTER !== 'devnet';
+function show(id) {
+  for (const s of STEPS) $(s).hidden = s !== id;
+  const n = Math.max(0, STEPS.indexOf(id) - 1);
+  [...$('dots').children].forEach((d, i) => d.classList.toggle('on', i <= n && id !== 's-open'));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---------- 0. Inside a wallet? ----------
+const here = location.href.split('#')[0];
+const browse = {
+  Phantom: `https://phantom.app/ul/browse/${encodeURIComponent(here)}?ref=${encodeURIComponent(location.origin)}`,
+  Solflare: `https://solflare.com/ul/v1/browse/${encodeURIComponent(here)}?ref=${encodeURIComponent(location.origin)}`,
+  Backpack: `https://backpack.app/ul/v1/browse/${encodeURIComponent(here)}?ref=${encodeURIComponent(location.origin)}`,
+};
+$('walletLinks').innerHTML = Object.entries(browse).map(([n, u]) => `<a class="btn-secondary big" href="${esc(u)}">Open in ${n}</a>`).join('')
+  + (CLUSTER === 'devnet' ? '<p class="muted">On the test network, use Solflare: Phantom’s phone app can’t sign test-network launches yet.</p>' : '');
+$('tryHere').addEventListener('click', (e) => { e.preventDefault(); show('s-wallet'); });
+setTimeout(() => show(hasWallet() ? 's-wallet' : 's-open'), 600); // wallets can register a moment after load
+
+// ---------- 1. Rep wallet + Membership ----------
+$('connect').addEventListener('click', async () => {
+  $('walletStatus').textContent = '';
+  try {
+    st.wallet = await connectWallet();
+    $('connect').textContent = `Connected: ${short(st.wallet)} · switch`;
+    await checkMembership();
+  } catch (e) { $('walletStatus').textContent = e.message; }
+});
+async function checkMembership() {
+  const line = $('memberLine'); line.hidden = false; line.textContent = 'Checking your Membership…';
+  st.member = false; $('toWhere').hidden = true;
+  try {
+    const m = await api(`/api/membership?wallet=${encodeURIComponent(st.wallet)}`);
+    if (!m.requiredUsd) { st.member = true; line.hidden = true; $('toWhere').hidden = false; return; }
+    const usd = `$${Number(m.usd || 0).toFixed(2)}`;
+    if (m.member) {
+      st.member = true; $('toWhere').hidden = false;
+      line.innerHTML = `<div class="ticket is-member"><div class="ticket-main"><div class="ticket-kicker">PunchCard · Launchpad pass</div>
+        <div class="ticket-title">You're a <em>PunchCard Member.</em></div><div class="ticket-meta"><span>Holding <b>${usd}</b> of PUNCH</span></div></div>
+        <div class="ticket-stub"><small>Admit one</small><b>Launch</b><span class="ticket-stamp">Member</span></div></div>`;
+    } else if (m.price === null) {
+      line.innerHTML = '<p class="gostat bad">Couldn’t check the PUNCH price right now. Try again in a minute.</p><button class="btn-secondary big" id="recheck" type="button">Check again</button>';
+    } else {
+      const gap = Math.max(0, m.requiredUsd - (m.usd || 0));
+      line.innerHTML = `<div class="ticket is-pending"><div class="ticket-main"><div class="ticket-kicker">PunchCard · Launchpad pass</div>
+        <div class="ticket-title">Not a member <em>yet.</em></div><div class="ticket-meta"><span>Holding <b>${usd}</b> of $${m.requiredUsd}</span></div></div>
+        <div class="ticket-stub"><small>Admit one</small><b>Launch</b><span class="ticket-stamp">Not yet</span></div></div>
+        <p class="muted">Hold $${m.requiredUsd} of PUNCH in this wallet to launch: about $${gap.toFixed(2)} more.</p>
+        <div class="row"><a class="btn-primary sol big" href="https://pump.fun/coin/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx" target="_blank" rel="noopener">Buy PUNCH</a><button class="btn-secondary big" id="recheck" type="button">Check again</button></div>`;
+    }
+    $('recheck')?.addEventListener('click', checkMembership);
+  } catch (e) { line.innerHTML = `<p class="gostat bad">${esc(e.message)}</p>`; }
+}
+$('toWhere').addEventListener('click', () => show('s-where'));
+
+// ---------- 2. Where are you? ----------
+const pickPlace = async (maps, label) => {
+  $('whereStatus').className = 'gostat'; $('whereStatus').textContent = `Checking ${label || 'the business'}…`;
+  $('bizPicked').hidden = true;
+  try {
+    const r = await api('/api/business', { maps });
+    st.place = maps; st.business = r.business;
+    $('bizName').textContent = r.business.name; $('bizAddr').textContent = r.business.address || '';
+    if (r.alreadyLaunched) {
+      $('bizNote').innerHTML = `<b>${esc(r.business.name)} already has a token.</b> ${r.mint ? `<a href="/launchpad/coin/?mint=${esc(r.mint)}">See it</a>.` : ''} Only one per business.`;
+      $('toToken').hidden = true;
+    } else {
+      $('bizNote').textContent = r.ownerCanVerifyVia === null ? 'Heads up: this listing has no website, so the owner can’t verify yet.' : 'The owner can claim the fees by verifying the website on its Google listing.';
+      $('toToken').hidden = false;
+    }
+    $('bizPicked').hidden = false; $('whereStatus').textContent = '';
+    $('bizPicked').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) { $('whereStatus').className = 'gostat bad'; $('whereStatus').textContent = e.message; }
+};
+$('locate').addEventListener('click', () => {
+  if (!navigator.geolocation) { $('whereStatus').textContent = 'Location isn’t available here. Search by name below.'; return; }
+  $('whereStatus').className = 'gostat'; $('whereStatus').textContent = 'Finding where you are…';
+  navigator.geolocation.getCurrentPosition(async (p) => {
+    try {
+      const r = await api('/api/places/nearby', { lat: p.coords.latitude, lng: p.coords.longitude });
+      $('nearby').innerHTML = (r.places || []).map((x, i) => `<li><button type="button" data-i="${i}"><b>${esc(x.name)}</b><span>${esc(x.detail)}</span></button></li>`).join('');
+      $('nearby').onclick = (e) => { const b = e.target.closest('button'); if (b) { const x = r.places[b.dataset.i]; pickPlace(x.placeId, x.name); } };
+      $('whereStatus').textContent = r.places?.length ? 'Tap the business you’re in:' : 'Nothing found right here. Search by name below.';
+    } catch (e) { $('whereStatus').className = 'gostat bad'; $('whereStatus').textContent = e.message; }
+  }, () => { $('whereStatus').textContent = 'Couldn’t get your location (allow it for this page, or search by name below).'; }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+});
+businessSearch($('maps'), (it) => pickPlace(businessQuery($('maps')).maps, it.name));
+$('maps').addEventListener('keydown', (e) => { if (e.key === 'Enter' && $('maps').value.startsWith('test:')) pickPlace($('maps').value.trim()); });
+$('toToken').addEventListener('click', () => {
+  if (!$('name').value) $('name').value = `${st.business.name} Fans`.slice(0, 32);
+  if (!$('ticker').value) $('ticker').value = st.business.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  show('s-token');
+});
+
+// ---------- 3. The token ----------
+$('ticker').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+$('img').addEventListener('change', () => {
+  const f = $('img').files[0]; if (!f) return;
+  st.image = f; const url = URL.createObjectURL(f);
+  $('photo').style.backgroundImage = `url(${url})`; $('photo').classList.add('has');
+});
+$('toLaunch').addEventListener('click', () => {
+  const name = $('name').value.trim(), ticker = $('ticker').value.trim();
+  if (name.length < 2) return ($('tokenStatus').textContent = 'Give the token a name (2 to 32 characters).');
+  if (!/^[A-Z0-9]{2,10}$/.test(ticker)) return ($('tokenStatus').textContent = 'The ticker needs 2 to 10 letters or numbers.');
+  $('tokenStatus').textContent = '';
+  $('sumName').textContent = `${name} · $${ticker}`; $('sumBiz').textContent = st.business.name;
+  show('s-launch');
+});
+
+// ---------- 4. Launch ----------
+const cost = { fee: 0.02, net: 0.015 };
+const fmt = (v) => String(Math.round(v * 10000) / 10000);
+const showCost = () => {
+  const buy = Math.min(Math.max(Number($('devbuy').value || 0), 0), 3);
+  $('costFee').textContent = fmt(cost.fee); $('costNet').textContent = fmt(cost.net); $('costBuy').textContent = fmt(buy); $('costTotal').textContent = fmt(cost.fee + cost.net + buy);
+};
+$('devbuy').addEventListener('input', showCost);
+api('/api/fees').then((f) => { if (f.launchFeeLamports != null) cost.fee = f.launchFeeLamports / 1e9; if (f.networkCostLamports) cost.net = f.networkCostLamports / 1e9; showCost(); }).catch(() => {});
+const canLaunch = () => { $('launch').disabled = !(st.wallet && st.member && $('terms').checked); };
+$('terms').addEventListener('change', canLaunch);
+$('launch').addEventListener('click', async () => {
+  const s = $('launchStatus'); s.className = 'gostat';
+  const devBuySol = Number($('devbuy').value || 0);
+  if (!(devBuySol >= 0 && devBuySol <= 3)) return (s.textContent = 'The first buy must be between 0 and 3 SOL.');
+  $('launch').disabled = true;
+  try {
+    s.textContent = 'Preparing the launch…';
+    const imageBase64 = st.image ? await imageToPng(st.image) : undefined;
+    let res;
+    for (let attempt = 1; ; attempt++) {
+      const prep = await api('/api/launch/prepare', { maps: st.place, coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
+        description: $('desc').value.trim(), launcher: st.wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION });
+      s.textContent = attempt > 1 ? 'That took a little long. Please approve the fresh launch in your wallet…' : 'Approve the launch in your wallet…';
+      const signed = await signTx(prep.tx);
+      s.textContent = 'Launching on Solana… (10–30 seconds)';
+      try { res = await api('/api/launch/submit', { mint: prep.mint, tx: signed }); break; }
+      catch (e) { if (attempt < 2 && /blockhash|expired|block height/i.test(e.message)) continue; throw e; }
+    }
+    st.mint = res.mint;
+    done();
+  } catch (e) {
+    s.className = 'gostat bad';
+    s.textContent = /reject|cancel/i.test(e.message) ? 'Cancelled in the wallet. Nothing was launched.' : e.message;
+    canLaunch();
+  }
+});
+
+// ---------- 5. Done ----------
+const qrImg = (text) => { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createDataURL(6, 2); };
+function done() {
+  const tokenUrl = `${SITE}/launchpad/coin/?mint=${st.mint}`, claimUrl = `${SITE}/launchpad/claim/?mint=${st.mint}`;
+  $('doneTicker').textContent = `$${$('ticker').value.trim()}`;
+  $('doneBiz').textContent = `A community token for ${st.business.name}.`;
+  $('qrToken').src = qrImg(tokenUrl); $('qrClaim').src = qrImg(claimUrl);
+  $('openToken').href = tokenUrl;
+  $('share').onclick = async () => {
+    const data = { title: `$${$('ticker').value.trim()} on PunchCard`, text: `A community token for ${st.business.name}. Every trade helps the business.`, url: tokenUrl };
+    try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(tokenUrl); $('share').textContent = 'Link copied'; } } catch { /* dismissed */ }
+  };
+  show('s-done');
+}
+$('again').addEventListener('click', () => {
+  Object.assign(st, { place: null, business: null, image: null, mint: null });
+  for (const id of ['name', 'ticker', 'desc', 'maps']) $(id).value = '';
+  $('devbuy').value = '0'; $('terms').checked = false; $('launch').disabled = true; $('img').value = '';
+  $('photo').style.backgroundImage = ''; $('photo').classList.remove('has');
+  $('nearby').innerHTML = ''; $('bizPicked').hidden = true; $('launchStatus').textContent = '';
+  show('s-where');
+});
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/go/sw.js', { scope: '/go/' }).catch(() => {});
+</script>
+</body>
+</html>
