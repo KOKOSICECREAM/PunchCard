@@ -19,14 +19,14 @@
   .lb .lede { color: var(--ink-mid); max-width: 62ch; margin: 0; line-height: 1.6; }
   .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; }
   .tier { padding: 0.8rem 0.9rem; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--paper-card); display: grid; gap: 0.15rem; }
-  .tier b { font-size: 1rem; }
+  .tier b { font-size: 1rem; display: flex; align-items: center; gap: .5rem; }
   .tier small { color: var(--ink-faded); font-size: 0.8rem; line-height: 1.4; }
   .tier.inferno { background: linear-gradient(135deg, #fbe7a6, #f0b54a); border-color: #c9881e; color: #3d2400; }
   .tier.inferno small { color: #5c3a00; }
   .board { display: grid; gap: 0.5rem; list-style: none; margin: 0; padding: 0; counter-reset: r; }
   .board li { counter-increment: r; display: grid; grid-template-columns: 2.4rem 1fr auto; gap: 0.75rem; align-items: center; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--paper-card); }
   .board li::before { content: counter(r); font-family: 'Special Elite', cursive; font-size: 1.4rem; color: var(--sol); text-align: center; }
-  .board li:nth-child(1)::before { content: '👑'; }
+  .board li:nth-child(1)::before { color: #fff; background: linear-gradient(135deg, #f7d774, #c9881e); border-radius: 50%; width: 2rem; height: 2rem; display: grid; place-items: center; font-size: 1.1rem; justify-self: center; }
   .board .who { min-width: 0; display: grid; gap: 0.2rem; }
   .board .who b { font-family: 'Courier Prime', monospace; overflow-wrap: anywhere; }
   .board .who span { color: var(--ink-faded); font-size: 0.82rem; }
@@ -51,22 +51,22 @@
     <p class="lede">PunchCard ambassadors launch tokens for the local spots they love and bring the owners in. Ranked by what they’ve committed to fair launches: every first buy above 0.5% of a token’s supply is burned at launch, so a bigger first buy is a bigger commitment to the fans.</p>
   </div>
   <div class="tiers" aria-label="Burn honours">
-    <div class="tier inferno"><b>👑🔥 Inferno</b><small>3 SOL first buy, the highest honour. Top placement and a 15% Bring them in reward.</small></div>
-    <div class="tier"><b>🔥🔥🔥 Blaze</b><small>2 SOL+. Top placement and a 12% reward.</small></div>
-    <div class="tier"><b>🔥🔥 Flame</b><small>1 SOL+ first buy.</small></div>
-    <div class="tier"><b>🔥 Ember</b><small>0.5 SOL+ first buy.</small></div>
+    <div class="tier inferno"><b><span class="hmark r4 gold lg" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Inferno</b><small>3 SOL first buy, the highest honour. Top placement and a 15% Bring them in reward.</small></div>
+    <div class="tier"><b><span class="hmark r3 lg" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Blaze</b><small>2 SOL+. Top placement and a 12% reward.</small></div>
+    <div class="tier"><b><span class="hmark r2 lg" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Flame</b><small>1 SOL+ first buy.</small></div>
+    <div class="tier"><b><span class="hmark r1 lg" aria-hidden="true"><i></i><i></i><i></i><i></i></span> Ember</b><small>0.5 SOL+ first buy.</small></div>
   </div>
   <ol class="board" id="board"><li class="empty" style="display:block">Loading…</li></ol>
   <p class="legal-note">Honours and rankings recognise launches made under the published fair-launch rules; they aren’t endorsements of any token or person. Rewards come from PunchCard’s service fee only, start once a business claims its token, and may be small or zero. <a href="/launchpad/how/#bring-them-in">How rewards work</a>.</p>
 </main>
 <script type="module">
 import { API, esc, short } from '/launchpad/lp.js';
-const names = { inferno: '👑🔥 Inferno', blaze: '🔥🔥🔥 Blaze', flame: '🔥🔥 Flame', ember: '🔥 Ember' };
+import { HONOURS, honourPill } from '/launchpad/icons.js';
 const board = document.getElementById('board');
 try {
   const { ambassadors = [] } = await fetch(`${API}/api/ambassadors`).then((r) => r.json());
   board.innerHTML = ambassadors.length ? ambassadors.map((a) => {
-    const hon = ['inferno', 'blaze', 'flame', 'ember'].filter((k) => a.honours?.[k]).map((k) => `${a.honours[k]}× ${names[k]}`).join(' · ');
+    const hon = HONOURS.filter((h) => a.honours?.[h.key]).map((h) => `${a.honours[h.key]}× ${honourPill(h)}`).join(' · ');
     return `<li><div class="who"><b>${esc(short(a.wallet))}</b><span>${a.launches} launch${a.launches === 1 ? '' : 'es'} · ${a.businessesJoined} business${a.businessesJoined === 1 ? '' : 'es'} joined${hon ? ` · ${hon}` : ''}</span></div>
       <div class="sol"><b>${a.burnSolCommitted.toLocaleString(undefined, { maximumFractionDigits: 2 })} SOL</b><small>committed to burns</small></div></li>`;
   }).join('') : '<li class="empty" style="display:block">No community launches yet. When the launchpad opens to everyone, the first ambassadors show up here.</li>';

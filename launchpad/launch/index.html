@@ -58,14 +58,14 @@
       <div class="field"><label for="devbuy">Your first buy (SOL)</label><input id="devbuy" type="number" min="0" max="3" step="0.01" value="0"><span class="hint">0 to 3 SOL</span><span class="hint" id="burnHint"></span></div>
     </div>
     <div class="notice ok"><b>Bring them in.</b> If the business claims your token, your launch wallet earns 10% of PunchCard's fee from it for as long as it trades. <a href="/launchpad/how/#bring-them-in">How it works</a></div>
-    <div class="notice ok"><b>Fair launch.</b> Launching takes a <a href="/launchpad/how/#membership">PunchCard Membership</a>. You get no share of the fees. Your first buy is capped at 3 SOL and you keep at most 0.5% of the supply: anything above that is burned at launch (first buys of 0.5 SOL or more earn the 🔥 Burn Badge), and your wallet is left out of holder rewards. One token per business.</div>
+    <div class="notice ok"><b>Fair launch.</b> Launching takes a <a href="/launchpad/how/#membership">PunchCard Membership</a>. You get no share of the fees. Your first buy is capped at 3 SOL and you keep at most 0.5% of the supply: anything above that is burned at launch (bigger first buys earn burn honours: Ember, Flame, Blaze and Inferno), and your wallet is left out of holder rewards. One token per business.</div>
   </section>
 
   <section class="panel" aria-labelledby="s3" id="launchPanel" hidden>
     <h2 id="s3"><span class="step-num">3</span>Launch</h2>
     <p id="walletLine" class="status-line">Connect the Solana wallet that will launch and pay: Phantom, Solflare, Backpack or any other.</p>
     <div class="member-box" id="memberBox">
-      <div class="member-h">🎟️ PunchCard Membership required</div>
+      <div class="member-h"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4Z"/><path d="M14.5 5.5v13" stroke-dasharray="1.5 2.5"/></svg> PunchCard Membership required</div>
       <p>Every launch on PunchCard needs a Membership. To be a member, hold at least <b>$<span id="memberUsd">50</span> worth of PUNCH</b> in the wallet you launch from. We check it automatically when you connect. Nothing is charged or locked: your PUNCH stays in your wallet.</p>
       <p class="member-status" id="memberLine" role="status" hidden></p>
     </div>
@@ -101,6 +101,7 @@
 </footer>
 
 <script type="module">
+import { honourFor, honourPill, HONOURS, ICONS } from '/launchpad/icons.js';
 import { $, esc, api, connectWallet, signTx, imageToPng, short, explorer, businessSearch, businessQuery } from '/launchpad/lp.js';
 
 let business = null, wallet = null;
@@ -250,8 +251,8 @@ function burnPreview(el, buy, f) {
   const keepSol = f.keepSolLamports / 1e9, pct = f.launcherKeepBps / 100;
   if (!(buy > 0)) { el.textContent = `You keep up to ${pct}% of the supply from a first buy (about ${keepSol.toFixed(2)} SOL); anything above that is burned at launch.`; return; }
   if (buy <= keepSol) { el.textContent = `All of it stays in your wallet (under ${pct}% of the supply).`; return; }
-  const h = [[3, '👑🔥 Inferno, the highest honour'], [2, '🔥🔥🔥 Blaze'], [1, '🔥🔥 Flame'], [0.5, '🔥 Ember']].find(([min]) => buy >= min);
-  el.innerHTML = `🔥 You keep ${pct}% of the supply; about <b>${Math.round((1 - keepSol / buy) * 100)}%</b> of this buy is burned at launch.${h ? ` Earns <b>${h[1]}</b>.` : ''}${buy < 3 ? ' <span class="next-honour">3 SOL earns 👑🔥 Inferno.</span>' : ''}`;
+  const h = honourFor(buy);
+  el.innerHTML = `${ICONS.flame} You keep ${pct}% of the supply; about <b>${Math.round((1 - keepSol / buy) * 100)}%</b> of this buy is burned at launch.${h ? ` Earns ${honourPill(h)}${h.rank === 4 ? ', the highest honour' : ''}.` : ''}${buy < 3 ? ` <span class="next-honour">3 SOL earns ${honourPill(HONOURS[0])}.</span>` : ''}`;
 }
 $('devbuy').addEventListener('input', showCost);
 api('/api/fees').then((f) => {
