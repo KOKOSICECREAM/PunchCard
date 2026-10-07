@@ -211,14 +211,22 @@ $('launch').addEventListener('click', async () => {
   try {
     s.textContent = 'Preparing your launch…';
     const imageBase64 = await imageToPng($('img').files[0]);
-    const prep = await api('/api/launch/prepare', {
-      maps: businessQuery($('maps')).maps, coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
-      description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION,
-    });
-    s.textContent = 'Approve the launch in your wallet…';
-    const signed = await signTx(prep.tx);
-    s.textContent = 'Launching on Solana… (10–30 seconds)';
-    const res = await api('/api/launch/submit', { mint: prep.mint, tx: signed });
+    // A launch must be approved within about a minute; if it expired, prepare a fresh one once.
+    let res;
+    for (let attempt = 1; ; attempt++) {
+      const prep = await api('/api/launch/prepare', {
+        maps: businessQuery($('maps')).maps, coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
+        description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION,
+      });
+      s.textContent = attempt > 1 ? 'That took a little long, so here is a fresh launch: please approve it again in your wallet…' : 'Approve the launch in your wallet…';
+      const signed = await signTx(prep.tx);
+      s.textContent = 'Launching on Solana… (10–30 seconds)';
+      try { res = await api('/api/launch/submit', { mint: prep.mint, tx: signed }); break; }
+      catch (e) {
+        if (attempt < 2 && /blockhash|expired|block height/i.test(e.message)) { s.textContent = 'Preparing a fresh launch…'; continue; }
+        throw e;
+      }
+    }
     s.textContent = 'Live! Opening your token…';
     location.href = `/launchpad/coin/?mint=${encodeURIComponent(res.mint)}&new=1`;
   } catch (e) {
