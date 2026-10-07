@@ -135,23 +135,23 @@
   .splash { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: radial-gradient(80% 60% at 50% 45%, #fbf8f2, #efe8db); }
   .splash-inner { display: grid; justify-items: center; gap: 1.1rem; }
   .splash .pc-logo { width: 132px; height: 132px; overflow: visible; filter: drop-shadow(0 18px 30px rgba(28,24,18,.25)); }
-  .pc-card { transform-origin: 256px 256px; animation: card-in .7s var(--spring) both; }
+  .pc-card { transform-origin: 256px 256px; animation: card-in .9s var(--spring) both; }
   @keyframes card-in { from { transform: scale(.55) rotate(-10deg); opacity: 0; } }
-  .pc-hole { fill: #f6efe2; transform-box: fill-box; transform-origin: center; animation: hole-in .42s var(--spring) both; animation-delay: calc(.45s + var(--k) * .13s); }
-  .pc-hole.last { animation-name: hole-in, go-green; animation-duration: .42s, .4s; animation-delay: calc(.45s + 3 * .13s), 1.05s; animation-fill-mode: both, forwards; }
+  .pc-hole { fill: #f6efe2; transform-box: fill-box; transform-origin: center; animation: hole-in .5s var(--spring) both; animation-delay: calc(.7s + var(--k) * .22s); }
+  .pc-hole.last { animation-name: hole-in, go-green; animation-duration: .5s, .5s; animation-delay: calc(.7s + 3 * .22s), 1.6s; animation-fill-mode: both, forwards; }
   @keyframes hole-in { from { transform: scale(0); } 70% { transform: scale(1.25); } }
   @keyframes go-green { to { fill: #93c2a4; } }
-  .pc-p { animation: p-in .6s .8s var(--ease) both; }
+  .pc-p { animation: p-in .8s 1.15s var(--ease) both; }
   @keyframes p-in { from { opacity: 0; transform: translateY(40px); } }
-  .splash-ring { position: absolute; width: 132px; height: 132px; border-radius: 28px; border: 2px solid rgba(61,90,74,.5); animation: ring 1s 1.15s var(--ease) both; }
+  .splash-ring { position: absolute; width: 132px; height: 132px; border-radius: 28px; border: 2px solid rgba(61,90,74,.5); animation: ring 1.2s 1.75s var(--ease) both; }
   @keyframes ring { from { transform: scale(1); opacity: .9; } to { transform: scale(2.1); opacity: 0; } }
   .splash-word { display: flex; gap: 0.35rem; align-items: baseline; font-family: 'Special Elite', cursive; font-size: 1.9rem; color: var(--ink); overflow: hidden; }
-  .splash-word > * { display: inline-block; animation: word-in .55s var(--ease) both; }
-  .splash-word b { color: var(--terra); font-weight: 400; animation-delay: 1.02s; } .splash-word span:first-child { animation-delay: .95s; }
-  .splash-word .go-word { font-family: 'Courier Prime', monospace; font-weight: 700; font-size: 1rem; letter-spacing: .14em; color: #fff; background: var(--sol); padding: .2rem .55rem; border-radius: 999px; animation-delay: 1.18s; align-self: center; }
+  .splash-word > * { display: inline-block; animation: word-in .7s var(--ease) both; }
+  .splash-word b { color: var(--terra); font-weight: 400; animation-delay: 1.72s; } .splash-word span:first-child { animation-delay: 1.6s; }
+  .splash-word .go-word { font-family: 'Courier Prime', monospace; font-weight: 700; font-size: 1rem; letter-spacing: .14em; color: #fff; background: var(--sol); padding: .2rem .55rem; border-radius: 999px; animation-delay: 1.95s; align-self: center; }
   @keyframes word-in { from { opacity: 0; transform: translateY(110%); } }
-  .splash-tag { font-family: 'Lora', serif; font-style: italic; color: var(--ink-mid); animation: rise .6s 1.3s var(--ease) both; }
-  .splash.out { animation: splash-out .55s var(--ease) forwards; }
+  .splash-tag { font-family: 'Lora', serif; font-style: italic; color: var(--ink-mid); animation: rise .8s 2.15s var(--ease) both; }
+  .splash.out { animation: splash-out .7s var(--ease) forwards; }
   @keyframes splash-out { to { opacity: 0; transform: scale(1.06); filter: blur(6px); visibility: hidden; } }
   /* ===== Launch sequence ===== */
   .lx { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: radial-gradient(70% 50% at 50% 40%, #2a2419, #14110c 70%); color: #f6efe2; animation: fadein .35s var(--ease); }
@@ -354,8 +354,8 @@ $('back').addEventListener('click', () => { const prev = trail.pop(); if (prev) 
 
 // Splash: the PunchCard card drops in, its holes get punched, then the app glides in.
 const splashDone = new Promise((res) => {
-  const sp = $('splash'), t0 = performance.now(), MIN = RM ? 300 : 1750;
-  const finish = () => { if (sp.classList.contains('out')) return; sp.classList.add('out'); setTimeout(() => { sp.remove(); res(); }, RM ? 0 : 420); };
+  const sp = $('splash'), t0 = performance.now(), MIN = RM ? 600 : 3600; // ~1 s to read the finished logo and tagline
+  const finish = () => { if (sp.classList.contains('out')) return; sp.classList.add('out'); setTimeout(() => { sp.remove(); res(); }, RM ? 0 : 560); };
   sp.addEventListener('click', finish); // tap to skip
   setTimeout(finish, MIN);
 });
