@@ -19,6 +19,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
+<style>
+  .burn-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; margin: .8rem 0 1rem; }
+  .burn-stats div { padding: .8rem .9rem; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--paper-card); display: grid; gap: .15rem; }
+  .burn-stats span { font-size: .8rem; color: var(--ink-mid); }
+  .burn-stats b { font-variant-numeric: tabular-nums; }
+  .burn-stats .hot { background: var(--terra); border-color: var(--terra); color: #fff; }
+  .burn-stats .hot span { color: rgba(255,255,255,.85); }
+</style>
 </head>
 <body>
 <nav>
@@ -56,8 +64,16 @@
   </section>
 
   <section class="panel" aria-labelledby="logH">
-    <h2 id="logH">Buybacks and burns</h2>
+    <h2 id="logH">Buy-and-burn</h2>
+    <p>20% of PunchCard’s service fee from every token launched on the PunchCard Launchpad buys PUNCH on the market and burns it, every week. Every burn is public, with its transactions.</p>
+    <div class="burn-stats" id="burnStats" hidden>
+      <div><span>PunchCard fee counted</span><b id="bIncome">…</b></div>
+      <div><span>Set aside for burns (20%)</span><b id="bDue">…</b></div>
+      <div><span>Spent buying PUNCH</span><b id="bSpent">…</b></div>
+      <div class="hot"><span>PUNCH burned</span><b id="bPunch">…</b></div>
+    </div>
     <ul class="coin-list" id="log"><li class="status-line">None yet. Each one will be listed here with its transaction.</li></ul>
+    <p class="status-line">Counted from Oct 8, 2026. Weeks under 0.05 SOL roll over; big weeks are split so a buy never moves the price more than 6%. Burned PUNCH is gone for good.</p>
   </section>
 
   <section class="panel" aria-labelledby="noexpH">
@@ -91,13 +107,30 @@
     if (navigator.clipboard) navigator.clipboard.writeText(ca.textContent.trim()).then(function () { btn.textContent = 'Copied'; }, pick); else pick();
   });
   var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-  fetch('/punch/buybacks.json').then(function (r) { return r.json(); }).then(function (d) {
-    if (!d.entries || !d.entries.length) return;
-    document.getElementById('log').innerHTML = d.entries.map(function (e) {
+  var sol = function (l) { return (Number(l || 0) / 1e9).toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' SOL'; };
+  var punch = function (r) { return Math.round(Number(r || 0) / 1e6).toLocaleString() + ' PUNCH'; };
+  Promise.all([
+    fetch('/punch/buybacks.json').then(function (r) { return r.json(); }).catch(function () { return { entries: [] }; }),
+    fetch('https://punchcard-launchpad.quiet-mode-468e.workers.dev/api/punch-burns').then(function (r) { return r.json(); }).catch(function () { return null; })
+  ]).then(function (res) {
+    var manual = (res[0].entries || []).map(function (e) {
       var what = e.kind === 'burn' ? 'Burned ' + esc(e.punch) + ' PUNCH' : 'Bought back ' + esc(e.punch) + ' PUNCH for ' + esc(e.sol) + ' SOL';
-      return '<li><a href="https://solscan.io/tx/' + encodeURIComponent(e.tx) + '" target="_blank" rel="noopener"><span><b>' + what + '</b>' + (e.note ? ' · ' + esc(e.note) : '') + '</span><span class="status-line">' + esc(e.date) + '</span></a></li>';
-    }).join('');
-  }).catch(function () {});
+      return { t: Date.parse(e.date) || 0, html: '<li><a href="https://solscan.io/tx/' + encodeURIComponent(e.tx) + '" target="_blank" rel="noopener"><span><b>' + what + '</b>' + (e.note ? ' · ' + esc(e.note) : '') + '</span><span class="status-line">' + esc(e.date) + '</span></a></li>' };
+    });
+    var b = res[1], weekly = [];
+    if (b) {
+      document.getElementById('bIncome').textContent = sol(b.incomeLamports);
+      document.getElementById('bDue').textContent = sol(b.dueLamports);
+      document.getElementById('bSpent').textContent = sol(b.spentLamports);
+      document.getElementById('bPunch').textContent = punch(b.punchBurnedRaw);
+      document.getElementById('burnStats').hidden = false;
+      weekly = (b.burns || []).map(function (x) {
+        return { t: x.at * 1000, html: '<li><a href="https://solscan.io/tx/' + encodeURIComponent(x.burn_sig) + '" target="_blank" rel="noopener"><span><b>Burned ' + punch(x.punch_raw) + '</b> · bought with ' + sol(x.sol_lamports) + ' of PunchCard’s fee</span><span class="status-line">' + new Date(x.at * 1000).toLocaleDateString() + '</span></a></li>' };
+      });
+    }
+    var all = manual.concat(weekly).sort(function (a, c) { return c.t - a.t; });
+    if (all.length) document.getElementById('log').innerHTML = all.map(function (e) { return e.html; }).join('');
+  });
 })();
 </script>
 </body>
