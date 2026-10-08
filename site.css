@@ -544,3 +544,33 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .hmark.gold i { background: radial-gradient(circle at 45% 40%, #ffd98a 0 14%, #d4561a 42%, #4a0f04 100%); box-shadow: 0 0 4px rgba(212,86,26,.9), inset 0 0 0 1px rgba(74,15,4,.35); }
 .status-line .ico, .burn-line .ico, #burnHint .ico, .gostat .ico { color: var(--terra); width: 1.05em; height: 1.05em; }
 .boxes-note a { color: var(--sol); font-weight: 600; }
+
+/* ===== PunchCard Perk Pass (customer screen) ===== */
+.pp { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 1rem) 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem); background: rgba(20,17,12,.88); backdrop-filter: blur(6px); overflow-y: auto; animation: ppfade .3s ease; }
+@keyframes ppfade { from { opacity: 0; } }
+.pp-card { position: relative; width: 100%; max-width: 380px; border-radius: 26px; padding: 1.3rem 1.2rem 1.2rem; display: grid; gap: .7rem; justify-items: center; text-align: center; color: #f6efe2; overflow: hidden;
+  background: linear-gradient(120deg, #3d5a4a, #2f4a3b 40%, #a83a20 140%); background-size: 220% 220%; animation: pprise .45s cubic-bezier(.2,.9,.2,1), ppshift 6s ease-in-out infinite; box-shadow: 0 30px 60px rgba(0,0,0,.45); }
+@keyframes pprise { from { opacity: 0; transform: translateY(18px) scale(.97); } }
+@keyframes ppshift { 50% { background-position: 100% 100%; } }
+.pp-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.14) 50%, transparent 60%); animation: ppsheen 3.5s linear infinite; pointer-events: none; }
+@keyframes ppsheen { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.pp-card.expired { filter: grayscale(.9); }
+.pp-card.expired::after { display: none; }
+.pp-msg { background: #1c1812; }
+.pp-brand { display: flex; align-items: center; gap: .45rem; font-family: 'Special Elite', cursive; font-size: 1.05rem; }
+.pp-brand b { color: #f4d9a7; font-weight: 400; }
+.pp-biz { font-family: 'Courier Prime', monospace; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: rgba(246,239,226,.75); }
+.pp-perk { font-family: 'Special Elite', cursive; font-size: clamp(1.6rem, 7vw, 2rem); line-height: 1.1; text-wrap: balance; }
+.pp-holes { display: flex; gap: 8px; }
+.pp-holes i { width: 10px; height: 10px; border-radius: 50%; background: rgba(246,239,226,.9); }
+.pp-clock { font-family: 'Courier Prime', monospace; font-size: 2.1rem; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.pp-qr { background: #fff; border-radius: 18px; padding: 8px; width: min(64vw, 230px); }
+.pp-qr img { display: block; width: 100%; height: auto; border-radius: 12px; }
+.pp-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: .2rem .9rem; font-size: .85rem; color: rgba(246,239,226,.85); }
+.pp-bar { width: 100%; height: 6px; border-radius: 999px; background: rgba(246,239,226,.18); overflow: hidden; }
+.pp-bar span { display: block; height: 100%; background: #f4d9a7; transition: width .25s linear; }
+.pp-left { font-family: 'Courier Prime', monospace; font-size: .85rem; }
+.pp-hint, .pp-why { margin: 0; font-size: .85rem; line-height: 1.5; color: rgba(246,239,226,.8); }
+.pp-why { font-size: 1rem; color: #f6efe2; }
+.pp .pp-close { width: 100%; }
+@media (prefers-reduced-motion: reduce) { .pp-card, .pp-card::after { animation: none; } }

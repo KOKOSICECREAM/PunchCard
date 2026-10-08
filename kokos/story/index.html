@@ -11,6 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
+<script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
 <style>
   :root { --w: 1080px; }
   .mock-bar { position: sticky; top: 0; z-index: 30; background: #1c1812; color: #f6efe2; text-align: center; padding: .5rem 1rem; font-family: 'Courier Prime', monospace; font-size: .78rem; letter-spacing: .06em; }
@@ -52,6 +54,9 @@
   .perk .need { font-family: 'Courier Prime', monospace; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: #f4d9a7; }
   .perk b { font-family: 'Lora', serif; font-size: 1.2rem; }
   .perk small { color: rgba(246,239,226,.7); }
+  .perks { grid-template-columns: minmax(0, 420px); }
+  .perk .pass-btn { margin-top: .6rem; justify-self: start; background: #f4d9a7; border-color: #f4d9a7; color: #1c1812; }
+  .perk .pass-status { font-size: .82rem; color: rgba(246,239,226,.75); min-height: 1em; }
   /* updates */
   .feed { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
   .post { border-radius: 16px; border: 1px solid var(--border-mid); background: var(--paper-card); overflow: hidden; display: grid; }
@@ -129,11 +134,10 @@
   <section class="blk"><div class="wrap">
     <p class="lbl">For CREAM holders</p>
     <h2 class="t">A little thank-you back.</h2>
-    <p class="lede" style="max-width:60ch;margin:0 0 1.2rem">Perks KOKOS chose for the people who hold CREAM. Show your wallet at the counter.</p>
-    <div class="perks ex">
-      <div class="perk"><span class="need">Hold 100K CREAM</span><b>Free topping, any visit</b><small>Show your wallet at the counter.</small></div>
-      <div class="perk"><span class="need">Hold 1M CREAM</span><b>First taste of new flavors</b><small>Before they hit the menu.</small></div>
-      <div class="perk"><span class="need">Top 25 holders</span><b>A seat on the flavor panel</b><small>Help pick what comes next.</small></div>
+    <p class="lede" style="max-width:60ch;margin:0 0 1.2rem">A perk KOKOS chose for the people who hold CREAM. Your tokens never move: you just show a pass.</p>
+    <div class="perks">
+      <div class="perk real"><span class="need">Hold $50 of CREAM</span><b>Buy 1 scoop, get 1 free</b><small>Once a month. Show your perk pass at the counter.</small>
+        <button class="btn-primary pass-btn" type="button" data-perk="bogo-scoop">Get my perk pass</button><span class="pass-status" role="status"></span></div>
     </div>
     <p class="muted" style="margin-top:1rem;font-size:.85rem;color:var(--ink-faded)">Perks are customer rewards chosen by the shop and can change. Holding a token isn’t an investment in KOKOS or PunchCard.</p>
   </div></section>
@@ -173,6 +177,8 @@
 
 <script type="module">
 import { API } from '/launchpad/lp.js';
+import { openPerkPass } from '/launchpad/perk-pass.js';
+for (const b of document.querySelectorAll('.pass-btn')) b.addEventListener('click', () => openPerkPass({ mint: 'B2WCxWps69JzPMfjXE4MKpMkgiTgLcat1JGGpYzpXVjX', perkId: b.dataset.perk, status: b.nextElementSibling }));
 const usdFmt = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(v >= 10000 ? 0 : 1).replace(/\.0$/, '')}K` : `$${Math.round(v).toLocaleString()}`);
 try {
   const c = await fetch(`${API}/api/coins/B2WCxWps69JzPMfjXE4MKpMkgiTgLcat1JGGpYzpXVjX`).then((r) => r.json());
