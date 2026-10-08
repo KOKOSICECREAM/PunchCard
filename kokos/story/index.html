@@ -29,13 +29,17 @@
   .st-hero .ctas a { text-decoration: none; }
   .hero-art { position: relative; aspect-ratio: 1; max-width: 360px; justify-self: center; width: 100%; }
   .hero-art .photo { position: absolute; inset: 0; border-radius: 28px; transform: rotate(3deg); background: repeating-linear-gradient(135deg, #e9dcc6 0 14px, #e2d3ba 14px 28px); border: 3px solid #1c1812; box-shadow: 10px 10px 0 var(--terra); display: grid; place-items: center; color: #8c8070; font-family: 'Courier Prime', monospace; font-size: .8rem; text-align: center; padding: 1rem; }
-  .hero-art img { position: absolute; width: 46%; left: -6%; bottom: -6%; border-radius: 50%; border: 4px solid #f8f4ec; box-shadow: 0 14px 30px rgba(28,24,18,.25); transform: rotate(-6deg); }
+  .hero-art .photo.has-img { padding: 0; overflow: hidden; background: #e9dcc6; }
+  .hero-art .photo.has-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero-art img.coin { position: absolute; width: 46%; left: -6%; bottom: -6%; border-radius: 50%; border: 4px solid #f8f4ec; box-shadow: 0 14px 30px rgba(28,24,18,.25); transform: rotate(-6deg); }
   /* sections */
   section.blk { padding: 3.25rem 0; }
   section.blk + section.blk { border-top: 1px solid var(--border); }
   .lbl { font-family: 'Courier Prime', monospace; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--terra); margin: 0 0 .5rem; }
   h2.t { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.8rem, 4.6vw, 2.6rem); line-height: 1.1; margin: 0 0 1.2rem; text-wrap: balance; }
   .story { display: grid; grid-template-columns: .85fr 1.15fr; gap: 2.5rem; align-items: start; }
+  .owner.has-img { padding: 0; overflow: hidden; }
+  .owner.has-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .owner { aspect-ratio: 4/5; border-radius: 22px; background: repeating-linear-gradient(45deg, #ebe2d2 0 12px, #e4d8c4 12px 24px); display: grid; place-items: center; color: #8c8070; font-family: 'Courier Prime', monospace; font-size: .8rem; text-align: center; padding: 1rem; }
   .story-text { font-family: 'Lora', serif; font-size: 1.12rem; line-height: 1.75; color: var(--ink); }
   .story-text p { margin: 0 0 1rem; }
@@ -51,6 +55,8 @@
   /* updates */
   .feed { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
   .post { border-radius: 16px; border: 1px solid var(--border-mid); background: var(--paper-card); overflow: hidden; display: grid; }
+  .post .pic.media { padding: 0; overflow: hidden; }
+  .post .pic.media img, .post .pic.media video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .post .pic { aspect-ratio: 4/3; background: repeating-linear-gradient(135deg, #efe5d4 0 12px, #e7dbc6 12px 24px); display: grid; place-items: center; color: #8c8070; font-family: 'Courier Prime', monospace; font-size: .75rem; }
   .post .body { padding: .9rem 1rem 1.1rem; display: grid; gap: .35rem; }
   .post .when { font-family: 'Courier Prime', monospace; font-size: .72rem; color: var(--ink-faded); letter-spacing: .06em; }
@@ -101,13 +107,13 @@
         <a class="btn-secondary" href="https://kokosicecream.com" target="_blank" rel="noopener">Visit KOKOS</a>
       </div>
     </div>
-    <div class="hero-art"><div class="photo">Owner’s shop photo<br>(uploaded from the Merchant app)</div><img src="/kokos/cream.png" alt="CREAM token"></div>
+    <div class="hero-art"><div class="photo has-img"><img src="/kokos/story/media/1132.jpg" alt="Inside KOKOS Ice Cream: checkered floor, a giant ice cream cone by the door and the Treat Yourself counter" loading="eager"></div><img class="coin" src="/kokos/cream.png" alt="CREAM token"></div>
   </div>
 </div>
 
 <main>
   <section class="blk"><div class="wrap story">
-    <div class="owner">Photo of the people behind the counter</div>
+    <div class="owner has-img"><img src="/kokos/story/media/1130.jpg" alt="A triple scoop of KOKOS ice cream in front of the shop’s round gold mirror" loading="lazy"></div>
     <div>
       <p class="lbl">Meet the people</p>
       <h2 class="t">Why we scoop.</h2>
@@ -136,9 +142,8 @@
     <p class="lbl">From the shop</p>
     <h2 class="t">Updates.</h2>
     <div class="feed ex">
-      <article class="post"><div class="pic">Photo</div><div class="body"><span class="when">OCT 6 · KOKOS</span><p>We hit our first milestone! The new waffle-cone irons arrive next week. Thank you, CREAM fam.</p></div></article>
-      <article class="post"><div class="pic">Photo</div><div class="body"><span class="when">OCT 3 · KOKOS</span><p>Pumpkin chai is back for fall. Come say hi on City Ave.</p></div></article>
-      <article class="post"><div class="pic">Video</div><div class="body"><span class="when">SEP 28 · KOKOS</span><p>A day in the life: 6 a.m. coconut milk, 10 a.m. first scoop.</p></div></article>
+      <article class="post"><div class="pic media"><video src="/kokos/story/media/shop.mp4" poster="/kokos/story/media/shop-poster.jpg" muted autoplay loop playsinline preload="metadata" aria-label="The pink KOKOS container shop by the sand courts"></video></div><div class="body"><span class="when">OCT 6 · KOKOS</span><p>Sun’s out on City Ave. Come find the pink container by the courts.</p></div></article>
+      <article class="post"><div class="pic media"><img src="/kokos/story/media/1129.jpg" alt="A KOKOS cone against the shop’s pink patterned wall" loading="lazy"></div><div class="body"><span class="when">OCT 3 · KOKOS</span><p>The classic, against our favorite wall. Plant-based, made from organic coconut milk.</p></div></article>
     </div>
     <div class="socials ex">
       <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg>Instagram</a>
