@@ -19,14 +19,14 @@
   .ex::after { content: 'Example'; position: absolute; top: -.65rem; right: .75rem; font-family: 'Courier Prime', monospace; font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; background: #f4d9a7; color: #4a2c00; padding: .1rem .45rem; border-radius: 999px; }
   .wrap { max-width: var(--w); margin: 0 auto; padding: 0 1.25rem; }
   /* hero */
-  .hero { position: relative; overflow: hidden; background: radial-gradient(120% 90% at 85% 10%, rgba(232,135,106,.35), transparent 55%), radial-gradient(90% 80% at 0% 100%, rgba(147,194,164,.35), transparent 60%), #f3ece0; }
+  .st-hero { position: relative; overflow: hidden; background: radial-gradient(120% 90% at 85% 10%, rgba(232,135,106,.35), transparent 55%), radial-gradient(90% 80% at 0% 100%, rgba(147,194,164,.35), transparent 60%), #f3ece0; }
   .hero-in { display: grid; grid-template-columns: 1.2fr .8fr; gap: 2.5rem; align-items: center; padding: 3.5rem 1.25rem 3rem; max-width: var(--w); margin: 0 auto; }
   .kicker { font-family: 'Courier Prime', monospace; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--terra); }
-  .hero h1 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(2.4rem, 7vw, 4.2rem); line-height: 1.02; margin: .4rem 0 .8rem; text-wrap: balance; }
-  .hero h1 em { font-style: normal; color: var(--terra); }
-  .hero .thanks { font-family: 'Lora', serif; font-style: italic; font-size: clamp(1.15rem, 2.6vw, 1.45rem); color: var(--ink-mid); max-width: 34ch; line-height: 1.45; margin: 0 0 1.5rem; }
-  .hero .ctas { display: flex; flex-wrap: wrap; gap: .7rem; }
-  .hero .ctas a { text-decoration: none; }
+  .st-hero h1 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(2.4rem, 7vw, 4.2rem); line-height: 1.02; margin: .4rem 0 .8rem; text-wrap: balance; }
+  .st-hero h1 em { font-style: normal; color: var(--terra); }
+  .st-hero .thanks { font-family: 'Lora', serif; font-style: italic; font-size: clamp(1.15rem, 2.6vw, 1.45rem); color: var(--ink-mid); max-width: 34ch; line-height: 1.45; margin: 0 0 1.5rem; }
+  .st-hero .ctas { display: flex; flex-wrap: wrap; gap: .7rem; }
+  .st-hero .ctas a { text-decoration: none; }
   .hero-art { position: relative; aspect-ratio: 1; max-width: 360px; justify-self: center; width: 100%; }
   .hero-art .photo { position: absolute; inset: 0; border-radius: 28px; transform: rotate(3deg); background: repeating-linear-gradient(135deg, #e9dcc6 0 14px, #e2d3ba 14px 28px); border: 3px solid #1c1812; box-shadow: 10px 10px 0 var(--terra); display: grid; place-items: center; color: #8c8070; font-family: 'Courier Prime', monospace; font-size: .8rem; text-align: center; padding: 1rem; }
   .hero-art img { position: absolute; width: 46%; left: -6%; bottom: -6%; border-radius: 50%; border: 4px solid #f8f4ec; box-shadow: 0 14px 30px rgba(28,24,18,.25); transform: rotate(-6deg); }
@@ -98,7 +98,7 @@
   <ul class="nav-links"><li><a href="/launchpad/">Launchpad</a></li><li><a href="/launchpad/how/">How it works</a></li></ul>
 </nav>
 
-<div class="hero">
+<div class="st-hero">
   <div class="hero-in">
     <div>
       <div class="kicker">Nashville, TN · Scooping since 2017</div>
@@ -111,7 +111,7 @@
     </div>
     <div class="hero-art"><div class="photo">Owner’s shop photo<br>(uploaded from the Merchant app)</div><img src="/kokos/cream.png" alt="CREAM token"></div>
   </div>
-</header>
+</div>
 
 <main>
   <section class="blk"><div class="wrap story">
