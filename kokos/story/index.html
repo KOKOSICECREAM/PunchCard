@@ -41,18 +41,6 @@
   .story-text p { margin: 0 0 1rem; }
   .story-text .sig { font-style: italic; color: var(--ink-mid); }
   .quote { margin: 1.4rem 0 0; padding: 1.1rem 1.3rem; border-left: 4px solid var(--terra); background: var(--terra-pale); font-family: 'Lora', serif; font-style: italic; font-size: 1.2rem; line-height: 1.5; border-radius: 0 12px 12px 0; }
-  /* plans */
-  .plans { display: grid; gap: .9rem; }
-  .bar { height: 12px; border-radius: 999px; background: var(--paper-warm); overflow: hidden; margin: .25rem 0 1.25rem; }
-  .bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--sol), var(--terra)); border-radius: 999px; width: 0; transition: width 1.2s cubic-bezier(.2,.9,.2,1); }
-  .plan { display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; padding: 1rem 1.15rem; border-radius: 14px; border: 1px solid var(--border-mid); background: var(--paper-card); }
-  .plan .amt { font-family: 'Special Elite', cursive; font-size: 1.35rem; min-width: 4.2rem; }
-  .plan b { display: block; font-size: 1.02rem; }
-  .plan small { color: var(--ink-faded); }
-  .plan .st8 { font-family: 'Courier Prime', monospace; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--border-mid); color: var(--ink-faded); white-space: nowrap; }
-  .plan.done { border-color: var(--sol); background: var(--sol-pale); }
-  .plan.done .st8 { background: var(--sol); border-color: var(--sol); color: #fff; }
-  .plan.next .st8 { border-color: var(--terra); color: var(--terra); }
   /* perks */
   .perks { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; }
   .perk { position: relative; padding: 1.2rem 1.2rem 1.1rem 1.2rem; border-radius: 16px; background: #1c1812; color: #f6efe2; display: grid; gap: .35rem; overflow: hidden; }
@@ -70,6 +58,11 @@
   .socials { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.2rem; }
   .socials a { display: inline-flex; align-items: center; gap: .5rem; padding: .55rem .95rem; border-radius: 999px; border: 1px solid var(--border-mid); text-decoration: none; color: var(--ink); background: var(--paper-card); font-weight: 600; font-size: .9rem; }
   .socials svg { width: 1.1em; height: 1.1em; }
+  /* milestones (celebration only) */
+  .ms-strip { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.1rem; }
+  .ms-strip span { font-family: 'Courier Prime', monospace; font-size: .8rem; padding: .35rem .7rem; border-radius: 999px; border: 1px solid var(--border-mid); color: var(--ink-faded); }
+  .ms-strip span.on { background: var(--sol); border-color: var(--sol); color: #fff; font-weight: 700; }
+  .ms-strip span.next { border-color: var(--terra); color: var(--terra); font-weight: 700; }
   /* proof */
   .proof { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .8rem; }
   .stat { padding: 1.1rem; border-radius: 14px; background: var(--paper-card); border: 1px solid var(--border-mid); display: grid; gap: .15rem; }
@@ -87,8 +80,7 @@
     .hero-art { max-width: 280px; margin-top: .5rem; }
     .owner { max-width: 360px; }
   }
-  @media (max-width: 480px) { .plan { grid-template-columns: auto 1fr; } .plan .st8 { grid-column: 2; justify-self: start; } }
-  @media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
+  
 </style>
 </head>
 <body>
@@ -129,21 +121,9 @@
   </div></section>
 
   <section class="blk"><div class="wrap">
-    <p class="lbl">What the shop earns goes to</p>
-    <h2 class="t">Our plans, one milestone at a time.</h2>
-    <p class="lede" style="max-width:60ch;margin:0 0 1rem">Every CREAM trade pays the shop a creator fee. Here’s what KOKOS plans to do with it as it adds up. It’s their shop’s income, not an investment, and nobody is owed anything.</p>
-    <div class="bar" aria-hidden="true"><span id="planBar"></span></div>
-    <div class="plans ex" id="plans">
-      <div class="plan" data-at="100"><span class="amt">$100</span><span><b>A new set of waffle-cone irons</b><small>So the cones stay fresh all summer.</small></span><span class="st8">Plan</span></div>
-      <div class="plan" data-at="1000"><span class="amt">$1K</span><span><b>Two new seasonal flavors</b><small>Voted on by CREAM holders.</small></span><span class="st8">Plan</span></div>
-      <div class="plan" data-at="5000"><span class="amt">$5K</span><span><b>Summer bonuses for our scoopers</b><small>The people who make the magic.</small></span><span class="st8">Plan</span></div>
-      <div class="plan" data-at="25000"><span class="amt">$25K</span><span><b>A KOKOS cart for festivals</b><small>Bringing CREAM to the whole city.</small></span><span class="st8">Plan</span></div>
-    </div>
-  </div></section>
-
-  <section class="blk"><div class="wrap">
     <p class="lbl">For CREAM holders</p>
     <h2 class="t">A little thank-you back.</h2>
+    <p class="lede" style="max-width:60ch;margin:0 0 1.2rem">Perks KOKOS chose for the people who hold CREAM. Show your wallet at the counter.</p>
     <div class="perks ex">
       <div class="perk"><span class="need">Hold 100K CREAM</span><b>Free topping, any visit</b><small>Show your wallet at the counter.</small></div>
       <div class="perk"><span class="need">Hold 1M CREAM</span><b>First taste of new flavors</b><small>Before they hit the menu.</small></div>
@@ -175,6 +155,7 @@
       <div class="stat"><span>Shared with CREAM holders</span><b id="pCom">…</b><small id="pComSol"></small></div>
       <div class="stat"><span>Holders</span><b id="pHolders">…</b><small>wallets holding CREAM now</small></div>
     </div>
+    <div class="ms-strip" id="msStrip" aria-label="Milestones"></div>
   </div></section>
 </main>
 
@@ -182,7 +163,7 @@
   <h2>Thank the people behind the counter.</h2>
   <p>In a world that’s getting more automated by the day, the people who scoop your ice cream, cut your hair and know your order are worth celebrating. PunchCard is how their community says thanks.</p>
   <a class="btn-primary sol" href="https://pump.fun/coin/B2WCxWps69JzPMfjXE4MKpMkgiTgLcat1JGGpYzpXVjX" target="_blank" rel="noopener">Get CREAM</a>
-  <p class="fine">CREAM is a community token on pump.fun. Holding it isn’t an investment in KOKOS Ice Cream or PunchCard and promises no returns; tokens can lose all their value. KOKOS’s plans describe how it intends to use income its shop earns and aren’t obligations to holders. Not financial advice.</p>
+  <p class="fine">CREAM is a community token on pump.fun. Holding it isn’t an investment in KOKOS Ice Cream or PunchCard and promises no returns; tokens can lose all their value. Not financial advice.</p>
 </section>
 
 <script type="module">
@@ -194,15 +175,10 @@ try {
   const put = (id, l) => { document.getElementById(id).textContent = usdFmt(sol(l) * usd); document.getElementById(id + 'Sol').textContent = `${sol(l).toFixed(2)} SOL`; };
   put('pTotal', c.feesTotalLamports); put('pBiz', c.feesBusinessLamports); put('pCom', c.feesCommunityLamports);
   document.getElementById('pHolders').textContent = (c.holders ?? '—').toLocaleString();
-  // plans light up as the shop's earnings pass each milestone
-  const earned = sol(c.feesBusinessLamports) * usd, plans = [...document.querySelectorAll('.plan')], max = Number(plans.at(-1).dataset.at);
-  let nextSet = false;
-  for (const p of plans) {
-    const at = Number(p.dataset.at), s = p.querySelector('.st8');
-    if (earned >= at) { p.classList.add('done'); s.textContent = 'Reached'; }
-    else if (!nextSet) { p.classList.add('next'); s.textContent = `${usdFmt(at - earned)} to go`; nextSet = true; }
-  }
-  requestAnimationFrame(() => { document.getElementById('planBar').style.width = `${Math.min(100, (earned / max) * 100)}%`; });
+  // milestones the shop has reached (a celebration, not a plan)
+  const earned = sol(c.feesBusinessLamports) * usd, MS = [100, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
+  const next = MS.find((m) => earned < m);
+  document.getElementById('msStrip').innerHTML = MS.map((m) => `<span class="${earned >= m ? 'on' : m === next ? 'next' : ''}">${earned >= m ? 'Reached ' : ''}${usdFmt(m)}${m === 100000 ? '+' : ''}</span>`).join('');
 } catch { /* numbers stay as … */ }
 </script>
 </body>
