@@ -94,6 +94,15 @@
   .owner-brand b { color: #a83a20; font-weight: 400; }
   .owner-tag { margin: 0; font-family: 'Lora', serif; font-style: italic; color: #3d5a4a; }
   .owner-view .btn-secondary { border-color: #1c1812; }
+  .mine { margin-top: 1.4rem; display: grid; gap: .6rem; }
+  .mine h2 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: 1.35rem; margin: 0; }
+  .mine ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+  .mine li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem .75rem; align-items: center; padding: .8rem .9rem; border-radius: 14px; background: var(--paper-card); border: 1px solid var(--border-mid); }
+  .mine li b { display: block; font-size: 1rem; }
+  .mine li span { font-size: .85rem; color: var(--ink-mid); overflow-wrap: anywhere; }
+  .mine .acts { display: flex; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; }
+  .mine .acts a, .mine .acts button { font-size: .85rem; padding: .5rem .8rem; border-radius: 999px; }
+  .mine .claimed { font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--sol); }
   .owner-big { margin: 0; font-weight: 700; font-size: 1.15rem; }
   .owner-small { margin: 0; color: #4a4438; line-height: 1.5; font-size: 0.95rem; }
   .owner-url { margin: 0; font-family: 'Courier Prime', monospace; font-size: 0.75rem; color: #8c8070; overflow-wrap: anywhere; }
@@ -246,6 +255,7 @@
     <div class="member-status" id="memberLine" hidden></div>
     <button class="btn-primary sol big" id="toWhere" type="button" hidden>Next: find the business →</button>
     <p class="gostat" id="walletStatus" role="status"></p>
+    <div class="mine" id="mine" hidden><h2>Your launches</h2><ul id="mineList"></ul></div>
   </section>
 
   <!-- 2. Where are you? -->
@@ -407,8 +417,23 @@ $('connect').addEventListener('click', async () => {
     st.wallet = await connectWallet();
     $('connect').textContent = `Connected: ${short(st.wallet)} · switch`;
     await checkMembership();
+    loadMine();
   } catch (e) { $('walletStatus').textContent = e.message; }
 });
+// Your launches: reopen any token's owner screen later (e.g. at a scheduled meeting with the owner).
+async function loadMine() {
+  $('mine').hidden = true;
+  try {
+    const [me, all] = await Promise.all([api(`/api/launcher?wallet=${encodeURIComponent(st.wallet)}`), api('/api/coins').catch(() => ({ coins: [] }))]);
+    const claimed = new Set((all.coins || []).filter((c) => c.claimed).map((c) => c.mint));
+    if (!me.tokens?.length) return;
+    $('mineList').innerHTML = me.tokens.map((t) => `<li><div><b>$${esc(t.ticker)}</b><span>${esc(t.business)}</span></div><div class="acts">
+      ${claimed.has(t.mint) ? '<span class="claimed">Owner claimed</span>' : `<button class="btn-primary terra" type="button" data-owner="${esc(t.mint)}" data-biz="${esc(t.business)}">Show the owner</button>`}
+      <a class="btn-secondary" href="${SITE}/launchpad/coin/?mint=${esc(t.mint)}">Page</a></div></li>`).join('');
+    $('mine').hidden = false;
+    $('mineList').querySelectorAll('[data-owner]').forEach((b) => b.addEventListener('click', () => openOwner(b.dataset.owner, b.dataset.biz)));
+  } catch { /* the list is a convenience; launching still works */ }
+}
 async function checkMembership() {
   const line = $('memberLine'); line.hidden = false; busy(line, 'Checking your Membership…');
   st.member = false; $('toWhere').hidden = true;
@@ -628,30 +653,31 @@ function confetti() {
 }
 const reveal = (img, wrap, url) => { img.classList.remove('in'); wrap?.classList.remove('sweep'); img.onload = () => { img.classList.add('in'); void wrap?.offsetWidth; wrap?.classList.add('sweep'); }; img.src = url; };
 function done() {
-  const tokenUrl = `${SITE}/launchpad/coin/?mint=${st.mint}`, claimUrl = `${SITE}/launchpad/claim/?mint=${st.mint}`;
+  const tokenUrl = `${SITE}/launchpad/coin/?mint=${st.mint}`;
   $('doneTicker').textContent = `$${$('ticker').value.trim()}`;
   $('doneBiz').textContent = `A community token for ${st.business.name}.`;
   const h = st.burned > 0 && honourFor(st.firstBuy);
   if (st.burned > 0) { $('doneBurn').innerHTML = `${ICONS.flame} ${Math.round(st.burned / 1e6).toLocaleString()} tokens burned at launch${h ? ` · ${honourPill(h)} earned!` : ''}`; $('doneBurn').classList.toggle('inferno', st.firstBuy >= 3); $('doneBurn').hidden = false; } else $('doneBurn').hidden = true;
   qrImg(tokenUrl).then((u) => reveal($('qrToken'), $('qrToken').closest('.qr'), u));
   $('openToken').href = tokenUrl;
-  $('ownerH').textContent = st.business.name;
-  qrImg(claimUrl).then((u) => { $('qrOwner').dataset.url = u; });
-  $('ownerUrl').textContent = claimUrl.replace('https://', '');
   $('share').onclick = async () => {
     const data = { title: `$${$('ticker').value.trim()} on PunchCard`, text: `A community token for ${st.business.name}. Every trade helps the business.`, url: tokenUrl };
     try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(tokenUrl); $('share').textContent = 'Link copied'; } } catch { /* dismissed */ }
   };
   show('s-done');
   setTimeout(confetti, 120);
+  setTimeout(loadMine, 4000); // the new token joins Your launches
 }
 // Full-screen QR for the owner; keeps the screen awake while it's up (where the phone allows).
 let wake = null;
-$('showOwner').addEventListener('click', async () => {
-  $('ownerView').hidden = false; buzz(10);
-  if ($('qrOwner').dataset.url) reveal($('qrOwner'), $('ownerQr'), $('qrOwner').dataset.url);
+async function openOwner(mint, business) {
+  const claimUrl = `${SITE}/launchpad/claim/?mint=${mint}`;
+  $('ownerH').textContent = business; $('ownerUrl').textContent = claimUrl.replace('https://', '');
+  $('qrOwner').removeAttribute('src'); $('ownerView').hidden = false; buzz(10);
+  qrImg(claimUrl).then((u) => reveal($('qrOwner'), $('ownerQr'), u));
   try { wake = await navigator.wakeLock?.request('screen'); } catch { /* not allowed here */ }
-});
+}
+$('showOwner').addEventListener('click', () => openOwner(st.mint, st.business.name));
 $('closeOwner').addEventListener('click', () => { $('ownerView').hidden = true; wake?.release?.().catch(() => {}); wake = null; });
 $('again').addEventListener('click', () => {
   Object.assign(st, { place: null, business: null, image: null, mint: null });
