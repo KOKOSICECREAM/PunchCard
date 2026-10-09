@@ -426,10 +426,11 @@ async function loadMine() {
   try {
     const [me, all] = await Promise.all([api(`/api/launcher?wallet=${encodeURIComponent(st.wallet)}`), api('/api/coins').catch(() => ({ coins: [] }))]);
     const claimed = new Set((all.coins || []).filter((c) => c.claimed).map((c) => c.mint));
+    const pageOf = Object.fromEntries((all.coins || []).filter((c) => c.page).map((c) => [c.mint, c.page]));
     if (!me.tokens?.length) return;
     $('mineList').innerHTML = me.tokens.map((t) => `<li><div><b>$${esc(t.ticker)}</b><span>${esc(t.business)}</span></div><div class="acts">
       ${claimed.has(t.mint) ? '<span class="claimed">Owner claimed</span>' : `<button class="btn-primary terra" type="button" data-owner="${esc(t.mint)}" data-biz="${esc(t.business)}">Show the owner</button>`}
-      <a class="btn-secondary" href="${SITE}/launchpad/coin/?mint=${esc(t.mint)}">Page</a></div></li>`).join('');
+      <a class="btn-secondary" href="${esc(pageOf[t.mint] || `${SITE}/launchpad/coin/?mint=${t.mint}`)}">Page</a></div></li>`).join('');
     $('mine').hidden = false;
     $('mineList').querySelectorAll('[data-owner]').forEach((b) => b.addEventListener('click', () => openOwner(b.dataset.owner, b.dataset.biz)));
   } catch { /* the list is a convenience; launching still works */ }

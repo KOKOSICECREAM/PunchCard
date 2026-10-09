@@ -278,7 +278,7 @@ api('/api/fees').then((f) => {
 
 api('/api/coins').then((r) => {
   $('recent').innerHTML = r.coins.length
-    ? r.coins.slice(0, 10).map((c) => `<li><a href="/launchpad/coin/?mint=${esc(c.mint)}"><span><b>${esc(c.coin_name)}</b> $${esc(c.ticker)}</span><span class="status-line">${esc(c.business_name)}${c.city ? ' · ' + esc(c.city) : ''}</span></a></li>`).join('')
+    ? r.coins.slice(0, 10).map((c) => `<li><a href="${esc(c.page || `/launchpad/coin/?mint=${c.mint}`)}"><span><b>${esc(c.coin_name)}</b> $${esc(c.ticker)}</span><span class="status-line">${esc(c.business_name)}${c.city ? ' · ' + esc(c.city) : ''}</span></a></li>`).join('')
     : '<li class="status-line">No tokens yet. Be the first.</li>';
 }).catch(() => { $('recent').innerHTML = '<li class="status-line">Couldn’t load the list right now.</li>'; });
 </script>
