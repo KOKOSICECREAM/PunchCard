@@ -25,6 +25,40 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
+<style>
+  .cp-page { max-width: 960px; }
+  .cp-hero { border-radius: 20px; padding: clamp(1.3rem, 4vw, 2.4rem); background: radial-gradient(120% 90% at 90% 0%, rgba(232,135,106,.28), transparent 55%), radial-gradient(90% 80% at 0% 100%, rgba(147,194,164,.3), transparent 60%), var(--paper-warm); display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.2rem, 4vw, 2.5rem); align-items: center; }
+  .cp-kicker { font-family: 'Courier Prime', monospace; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--terra); }
+  .cp-hero h1 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(2.1rem, 6.5vw, 3.6rem); line-height: 1.04; margin: .35rem 0 .5rem; text-wrap: balance; }
+  .cp-token { font-family: 'Courier Prime', monospace; font-size: .95rem; color: var(--ink-mid); margin: 0 0 .9rem; }
+  .cp-token b { color: var(--terra); }
+  .cp-thanks { font-family: 'Lora', serif; font-style: italic; font-size: clamp(1.05rem, 2.4vw, 1.3rem); color: var(--ink-mid); line-height: 1.5; margin: 0 0 1.2rem; max-width: 40ch; }
+  .cp-ctas { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .cp-ctas a { text-decoration: none; }
+  .cp-art { position: relative; justify-self: center; width: min(100%, 300px); }
+  .cp-art img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 24px; box-shadow: 0 0 0 6px #fff8ee, 0 18px 40px rgba(28,24,18,.2); display: block; background: var(--paper-card); }
+  .cp-badge { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; font-size: .88rem; color: var(--ink-mid); }
+  .cp-sec { display: grid; gap: .9rem; }
+  .cp-sec h2 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.5rem, 4vw, 2rem); margin: 0; }
+  .cp-lbl { font-family: 'Courier Prime', monospace; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--terra); margin: 0; }
+  .cp-words { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+  .cp-words.has-img { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+  .cp-words blockquote { margin: 0; padding: 1.1rem 1.3rem; border-left: 4px solid var(--terra); background: var(--terra-pale); font-family: 'Lora', serif; font-size: 1.12rem; line-height: 1.6; border-radius: 0 12px 12px 0; }
+  .cp-words figure { margin: 0; }
+  .cp-words figure img { width: 100%; border-radius: 14px; display: block; }
+  .cp-credit { font-size: .8rem; color: var(--ink-faded); margin-top: .5rem; }
+  .cp-perks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 1rem; }
+  .cp-perk { padding: 1.2rem; border-radius: 16px; background: #1c1812; color: #f6efe2; display: grid; gap: .35rem; }
+  .cp-perk .need { font-family: 'Courier Prime', monospace; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: #f4d9a7; }
+  .cp-perk b { font-family: 'Lora', serif; font-size: 1.2rem; }
+  .cp-perk small { color: rgba(246,239,226,.72); line-height: 1.45; }
+  .cp-perk .pass-btn { margin-top: .5rem; justify-self: start; background: #f4d9a7; border-color: #f4d9a7; color: #1c1812; }
+  .cp-perk .pass-status { font-size: .82rem; color: rgba(246,239,226,.75); min-height: 1em; }
+  .cp-perk.soon { background: var(--paper-card); color: var(--ink); border: 1.5px dashed var(--border-mid); }
+  .cp-perk.soon .need { color: var(--terra); }
+  .cp-perk.soon small { color: var(--ink-mid); }
+  @media (max-width: 760px) { .cp-hero, .cp-words.has-img { grid-template-columns: minmax(0, 1fr); } .cp-art { width: min(100%, 240px); } }
+</style>
 </head>
 <body>
 <nav>
@@ -36,7 +70,7 @@
   </ul>
 </nav>
 
-<main class="app-wrap" id="main">
+<main class="app-wrap cp-page" id="main">
   <p class="status-line" id="loading">Loading…</p>
 </main>
 
@@ -55,6 +89,7 @@ import { $, esc, api, API, sol, short, explorer, countdown } from '/launchpad/lp
 const params = new URLSearchParams(location.search);
 const mint = params.get('mint') || '';
 const now = () => Math.floor(Date.now() / 1000);
+const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
 
 function statusOf(c) {
   if (c.status === 'HandedOver') return { pill: 'owned', label: 'Claimed by the owner', text: `Verified owner ${short(c.owner)} receives this token's creator fees directly from pump.fun.` };
@@ -68,29 +103,66 @@ function statusOf(c) {
   return { pill: 'open', label: 'Waiting for the owner', ends: c.deadline, text: `Creator fees are held for ${esc(c.business.name)}. The owner has until the deadline to claim them; after that, holders share them.` };
 }
 
+function perksHtml(c, perks) {
+  if (perks.length) return perks.map((x) => `<div class="cp-perk"><span class="need">Hold $${esc(x.minUsd)} of ${esc(c.ticker)}</span><b>${esc(x.title)}</b>
+    <small>${x.oneTime ? `Once every ${esc(x.everyDays)} days. ` : ''}Show your PunchCard Perk Pass at the counter.</small>
+    <button class="btn-primary pass-btn" type="button" data-perk="${esc(x.id)}">Get my PunchCard Perk Pass</button><span class="pass-status" role="status"></span></div>`).join('');
+  return `<div class="cp-perk soon"><span class="need">Coming soon</span><b>PunchCard Perk Pass</b>
+    <small>${c.status === 'HandedOver' ? `${esc(c.business.name)} can add a thank-you for ${esc(c.ticker)} holders here.` : `Perks are chosen by the owner. Once ${esc(c.business.name)} claims this page, they can add a thank-you for ${esc(c.ticker)} holders.`}</small></div>`;
+}
+
 async function load() {
   if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) { $('main').innerHTML = '<p class="notice bad">No token address in the link.</p>'; return; }
   let c;
   try { c = await api('/api/coins/' + mint); } catch (e) { $('main').innerHTML = `<p class="notice bad">${esc(e.message)}</p>`; return; }
-  document.title = `${c.coinName} ($${c.ticker}) — PunchCard`;
-  const st = statusOf(c);
+  const [prof, perkCfg] = await Promise.all([api(`/api/coins/${mint}/profile`).catch(() => ({})), api(`/api/perks?mint=${mint}`).catch(() => ({}))]);
+  const perks = perkCfg.perks || [], site = prof.site || null, host = site?.host || hostOf(c.business.website);
+  document.title = `${c.business.name} · ${c.coinName} ($${c.ticker}) — PunchCard`;
+  const st = statusOf(c), claimed = c.status === 'HandedOver' || c.status === 'Attested';
   const newNote = params.get('new') ? `<div class="notice ok"><b>It’s live.</b> Share this page with ${esc(c.business.name)} so the owner can claim their fees. <button class="btn-secondary" id="copyLink" type="button" style="margin-left:0.5rem">Copy link</button></div>` : '';
   const removedNote = c.hidden ? `<div class="notice warn"><b>Removed from PunchCard’s listings.</b> This token no longer appears on PunchCard (for example, at the business’s request). It still exists and may still trade on pump.fun; PunchCard can’t delete or change it.</div>` : '';
   const retiredNote = c.retired ? `<div class="notice warn"><b>Retired.</b> This business’s slot was released so a legitimate token can launch for it. This token still exists on pump.fun; any fees it holds still follow the published rules.</div>` : '';
+  const words = site?.description ? `
+    <section class="cp-sec">
+      <p class="cp-lbl">In their own words</p>
+      <div class="cp-words${site.image ? ' has-img' : ''}">
+        <div><blockquote>${esc(site.description)}</blockquote><p class="cp-credit">From <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(host)}</a></p></div>
+        ${site.image ? `<figure><img src="${esc(site.image)}" alt="From ${esc(host)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').remove()"><figcaption class="cp-credit">Image: ${esc(host)}</figcaption></figure>` : ''}
+      </div>
+      ${prof.featuredPage ? `<div><a class="btn-secondary" href="${esc(prof.featuredPage)}">Read the ${esc(c.business.name)} story</a></div>` : ''}
+    </section>` : (prof.featuredPage ? `<div><a class="btn-secondary" href="${esc(prof.featuredPage)}">Read the ${esc(c.business.name)} story</a></div>` : '');
   $('main').innerHTML = `
     ${removedNote}${retiredNote}${newNote}
-    <div class="coin-head">
-      <img src="${API}/img/${esc(mint)}" alt="" onerror="this.style.visibility='hidden'">
-      <div><h1 style="font-size:clamp(1.6rem,4vw,2.3rem)">${esc(c.coinName)} <em>$${esc(c.ticker)}</em></h1>
-        <p class="lede" style="font-size:1rem">for ${esc(c.business.name)}${c.business.city ? ' · ' + esc(c.business.city) : ''}</p></div>
-    </div>
+    <section class="cp-hero">
+      <div>
+        <div class="cp-kicker">${c.business.city ? esc(c.business.city) + ' · ' : ''}Community page</div>
+        <h1>${esc(c.business.name)}</h1>
+        <p class="cp-token">${esc(c.coinName)} · <b>$${esc(c.ticker)}</b></p>
+        ${c.description ? `<p class="cp-thanks">“${esc(c.description)}”</p>` : `<p class="cp-thanks">A thank-you to the people behind ${esc(c.business.name)}, from their community.</p>`}
+        <div class="cp-ctas">
+          <a class="btn-primary sol" href="https://pump.fun/coin/${esc(mint)}" target="_blank" rel="noopener">Get $${esc(c.ticker)} on pump.fun</a>
+          ${c.business.website ? `<a class="btn-secondary" href="${esc(c.business.website)}" target="_blank" rel="noopener">Visit ${esc(host || 'their site')}</a>` : ''}
+          ${prof.mapsUrl ? `<a class="btn-secondary" href="${esc(prof.mapsUrl)}" target="_blank" rel="noopener">Directions</a>` : ''}
+        </div>
+        <div class="cp-badge">${claimed ? `<span class="pill owned">Verified business</span>` : `<span class="pill open">Made by the community</span><span>Own ${esc(c.business.name)}? <a href="/launchpad/claim/?mint=${esc(mint)}">Claim this page</a></span>`}${c.burnTier ? ' ' + honourPill(c.burnTier) : ''}</div>
+      </div>
+      <div class="cp-art"><img src="${API}/img/${esc(mint)}" alt="${esc(c.business.name)}" onerror="this.parentNode.style.display='none'"></div>
+    </section>
+    ${words}
+    <section class="cp-sec">
+      <p class="cp-lbl">For ${esc(c.ticker)} holders</p>
+      <h2>A little thank-you back.</h2>
+      <div class="cp-perks">${perksHtml(c, perks)}</div>
+      <p class="status-line">Perks are customer rewards chosen by the business and can change. Holding a token isn’t an investment in the business or PunchCard.</p>
+    </section>
     <section class="panel">
+      <h2>The numbers, live</h2>
       <div><span class="pill ${st.pill}">${st.label}</span>${st.ends && st.ends > now() ? ` <span class="status-line" id="cd"></span>` : ''}</div>
       <p>${st.text}</p>
       <div class="stats">
-        <div class="stat"><small>Held for the business</small><b>${sol(c.feesInVaultLamports)} SOL</b></div>
+        <div class="stat"><small>${c.status === 'HandedOver' ? 'Saved for holders' : 'Held for the business'}</small><b>${sol(c.feesInVaultLamports)} SOL</b></div>
         <div class="stat"><small>Waiting at pump.fun</small><b>${sol(c.feesPendingAtPumpLamports)} SOL</b></div>
-        <div class="stat"><small>${c.status === 'HandedOver' ? 'Paid to the owner at claim' : 'Paid to the owner'}</small><b>${sol(c.ownerPaidLamports)} SOL</b></div>
+        <div class="stat"><small>Paid to the owner</small><b>${sol(c.businessPaidLamports ?? c.ownerPaidLamports)} SOL</b></div>
       </div>
       <div class="btn-row">
         ${c.status === 'Open' ? `<a class="btn-primary sol" href="/launchpad/claim/?mint=${esc(mint)}">I own this business</a>` : ''}
@@ -109,17 +181,20 @@ async function load() {
     </section>
     <section class="panel">
       <h2>Details</h2>
-      <p class="status-line">${esc(c.business.address || '')}${c.business.website ? ` · <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(c.business.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>` : ''}</p>
+      <p class="status-line">${esc(c.business.address || '')}${c.business.website ? ` · <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(host)}</a>` : ''}</p>
       <p class="status-line">Token <span class="mono">${esc(mint)}</span></p>
-      <p class="status-line">Launched by <span class="mono">${esc(short(c.launcher))}</span>${c.launchedAt ? ' on ' + new Date(c.launchedAt * 1000).toLocaleDateString() : ''}${c.deadline ? ` · claim deadline ${new Date(c.deadline * 1000).toLocaleString()}` : ''}</p>
+      <p class="status-line">Launched by <span class="mono">${esc(short(c.launcher))}</span>${c.launchedAt ? ' on ' + new Date(c.launchedAt * 1000).toLocaleDateString() : ''}${c.deadline && !claimed ? ` · claim deadline ${new Date(c.deadline * 1000).toLocaleString()}` : ''}</p>
       ${Number(c.launchBurnTokens || 0) > 0 ? `<p class="status-line">${ICONS.flame} <b>Fair launch:</b> the launcher's ${(c.firstBuyLamports / 1e9).toLocaleString()} SOL first buy was capped at 0.5% of the supply; <b>${Math.round(Number(c.launchBurnTokens) / 1e6).toLocaleString()} tokens were burned</b> at launch.${c.burnTier ? ` ${honourPill(c.burnTier)}` : ''}</p>` : ''}
       ${c.launcherReward?.eligible ? `<p class="status-line">${ICONS.door} <b>Bring them in reward:</b> the business joined, so this token's launcher earns ${c.launcherReward.rateBps / 100}% of PunchCard's fee from it, paid weekly · earned ${sol(c.launcherReward.earnedLamports)} SOL, paid ${sol(c.launcherReward.paidLamports)} SOL. <a href="/launchpad/how/#bring-them-in">How it works</a></p>` : ''}
-      ${c.description ? `<p>${esc(c.description)}</p>` : ''}
-      <p class="status-line">Creator fee split: ${c.platformBps ? `${(10000 - c.platformBps) / 100}% for the business${c.communityBps ? ` (the owner shares ${c.communityBps / 100}% of it with holders${c.shareReserve ? ', including the fees held at claim' : ''})` : ''} · ${c.platformBps / 100}% PunchCard service fee` : '100% for the business (launched before the service fee)'}. pump.fun keeps its own trading fees. Community tokens are tradable and can lose value.</p>
+      <p class="status-line">This page is written by the community${claimed ? ' and the verified owner' : ''}; text and images marked with a website come from the business's own site. Creator fee split: ${c.platformBps ? `${(10000 - c.platformBps) / 100}% for the business · ${c.platformBps / 100}% PunchCard service fee` : '100% for the business'}. pump.fun keeps its own trading fees. Community tokens are tradable and can lose value.</p>
     </section>`;
 
   if (st.ends && st.ends > now()) { const tick = () => { const el = $('cd'); if (el) el.textContent = `· ${countdown(st.ends)} left`; }; tick(); setInterval(tick, 1000); }
   $('copyLink')?.addEventListener('click', () => { const u = location.origin + location.pathname + '?mint=' + mint; navigator.clipboard.writeText(u).then(() => ($('copyLink').textContent = 'Copied'), () => ($('copyLink').outerHTML = `<span class="mono">${esc(u)}</span>`)); });
+  document.querySelectorAll('.pass-btn').forEach((b) => b.addEventListener('click', async () => {
+    const { openPerkPass } = await import('/launchpad/perk-pass.js');
+    b.disabled = true; try { await openPerkPass({ mint, perkId: b.dataset.perk, status: b.nextElementSibling }); } finally { b.disabled = false; }
+  }));
   $('payout').addEventListener('click', async () => {
     $('payout').disabled = true; $('payoutStatus').textContent = 'Paying out…';
     try {
