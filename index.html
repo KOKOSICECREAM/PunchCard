@@ -75,6 +75,28 @@
     <p class="select-foot">Ranked by holders. Launched by users, not by PunchCard or the businesses they name. <a href="/launchpad/#community">See all →</a></p>
   </section>
 
+  <section class="go-promo" aria-labelledby="goH">
+    <div class="go-promo-main">
+      <div class="go-promo-icon" aria-hidden="true"><img src="/go/icon-512.png" alt="" width="112" height="112"></div>
+      <div class="go-promo-text">
+        <div class="teaser-tag">New · PunchCard GO · in beta</div>
+        <h2 id="goH">Launch a token <em>right in the shop.</em></h2>
+        <p>PunchCard GO is the app for our ambassadors. Walk into a place you love, launch its token from your phone in a couple of minutes, and hand the owner a QR code to claim it. When they do, you earn the <a href="/launchpad/how/#bring-them-in">Bring them in</a> reward.</p>
+        <div class="go-promo-actions"><a class="teaser-btn" href="/go/">Open PunchCard GO →</a><span class="go-promo-meta">Free · works in Phantom and Solflare · needs a PunchCard Membership</span></div>
+      </div>
+      <div class="go-promo-qr"><img id="goQr" alt="QR code to open PunchCard GO on your phone" width="132" height="132"><small>Scan to open on your phone</small></div>
+    </div>
+    <div class="go-steps">
+      <h3>Save it to your phone</h3>
+      <ol>
+        <li><b>In your wallet (best)</b>Open <span class="mono">punchcard.club/go</span> and tap <b>Open in Phantom</b> or <b>Solflare</b>. Then add it to your wallet’s browser favorites, so connecting and launching just work.</li>
+        <li><b>iPhone</b>In Safari, tap the Share button, then <b>Add to Home Screen</b>. The GO icon lands next to your other apps.</li>
+        <li><b>Android</b>In Chrome, tap the menu (three dots), then <b>Install app</b> or <b>Add to Home screen</b>.</li>
+      </ol>
+      <p class="go-steps-note">The home-screen icon opens GO straight away; tap <b>Open in Phantom</b> or <b>Solflare</b> when you’re ready to launch. GO is in beta with our first ambassadors: launches open to all members during Open Doors events.</p>
+    </div>
+  </section>
+
   <section class="boxes" aria-label="Choose one">
 
     <a class="box launch" href="/launchpad/">
@@ -105,7 +127,7 @@
 
   </section>
   <p class="boxes-note"><b>Two separate products.</b> Different tokens, different chains: holding one gives you nothing in the other.</p>
-  <p class="boxes-note legal-note">Community tokens are launched by users, not by PunchCard or the businesses they name. A token isn’t affiliated with a business unless its owner has claimed it, and launchers are responsible for having the rights to any name, logo or image they use. <a href="/terms/">Terms</a>.</p>
+  <p class="boxes-note legal-note">Community tokens are launched by users, not by PunchCard or the businesses they name. A token isn’t affiliated with a business unless its owner has claimed it, and launchers agree to use a business’s name and images in good faith and to help the owner claim it. <a href="/terms/">Terms</a>.</p>
 </main>
 
 <footer>
@@ -116,6 +138,7 @@
       <li><a href="/launchpad/">Community Launchpad</a></li>
       <li><a href="/kokos-skoop/">SKOOP, our first merchant</a></li>
       <li><a href="/app/">PunchCard App (rewards)</a></li>
+      <li><a href="/go/">PunchCard GO (ambassadors)</a></li>
       <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li>
     <li><a href="/terms/">Terms</a></li></ul>
     <div class="footer-meta">punchcard.club · © 2026</div>
@@ -135,5 +158,9 @@
 </script>
 <script type="module" src="/launchpad/select.js"></script>
 <script type="module" src="/launchpad/community.js"></script>
+<script type="module">
+import { qrImg } from '/launchpad/qr.js';
+qrImg('https://punchcard.club/go/').then((u) => { document.getElementById('goQr').src = u; }).catch(() => {});
+</script>
 </body>
 </html>
