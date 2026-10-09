@@ -1,0 +1,33 @@
+/* Community business page (token page and dedicated pages like /delgado/). */
+.cp-page { max-width: 960px; }
+.cp-hero { border-radius: 20px; padding: clamp(1.3rem, 4vw, 2.4rem); background: radial-gradient(120% 90% at 90% 0%, rgba(232,135,106,.28), transparent 55%), radial-gradient(90% 80% at 0% 100%, rgba(147,194,164,.3), transparent 60%), var(--paper-warm); display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.2rem, 4vw, 2.5rem); align-items: center; }
+.cp-kicker { font-family: 'Courier Prime', monospace; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--terra); }
+.cp-hero h1 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(2.1rem, 6.5vw, 3.6rem); line-height: 1.04; margin: .35rem 0 .5rem; text-wrap: balance; }
+.cp-token { font-family: 'Courier Prime', monospace; font-size: .95rem; color: var(--ink-mid); margin: 0 0 .9rem; }
+.cp-token b { color: var(--terra); }
+.cp-thanks { font-family: 'Lora', serif; font-style: italic; font-size: clamp(1.05rem, 2.4vw, 1.3rem); color: var(--ink-mid); line-height: 1.5; margin: 0 0 1.2rem; max-width: 40ch; }
+.cp-ctas { display: flex; flex-wrap: wrap; gap: .6rem; }
+.cp-ctas a { text-decoration: none; }
+.cp-art { position: relative; justify-self: center; width: min(100%, 300px); }
+.cp-art img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 24px; box-shadow: 0 0 0 6px #fff8ee, 0 18px 40px rgba(28,24,18,.2); display: block; background: var(--paper-card); }
+.cp-badge { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; font-size: .88rem; color: var(--ink-mid); }
+.cp-sec { display: grid; gap: .9rem; }
+.cp-sec h2 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.5rem, 4vw, 2rem); margin: 0; }
+.cp-lbl { font-family: 'Courier Prime', monospace; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--terra); margin: 0; }
+.cp-words { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+.cp-words.has-img { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+.cp-words blockquote { margin: 0; padding: 1.1rem 1.3rem; border-left: 4px solid var(--terra); background: var(--terra-pale); font-family: 'Lora', serif; font-size: 1.12rem; line-height: 1.6; border-radius: 0 12px 12px 0; }
+.cp-words figure { margin: 0; }
+.cp-words figure img { width: 100%; border-radius: 14px; display: block; }
+.cp-credit { font-size: .8rem; color: var(--ink-faded); margin-top: .5rem; }
+.cp-perks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 1rem; }
+.cp-perk { padding: 1.2rem; border-radius: 16px; background: #1c1812; color: #f6efe2; display: grid; gap: .35rem; }
+.cp-perk .need { font-family: 'Courier Prime', monospace; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: #f4d9a7; }
+.cp-perk b { font-family: 'Lora', serif; font-size: 1.2rem; }
+.cp-perk small { color: rgba(246,239,226,.72); line-height: 1.45; }
+.cp-perk .pass-btn { margin-top: .5rem; justify-self: start; background: #f4d9a7; border-color: #f4d9a7; color: #1c1812; }
+.cp-perk .pass-status { font-size: .82rem; color: rgba(246,239,226,.75); min-height: 1em; }
+.cp-perk.soon { background: var(--paper-card); color: var(--ink); border: 1.5px dashed var(--border-mid); }
+.cp-perk.soon .need { color: var(--terra); }
+.cp-perk.soon small { color: var(--ink-mid); }
+@media (max-width: 760px) { .cp-hero, .cp-words.has-img { grid-template-columns: minmax(0, 1fr); } .cp-art { width: min(100%, 240px); } }
