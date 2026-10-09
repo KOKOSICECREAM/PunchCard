@@ -64,7 +64,10 @@
   .biz-card span { color: var(--ink-mid); font-size: 0.88rem; }
   .photo { display: grid; place-items: center; aspect-ratio: 1; max-width: 220px; width: 60%; margin: 0 auto; border-radius: 50%; border: 2px dashed var(--border-mid); background: var(--paper-card) center/cover no-repeat; color: var(--ink-faded); font-size: 0.9rem; text-align: center; cursor: pointer; overflow: hidden; }
   .photo.has { border-style: solid; border-color: var(--sol); color: transparent; }
-  .photo input { display: none; }
+  .photo input, .pick input { display: none; }
+  .pick-row { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; margin-top: -.25rem; }
+  .pick { font-size: .9rem; font-weight: 600; padding: .55rem 1rem; border-radius: 999px; border: 1.5px solid var(--border-mid); background: var(--paper-card); cursor: pointer; }
+  .pick:active { transform: scale(.96); }
   .go .field input, .go .field textarea { font-size: 16px; } /* no zoom on iPhone */
   .cost { display: grid; gap: 0.3rem; padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--paper-card); font-size: 0.92rem; }
   .cost div { display: flex; justify-content: space-between; gap: 0.5rem; }
@@ -265,7 +268,8 @@
   <!-- 3. The token -->
   <section id="s-token" hidden aria-labelledby="h-token">
     <h1 id="h-token">Make it <em>theirs.</em></h1>
-    <label class="photo" id="photo">Tap to take a photo<br>of the shop or logo<input id="img" type="file" accept="image/*" capture="environment"></label>
+    <label class="photo" id="photo">Tap to add a photo<br>of the shop or logo<input id="img" type="file" accept="image/*"></label>
+    <div class="pick-row"><label class="pick">Take a photo<input id="imgCam" type="file" accept="image/*" capture="environment"></label><label class="pick">Upload a logo<input id="imgFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></label></div>
     <div class="field"><label for="name">Token name</label><input id="name" maxlength="24" placeholder="Rosie's Bagels Fans"></div>
     <div class="field"><label for="ticker">Ticker</label><input id="ticker" maxlength="10" placeholder="ROSIE" autocapitalize="characters"></div>
     <div class="field"><label for="desc">A line about the place <span class="hint">(optional)</span></label><textarea id="desc" maxlength="500" rows="3" placeholder="Best bagels on the block since 1998."></textarea></div>
@@ -478,10 +482,13 @@ $('toToken').addEventListener('click', () => {
 
 // ---------- 3. The token ----------
 $('ticker').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
-$('img').addEventListener('change', () => {
-  const f = $('img').files[0]; if (!f) return;
+// One picture for the token: the round tile (phone asks camera or library), "Take a photo" or "Upload a logo".
+for (const id of ['img', 'imgCam', 'imgFile']) $(id).addEventListener('change', (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  if (!/^image\//.test(f.type)) return ($('tokenStatus').textContent = 'That file isn’t an image. Try a PNG or JPG.');
+  $('tokenStatus').textContent = '';
   st.image = f; const url = URL.createObjectURL(f);
-  $('photo').style.backgroundImage = `url(${url})`; $('photo').classList.add('has');
+  $('photo').style.backgroundImage = `url(${url})`; $('photo').classList.add('has'); buzz(8);
 });
 $('toLaunch').addEventListener('click', () => {
   const name = $('name').value.trim(), ticker = $('ticker').value.trim();
@@ -649,7 +656,7 @@ $('closeOwner').addEventListener('click', () => { $('ownerView').hidden = true; 
 $('again').addEventListener('click', () => {
   Object.assign(st, { place: null, business: null, image: null, mint: null });
   for (const id of ['name', 'ticker', 'desc', 'maps']) $(id).value = '';
-  $('devbuy').value = '0'; $('terms').checked = false; $('launch').disabled = true; $('img').value = '';
+  $('devbuy').value = '0'; $('terms').checked = false; $('launch').disabled = true; for (const id of ['img', 'imgCam', 'imgFile']) $(id).value = '';
   $('photo').style.backgroundImage = ''; $('photo').classList.remove('has');
   $('nearby').innerHTML = ''; $('bizPicked').hidden = true; $('launchStatus').textContent = '';
   trail.length = 0; trail.push('s-wallet');
