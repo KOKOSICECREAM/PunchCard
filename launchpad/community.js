@@ -13,7 +13,7 @@ const until = (t) => {
 
 function card(c) {
   const badge = c.claimed ? '<span class="sel-badge ok">Community-launched · Claimed by the owner</span>' : '<span class="sel-badge">Community-launched · Unclaimed</span>';
-  return `<a class="sel-card" href="/launchpad/coin/?mint=${encodeURIComponent(c.mint)}">
+  return `<a class="sel-card" href="${esc(c.page ? c.page.replace(/^https:\/\/punchcard\.club/, '') : `/launchpad/coin/?mint=${encodeURIComponent(c.mint)}`)}">
     <img src="${API}/img/${encodeURIComponent(c.mint)}" alt="" width="64" height="64" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
     <span><b>${esc(c.ticker)} · ${esc(c.business_name)}</b><small>${esc([c.city, c.country].filter(Boolean).join(', '))}</small>${badge}
     <small class="sel-stats">${c.holders ? `${Number(c.holders).toLocaleString()} holders` : 'New'}${c.burnTier ? ` · ${honourPill(c.burnTier)}` : ''}</small></span></a>`;
