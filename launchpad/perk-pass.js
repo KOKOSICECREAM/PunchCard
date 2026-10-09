@@ -21,7 +21,7 @@ function close() { clearInterval(timer); const el = overlay(); el.hidden = true;
 
 function showMessage(html) {
   const el = overlay();
-  el.innerHTML = `<div class="pp-card pp-msg"><div class="pp-brand"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> perk pass</span></div>${html}<button class="btn-secondary pp-close" type="button">Close</button></div>`;
+  el.innerHTML = `<div class="pp-card pp-msg"><div class="pp-brand"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> Perk Pass</span></div>${html}<button class="btn-secondary pp-close" type="button">Close</button></div>`;
   el.hidden = false;
   el.querySelector('.pp-close').onclick = close;
 }
@@ -29,7 +29,7 @@ function showMessage(html) {
 function showPass(p) {
   const el = overlay(), url = `https://punchcard.club/pass/?id=${p.id}`;
   el.innerHTML = `<div class="pp-card">
-    <div class="pp-brand"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> perk pass</span></div>
+    <div class="pp-brand"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> Perk Pass</span></div>
     <div class="pp-biz">${esc(p.business)}</div>
     <div class="pp-perk">${esc(p.perk)}</div>
     <div class="pp-holes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
