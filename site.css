@@ -358,7 +358,7 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .legal .panel p { color: var(--ink-mid); }
 .legal a { color: var(--sol); }
 /* PUNCH live: the real logo, the CA and a copy button. */
-.teaser.live .teaser-logo img { filter: none; transform: none; border-radius: 50%; }
+.teaser.live .teaser-logo img { filter: drop-shadow(0 10px 22px rgba(0,0,0,.35)); transform: none; border-radius: 0; object-fit: contain; }
 .ca-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
 .ca { font-family: 'Courier Prime', monospace; font-size: 0.95rem; background: rgba(248,244,236,0.08); border: 1px solid rgba(248,244,236,0.2); border-radius: 8px; padding: 0.55rem 0.8rem; overflow-wrap: anywhere; min-width: 0; user-select: all; }
 .ca-copy { font: 600 0.9rem 'Inter', sans-serif; background: #f4d9a7; color: var(--ink); border: none; border-radius: 8px; padding: 0.6rem 1rem; cursor: pointer; }
