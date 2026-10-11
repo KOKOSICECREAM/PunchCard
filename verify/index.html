@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify a PunchCard token</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PunchCard">
+<meta property="og:url" content="https://punchcard.club/verify/">
+<meta property="og:title" content="Verify a PunchCard token">
+<meta property="og:description" content="Paste any token’s contract address to check if it’s an official PunchCard launch, verified on Solana.">
+<meta property="og:image" content="https://punchcard.club/og/verify.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Verify a PunchCard token">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Verify a PunchCard token">
+<meta name="twitter:description" content="Paste any token’s contract address to check if it’s an official PunchCard launch, verified on Solana.">
+<meta name="twitter:image" content="https://punchcard.club/og/verify.png">
+<meta name="theme-color" content="#f8f4ec">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>.panel a { color: var(--terra); }</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
+  <ul class="nav-links">
+    <li><a href="/launchpad/how/">How it works</a></li>
+    <li><a href="/launchpad/owners/">Owners</a></li>
+    <li><a href="/launchpad/launch/">Launch</a></li>
+  </ul>
+</nav>
+
+<main class="app-wrap">
+  <div>
+    <h1>Verify a <em>PunchCard token.</em></h1>
+    <p class="lede">Anyone can copy a name, a logo or a description. Only PunchCard’s program on Solana can create a token’s PunchCard record, so that’s what we check.</p>
+  </div>
+  <section class="panel"><div id="verify"></div></section>
+  <section class="panel">
+    <h2>How it works</h2>
+    <p>Every token launched on the PunchCard Launchpad gets a permanent record on Solana, created by PunchCard’s program <a class="mono" href="https://solscan.io/account/6SojAbiusoMurQ2syjJHeVXtYm6pebwG2Bw2j12VTzUp" target="_blank" rel="noopener">6Soj…TzUp</a>. Nobody else can create one. If a token has that record, it’s an official PunchCard launch; if not, it isn’t, whatever its name or description says.</p>
+    <p class="status-line">Official PunchCard pages and links only come from <b>punchcard.club</b> and <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a>.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span></a>
+    <ul class="footer-links"><li><a href="/launchpad/how/">How the launchpad works</a></li><li><a href="/launchpad/launch/">Launch a token</a></li> <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li><li><a href="/terms/">Terms</a></li></ul>
+    <div class="footer-meta">punchcard.club · Community Launchpad · © 2026</div>
+  </div>
+</footer>
+
+<script type="module">
+import { mountVerify } from '/launchpad/verify.js';
+mountVerify(document.getElementById('verify'), { autofocus: true });
+</script>
+</body>
+</html>

@@ -62,7 +62,7 @@ async function load() {
           ${c.business.website && !prof.brand ? `<a class="btn-secondary" href="${esc(c.business.website)}" target="_blank" rel="noopener">Visit ${esc(host || 'their site')}</a>` : ''}
           ${prof.mapsUrl ? `<a class="btn-secondary" href="${esc(prof.mapsUrl)}" target="_blank" rel="noopener">Directions</a>` : ''}
         </div>
-        <div class="cp-badge">${claimed ? `<span class="pill owned">Verified business</span>` : `<span class="pill open">Made by the community</span><span>Own ${esc(c.business.name)}? <a href="/launchpad/claim/?mint=${esc(mint)}">Claim this page</a></span>`}${c.burnTier ? ' ' + honourPill(c.burnTier) : ''}</div>
+        <div class="cp-badge">${claimed ? `<span class="pill owned">Verified business</span>` : `<span class="pill open">Made by the community</span><span>Own ${esc(c.business.name)}? <a href="/launchpad/claim/?mint=${esc(mint)}">Claim this page</a></span>`}${c.burnTier ? ' ' + honourPill(c.burnTier) : ''}${prof.record ? ` <a class="pill verified" href="https://solscan.io/account/${esc(prof.record)}" target="_blank" rel="noopener" title="This token's PunchCard record on Solana">Verified on Solana</a>` : ''}</div>
       ${prof.brand ? `<p class="cp-brand-note">A commemorative community token, made by fans. Not affiliated with or endorsed by ${esc(c.business.name)} or its brand.</p>` : ''}
       </div>
       <div class="cp-art"><img src="${API}/img/${esc(mint)}" alt="${esc(c.business.name)}" onerror="this.parentNode.style.display='none'"></div>
