@@ -72,7 +72,7 @@ function walletHelp() {
   const ref = encodeURIComponent(location.origin), u = encodeURIComponent(url);
   return `<b>No wallet in this browser.</b> To receive the fees, open this page in your wallet app${claim ? ' (your code comes along)' : ''}:
     <div class="btn-row" style="margin-top:0.5rem"><a class="btn-secondary" href="https://phantom.app/ul/browse/${u}?ref=${ref}">Open in Phantom</a><a class="btn-secondary" href="https://solflare.com/ul/v1/browse/${u}?ref=${ref}">Open in Solflare</a></div>
-    <span class="status-line">No wallet yet? Get <a href="https://phantom.com/download" target="_blank" rel="noopener">Phantom</a> (free, a couple of minutes), then come back and tap “Open in Phantom”. Use a wallet you’ll keep: the fees go to it permanently.</span>`;
+    <span class="status-line">No wallet yet? Get <a href="https://phantom.com/download" target="_blank" rel="noopener">Phantom</a> (free, about five minutes; <a href="/launchpad/owners/#wallet" target="_blank">step-by-step guide and safety tips</a>), then come back and tap “Open in Phantom”. Use a wallet you’ll keep: the fees go to it permanently.</span>`;
 }
 function showWalletHelp() {
   if (hasWallet()) return;
@@ -114,7 +114,7 @@ function render() {
     </section>
     <section class="panel" id="walletPanel" hidden>
       <h2><span class="step-num">2</span>Choose where the fees go</h2>
-      <p>Connect the Solana wallet that should receive this business’s creator fees.</p>
+      <p>Connect the Solana wallet that should receive this business’s creator fees. New to crypto? <a href="/launchpad/owners/#wallet" target="_blank">Here’s how to set up a free Phantom wallet</a>. Never share your recovery phrase with anyone, including us.</p>
       <div class="btn-row"><button class="btn-secondary" id="connect" type="button">Connect wallet</button><span class="status-line" id="walletLine"></span></div>
       <div class="notice warn" id="walletHelp" hidden></div>
       <div class="notice warn"><b>This is permanent.</b> Once your claim goes through, pump.fun pays your share of this token’s creator fees to this wallet forever. It can’t be changed later. Use a wallet you’ll keep, ideally a hardware wallet or a multisig for your business.</div>
