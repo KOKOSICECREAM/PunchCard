@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Phantom lab — PunchCard</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+  .lab { display: grid; gap: .7rem; }
+  .lab-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .4rem 1rem; align-items: center; padding: .9rem 1rem; border-radius: 12px; background: var(--paper-card); border: 1px solid var(--border-mid); }
+  .lab-row b { display: block; } .lab-row small { color: var(--ink-mid); }
+  .lab-res { grid-column: 1 / -1; font-size: .88rem; min-height: 1em; }
+  .lab-res.ok { color: var(--sol); font-weight: 600; } .lab-res.bad { color: var(--terra); font-weight: 600; }
+</style>
+</head>
+<body>
+<main class="app-wrap">
+  <div>
+    <h1>Phantom <em>lab.</em></h1>
+    <p class="lede">Each button asks your wallet to <b>sign only</b>. Nothing is ever sent and nothing costs anything. Note which ones Phantom blocks, then tap <b>Close</b> on its warning (never “Proceed anyway” here, it isn't needed).</p>
+  </div>
+  <section class="panel">
+    <div class="btn-row"><button class="btn-primary sol" id="connect" type="button">Connect wallet</button><span class="status-line" id="who"></span></div>
+  </section>
+  <section class="lab" id="tests"></section>
+  <section class="panel"><h2>Results to send</h2><p class="status-line" id="summary">Run the tests, then copy this line to Claude.</p><button class="btn-secondary" id="copy" type="button">Copy results</button></section>
+</main>
+<script type="module">
+import { $, api, connectWallet, signTx, short } from '/launchpad/lp.js';
+const TESTS = [
+  ['transfer', '1. Plain transfer', 'A tiny transfer to yourself. The baseline: should never be blocked.'],
+  ['extra-signer', '2. Extra signer', 'A note that needs a second signer, like our launches do.'],
+  ['pump-create', '3. pump.fun create only', 'Just creating a pump.fun token, no PunchCard parts.'],
+  ['launch-no-burn', '4. Launch without burn', 'Create + PunchCard register + a tiny first buy.'],
+  ['launch', '5. Full launch', 'Everything, including the burn (buy sized to your balance).'],
+];
+const results = {};
+let wallet = null;
+$('tests').innerHTML = TESTS.map(([k, t, d]) => `<div class="lab-row"><div><b>${t}</b><small>${d}</small></div><button class="btn-secondary" data-k="${k}" type="button" disabled>Sign</button><div class="lab-res" id="r-${k}"></div></div>`).join('');
+const summary = () => { $('summary').textContent = TESTS.map(([k]) => `${k}: ${results[k] || '-'}`).join(' | '); };
+$('connect').addEventListener('click', async () => {
+  try { wallet = await connectWallet(); $('who').textContent = 'Connected ' + short(wallet); document.querySelectorAll('[data-k]').forEach((b) => (b.disabled = false)); }
+  catch (e) { $('who').textContent = e.message; }
+});
+document.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', async () => {
+  const k = b.dataset.k, r = $('r-' + k); r.className = 'lab-res'; r.textContent = 'Building…';
+  try {
+    const { tx } = await api('/api/lab/tx', { wallet, kind: k });
+    r.textContent = 'Check your wallet…';
+    await signTx(tx); // signed and thrown away: never sent
+    results[k] = 'signed OK (no block)'; r.className = 'lab-res ok'; r.textContent = 'Signed, no block. (Not sent.)';
+  } catch (e) {
+    results[k] = /reject|cancel|denied|closed|blocked/i.test(e.message) ? 'blocked or cancelled' : 'error: ' + e.message.slice(0, 60);
+    r.className = 'lab-res bad'; r.textContent = results[k] + '. Tell Claude if Phantom showed the red block screen.';
+  }
+  summary();
+}));
+$('copy').addEventListener('click', () => navigator.clipboard.writeText($('summary').textContent).then(() => ($('copy').textContent = 'Copied'), () => {}));
+</script>
+</body>
+</html>
