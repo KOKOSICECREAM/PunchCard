@@ -559,11 +559,11 @@ $('launch').addEventListener('click', async () => {
     let res;
     for (let attempt = 1; ; attempt++) {
       const prep = await api('/api/launch/prepare', { maps: st.place, coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
-        description: $('desc').value.trim(), launcher: st.wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION });
+        description: $('desc').value.trim(), launcher: st.wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION, signFirst: true });
       lx.phase(1, attempt > 1 ? 'Approve the fresh launch' : 'Approve in your wallet', `mint ${short(prep.mint)}`);
       const signed = await signTx(prep.tx);
       lx.phase(2, 'Launching on Solana', 'registering · creating · usually 10–30 seconds');
-      try { res = await api('/api/launch/submit', { mint: prep.mint, tx: signed }); break; }
+      try { res = await api('/api/launch/submit', { mint: prep.mint, tx: signed, nonce: prep.nonce, ticket: prep.ticket }); break; }
       catch (e) { if (attempt < 2 && /blockhash|expired|block height/i.test(e.message)) continue; throw e; }
     }
     st.mint = res.mint; st.burned = Number(res.burnTokens || 0); st.firstBuy = devBuySol;
