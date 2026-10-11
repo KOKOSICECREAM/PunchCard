@@ -247,6 +247,32 @@ export async function signTx(b64) {
   }
 }
 
+/**
+ * Signs several transactions in one wallet approval where the wallet allows it (a split launch is two),
+ * otherwise one after the other. Returns base64 signed transactions in the same order.
+ */
+export async function signTxs(list) {
+  if (list.length === 1) return [await signTx(list[0])];
+  const w = need();
+  const all = list.map(b64ToBytes);
+  const viaLegacy = async (p) => {
+    if (typeof p.signAllTransactions !== 'function') { const out = []; for (const b of list) out.push(await signTx(b)); return out; }
+    const signed = await p.signAllTransactions(all.map((b) => window.solanaWeb3.VersionedTransaction.deserialize(b)));
+    return signed.map((t) => bytesToB64(t.serialize()));
+  };
+  if (!w.std) return viaLegacy(w.legacy);
+  try {
+    const outs = await w.std.features['solana:signTransaction'].signTransaction(...all.map((transaction) => ({ transaction, account: w.account, chain: chainFor(w) })));
+    if (outs.length !== all.length) throw new Error('wallet returned the wrong number of transactions');
+    return outs.map((o) => bytesToB64(o.signedTransaction));
+  } catch (e) {
+    if (isRejection(e)) throw e;
+    const p = await legacyFor(w).catch(() => null);
+    if (p) { try { return await viaLegacy(p); } catch (e2) { if (isRejection(e2)) throw e2; } }
+    const out = []; for (const b of list) out.push(await signTx(b)); return out; // last resort: one approval each
+  }
+}
+
 /** Ask the wallet to sign a text message; returns the signature as base64. */
 export async function signMessage(text) {
   const w = need();
