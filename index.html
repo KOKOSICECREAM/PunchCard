@@ -60,6 +60,7 @@
       <p class="teaser-note">This is the only official CA. Only trust the CA posted here and on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a>.</p>
     </div>
   </section>
+  <section class="vf-home" aria-labelledby="vfH"><h2 id="vfH">Is it a real <em>PunchCard token?</em></h2><div id="verify"></div><p class="status-line" style="margin-top:.6rem">Checked on Solana: only PunchCard’s program can create a PunchCard record. <a href="/verify/">How it works</a></p></section>
   <div class="od-banner" data-open-doors hidden></div>
   <section class="select-sec" aria-labelledby="selH">
     <div class="select-head">
@@ -140,6 +141,7 @@
       <li><a href="/kokos-skoop/">SKOOP, our first merchant</a></li>
       <li><a href="/app/">PunchCard App (rewards)</a></li>
       <li><a href="/go/">PunchCard GO (ambassadors)</a></li>
+      <li><a href="/verify/">Verify a token</a></li>
       <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li>
     <li><a href="/terms/">Terms</a></li></ul>
     <div class="footer-meta">punchcard.club · © 2026</div>
@@ -161,6 +163,8 @@
 <script type="module" src="/launchpad/community.js"></script>
 <script type="module">
 import { qrImg } from '/launchpad/qr.js';
+import { mountVerify } from '/launchpad/verify.js';
+mountVerify(document.getElementById('verify'));
 qrImg('https://punchcard.club/go/').then((u) => { document.getElementById('goQr').src = u; }).catch(() => {});
 </script>
 </body>
