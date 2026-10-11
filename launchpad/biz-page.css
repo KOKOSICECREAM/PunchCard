@@ -31,3 +31,4 @@
 .cp-perk.soon .need { color: var(--terra); }
 .cp-perk.soon small { color: var(--ink-mid); }
 @media (max-width: 760px) { .cp-hero, .cp-words.has-img { grid-template-columns: minmax(0, 1fr); } .cp-art { width: min(100%, 240px); } }
+.cp-brand-note { margin: .9rem 0 0; padding: .6rem .8rem; border-radius: 10px; background: rgba(28,24,18,.06); font-size: .85rem; color: var(--ink-mid); max-width: 52ch; }
