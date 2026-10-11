@@ -59,10 +59,11 @@ async function load() {
         ${c.description ? `<p class="cp-thanks">“${esc(c.description)}”</p>` : `<p class="cp-thanks">A thank-you to the people behind ${esc(c.business.name)}, from their community.</p>`}
         <div class="cp-ctas">
           <a class="btn-primary sol" href="https://pump.fun/coin/${esc(mint)}" target="_blank" rel="noopener">Get $${esc(c.ticker)} on pump.fun</a>
-          ${c.business.website ? `<a class="btn-secondary" href="${esc(c.business.website)}" target="_blank" rel="noopener">Visit ${esc(host || 'their site')}</a>` : ''}
+          ${c.business.website && !prof.brand ? `<a class="btn-secondary" href="${esc(c.business.website)}" target="_blank" rel="noopener">Visit ${esc(host || 'their site')}</a>` : ''}
           ${prof.mapsUrl ? `<a class="btn-secondary" href="${esc(prof.mapsUrl)}" target="_blank" rel="noopener">Directions</a>` : ''}
         </div>
         <div class="cp-badge">${claimed ? `<span class="pill owned">Verified business</span>` : `<span class="pill open">Made by the community</span><span>Own ${esc(c.business.name)}? <a href="/launchpad/claim/?mint=${esc(mint)}">Claim this page</a></span>`}${c.burnTier ? ' ' + honourPill(c.burnTier) : ''}</div>
+      ${prof.brand ? `<p class="cp-brand-note">A commemorative community token, made by fans. Not affiliated with or endorsed by ${esc(c.business.name)} or its brand.</p>` : ''}
       </div>
       <div class="cp-art"><img src="${API}/img/${esc(mint)}" alt="${esc(c.business.name)}" onerror="this.parentNode.style.display='none'"></div>
     </section>
@@ -99,7 +100,7 @@ async function load() {
     </section>
     <section class="panel">
       <h2>Details</h2>
-      <p class="status-line">${esc(c.business.address || '')}${c.business.website ? ` · <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(host)}</a>` : ''}</p>
+      <p class="status-line">${esc(c.business.address || '')}${c.business.website && !prof.brand ? ` · <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(host)}</a>` : ''}</p>
       <p class="status-line">Token <span class="mono">${esc(mint)}</span></p>
       <p class="status-line">Launched by <span class="mono">${esc(short(c.launcher))}</span>${c.launchedAt ? ' on ' + new Date(c.launchedAt * 1000).toLocaleDateString() : ''}${c.deadline && !claimed ? ` · claim deadline ${new Date(c.deadline * 1000).toLocaleString()}` : ''}</p>
       ${Number(c.launchBurnTokens || 0) > 0 ? `<p class="status-line">${ICONS.flame} <b>Fair launch:</b> the launcher's ${(c.firstBuyLamports / 1e9).toLocaleString()} SOL first buy was capped at 0.5% of the supply; <b>${Math.round(Number(c.launchBurnTokens) / 1e6).toLocaleString()} tokens were burned</b> at launch.${c.burnTier ? ` ${honourPill(c.burnTier)}` : ''}</p>` : ''}
