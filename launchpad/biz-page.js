@@ -32,6 +32,7 @@ async function load() {
   let c;
   try { c = await api('/api/coins/' + mint); } catch (e) { $('main').innerHTML = `<p class="notice bad">${esc(e.message)}</p>`; return; }
   const [prof, perkCfg] = await Promise.all([api(`/api/coins/${mint}/profile`).catch(() => ({})), api(`/api/perks?mint=${mint}`).catch(() => ({}))]);
+  if (!prof.record) { const v = await api(`/api/verify?mint=${mint}`).catch(() => null); if (v?.official) prof.record = v.record; } // older cached profiles
   const perks = perkCfg.perks || [], site = prof.site || null, host = site?.host || hostOf(c.business.website);
   document.title = `${c.business.name} · ${c.coinName} ($${c.ticker}) — PunchCard`;
   const st = statusOf(c), claimed = c.status === 'HandedOver' || c.status === 'Attested';
