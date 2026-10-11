@@ -3,6 +3,7 @@
 // set yet) it shows "launching soon".
 import { API } from '/launchpad/lp.js';
 import { honourPill, ICONS } from '/launchpad/icons.js';
+import { showPunchBurned } from '/launchpad/punch-burned.js';
 
 const main = document.querySelector('main[data-mint]');
 const mint = main.dataset.mint, ticker = main.dataset.ticker, business = main.dataset.business;
@@ -93,6 +94,8 @@ async function load() {
     </div>
     <p class="status-line">Launched ${new Date(c.launchedAt * 1000).toLocaleDateString()} by PunchCard's launcher ${acct(c.launcher)}, which gets no creator fees. <a href="/launchpad/coin/?mint=${encodeURIComponent(mint)}">Full token details</a></p>
     ${Number(c.launchBurnTokens || 0) > 0 ? `<p class="status-line">${ICONS.flame} <b>Fair launch:</b> the launcher's ${(c.firstBuyLamports / 1e9).toLocaleString()} SOL first buy was capped at 0.5% of the supply; <b>${Math.round(Number(c.launchBurnTokens) / 1e6).toLocaleString()} tokens were burned</b> at launch.${c.burnTier ? ` ${honourPill(c.burnTier)}` : ''}</p>` : ''}
+    <div id="punchBurned"></div>
     <div id="excluded"></div>`;
+  showPunchBurned($('punchBurned'), mint, ticker);
   if (c.communityShares) showExcluded().catch(() => {});
 }

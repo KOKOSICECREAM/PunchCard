@@ -1,6 +1,7 @@
 // Community business page: renders into <main id="main"> for ?mint= or <body data-mint>.
 import { honourPill, ICONS } from '/launchpad/icons.js';
 import { $, esc, api, API, sol, short, explorer, countdown } from '/launchpad/lp.js';
+import { showPunchBurned } from '/launchpad/punch-burned.js';
 
 const params = new URLSearchParams(location.search);
 const mint = params.get('mint') || document.body.dataset.mint || ''; // dedicated pages set data-mint
@@ -105,10 +106,12 @@ async function load() {
       <p class="status-line">Token <span class="mono">${esc(mint)}</span></p>
       <p class="status-line">Launched by <span class="mono">${esc(short(c.launcher))}</span>${c.launchedAt ? ' on ' + new Date(c.launchedAt * 1000).toLocaleDateString() : ''}${c.deadline && !claimed ? ` · claim deadline ${new Date(c.deadline * 1000).toLocaleString()}` : ''}</p>
       ${Number(c.launchBurnTokens || 0) > 0 ? `<p class="status-line">${ICONS.flame} <b>Fair launch:</b> the launcher's ${(c.firstBuyLamports / 1e9).toLocaleString()} SOL first buy was capped at 0.5% of the supply; <b>${Math.round(Number(c.launchBurnTokens) / 1e6).toLocaleString()} tokens were burned</b> at launch.${c.burnTier ? ` ${honourPill(c.burnTier)}` : ''}</p>` : ''}
+      <div id="punchBurned"></div>
       ${c.launcherReward?.eligible ? `<p class="status-line">${ICONS.door} <b>Bring them in reward:</b> the business joined, so this token's launcher earns ${c.launcherReward.rateBps / 100}% of PunchCard's fee from it, paid weekly · earned ${sol(c.launcherReward.earnedLamports)} SOL, paid ${sol(c.launcherReward.paidLamports)} SOL. <a href="/launchpad/how/#bring-them-in">How it works</a></p>` : ''}
       <p class="status-line">This page is written by the community${claimed ? ' and the verified owner' : ''}; text and images marked with a website come from the business's own site. Creator fee split: ${c.platformBps ? `${(10000 - c.platformBps) / 100}% for the business · ${c.platformBps / 100}% PunchCard service fee` : '100% for the business'}. pump.fun keeps its own trading fees. Community tokens are tradable and can lose value.</p>
     </section>`;
 
+  showPunchBurned($('punchBurned'), mint, c.ticker);
   if (st.ends && st.ends > now()) { const tick = () => { const el = $('cd'); if (el) el.textContent = `· ${countdown(st.ends)} left`; }; tick(); setInterval(tick, 1000); }
   $('copyLink')?.addEventListener('click', () => { const u = location.origin + location.pathname + '?mint=' + mint; navigator.clipboard.writeText(u).then(() => ($('copyLink').textContent = 'Copied'), () => ($('copyLink').outerHTML = `<span class="mono">${esc(u)}</span>`)); });
   document.querySelectorAll('.pass-btn').forEach((b) => b.addEventListener('click', async () => {
