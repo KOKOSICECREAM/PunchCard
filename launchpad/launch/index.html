@@ -115,7 +115,7 @@
 
 <script type="module">
 import { honourFor, honourPill, HONOURS, ICONS } from '/launchpad/icons.js';
-import { $, esc, api, connectWallet, signTx, imageToPng, short, explorer, businessSearch, businessQuery } from '/launchpad/lp.js';
+import { $, esc, api, connectWallet, signTx, signTxs, imageToPng, short, explorer, businessSearch, businessQuery } from '/launchpad/lp.js';
 
 let business = null, wallet = null;
 const TERMS_VERSION = '2026-10-09';
@@ -230,12 +230,12 @@ $('launch').addEventListener('click', async () => {
     for (let attempt = 1; ; attempt++) {
       const prep = await api('/api/launch/prepare', {
         maps: businessQuery($('maps')).maps, coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
-        description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION, signFirst: true,
+        description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION, signFirst: true, bundle: true,
       });
       s.textContent = attempt > 1 ? 'That took a little long, so here is a fresh launch: please approve it again in your wallet…' : 'Approve the launch in your wallet…';
-      const signed = await signTx(prep.tx);
+      const signed = prep.txs ? await signTxs(prep.txs) : await signTx(prep.tx);
       s.textContent = 'Launching on Solana… (10–30 seconds)';
-      try { res = await api('/api/launch/submit', { mint: prep.mint, tx: signed, nonce: prep.nonce, ticket: prep.ticket }); break; }
+      try { res = await api('/api/launch/submit', { mint: prep.mint, ...(prep.txs ? { txs: signed } : { tx: signed }), nonce: prep.nonce, ticket: prep.ticket }); break; }
       catch (e) {
         if (attempt < 2 && /blockhash|expired|block height/i.test(e.message)) { s.textContent = 'Preparing a fresh launch…'; continue; }
         throw e;
