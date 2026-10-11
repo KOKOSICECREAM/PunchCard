@@ -37,6 +37,8 @@ const TESTS = [
   ['pump-create', '3. pump.fun create only', 'Just creating a pump.fun token, no PunchCard parts.'],
   ['launch-no-burn', '4. Launch without burn', 'Create + PunchCard register + a tiny first buy.'],
   ['launch', '5. Full launch', 'Everything, including the burn (buy sized to your balance).'],
+  ['create-register', '6. Create + PunchCard register', 'Our register step, with no buy.'],
+  ['create-buy', '7. pump.fun create + buy', 'pump.fun’s own create and buy, no PunchCard parts.'],
 ];
 const results = {};
 let wallet = null;
