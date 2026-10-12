@@ -21,7 +21,7 @@
 <main class="app-wrap">
   <div>
     <h1>Phantom <em>lab.</em></h1>
-    <p class="lede">Each button asks your wallet to <b>sign only</b>. Nothing is ever sent and nothing costs anything. Note which ones Phantom blocks, then tap <b>Close</b> on its warning (never “Proceed anyway” here, it isn't needed).</p>
+    <p class="lede">Each button asks your wallet to <b>sign only</b>. Nothing is ever sent and nothing costs anything. Note which ones Phantom blocks. To get a signed sample for Phantom support, tap <b>Proceed anyway</b> on its warning and sign: it's still never sent.</p>
   </div>
   <section class="panel">
     <div class="btn-row"><button class="btn-primary sol" id="connect" type="button">Connect wallet</button><span class="status-line" id="who"></span></div>
@@ -53,8 +53,10 @@ document.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click',
   try {
     const { tx } = await api('/api/lab/tx', { wallet, kind: k });
     r.textContent = 'Check your wallet…';
-    await signTx(tx); // signed and thrown away: never sent
-    results[k] = 'signed OK (no block)'; r.className = 'lab-res ok'; r.textContent = 'Signed, no block. (Not sent.)';
+    const signed = await signTx(tx); // never sent (and it can't land: PunchCard's co-signatures are missing)
+    results[k] = 'signed'; r.className = 'lab-res ok';
+    r.innerHTML = 'Signed. (Not sent.) Signed transaction, for Phantom support:<textarea readonly rows="4" style="width:100%;margin-top:.4rem;font-family:monospace;font-size:.72rem">' + signed + '</textarea><button class="btn-secondary" type="button">Copy signed transaction</button>';
+    r.querySelector('button').onclick = (e) => navigator.clipboard.writeText(signed).then(() => (e.target.textContent = 'Copied'), () => r.querySelector('textarea').select());
   } catch (e) {
     results[k] = /reject|cancel|denied|closed|blocked/i.test(e.message) ? 'blocked or cancelled' : 'error: ' + e.message.slice(0, 60);
     r.className = 'lab-res bad'; r.textContent = results[k] + '. Tell Claude if Phantom showed the red block screen.';
