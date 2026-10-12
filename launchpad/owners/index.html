@@ -157,5 +157,12 @@ $('find').addEventListener('click', async () => {
   finally { $('find').disabled = false; }
 });
 </script>
+<script>
+// A link to a question (e.g. #talk, #wallet) opens and shows it.
+(function () {
+  function open() { var el = location.hash && document.getElementById(location.hash.slice(1)); if (el && el.tagName === 'DETAILS') { el.open = true; el.scrollIntoView({ block: 'start' }); } }
+  open(); window.addEventListener('hashchange', open);
+})();
+</script>
 </body>
 </html>
