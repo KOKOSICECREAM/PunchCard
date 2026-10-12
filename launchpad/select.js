@@ -3,6 +3,7 @@
 // from select.json; once an entry has a mint, its card shows live data from the launchpad backend.
 // Ranked by what has actually been paid to each business (public on-chain data, never paid placement).
 import { API } from '/launchpad/lp.js';
+import { ICONS } from '/launchpad/icons.js';
 
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const sol = (l) => { const n = Number(l) / 1e9; return n >= 10 ? n.toFixed(1) : n >= 1 ? n.toFixed(2) : n.toFixed(3); };
@@ -18,7 +19,7 @@ async function live(b) {
 
 function card(b) {
   const badge = {
-    approved: '<span class="sel-badge ok">★ Business-approved</span>',
+    approved: `<span class="sel-badge ok">${ICONS.ticket} Business-approved</span>`,
     review: '<span class="sel-badge">Owner claim in review</span>',
     launched: '<span class="sel-badge">Live · owner claim pending</span>',
     soon: '<span class="sel-badge soon">Coming soon</span>',
