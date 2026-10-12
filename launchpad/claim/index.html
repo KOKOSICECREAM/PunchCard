@@ -25,6 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
+<style>.talk-quote { margin: 0; padding: .9rem 1.1rem; border-left: 4px solid var(--terra); background: var(--terra-pale); border-radius: 0 10px 10px 0; font-family: 'Lora', serif; font-style: italic; line-height: 1.55; }</style>
 </head>
 <body>
 <nav>
@@ -180,7 +181,15 @@ function render() {
           ${r.held ? `<div class="notice warn"><b>Your claim is getting a longer review (up to 7 days).</b> We hold a small number of claims for a closer look when something about the website needs checking${r.flags?.length ? `: ${r.flags.map(esc).join(' ')}` : '.'} If this is your business, email <b>hello@punchcard.club</b> from an address at your business and we can finish the review sooner.</div>` : ''}
           <p>${r.held ? 'After the review' : 'There’s a 24-hour check before the first payout, in case anyone contests the claim. After it'} ends (${esc(when)}), ${r.inTime === false ? 'your share of this token’s future creator fees' : 'your share of everything held'} is sent to your wallet automatically, and from then on pump.fun pays you directly.</p>
           <div class="btn-row"><a class="btn-primary sol" href="/launchpad/coin/?mint=${esc(mint)}">See your token</a></div>
+        </section>
+        <section class="panel">
+          <h2>Telling your customers</h2>
+          <p>Thank your fans and share it however you like. If you mention the token, keep it simple and true. You can use this:</p>
+          <blockquote class="talk-quote" id="talkQuote">“Fans created a community token for ${esc(coin.business.name)}. We didn't launch or sell it, we don't control its price or trading, and we don't guarantee its value. We receive a share of its creator fees.”</blockquote>
+          <div class="btn-row"><button class="btn-secondary" id="copyTalk" type="button">Copy this</button></div>
+          <p class="status-line">Please don't tell people to buy it, or say its price will rise or that you'll support it. Fees you receive are generally income for your business, so keep a record and ask your accountant. <a href="/launchpad/owners/#talk">More owner tips</a></p>
         </section>`;
+      $('copyTalk')?.addEventListener('click', () => { const t = $('talkQuote').textContent.trim(); navigator.clipboard?.writeText(t).then(() => ($('copyTalk').textContent = 'Copied'), () => {}); });
     } catch (e) {
       s.textContent = /reject|cancel/i.test(e.message) ? 'Cancelled in the wallet.' : e.message;
       $('verify').disabled = false;
