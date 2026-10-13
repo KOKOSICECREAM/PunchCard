@@ -547,6 +547,7 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 
 /* ===== PunchCard Perk Pass (customer screen) ===== */
 .pp { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 1rem) 1rem calc(env(safe-area-inset-bottom, 0px) + 1rem); background: rgba(20,17,12,.88); backdrop-filter: blur(6px); overflow-y: auto; animation: ppfade .3s ease; }
+.pp[hidden] { display: none; } /* "Done" closes the pass (the grid display above would otherwise keep the empty blurred overlay up) */
 @keyframes ppfade { from { opacity: 0; } }
 .pp-card { position: relative; width: 100%; max-width: 380px; border-radius: 26px; padding: 1.3rem 1.2rem 1.2rem; display: grid; gap: .7rem; justify-items: center; text-align: center; color: #f6efe2; overflow: hidden;
   background: linear-gradient(120deg, #3d5a4a, #2f4a3b 40%, #a83a20 140%); background-size: 220% 220%; animation: pprise .45s cubic-bezier(.2,.9,.2,1), ppshift 6s ease-in-out infinite; box-shadow: 0 30px 60px rgba(0,0,0,.45); }
