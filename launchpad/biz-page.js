@@ -6,6 +6,7 @@ import { showPunchBurned } from '/launchpad/punch-burned.js';
 const params = new URLSearchParams(location.search);
 const mint = params.get('mint') || document.body.dataset.mint || ''; // dedicated pages set data-mint
 const now = () => Math.floor(Date.now() / 1000);
+const slot = (id) => { const t = document.getElementById(id); return t ? t.innerHTML : ''; }; // owner-written sections on dedicated pages
 const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
 
 function statusOf(c) {
@@ -51,6 +52,33 @@ async function load() {
       </div>
       ${story}
     </section>` : story;
+  const ownStory = slot('biz-story'), updates = slot('biz-updates');
+  const dex = `https://dexscreener.com/solana/${esc(mint)}`;
+  const holderShare = c.communityBps > 0 ? `<li><b>${c.communityBps / 100}% of ${esc(c.business.name)}’s fees go to ${esc(c.ticker)} holders</b>, sent automatically each week${c.holderRounds ? ` (${c.holderRounds} ${c.holderRounds === 1 ? 'round' : 'rounds'} so far)` : ''}. No claiming needed.</li>` : '';
+  const tokenInfo = `
+    <section class="cp-sec">
+      <p class="cp-lbl">The token</p>
+      <h2>$${esc(c.ticker)} at a glance.</h2>
+      <div class="cp-ca"><span class="cp-ca-l">Official contract address</span><code id="ca">${esc(mint)}</code><button class="btn-secondary" id="copyCa" type="button">Copy</button></div>
+      <div class="cp-links">
+        <a class="btn-secondary" href="https://pump.fun/coin/${esc(mint)}" target="_blank" rel="noopener">pump.fun</a>
+        <a class="btn-secondary" href="${dex}" target="_blank" rel="noopener">DexScreener</a>
+        <a class="btn-secondary" href="${explorer('token', mint)}" target="_blank" rel="noopener">Solscan</a>
+        <a class="btn-secondary" href="/verify/?mint=${esc(mint)}">Verify it’s official</a>
+      </div>
+      <ul class="cp-facts">
+        <li><b>Where trading fees go:</b> ${c.platformBps ? `${(10000 - c.platformBps) / 100}% to ${esc(c.business.name)}, ${c.platformBps / 100}% PunchCard service fee` : `100% to ${esc(c.business.name)}`}${claimed ? '' : ' (held until the owner claims)'}.</li>
+        ${holderShare}
+        ${Number(c.launchBurnTokens || 0) > 0 ? `<li><b>Fair launch:</b> the launcher kept only 0.5% of the supply; the rest of the first buy was burned.</li>` : ''}
+        ${c.holders ? `<li><b>${Number(c.holders).toLocaleString()} wallets</b> hold ${esc(c.ticker)} today.</li>` : ''}
+      </ul>
+    </section>`;
+  const howPass = perks.length ? `
+      <ol class="cp-how">
+        <li><b>Open your pass.</b> Tap the button and approve a free message in your wallet. Nothing is sent and your tokens never move.</li>
+        <li><b>Show it at the counter.</b> Your pass is good for 5 minutes and shows a live clock.</li>
+        <li><b>Staff scan and redeem.</b> They see a green VALID and tap the gold button, so each perk is used once per period.</li>
+      </ol>` : '';
   $('main').innerHTML = `
     ${removedNote}${retiredNote}${newNote}
     <section class="cp-hero">
@@ -69,13 +97,15 @@ async function load() {
       </div>
       <div class="cp-art"><img src="${API}/img/${esc(mint)}" alt="${esc(c.business.name)}" onerror="this.parentNode.style.display='none'"></div>
     </section>
-    ${words}
+    ${ownStory || words}
+    ${tokenInfo}
     <section class="cp-sec">
       <p class="cp-lbl">For ${esc(c.ticker)} holders</p>
       <h2>A little thank-you back.</h2>
-      <div class="cp-perks">${perksHtml(c, perks)}</div>
+      <div class="cp-perks">${perksHtml(c, perks)}</div>${howPass}
       <p class="status-line">Perks are customer rewards chosen by the business and can change. Holding a token isn’t an investment in the business or PunchCard.</p>
     </section>
+    ${updates}
     <section class="panel">
       <h2>The numbers, live</h2>
       <div><span class="pill ${st.pill}">${st.label}</span>${st.ends && st.ends > now() ? ` <span class="status-line" id="cd"></span>` : ''}</div>
@@ -103,7 +133,6 @@ async function load() {
     <section class="panel">
       <h2>Details</h2>
       <p class="status-line">${esc(c.business.address || '')}${c.business.website && !prof.brand ? ` · <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(host)}</a>` : ''}</p>
-      <p class="status-line">Token <span class="mono">${esc(mint)}</span></p>
       <p class="status-line">Launched by <span class="mono">${esc(short(c.launcher))}</span>${c.launchedAt ? ' on ' + new Date(c.launchedAt * 1000).toLocaleDateString() : ''}${c.deadline && !claimed ? ` · claim deadline ${new Date(c.deadline * 1000).toLocaleString()}` : ''}</p>
       ${Number(c.launchBurnTokens || 0) > 0 ? `<p class="status-line">${ICONS.flame} <b>Fair launch:</b> the launcher's ${(c.firstBuyLamports / 1e9).toLocaleString()} SOL first buy was capped at 0.5% of the supply; <b>${Math.round(Number(c.launchBurnTokens) / 1e6).toLocaleString()} tokens were burned</b> at launch.${c.burnTier ? ` ${honourPill(c.burnTier)}` : ''}</p>` : ''}
       <div id="punchBurned"></div>
@@ -111,6 +140,7 @@ async function load() {
       <p class="status-line">This page is written by the community${claimed ? ' and the verified owner' : ''}; text and images marked with a website come from the business's own site. Creator fee split: ${c.platformBps ? `${(10000 - c.platformBps) / 100}% for the business · ${c.platformBps / 100}% PunchCard service fee` : '100% for the business'}. pump.fun keeps its own trading fees. Community tokens are tradable and can lose value.</p>
     </section>`;
 
+  $('copyCa').addEventListener('click', () => navigator.clipboard.writeText(mint).then(() => { $('copyCa').textContent = 'Copied'; setTimeout(() => ($('copyCa').textContent = 'Copy'), 1500); }, () => getSelection().selectAllChildren($('ca'))));
   showPunchBurned($('punchBurned'), mint, c.ticker);
   if (st.ends && st.ends > now()) { const tick = () => { const el = $('cd'); if (el) el.textContent = `· ${countdown(st.ends)} left`; }; tick(); setInterval(tick, 1000); }
   $('copyLink')?.addEventListener('click', () => { const u = location.origin + location.pathname + '?mint=' + mint; navigator.clipboard.writeText(u).then(() => ($('copyLink').textContent = 'Copied'), () => ($('copyLink').outerHTML = `<span class="mono">${esc(u)}</span>`)); });
