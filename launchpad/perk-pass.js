@@ -38,7 +38,7 @@ function showPass(p) {
     <div class="pp-meta"><span>Holder <b class="mono">${esc(short(p.wallet))}</b></span><span>Holds <b>$${Number(p.holdingsUsd || 0).toFixed(2)}</b> of ${esc(p.holdTicker || p.ticker)}</span></div>
     <div class="pp-bar"><span id="ppBar"></span></div>
     <div class="pp-left" id="ppLeft"></div>
-    <p class="pp-hint">Show this to the staff. They scan the code to confirm it${p.oneTime ? ` and redeem it (once every ${p.everyDays} days)` : ''}.</p>
+    <p class="pp-hint">Show this to the staff. They scan the code to confirm it${p.oneTime ? ` and ${p.member ? 'mark it used' : 'redeem it'} (${Number(p.everyDays) === 1 ? 'once a day' : `once every ${p.everyDays} days`})` : ''}.</p>
     <button class="btn-secondary pp-close" type="button">Done</button>
   </div>`;
   el.hidden = false;

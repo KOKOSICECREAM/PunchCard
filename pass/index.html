@@ -91,7 +91,7 @@ function render() {
   if (pass.valid) {
     v.className = 'verdict v-valid';
     v.innerHTML = `${ICON.ok}<div class="word">Valid</div><div class="why">Holder confirmed just now</div>`;
-    $('redeem').hidden = !pass.oneTime; $('redeem').textContent = `Redeem: ${pass.perk}`;
+    $('redeem').hidden = !pass.oneTime; $('redeem').textContent = pass.member ? `Mark used: ${pass.perk}` : `Redeem: ${pass.perk}`;
   } else {
     v.className = 'verdict v-invalid';
     v.innerHTML = `${ICON.no}<div class="word">Not valid</div><div class="why">${esc(pass.reason || 'This pass can’t be used')}</div>`;
