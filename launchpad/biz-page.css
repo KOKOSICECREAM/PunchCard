@@ -32,3 +32,17 @@
 .cp-perk.soon small { color: var(--ink-mid); }
 @media (max-width: 760px) { .cp-hero, .cp-words.has-img { grid-template-columns: minmax(0, 1fr); } .cp-art { width: min(100%, 240px); } }
 .cp-brand-note { margin: .9rem 0 0; padding: .6rem .8rem; border-radius: 10px; background: rgba(28,24,18,.06); font-size: .85rem; color: var(--ink-mid); max-width: 52ch; }
+
+/* token at a glance */
+.cp-ca { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .7rem; padding: .8rem 1rem; border-radius: 14px; background: var(--paper-card); border: 1px solid var(--border-mid); }
+.cp-ca-l { flex-basis: 100%; font-size: .78rem; color: var(--ink-faded); }
+.cp-ca code { flex: 1 1 18rem; min-width: 0; overflow-wrap: anywhere; font-family: 'Courier Prime', monospace; font-size: .95rem; }
+.cp-links { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cp-links a { text-decoration: none; }
+.cp-facts { margin: 0; padding-left: 1.1rem; display: grid; gap: .35rem; color: var(--ink-mid); line-height: 1.5; }
+.cp-facts b { color: var(--ink); }
+/* how the Perk Pass works */
+.cp-how { margin: .3rem 0 0; padding: 0; list-style: none; counter-reset: s; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: .8rem; }
+.cp-how li { counter-increment: s; position: relative; padding: .9rem 1rem .9rem 3rem; border-radius: 14px; background: var(--paper-card); border: 1px solid var(--border-mid); line-height: 1.45; font-size: .92rem; color: var(--ink-mid); }
+.cp-how li::before { content: counter(s); position: absolute; left: .9rem; top: .85rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; background: #f4d9a7; color: #1c1812; font-weight: 700; font-size: .85rem; }
+.cp-how b { color: var(--ink); display: block; }

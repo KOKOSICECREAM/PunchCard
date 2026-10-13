@@ -3,99 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CREAM by KOKOS Ice Cream — PunchCard</title>
+<title>KOKOS Ice Cream · $CREAM — PunchCard</title>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="PunchCard">
 <meta property="og:url" content="https://punchcard.club/kokos/">
-<meta property="og:title" content="CREAM by KOKOS Ice Cream">
-<meta property="og:description" content="The community token for KOKOS Ice Cream. Official CA and where its creator fees go.">
-<meta property="og:image" content="https://punchcard.club/og/kokos.png">
+<meta property="og:title" content="KOKOS Ice Cream · $CREAM — PunchCard">
+<meta property="og:description" content="Plant-based ice cream in Nashville since 2017. Meet the people behind KOKOS, the CREAM token, and the PunchCard Perk Pass.">
+<meta property="og:image" content="https://punchcard.club/og/kokos-story.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="CREAM by KOKOS Ice Cream">
+<meta property="og:image:alt" content="KOKOS Ice Cream · $CREAM — PunchCard">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="CREAM by KOKOS Ice Cream">
-<meta name="twitter:description" content="The community token for KOKOS Ice Cream. Official CA and where its creator fees go.">
-<meta name="twitter:image" content="https://punchcard.club/og/kokos.png">
-<meta name="description" content="CREAM is the community token for KOKOS Ice Cream, plant-based ice cream in Nashville since 2017. The official CA and where its creator fees go.">
+<meta name="twitter:title" content="KOKOS Ice Cream · $CREAM — PunchCard">
+<meta name="twitter:description" content="Plant-based ice cream in Nashville since 2017. Meet the people behind KOKOS, the CREAM token, and the PunchCard Perk Pass.">
+<meta name="twitter:image" content="https://punchcard.club/og/kokos-story.png">
 <meta name="theme-color" content="#f8f4ec">
-<link rel="icon" href="/kokos/cream.png" type="image/png">
-<link rel="apple-touch-icon" href="/kokos/cream.png">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
-<script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
+<link rel="stylesheet" href="/launchpad/biz-page.css">
+<style>
+  /* KOKOS's own sections (inserted by biz-page.js) */
+  .kk-story { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(1.2rem, 4vw, 2.5rem); align-items: start; }
+  .kk-story > img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 20px; display: block; }
+  .kk-text { font-family: 'Lora', serif; font-size: 1.08rem; line-height: 1.7; color: var(--ink-mid); }
+  .kk-text p { margin: 0 0 1rem; }
+  .kk-sig { font-style: italic; color: var(--ink); }
+  .kk-quote { margin-top: 1rem; padding: 1rem 1.2rem; border-left: 4px solid var(--terra); background: var(--terra-pale); border-radius: 0 12px 12px 0; font-family: 'Lora', serif; font-style: italic; }
+  .kk-feed { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 1rem; }
+  .kk-post { border-radius: 16px; border: 1px solid var(--border-mid); background: var(--paper-card); overflow: hidden; }
+  .kk-post img, .kk-post video { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+  .kk-post p { margin: 0; padding: .9rem 1rem 1.1rem; line-height: 1.55; }
+  .kk-socials { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .kk-socials a { display: inline-flex; align-items: center; gap: .5rem; padding: .55rem .95rem; border-radius: 999px; border: 1px solid var(--border-mid); text-decoration: none; color: var(--ink); background: var(--paper-card); font-weight: 600; font-size: .9rem; }
+  .kk-socials svg { width: 1.1em; height: 1.1em; }
+  @media (max-width: 760px) { .kk-story { grid-template-columns: minmax(0, 1fr); } .kk-story > img { max-width: 360px; } }
+</style>
 </head>
-<body>
+<body data-mint="B2WCxWps69JzPMfjXE4MKpMkgiTgLcat1JGGpYzpXVjX">
 <nav>
   <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
   <ul class="nav-links">
-    <li><a href="/launchpad/">Launchpad</a></li>
     <li><a href="/launchpad/how/">How it works</a></li>
+    <li><a href="/launchpad/owners/">Owners</a></li>
+    <li><a href="/launchpad/launch/">Launch</a></li>
   </ul>
 </nav>
 
-<main class="app-wrap punch-page" data-mint="B2WCxWps69JzPMfjXE4MKpMkgiTgLcat1JGGpYzpXVjX" data-ticker="CREAM" data-business="KOKOS Ice Cream">
-  <div class="featured-head">
-    <img src="/kokos/cream.png" alt="CREAM Token logo" width="140" height="140">
+<template id="biz-story">
+  <section class="cp-sec kk-story">
+    <img src="/kokos/story/media/1130.jpg" alt="A triple scoop of KOKOS ice cream in front of the shop’s round gold mirror" loading="lazy">
     <div>
-      <span class="soon-tag">Featured business · Community token</span>
-      <h1>CREAM, <em>by KOKOS Ice Cream.</em></h1>
-      <p class="lede">Plant-based ice cream made from organic coconut milk. Skooping in Nashville since 2017. CREAM is its community token on pump.fun, and every trade helps the shop.</p>
+      <p class="cp-lbl">Meet the people</p>
+      <h2>Why we scoop.</h2>
+      <div class="kk-text">
+        <p>We started KOKOS in 2017 with one idea: ice cream everyone at the table can enjoy. Every batch is made by hand from organic coconut milk, and most days you’ll find us behind the counter ourselves.</p>
+        <p>We know our customers by name, and their kids’ favorite flavors too. That’s the part of this job no machine will ever do for us.</p>
+        <p class="kk-sig">— The KOKOS team</p>
+      </div>
+      <div class="kk-quote">“CREAM is our community’s way of saying thanks for the scoops. Every trade sends a little back to the shop and the people who make it.”</div>
     </div>
-  </div>
-
-  <section class="panel" aria-labelledby="caH" data-when="launched" hidden>
-    <h2 id="caH">Official CA</h2>
-    <div class="punch-ca"><code id="ca"></code><button class="btn-secondary" id="copyCa" type="button">Copy CA</button></div>
-    <div class="btn-row">
-      <a class="btn-primary sol" id="pumpLink" target="_blank" rel="noopener">View on pump.fun ↗</a>
-      <a class="btn-secondary" id="dexLink" target="_blank" rel="noopener">DexScreener ↗</a>
-      <a class="btn-secondary" id="scanLink" target="_blank" rel="noopener">Solscan ↗</a>
+  </section>
+</template>
+<template id="biz-updates">
+  <section class="cp-sec">
+    <p class="cp-lbl">From the shop</p>
+    <h2>Updates.</h2>
+    <div class="kk-feed">
+      <article class="kk-post"><video src="/kokos/story/media/shop.mp4" poster="/kokos/story/media/shop-poster.jpg" muted autoplay loop playsinline preload="metadata" aria-label="The pink KOKOS container shop by the sand courts"></video><p>Sun’s out on City Ave. Come find the pink container by the courts.</p></article>
+      <article class="kk-post"><img src="/kokos/story/media/1129.jpg" alt="A KOKOS cone against the shop’s pink patterned wall" loading="lazy"><p>The classic, against our favorite wall. Plant-based, made from organic coconut milk.</p></article>
     </div>
-    <p class="status-line">Only trust the CA posted here, on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> and at kokosicecream.com.</p>
+    <div class="kk-socials">
+      <a href="https://www.instagram.com/kokosicecream" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg>Instagram</a>
+      <a href="https://www.facebook.com/kokosicecream" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21h3Z"/></svg>Facebook</a>
+    </div>
   </section>
+</template>
 
-  <section class="panel" data-when="soon">
-    <h2>Launching soon</h2>
-    <p>Follow <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> to catch it.</p>
-  </section>
-
-  <section class="panel" aria-labelledby="feesH" data-when="launched" hidden>
-    <h2 id="feesH">Where CREAM fees go</h2>
-    <div id="fees"><p class="status-line">Loading live details…</p></div>
-  </section>
-
-  <section class="panel" aria-labelledby="visitH">
-    <h2 id="visitH">Visit KOKOS</h2>
-    <p><b>KOKOS Ice Cream</b>, 3 City Ave, Suite 700 (OneC1TY), Nashville, TN.</p>
-    <div class="btn-row"><a class="btn-primary sol" href="/kokos/story/">The KOKOS story and PunchCard Perk Pass</a><a class="btn-secondary" href="https://kokosicecream.com" target="_blank" rel="noopener">kokosicecream.com ↗</a></div>
-    <p class="status-line">KOKOS Ice Cream is owned by PunchCard's founder. CREAM follows the same launchpad rules as every other token: the launcher gets no creator fees, and the shop's claim goes through the same website verification and review hold as anyone's.</p>
-  </section>
-
-  <section class="panel" aria-labelledby="noexpH">
-    <h2 id="noexpH">Not advice, not an investment</h2>
-    <ul class="punch-list">
-      <li><b>Not financial advice.</b> Nothing here is investment advice. Do your own research.</li>
-      <li><b>Not an investment.</b> Holding CREAM isn't an investment in KOKOS Ice Cream or PunchCard and gives no ownership, equity, profit share, voting or other rights. Any holder share is the shop's thank-you from trading fees, not a dividend or a return.</li>
-      <li><b>No expectation of profit.</b> There's no expectation of profit, price support, ownership, revenue or financial return. The shop doesn't control the token's price or trading.</li>
-      <li><b>Perks are separate.</b> Any perk a business offers holders is limited, set by the business, can change or end, and follows its published terms. It isn't a financial return.</li>
-      <li><b>You can lose everything.</b> CREAM is a speculative community token and can lose all its value. Only use money you can afford to lose. See the <a href="/terms/">Terms</a>.</li>
-    </ul>
-  </section>
+<main class="app-wrap cp-page" id="main">
+  <p class="status-line" id="loading">Loading…</p>
 </main>
 
 <footer>
   <div class="footer-inner">
     <a class="footer-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="26" height="26">Punch<span>Card</span></a>
-    <ul class="footer-links">
-      <li><a href="/launchpad/">Community Launchpad</a></li>
-      <li><a href="https://kokosicecream.com" target="_blank" rel="noopener">KOKOS Ice Cream</a></li>
-      <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li>
-    </ul>
-    <div class="footer-meta">punchcard.club · Featured business · © 2026</div>
+    <ul class="footer-links"><li><a href="/launchpad/how/">How the launchpad works</a></li><li><a href="/launchpad/launch/">Launch a token</a></li> <li><a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X · @punchcard_club</a></li><li><a href="/terms/">Terms</a></li></ul>
+    <div class="footer-meta">punchcard.club · Community Launchpad · © 2026</div>
   </div>
 </footer>
-<script type="module" src="/launchpad/featured.js"></script>
+
+<script type="module" src="/launchpad/biz-page.js"></script>
 </body>
 </html>
