@@ -35,7 +35,7 @@ function showPass(p) {
     <div class="pp-holes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <div class="pp-clock" id="ppClock" aria-label="Live clock">--:--:--</div>
     <div class="pp-qr"><img id="ppQr" alt="QR code for the staff to scan"></div>
-    <div class="pp-meta"><span>Holder <b class="mono">${esc(short(p.wallet))}</b></span><span>Holds <b>$${Number(p.holdingsUsd || 0).toFixed(2)}</b> of ${esc(p.ticker)}</span></div>
+    <div class="pp-meta"><span>Holder <b class="mono">${esc(short(p.wallet))}</b></span><span>Holds <b>$${Number(p.holdingsUsd || 0).toFixed(2)}</b> of ${esc(p.holdTicker || p.ticker)}</span></div>
     <div class="pp-bar"><span id="ppBar"></span></div>
     <div class="pp-left" id="ppLeft"></div>
     <p class="pp-hint">Show this to the staff. They scan the code to confirm it${p.oneTime ? ` and redeem it (once every ${p.everyDays} days)` : ''}.</p>

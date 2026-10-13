@@ -82,7 +82,7 @@ function render() {
   if (!pass) return;
   $('info').hidden = false;
   $('biz').textContent = pass.business; $('perk').textContent = pass.perk;
-  $('who').textContent = short(pass.wallet); $('holds').textContent = `$${Number(pass.holdingsUsd || 0).toFixed(2)} of ${pass.ticker}`;
+  $('who').textContent = short(pass.wallet); $('holds').textContent = `$${Number(pass.holdingsUsd || 0).toFixed(2)} of ${pass.holdTicker || pass.ticker}`;
   if (pass.redeemedAt) {
     v.className = 'verdict v-redeemed';
     v.innerHTML = `${ICON.star}<div class="word">Redeemed</div><div class="why">${new Date(pass.redeemedAt * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · enjoy!</div>`;
