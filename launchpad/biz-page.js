@@ -21,8 +21,8 @@ function statusOf(c) {
 }
 
 function perksHtml(c, perks) {
-  if (perks.length) return perks.map((x) => `<div class="cp-perk"><span class="need">Hold $${esc(x.minUsd)} of ${esc(c.ticker)}</span><b>${esc(x.title)}</b>
-    <small>${x.oneTime ? `Once every ${esc(x.everyDays)} days. ` : ''}Show your PunchCard Perk Pass at the counter.</small>
+  if (perks.length) return perks.map((x) => `<div class="cp-perk"><span class="need">${x.member ? 'PunchCard Members · ' : ''}Hold $${esc(x.minUsd)} of ${esc(x.holdTicker || c.ticker)}</span><b>${esc(x.title)}</b>
+    <small>${x.member ? 'Every visit, at every participating PunchCard business. ' : x.oneTime ? `Once every ${esc(x.everyDays)} days. ` : ''}Show your PunchCard Perk Pass at the counter.</small>
     <button class="btn-primary pass-btn" type="button" data-perk="${esc(x.id)}">Get my PunchCard Perk Pass</button><span class="pass-status" role="status"></span></div>`).join('');
   return `<div class="cp-perk soon"><span class="need">Coming soon</span><b>PunchCard Perk Pass</b>
     <small>${c.status === 'HandedOver' ? `${esc(c.business.name)} can add a thank-you for ${esc(c.ticker)} holders here.` : `Perks are chosen by the owner. Once ${esc(c.business.name)} claims this page, they can add a thank-you for ${esc(c.ticker)} holders.`}</small></div>`;
