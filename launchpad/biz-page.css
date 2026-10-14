@@ -46,3 +46,11 @@
 .cp-how li { counter-increment: s; position: relative; padding: .9rem 1rem .9rem 3rem; border-radius: 14px; background: var(--paper-card); border: 1px solid var(--border-mid); line-height: 1.45; font-size: .92rem; color: var(--ink-mid); }
 .cp-how li::before { content: counter(s); position: absolute; left: .9rem; top: .85rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; background: #f4d9a7; color: #1c1812; font-weight: 700; font-size: .85rem; }
 .cp-how b { color: var(--ink); display: block; }
+
+/* check my thank-yous */
+.cp-mine { display: grid; gap: .6rem; padding: 1rem; border-radius: 14px; background: var(--paper-card); border: 1px solid var(--border-mid); }
+.cp-mine-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cp-mine-row input { flex: 1 1 16rem; min-width: 0; font-family: 'Courier Prime', monospace; }
+.cp-mine-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
+.cp-mine-list li { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: baseline; font-variant-numeric: tabular-nums; }
+.cp-mine-list li span:first-child { min-width: 4.5rem; color: var(--ink-faded); }
