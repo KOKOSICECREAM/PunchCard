@@ -72,6 +72,11 @@ async function load() {
         ${Number(c.launchBurnTokens || 0) > 0 ? `<li><b>Fair launch:</b> the launcher kept only 0.5% of the supply; the rest of the first buy was burned.</li>` : ''}
         ${c.holders ? `<li><b>${Number(c.holders).toLocaleString()} wallets</b> hold ${esc(c.ticker)} today.</li>` : ''}
       </ul>
+      ${c.communityBps > 0 || c.holderRounds ? `<div class="cp-mine">
+        <b>Check my thank-yous</b>
+        <form id="mineForm" class="cp-mine-row"><input id="mineWallet" placeholder="Paste your wallet address" autocomplete="off" spellcheck="false" aria-label="Your wallet address"><button class="btn-secondary" type="submit">Check</button></form>
+        <div id="mineOut" role="status"></div>
+      </div>` : ''}
     </section>`;
   const howPass = perks.length ? `
       <ol class="cp-how">
@@ -141,6 +146,22 @@ async function load() {
     </section>`;
 
   $('copyCa').addEventListener('click', () => navigator.clipboard.writeText(mint).then(() => { $('copyCa').textContent = 'Copied'; setTimeout(() => ($('copyCa').textContent = 'Copy'), 1500); }, () => getSelection().selectAllChildren($('ca'))));
+  $('mineForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const w = $('mineWallet').value.trim(), out = $('mineOut');
+    out.innerHTML = '<p class="status-line">Checking…</p>';
+    try {
+      const d = await api(`/api/rounds/holder?mint=${mint}&wallet=${encodeURIComponent(w)}`);
+      const mine = d.rounds.filter((x) => x.included);
+      if (!d.rounds.length) { out.innerHTML = '<p class="status-line">No holder rounds yet. The first one goes out after a week of trading.</p>'; return; }
+      if (!mine.length) { out.innerHTML = `<p class="status-line">This wallet isn’t in any round yet. Rounds count wallets that held ${esc(c.ticker)} during the week (launch-window buyers are excluded), so holding now counts toward the next one.</p>`; return; }
+      const total = mine.reduce((a, x) => a + BigInt(x.amount), 0n);
+      out.innerHTML = `<p class="status-line"><b>${sol(total)} SOL</b> in total across ${mine.length} ${mine.length === 1 ? 'round' : 'rounds'}.</p><ul class="cp-mine-list">${mine.map((x) => `<li><span>Week ${x.round + 1}</span><b>${sol(x.amount)} SOL</b>${x.paid
+        ? (x.sig ? `<a href="https://solscan.io/tx/${esc(x.sig)}" target="_blank" rel="noopener">Paid${x.paidAt ? ' ' + new Date(x.paidAt * 1000).toLocaleDateString() : ''}</a>` : '<span>Paid</span>')
+        : `<span>Sends after ${new Date(x.payAfter * 1000).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>`}</li>`).join('')}</ul>
+        <p class="status-line">Payments arrive automatically from PunchCard’s payout wallet 7SaF…sszK. Some wallets list them as an app interaction rather than “Received”.</p>`;
+    } catch (err) { out.innerHTML = `<p class="status-line">${esc(err.message)}</p>`; }
+  });
   showPunchBurned($('punchBurned'), mint, c.ticker);
   if (st.ends && st.ends > now()) { const tick = () => { const el = $('cd'); if (el) el.textContent = `· ${countdown(st.ends)} left`; }; tick(); setInterval(tick, 1000); }
   $('copyLink')?.addEventListener('click', () => { const u = location.origin + location.pathname + '?mint=' + mint; navigator.clipboard.writeText(u).then(() => ($('copyLink').textContent = 'Copied'), () => ($('copyLink').outerHTML = `<span class="mono">${esc(u)}</span>`)); });
