@@ -51,6 +51,7 @@ const TESTS = [
   ['launch-split-small', '10. Split launch, small (two transactions)', 'The full launch as two transactions signed together: 1) create + register (~700 bytes), 2) first buy + burn (~470 bytes). Phantom asks once for both.'],
   ['launch-buy-small', '11. Create + register + first buy (no burn), small', 'One transaction (~770 bytes): the launch with the first buy but without the burn. The burn would be a second, separate step.'],
   ['buy-burn-existing', '12. First buy + burn on an existing token', 'Step 2 of a two-step launch: buy 0.01 SOL of the $NOBUY test token and burn most of it (~570 bytes).'],
+  ['plan-b-user', '13. Plan B: pump.fun create + your first buy + burn', 'What you would sign in Plan B: pump.fun’s standard create and buy (you are the first buyer), the fair-launch burn, and paying PunchCard back for the launch fee. No PunchCard program step (~720 bytes).'],
 ];
 const results = {};
 let wallet = null;
