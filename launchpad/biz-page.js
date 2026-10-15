@@ -39,6 +39,7 @@ async function load() {
   document.title = `${c.business.name} · ${c.coinName} ($${c.ticker}) — PunchCard`;
   const st = statusOf(c), claimed = c.status === 'HandedOver' || c.status === 'Attested';
   const newNote = params.get('new') ? `<div class="notice ok"><b>It’s live.</b> Share this page with ${esc(c.business.name)} so the owner can claim their fees. <button class="btn-secondary" id="copyLink" type="button" style="margin-left:0.5rem">Copy link</button></div>` : '';
+  const firstBuyNote = c.firstBuyPending ? `<div class="notice warn"><b>Launcher: finish your first buy.</b> Your launch is live; your first buy of ${sol(c.plannedBuyLamports)} SOL (with the fair-launch burn) is waiting. <button class="btn-primary" id="finishBuy" type="button" style="margin-left:.5rem">Finish my first buy</button> <span class="status-line" id="finishBuyStatus"></span></div>` : '';
   const removedNote = c.hidden ? `<div class="notice warn"><b>Removed from PunchCard’s listings.</b> This token no longer appears on PunchCard (for example, at the business’s request). It still exists and may still trade on pump.fun; PunchCard can’t delete or change it.</div>` : '';
   const retiredNote = c.retired ? `<div class="notice warn"><b>Retired.</b> This business’s slot was released so a legitimate token can launch for it. This token still exists on pump.fun; any fees it holds still follow the published rules.</div>` : '';
   // Link a featured page, unless this is it.
@@ -85,7 +86,7 @@ async function load() {
         <li><b>Staff scan and redeem.</b> They see a green VALID and tap the gold button, so each perk is used once per period.</li>
       </ol>` : '';
   $('main').innerHTML = `
-    ${removedNote}${retiredNote}${newNote}
+    ${removedNote}${retiredNote}${newNote}${firstBuyNote}
     <section class="cp-hero">
       <div>
         <div class="cp-kicker">${c.business.city ? esc(c.business.city) + ' · ' : ''}Community page</div>
@@ -145,6 +146,16 @@ async function load() {
       <p class="status-line">This page is written by the community${claimed ? ' and the verified owner' : ''}; text and images marked with a website come from the business's own site. Creator fee split: ${c.platformBps ? `${(10000 - c.platformBps) / 100}% for the business · ${c.platformBps / 100}% PunchCard service fee` : '100% for the business'}. pump.fun keeps its own trading fees. Community tokens are tradable and can lose value.</p>
     </section>`;
 
+  $('finishBuy')?.addEventListener('click', async () => {
+    const st = $('finishBuyStatus'); $('finishBuy').disabled = true;
+    try {
+      const { connectWallet, finishFirstBuy } = await import('/launchpad/lp.js');
+      const w = await connectWallet();
+      if (w !== c.launcher) throw new Error('Connect the wallet that launched this token.');
+      st.textContent = 'Approve the first buy in your wallet…';
+      await finishFirstBuy(mint, w); st.textContent = 'Done. Updating…'; setTimeout(load, 2500);
+    } catch (e) { st.textContent = /reject|cancel/i.test(e.message) ? 'Cancelled in the wallet.' : e.message; $('finishBuy').disabled = false; }
+  });
   $('copyCa').addEventListener('click', () => navigator.clipboard.writeText(mint).then(() => { $('copyCa').textContent = 'Copied'; setTimeout(() => ($('copyCa').textContent = 'Copy'), 1500); }, () => getSelection().selectAllChildren($('ca'))));
   $('mineForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
