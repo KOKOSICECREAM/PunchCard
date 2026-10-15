@@ -318,3 +318,10 @@ export function imageToPng(file, size = 512) {
     img.src = url;
   });
 }
+
+/** Two-step launch, step 2: the launcher's first buy + burn on their now-live token (priced live, signed in the wallet). */
+export async function finishFirstBuy(mint, launcher) {
+  const prep = await api('/api/launch/first-buy', { mint, launcher });
+  const signed = await signTx(prep.tx);
+  return api('/api/launch/first-buy', { mint, launcher, tx: signed });
+}
