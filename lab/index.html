@@ -36,8 +36,9 @@
   </section>
   <section class="panel"><h2>Results to send</h2><p class="status-line" id="summary">Run the tests, then copy this line to Claude.</p><button class="btn-secondary" id="copy" type="button">Copy results</button></section>
 </main>
+<script src="https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js"></script>
 <script type="module">
-import { $, api, connectWallet, signTx, short } from '/launchpad/lp.js';
+import { $, api, connectWallet, signTx, signTxs, short } from '/launchpad/lp.js';
 const TESTS = [
   ['transfer', '1. Plain transfer', 'A tiny transfer to yourself. The baseline: should never be blocked.'],
   ['extra-signer', '2. Extra signer', 'A note that needs a second signer, like our launches do.'],
@@ -47,6 +48,7 @@ const TESTS = [
   ['create-register', '6. Create + PunchCard register', 'Our register step, with no buy.'],
   ['create-buy', '7. pump.fun create + buy', 'pump.fun’s own create and buy, no PunchCard parts.'],
   ['launch-small', '8. Full launch, small (~870 bytes)', 'The full launch (create + register_coin + buy + burn) with its own lookup table, under Phantom’s ~900-byte guidance. Takes a few seconds to prepare.'],
+  ['launch-split-small', '10. Split launch, small (two transactions)', 'The full launch as two transactions signed together: 1) create + register (~700 bytes), 2) first buy + burn (~470 bytes). Phantom asks once for both.'],
 ];
 const results = {};
 let wallet = null;
@@ -59,9 +61,9 @@ $('connect').addEventListener('click', async () => {
 document.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', async () => {
   const k = b.dataset.k, r = $('r-' + k); r.className = 'lab-res'; r.textContent = 'Building…';
   try {
-    const { tx } = await api('/api/lab/tx', { wallet, kind: k });
+    const { tx, txs } = await api('/api/lab/tx', { wallet, kind: k });
     r.textContent = 'Check your wallet…';
-    const signed = await signTx(tx); // never sent (and it can't land: PunchCard's co-signatures are missing)
+    const signed = txs ? (await signTxs(txs)).join('\n\n') : await signTx(tx); // never sent (and it can't land: PunchCard's co-signatures are missing)
     results[k] = 'signed'; r.className = 'lab-res ok';
     r.innerHTML = 'Signed. (Not sent.) Signed transaction, for Phantom support:<textarea readonly rows="4" style="width:100%;margin-top:.4rem;font-family:monospace;font-size:.72rem">' + signed + '</textarea><button class="btn-secondary" type="button">Copy signed transaction</button>';
     r.querySelector('button').onclick = (e) => navigator.clipboard.writeText(signed).then(() => (e.target.textContent = 'Copied'), () => r.querySelector('textarea').select());
