@@ -49,6 +49,7 @@ const TESTS = [
   ['create-buy', '7. pump.fun create + buy', 'pump.fun’s own create and buy, no PunchCard parts.'],
   ['launch-small', '8. Full launch, small (~870 bytes)', 'The full launch (create + register_coin + buy + burn) with its own lookup table, under Phantom’s ~900-byte guidance. Takes a few seconds to prepare.'],
   ['launch-split-small', '10. Split launch, small (two transactions)', 'The full launch as two transactions signed together: 1) create + register (~700 bytes), 2) first buy + burn (~470 bytes). Phantom asks once for both.'],
+  ['launch-buy-small', '11. Create + register + first buy (no burn), small', 'One transaction (~770 bytes): the launch with the first buy but without the burn. The burn would be a second, separate step.'],
 ];
 const results = {};
 let wallet = null;
