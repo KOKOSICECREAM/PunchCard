@@ -32,6 +32,14 @@
   .burn-stats b { font-variant-numeric: tabular-nums; }
   .burn-stats .hot { background: var(--terra); border-color: var(--terra); color: #fff; }
   .burn-stats .hot span { color: rgba(255,255,255,.85); }
+  .burn-total { display: grid; gap: .4rem; padding: 1.1rem 1.2rem; border-radius: 16px; background: #1c1812; color: #f6efe2; margin-bottom: 1rem; }
+  .burn-total > b { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(2rem, 7vw, 2.8rem); color: #f4d9a7; line-height: 1; font-variant-numeric: tabular-nums; }
+  .burn-total > span { font-size: .9rem; color: rgba(246,239,226,.75); }
+  .burn-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: .6rem; margin-top: .4rem; }
+  .burn-split div { display: grid; gap: .1rem; padding: .6rem .8rem; border-radius: 10px; background: rgba(246,239,226,.08); }
+  .burn-split span { font-size: .78rem; color: rgba(246,239,226,.7); }
+  .burn-split b { font-variant-numeric: tabular-nums; }
+  .burn-h3 { margin: 1.2rem 0 .3rem; font-size: 1.05rem; }
 </style>
 </head>
 <body>
@@ -87,8 +95,18 @@
   </section>
 
   <section class="panel" aria-labelledby="logH">
-    <h2 id="logH">Buy-and-burn</h2>
-    <p>20% of PunchCard’s service fee from every token launched on the PunchCard Launchpad buys PUNCH on the market and burns it, every week. Every burn is public, with its transactions.</p>
+    <h2 id="logH">PUNCH burned</h2>
+    <div class="burn-total" id="burnTotal" hidden>
+      <b id="tBurned">…</b>
+      <span>PUNCH burned in all, <span id="tPct"></span> of the 1 billion supply. Read live from Solana.</span>
+      <div class="burn-split">
+        <div><span>Weekly buy-and-burn</span><b id="tWeekly">…</b></div>
+        <div><span>Paid at PunchCard businesses and other burns</span><b id="tOther">…</b></div>
+      </div>
+    </div>
+    <p>PUNCH burns two ways. When a customer pays with PUNCH at a PunchCard business, the PUNCH is burned instead of being sent to the shop. And 20% of PunchCard’s service fee buys PUNCH on the market and burns it every week.</p>
+    <h3 class="burn-h3">Weekly buy-and-burn</h3>
+    <p>20% of PunchCard’s service fee from every token launched on the PunchCard Launchpad buys PUNCH on the market and burns it. Every burn is public, with its transactions.</p>
     <div class="burn-stats" id="burnStats" hidden>
       <div><span>PunchCard fee counted</span><b id="bIncome">…</b></div>
       <div><span>Set aside for burns (20%)</span><b id="bDue">…</b></div>
@@ -135,7 +153,18 @@
   Promise.all([
     fetch('/punch/buybacks.json').then(function (r) { return r.json(); }).catch(function () { return { entries: [] }; }),
     fetch('https://punchcard-launchpad.quiet-mode-468e.workers.dev/api/punch-burns').then(function (r) { return r.json(); }).catch(function () { return null; })
+    , fetch('https://api.mainnet-beta.solana.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTokenSupply', params: ['8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx'] }) })
+      .then(function (r) { return r.json(); }).then(function (j) { return j.result.value.amount; }).catch(function () { return null; })
   ]).then(function (res) {
+    // Every burn from any source lowers the supply, so 1B minus supply is the true total.
+    if (res[2]) {
+      var total = 1e15 - Number(res[2]), weeklyRaw = res[1] ? Number(res[1].punchBurnedRaw || 0) : 0;
+      document.getElementById('tBurned').textContent = Math.round(total / 1e6).toLocaleString();
+      document.getElementById('tPct').textContent = (total / 1e13).toFixed(2) + '%';
+      document.getElementById('tWeekly').textContent = punch(weeklyRaw);
+      document.getElementById('tOther').textContent = punch(Math.max(0, total - weeklyRaw));
+      document.getElementById('burnTotal').hidden = false;
+    }
     var manual = (res[0].entries || []).map(function (e) {
       var what = e.kind === 'burn' ? 'Burned ' + esc(e.punch) + ' PUNCH' : 'Bought back ' + esc(e.punch) + ' PUNCH for ' + esc(e.sol) + ' SOL';
       return { t: Date.parse(e.date) || 0, html: '<li><a href="https://solscan.io/tx/' + encodeURIComponent(e.tx) + '" target="_blank" rel="noopener"><span><b>' + what + '</b>' + (e.note ? ' · ' + esc(e.note) : '') + '</span><span class="status-line">' + esc(e.date) + '</span></a></li>' };
