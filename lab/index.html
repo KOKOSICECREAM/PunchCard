@@ -27,6 +27,13 @@
     <div class="btn-row"><button class="btn-primary sol" id="connect" type="button">Connect wallet</button><span class="status-line" id="who"></span></div>
   </section>
   <section class="lab" id="tests"></section>
+  <section class="panel">
+    <h2>Test 9: real test launch (submitted)</h2>
+    <p>Creates a real token named <b>Wallet Test - Do Not Buy</b> ($NOBUY): no first buy, a made-up business, not listed on PunchCard. You sign in Phantom, PunchCard submits it, and you get the transaction link for Phantom support. Costs about 0.05 SOL (0.02 of it goes to PunchCard’s treasury). It’s permanent on pump.fun.</p>
+    <label class="status-line" style="display:flex;gap:.5rem;align-items:flex-start"><input type="checkbox" id="t9ok"> I understand this creates a real, permanent token.</label>
+    <div class="btn-row"><button class="btn-primary" id="t9" type="button" disabled>Sign and submit test launch</button></div>
+    <div class="lab-res" id="r9" role="status"></div>
+  </section>
   <section class="panel"><h2>Results to send</h2><p class="status-line" id="summary">Run the tests, then copy this line to Claude.</p><button class="btn-secondary" id="copy" type="button">Copy results</button></section>
 </main>
 <script type="module">
@@ -64,6 +71,23 @@ document.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click',
   }
   summary();
 }));
+const t9ready = () => { $('t9').disabled = !(wallet && $('t9ok').checked); };
+$('t9ok').addEventListener('change', t9ready);
+$('connect').addEventListener('click', () => setTimeout(t9ready, 1500));
+$('t9').addEventListener('click', async () => {
+  const r = $('r9'); $('t9').disabled = true; r.className = 'lab-res'; r.textContent = 'Preparing (a few seconds)…';
+  try {
+    const prep = await api('/api/lab/test-launch', { wallet });
+    r.textContent = `Built (${prep.size} bytes). Check your wallet…`;
+    const signed = await signTx(prep.tx);
+    r.textContent = 'Submitting…';
+    const done = await api('/api/lab/test-launch', { wallet, tx: signed, nonce: prep.nonce, ticket: prep.ticket });
+    const link = 'https://solscan.io/tx/' + done.signature;
+    r.className = 'lab-res ok';
+    r.innerHTML = `Submitted. Send this link to Phantom support:<br><a href="${link}" target="_blank" rel="noopener" style="word-break:break-all">${link}</a><br><button class="btn-secondary" type="button" style="margin-top:.4rem">Copy link</button>`;
+    r.querySelector('button').onclick = (e) => navigator.clipboard.writeText(link).then(() => (e.target.textContent = 'Copied'), () => {});
+  } catch (e) { r.className = 'lab-res bad'; r.textContent = e.message; t9ready(); }
+});
 $('copy').addEventListener('click', () => navigator.clipboard.writeText($('summary').textContent).then(() => ($('copy').textContent = 'Copied'), () => {}));
 </script>
 </body>

@@ -21,6 +21,7 @@ export function mountVerify(el, { autofocus = false } = {}) {
     try {
       const r = await fetch(`${API}/api/verify?mint=${encodeURIComponent(mint)}`), j = await r.json();
       if (!r.ok) return show('bad', `${NO}<div>${esc(j.error || 'Couldn’t check that address.')}</div>`);
+      if (j.test) return show('bad', `${NO}<div><b>PunchCard test token, not a business.</b> PunchCard made this token to test wallet compatibility. It has no business, page or perks. Please don’t buy it.</div>`);
       if (!j.official) return show('bad', `${NO}<div><b>Not a PunchCard launch.</b> This token wasn’t launched on the PunchCard Launchpad. Official PunchCard tokens always have a PunchCard record on Solana.</div>`);
       show('ok', `${OK}<div><b>Official PunchCard launch, verified on Solana.</b><br>${j.ticker ? `<b>$${esc(j.ticker)}</b> · ` : ''}${esc(j.business || '')}${j.city ? ', ' + esc(j.city) : ''}
         <div class="vf-links"><a href="${esc(j.page)}">Open its PunchCard page</a><a href="https://solscan.io/account/${esc(j.record)}" target="_blank" rel="noopener">See the on-chain record</a></div>
