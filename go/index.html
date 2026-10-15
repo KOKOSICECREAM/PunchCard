@@ -123,6 +123,23 @@
   .go-back { overflow: hidden; transition: transform .2s var(--ease), opacity .25s, width .3s var(--ease), margin .3s var(--ease), border-width .3s; }
   .go-back[aria-hidden="true"] { opacity: 0; pointer-events: none; width: 0; border-width: 0; margin-right: -0.5rem; }
   .go-left { display: flex; align-items: center; gap: 0.5rem; }
+  .go-right { display: flex; align-items: center; gap: .75rem; }
+  .go-share { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--border-mid); background: var(--paper-card); color: var(--ink); cursor: pointer; padding: 0; }
+  .go-share svg { width: 20px; height: 20px; }
+  .share-sheet { position: fixed; inset: 0; z-index: 50; display: grid; place-items: end center; background: rgba(28,24,18,.45); padding: 1rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
+  .share-sheet[hidden] { display: none; }
+  .share-card { width: min(100%, 420px); background: var(--paper); border-radius: 22px; padding: 1.3rem 1.2rem 1rem; display: grid; gap: .6rem; text-align: center; animation: sheetUp .35s var(--ease); }
+  .share-card h2 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: 1.5rem; margin: 0; }
+  .share-card h2 em { font-style: normal; color: var(--sol); }
+  .share-card p { margin: 0; color: var(--ink-mid); }
+  .share-qr { justify-self: center; padding: .6rem; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px var(--border-mid); }
+  .share-qr img { display: block; width: 240px; height: 240px; max-width: 100%; }
+  .share-url { font-family: 'Courier Prime', monospace; font-weight: 700; color: var(--ink) !important; }
+  .share-steps { text-align: left; margin: 0; padding-left: 1.2rem; font-size: .88rem; color: var(--ink-mid); display: grid; gap: .25rem; }
+  .share-btns { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
+  .share-close { background: none; border: 0; color: var(--ink-mid); font-weight: 600; padding: .5rem; cursor: pointer; }
+  @keyframes sheetUp { from { transform: translateY(30px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .share-card { animation: none; } }
   .go-track { position: relative; display: flex; gap: 10px; align-items: center; padding: 0 2px; }
   .go-track::before { content: ''; position: absolute; left: 6px; right: 6px; top: 50%; height: 2px; background: var(--border-mid); transform: translateY(-50%); }
   .go-track .fill { position: absolute; left: 6px; top: 50%; height: 2px; background: var(--sol); transform: translateY(-50%); width: 0; transition: width .5s var(--ease); }
@@ -234,7 +251,26 @@
       <button class="go-back" id="back" type="button" aria-label="Back" aria-hidden="true" tabindex="-1">‹</button>
       <a class="go-brand" href="/go/"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> Go</span></a>
     </div>
-    <div class="go-track" aria-hidden="true" id="dots"><span class="fill"></span><i></i><i></i><i></i><i></i><i class="last"></i></div>
+    <div class="go-right">
+      <div class="go-track" aria-hidden="true" id="dots"><span class="fill"></span><i></i><i></i><i></i><i></i><i class="last"></i></div>
+      <button class="go-share" id="shareApp" type="button" aria-label="Share PunchCard Go with a friend" title="Share PunchCard Go">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="share-sheet" id="shareSheet" hidden role="dialog" aria-modal="true" aria-labelledby="shareH">
+    <div class="share-card">
+      <h2 id="shareH">Share PunchCard <em>Go</em></h2>
+      <p>Have a friend scan this with their phone camera.</p>
+      <div class="share-qr"><img id="shareQr" alt="QR code for punchcard.club/go" width="240" height="240"></div>
+      <p class="share-url">punchcard.club/go</p>
+      <ol class="share-steps">
+        <li>Open it in a wallet app's browser (Phantom or Solflare), or in Safari / Chrome.</li>
+        <li>Save it: <b>Share → Add to Home Screen</b> on iPhone, <b>⋮ → Install app</b> on Android.</li>
+      </ol>
+      <div class="share-btns"><button class="btn-primary sol" id="shareNative" type="button">Share link</button><button class="btn-secondary" id="shareCopy" type="button">Copy link</button></div>
+      <button class="share-close" id="shareClose" type="button">Done</button>
+    </div>
   </div>
   <div class="go-net" id="netBanner" hidden>TEST NETWORK · devnet · not real money</div>
 
@@ -586,6 +622,20 @@ $('launch').addEventListener('click', async () => {
 // PunchCard-branded QR: softly rounded modules in ink, corner eyes in PunchCard red and green, and the
 // PunchCard logo in the middle. Error correction H keeps it scannable with the logo covering the centre.
 const logo = new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = '/brand/punchcard.svg'; });
+// Share the app: a branded QR for punchcard.club/go, plus the phone's share sheet or copy.
+const APP_URL = 'https://punchcard.club/go/';
+$('shareApp').addEventListener('click', async () => {
+  $('shareSheet').hidden = false;
+  if (!$('shareQr').src) $('shareQr').src = await qrImg(APP_URL, 600);
+  $('shareNative').hidden = !navigator.share;
+});
+$('shareNative').addEventListener('click', () => navigator.share({ title: 'PunchCard Go', text: 'Support the businesses you love. Open PunchCard Go:', url: APP_URL }).catch(() => {}));
+$('shareCopy').addEventListener('click', () => navigator.clipboard.writeText(APP_URL).then(() => ($('shareCopy').textContent = 'Copied'), () => {}));
+const closeShare = () => { $('shareSheet').hidden = true; $('shareCopy').textContent = 'Copy link'; };
+$('shareClose').addEventListener('click', closeShare);
+$('shareSheet').addEventListener('click', (e) => { if (e.target === $('shareSheet')) closeShare(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('shareSheet').hidden) closeShare(); });
+
 async function qrImg(text, px = 720) {
   const q = qrcode(0, 'H'); q.addData(text); q.make();
   const n = q.getModuleCount(), quiet = 3, cell = Math.floor(px / (n + quiet * 2)), size = cell * (n + quiet * 2), o = quiet * cell;
