@@ -39,6 +39,7 @@ const TESTS = [
   ['launch', '5. Full launch', 'Everything, including the burn (buy sized to your balance).'],
   ['create-register', '6. Create + PunchCard register', 'Our register step, with no buy.'],
   ['create-buy', '7. pump.fun create + buy', 'pump.fun’s own create and buy, no PunchCard parts.'],
+  ['launch-small', '8. Full launch, small (~870 bytes)', 'The full launch (create + register_coin + buy + burn) with its own lookup table, under Phantom’s ~900-byte guidance. Takes a few seconds to prepare.'],
 ];
 const results = {};
 let wallet = null;
