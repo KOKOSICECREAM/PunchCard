@@ -30,7 +30,7 @@
   <section class="panel">
     <h2>Test 9: real test launch (submitted)</h2>
     <p>Creates a real token named <b>Wallet Test - Do Not Buy</b> ($NOBUY): no first buy, a made-up business, not listed on PunchCard. You sign in Phantom, PunchCard submits it, and you get the transaction link for Phantom support. Costs about 0.05 SOL (0.02 of it goes to PunchCard’s treasury). It’s permanent on pump.fun.</p>
-    <div class="field"><label for="t9buy">First buy (SOL, 0 to 0.3). Above ~0.142 SOL the extra is burned, like a real launch.</label><input id="t9buy" type="number" min="0" max="0.3" step="0.01" value="0.2"></div>
+    <div class="field"><label for="t9buy">First buy (SOL, 0 to 0.3). Above ~0.142 SOL the extra is burned, like a real launch.</label><input id="t9buy" type="text" inputmode="decimal" value="0.01"></div>
     <label class="status-line" style="display:flex;gap:.5rem;align-items:flex-start"><input type="checkbox" id="t9ok"> I understand this creates a real, permanent token.</label>
     <div class="btn-row"><button class="btn-primary" id="t9" type="button" disabled>Sign and submit test launch</button></div>
     <div class="lab-res" id="r9" role="status"></div>
@@ -83,8 +83,11 @@ $('connect').addEventListener('click', () => setTimeout(t9ready, 1500));
 $('t9').addEventListener('click', async () => {
   const r = $('r9'); $('t9').disabled = true; r.className = 'lab-res'; r.textContent = 'Preparing (a few seconds)…';
   try {
-    const prep = await api('/api/lab/test-launch', { wallet, devBuySol: Number($('t9buy').value || 0) });
-    r.textContent = `Built (${prep.size} bytes). Check your wallet…`;
+    const buy = Number(String($('t9buy').value).replace(',', '.'));
+    if (!(buy >= 0 && buy <= 0.3)) throw new Error('First buy must be between 0 and 0.3 SOL.');
+    const prep = await api('/api/lab/test-launch', { wallet, devBuySol: buy });
+    const total = (prep.devBuyLamports || 0) / 1e9 + 0.037;
+    r.innerHTML = `Built (${prep.size} bytes). <b>First buy ${(prep.devBuyLamports || 0) / 1e9} SOL; total about ${total.toFixed(3)} SOL.</b> If your wallet shows much more, reject it. Check your wallet…`;
     const signed = await signTx(prep.tx);
     r.textContent = 'Submitting…';
     const done = await api('/api/lab/test-launch', { wallet, tx: signed, nonce: prep.nonce, ticket: prep.ticket });
