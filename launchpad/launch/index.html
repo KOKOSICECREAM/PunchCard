@@ -230,7 +230,7 @@ $('launch').addEventListener('click', async () => {
     for (let attempt = 1; ; attempt++) {
       const prep = await api('/api/launch/prepare', {
         maps: businessQuery($('maps')).maps, coinName: $('name').value.trim(), ticker: $('ticker').value.trim(),
-        description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION, signFirst: true, bundle: true, twoStep: true,
+        description: $('desc').value.trim(), launcher: wallet, devBuySol, imageBase64, termsVersion: TERMS_VERSION, signFirst: true, bundle: true, twoStep: true, planB: true,
       });
       s.textContent = attempt > 1 ? 'That took a little long, so here is a fresh launch: please approve it again in your wallet…' : 'Approve the launch in your wallet…';
       const signed = prep.txs ? await signTxs(prep.txs) : await signTx(prep.tx);
