@@ -1209,6 +1209,7 @@ async function pollForKokosBurn(reference,raw,totalCents,deadline,pollToken){
             localStorage.setItem('kokos_sol_burns',JSON.stringify(log.slice(-500)));}catch(e){}
           if(paid==='burned')showPaymentSuccess(totalCents,Number(burned)/10**KOKOS_SOLANA.DECIMALS,s.signature,'PUNCH burned');
           else showPaymentSuccess(totalCents,Number(received)/10**KOKOS_SOLANA.DECIMALS,s.signature,'PUNCH · burned at close');
+          cart={};renderCart();renderMenu();   // start the next order blank, like the SKOOP and USDC paths
           return;   // no reward: PUNCH payers are on Solana, rewards are on Base (MVP)
         }
       }
