@@ -2,7 +2,10 @@
 // PunchCard-branded QR: softly rounded modules in ink, corner eyes in PunchCard red and green, and the
 // PunchCard logo in the middle. Error correction H keeps it scannable with the logo covering the centre.
 const logo = new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = '/brand/punchcard.svg'; });
+// Pages that don't include qrcode-generator get it loaded on first use (the Perk Pass runs on many pages).
+const loadScript = (src) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load ' + src)); document.head.appendChild(s); });
 export async function qrImg(text, px = 720) {
+  if (typeof qrcode === 'undefined') await loadScript('https://unpkg.com/qrcode-generator@1.4.4/qrcode.js');
   const q = qrcode(0, 'H'); q.addData(text); q.make();
   const n = q.getModuleCount(), quiet = 3, cell = Math.floor(px / (n + quiet * 2)), size = cell * (n + quiet * 2), o = quiet * cell;
   const c = document.createElement('canvas'); c.width = c.height = size;
