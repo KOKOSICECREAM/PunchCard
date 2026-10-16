@@ -20,6 +20,13 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; font-size: 16px; line-height: 1.65; overflow-x: hidden; }
+/* Links: always PunchCard terracotta with a soft underline, never the browser's blue/purple.
+   Component styles (buttons, nav, lists) set their own colours and win over this. */
+a { color: var(--terra); text-decoration: underline; text-decoration-color: rgba(168,58,32,.35); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:where(:visited) { color: var(--terra); }
+a:where(:hover) { text-decoration-color: currentColor; }
+/* On dark panels, a light gold that reads clearly. */
+.cp-perk a, .burn-total a, .closing a, .share-card .dark a, .perk a, .ticket a { color: #f4d9a7; text-decoration-color: rgba(244,217,167,.45); }
 a:focus-visible { outline: 3px solid var(--terra); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
 

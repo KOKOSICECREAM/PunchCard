@@ -866,6 +866,9 @@
   .app-callout p { font-size:0.95rem; color:rgba(248,244,236,0.8); max-width:52ch; }
   .app-callout b { color:var(--paper); }
   .app-callout a { background:var(--paper); color:var(--ink); font-weight:700; text-decoration:none; padding:0.75rem 1.3rem; border-radius:6px; white-space:nowrap; }
+  /* Links in brand (never the browser's blue/purple); component rules above set their own. */
+  a { color: var(--terra); text-decoration-color: rgba(168,58,32,.35); text-underline-offset: 2px; }
+  a:where(:visited) { color: var(--terra); }
 </style>
 
   <!-- Open Graph / Social Media -->
