@@ -61,10 +61,17 @@ function showPass(p) {
 }
 
 /** Customer flow. `status` (optional) is an element for progress text. */
+// Some wallets (Ledger, older apps) sign through @solana/web3.js; load it when a page doesn't include it.
+async function needWeb3() {
+  if (window.solanaWeb3) return;
+  await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://unpkg.com/@solana/web3.js@1.98.4/lib/index.iife.min.js'; s.onload = res; s.onerror = () => rej(new Error('Could not load the Solana library. Check your connection.')); document.head.appendChild(s); });
+}
+
 export async function openPerkPass({ mint, perkId, status }) {
   const say = (t) => { if (status) status.textContent = t; };
   try {
     say('Connecting your wallet…');
+    await needWeb3();
     const wallet = await connectWallet();
     say('Getting your pass ready…');
     const ch = await api('/api/perks/challenge', { mint, perkId, wallet });
