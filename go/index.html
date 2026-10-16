@@ -276,17 +276,18 @@
 
   <!-- 0. Open inside a wallet -->
   <section id="s-open" hidden aria-labelledby="h-open">
-    <h1 id="h-open">Launch a token <em>in the shop.</em></h1>
+    <h1 id="h-open">Launch a token for a business <em>you love.</em></h1>
     <p class="lede">PunchCard Go runs inside your wallet app, where connecting and approving just work. Pick yours:</p>
     <div class="wallet-links" id="walletLinks"></div>
     <p class="muted">Already in a wallet's browser or on a computer with a wallet extension? <a href="#" id="tryHere">Continue here</a>.</p>
+    <p class="muted">Standing in the shop? Even better: when you launch, you can hand the owner their claim code on the spot.</p>
     <p class="muted">Tip: open it once in your wallet, then add it to your home screen or wallet favorites.</p>
   </section>
 
   <!-- 1. Rep wallet + Membership -->
   <section id="s-wallet" hidden aria-labelledby="h-wallet">
     <h1 id="h-wallet">Hi! Let's get <em>you</em> connected.</h1>
-    <p class="lede">You launch from your own wallet. You'll need a PunchCard Membership, and you earn the <a href="/launchpad/how/#bring-them-in">Bring them in</a> reward when the owner claims.</p>
+    <p class="lede" id="walletLede">You launch from your own wallet. You'll need a PunchCard Membership, and you earn the <a href="/launchpad/how/#bring-them-in">Bring them in</a> reward when the owner claims.</p>
     <button class="btn-primary sol big" id="connect" type="button">Connect my wallet</button>
     <div class="member-status" id="memberLine" hidden></div>
     <button class="btn-primary sol big" id="toWhere" type="button" hidden>Next: find the business →</button>
@@ -347,7 +348,7 @@
       <div class="qr"><img id="qrToken" alt="QR code for the token page"><b>Fans: the token</b><small>Scan to see it and buy</small></div>
     </div>
     <button class="btn-primary terra big sheen" id="showOwner" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM21 14v.01M14 21h.01M17 21h4v-3"/></svg> Show the owner</button>
-    <p class="muted">The owner scans it with their phone camera, no app needed. It opens the claim page on punchcard.club. When they verify, they get 90% of the creator fees, and you earn your Bring them in reward.</p>
+    <p class="muted">The owner scans it with their phone camera, no app needed. It opens the claim page on punchcard.club. When they verify, they get 90% of the creator fees<span id="rewardNote">, and you earn your Bring them in reward</span>.</p>
     <div class="row"><button class="btn-secondary big" id="share" type="button">Share</button><a class="btn-secondary big" id="openToken" href="#">Open page</a></div>
     <button class="btn-primary sol big" id="again" type="button">Launch another</button>
   </section>
@@ -476,6 +477,9 @@ async function checkMembership() {
   st.member = false; $('toWhere').hidden = true;
   try {
     const m = await api(`/api/membership?wallet=${encodeURIComponent(st.wallet)}`);
+    if (m.team) { // PunchCard's own wallet (Select launches): no Bring them in reward
+      st.team = true; $('walletLede').textContent = 'Team wallet: this is a PunchCard launch, so there’s no Bring them in reward on it.'; const rn = $('rewardNote'); if (rn) rn.textContent = '';
+    }
     if (!m.requiredUsd) { st.member = true; line.hidden = true; $('toWhere').hidden = false; return; }
     const usd = `$${Number(m.usd || 0).toFixed(2)}`;
     if (m.member) {

@@ -44,7 +44,7 @@ async function openDoors() {
   const now = Math.floor(Date.now() / 1000);
   let html;
   if (now < st.opensAt) html = `<b>Open Doors:</b> for 24 hours, any PunchCard member can launch a token for a local business they love. ${st.cap} spots. Starts in <b>${until(st.opensAt)}</b> (${new Date(st.opensAt * 1000).toLocaleString()}).`;
-  else if (st.open) html = `<b>Open Doors is on!</b> Any PunchCard member can launch for a local business: <b>${st.remaining} of ${st.cap} spots left</b> · closes in ${until(st.closesAt)}. <a href="/launchpad/launch/">Launch a token →</a>`;
+  else if (st.open) html = `<b>Open Doors is on!</b> Any PunchCard member can launch for a local business: <b>${st.remaining} of ${st.cap} spots left</b> · closes in ${until(st.closesAt)}. <a href="/go/">Launch a token →</a>`;
   else if (now < st.closesAt) html = `<b>Open Doors:</b> all ${st.cap} spots are taken. Thank you! Follow <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> for the next one.`;
   else return;
   for (const el of els) { el.innerHTML = html; el.hidden = false; }

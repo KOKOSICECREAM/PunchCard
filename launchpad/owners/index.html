@@ -33,7 +33,7 @@
   <ul class="nav-links">
     <li><a href="/launchpad/how/">How it works</a></li>
     <li><a href="/launchpad/owners/" aria-current="page">Owners</a></li>
-    <li><a href="/launchpad/launch/">Launch</a></li>
+    <li><a href="/go/">Launch</a></li>
   </ul>
 </nav>
 
@@ -149,7 +149,7 @@ $('find').addEventListener('click', async () => {
         <div class="btn-row" style="margin-top:0.75rem"><a class="btn-primary sol" href="/launchpad/claim/?mint=${esc(r.mint)}">Claim it →</a><a class="btn-secondary" href="/launchpad/coin/?mint=${esc(r.mint)}">See the token</a></div>`;
     } else {
       out.innerHTML = `<div class="notice warn"><b>No token for ${name} yet.</b> Want one? You can launch it yourself: you'll still claim the fees as the owner.</div>
-        <div class="btn-row" style="margin-top:0.75rem"><a class="btn-primary sol" href="/launchpad/launch/">Launch one →</a></div>`;
+        <div class="btn-row" style="margin-top:0.75rem"><a class="btn-primary sol" href="/go/">Launch one →</a></div>`;
     }
     if (r.ownerCanVerifyVia === null) out.insertAdjacentHTML('beforeend', `<div class="notice warn" style="margin-top:0.75rem">Your Google listing has no website of its own yet. Add one to your Google Business Profile so you can verify.</div>`);
     out.hidden = false; $('st').textContent = '';
