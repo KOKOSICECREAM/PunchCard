@@ -67,6 +67,7 @@ async function load() {
         <a class="btn-secondary" href="${explorer('token', mint)}" target="_blank" rel="noopener">Solscan</a>
         <a class="btn-secondary" href="/verify/?mint=${esc(mint)}">Verify it’s official</a>
       </div>
+      <p class="status-line cp-ref">New to pump.fun? <a href="https://pump.fun/join/Punchcard_Team" target="_blank" rel="noopener">Join with PunchCard’s code</a> and pay a lower trading fee (pump.fun’s fee drops from 0.45% to 0.40%, and pump.fun shares part of its fee with PunchCard).</p>
       <ul class="cp-facts">
         <li><b>Where trading fees go:</b> ${c.platformBps ? `${(10000 - c.platformBps) / 100}% to ${esc(c.business.name)}, ${c.platformBps / 100}% PunchCard service fee` : `100% to ${esc(c.business.name)}`}${claimed ? '' : ' (held until the owner claims)'}.</li>
         ${holderShare}
