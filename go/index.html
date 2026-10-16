@@ -124,6 +124,11 @@
   .go-back[aria-hidden="true"] { opacity: 0; pointer-events: none; width: 0; border-width: 0; margin-right: -0.5rem; }
   .go-left { display: flex; align-items: center; gap: 0.5rem; }
   .go-right { display: flex; align-items: center; gap: .75rem; }
+  .go-home { display: none; font-size: .85rem; font-weight: 600; color: var(--ink-mid); text-decoration: none; padding: .35rem .6rem; border-radius: 8px; }
+  .go-home:hover { color: var(--ink); background: var(--paper-card); }
+  /* On computers only: phones use Go like an app (and the installed app has no browser around it). */
+  @media (min-width: 760px) and (hover: hover) { .go-home { display: inline-block; } }
+  @media (display-mode: standalone) { .go-home { display: none !important; } }
   .go-share { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--border-mid); background: var(--paper-card); color: var(--ink); cursor: pointer; padding: 0; }
   .go-share svg { width: 20px; height: 20px; }
   .share-sheet { position: fixed; inset: 0; z-index: 50; display: grid; place-items: end center; background: rgba(28,24,18,.45); padding: 1rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
@@ -252,6 +257,7 @@
       <a class="go-brand" href="/go/"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> Go</span></a>
     </div>
     <div class="go-right">
+      <a class="go-home" href="/">‹ punchcard.club</a>
       <div class="go-track" aria-hidden="true" id="dots"><span class="fill"></span><i></i><i></i><i></i><i></i><i class="last"></i></div>
       <button class="go-share" id="shareApp" type="button" aria-label="Share PunchCard Go with a friend" title="Share PunchCard Go">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>
