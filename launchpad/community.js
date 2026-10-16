@@ -1,4 +1,4 @@
-// Community launches (anyone can launch, may be unclaimed) and the Open Doors banner.
+// Community favorites (fan launches, most supported first; may be unclaimed) and the Open Doors banner.
 //   [data-community-list="strip"|"full"]  ranked by holders; the section [data-community-section]
 //                                         stays hidden until there is at least one community launch.
 //   [data-open-doors]                     countdown / spots left while an Open Doors window is set.
@@ -16,7 +16,7 @@ function card(c) {
   return `<a class="sel-card" href="${esc(c.page ? c.page.replace(/^https:\/\/punchcard\.club/, '') : `/launchpad/coin/?mint=${encodeURIComponent(c.mint)}`)}">
     <img src="${API}/img/${encodeURIComponent(c.mint)}" alt="" width="64" height="64" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
     <span><b>${esc(c.ticker)} · ${esc(c.business_name)}</b><small>${esc([c.city, c.country].filter(Boolean).join(', '))}</small>${badge}
-    <small class="sel-stats">${c.holders ? `${Number(c.holders).toLocaleString()} holders` : 'New'}${c.burnTier ? ` · ${honourPill(c.burnTier)}` : ''}</small></span></a>`;
+    <small class="sel-stats">${c.holders ? `${Number(c.holders).toLocaleString()} holders` : 'New'}${Number(c.feesGeneratedLamports) > 0 ? ` · ${(Number(c.feesGeneratedLamports) / 1e9).toFixed(2)} SOL in creator fees` : ''}${c.burnTier ? ` · ${honourPill(c.burnTier)}` : ''}</small></span></a>`;
 }
 
 async function communityLists() {
@@ -25,7 +25,8 @@ async function communityLists() {
   const { coins = [] } = await fetch(`${API}/api/coins`).then((r) => r.json()).catch(() => ({}));
   // Blaze and Inferno launches (2+ SOL committed to the burn) get top placement; then by holders.
   const top = (c) => (c.burnTier?.rank >= 3 ? c.burnTier.rank : 0);
-  const community = coins.filter((c) => !c.team).sort((a, b) => top(b) - top(a) || (b.holders || 0) - (a.holders || 0) || b.launched_at - a.launched_at);
+  const fees = (c) => Number(c.feesGeneratedLamports || 0);
+  const community = coins.filter((c) => !c.team).sort((a, b) => top(b) - top(a) || (b.holders || 0) - (a.holders || 0) || fees(b) - fees(a) || b.launched_at - a.launched_at);
   if (!community.length) return; // sections stay hidden
   document.querySelectorAll('[data-community-section]').forEach((s) => { s.hidden = false; });
   for (const el of lists) el.innerHTML = community.slice(0, el.dataset.communityList === 'strip' ? 3 : 60).map(card).join('');

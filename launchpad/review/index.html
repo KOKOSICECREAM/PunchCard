@@ -35,6 +35,12 @@
     <div class="btn-row"><button class="btn-primary sol" id="go" type="button">Connect and sign in</button><span class="status-line" id="st" role="status"></span></div>
   </section>
   <div id="queue" hidden></div>
+  <section class="panel" id="approveBox" hidden>
+    <h2>PunchCard Approved</h2>
+    <p>Give an unclaimed launch a full business page (story, photos and website text), or take it back to a simple token card. Claimed and featured businesses always have a full page.</p>
+    <div class="field"><label for="approveMint">Token address</label><input id="approveMint" placeholder="Token contract address" spellcheck="false" autocomplete="off"></div>
+    <div class="btn-row"><button class="btn-primary sol" id="approveYes" type="button">Approve</button><button class="btn-secondary" id="approveNo" type="button">Undo approval</button><span class="status-line" id="approveSt" role="status"></span></div>
+  </section>
   <section class="panel" id="emergency" hidden>
     <h2>Emergency pause</h2>
     <p>Stops new launches, claim approvals, handovers to owners, holder payouts and fee collection. Funds stay where they are. Cancelling claims still works. <b>Only the Squad can unpause.</b></p>
@@ -89,11 +95,19 @@ async function load() {
       <div class="btn-row" style="margin-top:0.4rem"><button class="btn-secondary" data-hide="${r.hidden ? 0 : 1}" data-mint="${esc(r.mint)}" type="button">${r.hidden ? 'Restore to PunchCard listings' : 'Remove from PunchCard listings'}</button><span class="status-line" id="h-${esc(r.mint)}"></span></div></li>`).join('');
   $('queue').innerHTML = `<p class="status-line">Signed in as ${esc(short(q.you))}</p>${claims}<section class="panel"><h2>Reports (last 30 days)</h2><ul class="coin-list">${reports || '<li class="status-line">None.</li>'}</ul></section>`;
   $('queue').hidden = false;
-  $('emergency').hidden = false;
+  $('emergency').hidden = false; $('approveBox').hidden = false;
   const h = await call('/api/health').catch(() => null);
   $('pauseState').textContent = h?.paused ? 'Status: PAUSED. Unpausing needs a Squad proposal (see the cheat sheet).' : 'Status: running.';
   $('pauseBtn').hidden = !!h?.paused;
 }
+for (const [id, approved] of [['approveYes', true], ['approveNo', false]]) $(id).addEventListener('click', async () => {
+  const mint = $('approveMint').value.trim();
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) { $('approveSt').textContent = 'Paste a token address first.'; return; }
+  $(id).disabled = true;
+  try { await call('/api/admin/approve', { mint, approved }); $('approveSt').innerHTML = approved ? `Approved. <a href="/launchpad/coin/?mint=${encodeURIComponent(mint)}" target="_blank" rel="noopener">Open its page</a>` : 'Back to a token card.'; }
+  catch (err) { $('approveSt').textContent = err.message; }
+  finally { $(id).disabled = false; }
+});
 document.addEventListener('click', async (e) => {
   const h = e.target.closest('button[data-hide]');
   if (h) { // listings only: the token itself can't be deleted
