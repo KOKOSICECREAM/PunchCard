@@ -54,3 +54,7 @@
 .cp-mine-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
 .cp-mine-list li { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: baseline; font-variant-numeric: tabular-nums; }
 .cp-mine-list li span:first-child { min-width: 4.5rem; color: var(--ink-faded); }
+
+/* token card: the owner invitation */
+.cp-owner { padding: 1.2rem 1.3rem; border-radius: 18px; border: 1.5px dashed var(--border-mid); background: var(--paper-card); }
+.cp-owner p { margin: 0; color: var(--ink-mid); line-height: 1.6; max-width: 60ch; }

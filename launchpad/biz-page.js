@@ -38,6 +38,8 @@ async function load() {
   const perks = perkCfg.perks || [], site = prof.site || null, host = site?.host || hostOf(c.business.website);
   document.title = `${c.business.name} · ${c.coinName} ($${c.ticker}) — PunchCard`;
   const st = statusOf(c), claimed = c.status === 'HandedOver' || c.status === 'Attested';
+  // Token card: unclaimed, not approved, no dedicated page. No business photos or website text until the owner says yes.
+  const card = c.pageLevel === 'card' && !document.body.dataset.mint;
   const newNote = params.get('new') ? `<div class="notice ok"><b>It’s live.</b> Share this page with ${esc(c.business.name)} so the owner can claim their fees. <button class="btn-secondary" id="copyLink" type="button" style="margin-left:0.5rem">Copy link</button></div>` : '';
   const firstBuyNote = c.firstBuyPending ? `<div class="notice warn"><b>Launcher: finish your first buy.</b> Your launch is live; your first buy of ${sol(c.plannedBuyLamports)} SOL (with the fair-launch burn) is waiting. <button class="btn-primary" id="finishBuy" type="button" style="margin-left:.5rem">Finish my first buy</button> <span class="status-line" id="finishBuyStatus"></span></div>` : '';
   const removedNote = c.hidden ? `<div class="notice warn"><b>Removed from PunchCard’s listings.</b> This token no longer appears on PunchCard (for example, at the business’s request). It still exists and may still trade on pump.fun; PunchCard can’t delete or change it.</div>` : '';
@@ -53,7 +55,7 @@ async function load() {
       </div>
       ${story}
     </section>` : story;
-  const ownStory = slot('biz-story'), updates = slot('biz-updates');
+  const ownStory = card ? '' : slot('biz-story'), updates = card ? '' : slot('biz-updates');
   const dex = `https://dexscreener.com/solana/${esc(mint)}`;
   const holderShare = c.communityBps > 0 ? `<li><b>${c.communityBps / 100}% of ${esc(c.business.name)}’s fees go to ${esc(c.ticker)} holders</b>, sent automatically each week${c.holderRounds ? ` (${c.holderRounds} ${c.holderRounds === 1 ? 'round' : 'rounds'} so far)` : ''}. No claiming needed.</li>` : '';
   const tokenInfo = `
@@ -90,23 +92,29 @@ async function load() {
     ${removedNote}${retiredNote}${newNote}${firstBuyNote}
     <section class="cp-hero">
       <div>
-        <div class="cp-kicker">${c.business.city ? esc(c.business.city) + ' · ' : ''}Community page</div>
+        <div class="cp-kicker">${c.business.city ? esc(c.business.city) + ' · ' : ''}${card ? 'Community token' : 'Community page'}</div>
         <h1>${esc(c.business.name)}</h1>
         <p class="cp-token">${c.coinName.trim().toLowerCase() === c.business.name.trim().toLowerCase() ? '' : esc(c.coinName) + ' · '}<b>$${esc(c.ticker)}</b></p>
         ${c.description ? `<p class="cp-thanks">“${esc(c.description)}”</p>` : `<p class="cp-thanks">A thank-you to the people behind ${esc(c.business.name)}, from their community.</p>`}
         <div class="cp-ctas">
           <a class="btn-primary sol" href="https://pump.fun/coin/${esc(mint)}" target="_blank" rel="noopener">Get $${esc(c.ticker)} on pump.fun</a>
-          ${c.business.website && !prof.brand ? `<a class="btn-secondary" href="${esc(c.business.website)}" target="_blank" rel="noopener">Visit ${esc(host || 'their site')}</a>` : ''}
-          ${prof.mapsUrl ? `<a class="btn-secondary" href="${esc(prof.mapsUrl)}" target="_blank" rel="noopener">Directions</a>` : ''}
+          ${!card && c.business.website && !prof.brand ? `<a class="btn-secondary" href="${esc(c.business.website)}" target="_blank" rel="noopener">Visit ${esc(host || 'their site')}</a>` : ''}
+          ${!card && prof.mapsUrl ? `<a class="btn-secondary" href="${esc(prof.mapsUrl)}" target="_blank" rel="noopener">Directions</a>` : ''}
         </div>
         <div class="cp-badge">${claimed ? `<span class="pill owned">Business identity verified</span>` : `<span class="pill open">Made by the community</span><span>Own ${esc(c.business.name)}? <a href="/launchpad/claim/?mint=${esc(mint)}">Claim this page</a></span>`}${c.burnTier ? ' ' + honourPill(c.burnTier) : ''}${prof.record ? ` <a class="pill verified" href="https://solscan.io/account/${esc(prof.record)}" target="_blank" rel="noopener" title="This token's PunchCard record on Solana">Verified on Solana</a>` : ''}</div>
       ${prof.brand ? `<p class="cp-brand-note">A commemorative community token, made by fans. Not affiliated with or endorsed by ${esc(c.business.name)} or its brand.</p>` : ''}
       </div>
       <div class="cp-art"><img src="${API}/img/${esc(mint)}" alt="${esc(c.business.name)}" onerror="this.parentNode.style.display='none'"></div>
     </section>
-    ${ownStory || words}
+    ${card ? '' : ownStory || words}
     ${tokenInfo}
-    <section class="cp-sec">
+    ${card ? `<section class="cp-sec cp-owner">
+      <p class="cp-lbl">For the owner</p>
+      <h2>Is this your business?</h2>
+      <p>${esc(c.business.name)}’s community made this token as a thank-you. Its creator fees are being held for the business. Claim them, and this becomes your full page on PunchCard: your story, photos and perks for your customers.</p>
+      <div class="cp-ctas">${c.status === 'Open' ? `<a class="btn-primary sol" href="/launchpad/claim/?mint=${esc(mint)}">Claim this token</a>` : ''}<a class="btn-secondary" href="/launchpad/owners/">How claiming works</a></div>
+    </section>` : ''}
+    <section class="cp-sec"${card ? ' hidden' : ''}>
       <p class="cp-lbl">For ${esc(c.ticker)} holders</p>
       <h2>A little thank-you back.</h2>
       <div class="cp-perks">${perksHtml(c, perks)}</div>${howPass}
