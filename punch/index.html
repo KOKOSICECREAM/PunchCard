@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PUNCH — The PunchCard Token</title>
+<title>$PUNCH — The community token that drives PunchCard</title>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="PunchCard">
 <meta property="og:url" content="https://punchcard.club/punch/">
-<meta property="og:title" content="PUNCH — The PunchCard token">
+<meta property="og:title" content="$PUNCH — The community token that drives PunchCard">
 <meta property="og:description" content="The PunchCard membership token: launch tokens for local businesses, 10% off at participating businesses, and weekly burns. The official CA.">
 <meta property="og:image" content="https://punchcard.club/og/punch.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="PUNCH — The PunchCard token">
+<meta property="og:image:alt" content="$PUNCH — The community token that drives PunchCard">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="PUNCH — The PunchCard token">
+<meta name="twitter:title" content="$PUNCH — The community token that drives PunchCard">
 <meta name="twitter:description" content="The PunchCard membership token: launch tokens for local businesses, 10% off at participating businesses, and weekly burns. The official CA.">
 <meta name="twitter:image" content="https://punchcard.club/og/punch.png">
 <meta name="description" content="PUNCH is the PunchCard token on pump.fun. The official CA, and where its creator fees go.">
@@ -47,6 +47,14 @@
   .punch-qr figcaption { font-size: .78rem; color: var(--ink-mid); margin-top: .35rem; max-width: 160px; }
   /* The QR is for computers: on a phone, the button opens the app directly. */
   @media (min-width: 760px) and (hover: hover) { .punch-qr { display: block; } }
+  .punch-move { display: grid; gap: .9rem; }
+  .punch-move h2 { margin: 0; font-family: 'Lora', serif; font-size: 1.35rem; }
+  .punch-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: .8rem; }
+  .punch-steps > div { position: relative; padding: 1rem 1.1rem 1.1rem; border-radius: 16px; background: var(--paper-card); border: 1px solid var(--border-mid); display: grid; gap: .3rem; align-content: start; }
+  .punch-steps .n { width: 1.8rem; height: 1.8rem; border-radius: 50%; display: grid; place-items: center; background: var(--terra); color: var(--paper); font-weight: 700; font-size: .9rem; }
+  .punch-steps b { font-size: 1.05rem; }
+  .punch-steps p { margin: 0; color: var(--ink-mid); line-height: 1.55; font-size: .95rem; }
+  .punch-why { margin: 0; padding: .9rem 1.1rem; border-left: 4px solid var(--sol); background: rgba(61,90,74,.07); border-radius: 0 12px 12px 0; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -60,9 +68,19 @@
 
 <main class="app-wrap punch-page">
   <div>
-    <h1>$PUNCH, <em>the PunchCard token.</em></h1>
-    <p class="lede">The membership token for the PunchCard Launchpad on Solana, separate from PunchCard Loyalty on Base. Here's the official CA and exactly where its creator fees go.</p>
+    <h1>$PUNCH. <em>The community token that drives PunchCard.</em></h1>
+    <p class="lede">PunchCard brings the energy of crypto to Main Street. Fans launch tokens for the local businesses they love, every trade sends a thank-you to the real people behind the counter, and owners step into crypto in a way that’s fun, friendly and genuinely useful. PUNCH is the membership token at the heart of it all.</p>
   </div>
+
+  <section class="punch-move" aria-labelledby="moveH">
+    <h2 id="moveH">How the movement works</h2>
+    <div class="punch-steps">
+      <div><span class="n">1</span><b>Fans start it</b><p>Anyone who loves a local spot can launch its token with PunchCard Go, often standing right there in the shop, and hand the owner a claim code on the spot.</p></div>
+      <div><span class="n">2</span><b>Businesses join in</b><p>Owners claim their token and receive creator fees from every trade, straight to their wallet. For many, it’s their first step into crypto, with nothing to build and nothing to manage.</p></div>
+      <div><span class="n">3</span><b>Crypto meets the real world</b><p>The buzz of crypto communities lands somewhere real: an ice cream counter, a guitar workshop, a pizza shop. Holders get perks they can use in person, and every launch tells a local story.</p></div>
+    </div>
+    <p class="punch-why">New for crypto communities: tokens with a real business and real people behind them. New for local businesses: a community that celebrates them, and a simple, fun way into crypto. <b>PUNCH connects the two.</b></p>
+  </section>
 
   <section class="panel" aria-labelledby="caH">
     <h2 id="caH">Official CA</h2>
@@ -80,7 +98,7 @@
   </section>
 
   <section class="panel" id="membership" aria-labelledby="memberH">
-    <h2 id="memberH">PunchCard Membership</h2>
+    <h2 id="memberH">What PUNCH unlocks</h2>
     <p>Hold at least <b>$50 worth of PUNCH</b> in your wallet and you’re a PunchCard Member. Members can:</p>
     <ul class="punch-list">
       <li><b>Launch tokens</b> on the PunchCard Launchpad, from that wallet.</li>
@@ -116,7 +134,7 @@
         <div><span>Paid at PunchCard businesses and other burns</span><b id="tOther">…</b></div>
       </div>
     </div>
-    <p>PUNCH burns two ways. When a customer pays with PUNCH at a PunchCard business, the PUNCH is burned instead of being sent to the shop. And 20% of PunchCard’s service fee buys PUNCH on the market and burns it every week.</p>
+    <p>As the network grows, PUNCH burns two ways. When a customer pays with PUNCH at a PunchCard business, that PUNCH is burned instead of being sent to the shop. And 20% of PunchCard’s service fee from every launch buys PUNCH on the market and burns it every week.</p>
     <h3 class="burn-h3">Weekly buy-and-burn</h3>
     <p>20% of PunchCard’s service fee from every token launched on the PunchCard Launchpad buys PUNCH on the market and burns it. Every burn is public, with its transactions.</p>
     <div class="burn-stats" id="burnStats" hidden>
