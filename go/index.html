@@ -506,7 +506,8 @@ async function checkMembership() {
         <div class="ticket-title">Not a member <em>yet.</em></div><div class="ticket-meta"><span>Holding <b>${usd}</b> of $${m.requiredUsd}</span></div></div>
         <div class="ticket-stub"><small>Admit one</small><b>Launch</b><span class="ticket-stamp">Not yet</span></div></div>
         <p class="muted">Hold $${m.requiredUsd} of PUNCH in this wallet to launch: about $${gap.toFixed(2)} more.</p>
-        <div class="row"><a class="btn-primary sol big" href="https://pump.fun/coin/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx" target="_blank" rel="noopener">Buy PUNCH</a><button class="btn-secondary big" id="recheck" type="button">Check again</button></div>
+        <div class="row"><a class="btn-primary sol big" href="https://pump.fun/coin/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx" target="_blank" rel="noopener">Buy PUNCH in the pump.fun app</a><button class="btn-secondary big" id="recheck" type="button">Check again</button></div>
+        <p class="muted">New to crypto? Pay by card or Apple Pay inside the pump.fun app, then buy PUNCH.</p>
         <p class="muted">New to pump.fun? <a href="https://pump.fun/join/Punchcard_Team" target="_blank" rel="noopener">Join with PunchCard’s code</a> for a lower trading fee (0.40% instead of 0.45%; pump.fun shares part of its fee with PunchCard).</p>`;
     }
     $('recheck')?.addEventListener('click', checkMembership);
