@@ -40,6 +40,13 @@
   .burn-split span { font-size: .78rem; color: rgba(246,239,226,.7); }
   .burn-split b { font-variant-numeric: tabular-nums; }
   .burn-h3 { margin: 1.2rem 0 .3rem; font-size: 1.05rem; }
+  .punch-buy { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: .6rem; }
+  .punch-buy > p { flex: 1 1 18rem; margin: 0; }
+  .punch-qr { display: none; margin: 0; text-align: center; }
+  .punch-qr img { display: block; width: 160px; height: 160px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--border-mid); }
+  .punch-qr figcaption { font-size: .78rem; color: var(--ink-mid); margin-top: .35rem; max-width: 160px; }
+  /* The QR is for computers: on a phone, the button opens the app directly. */
+  @media (min-width: 760px) and (hover: hover) { .punch-qr { display: block; } }
 </style>
 </head>
 <body>
@@ -61,8 +68,12 @@
     <h2 id="caH">Official CA</h2>
     <div class="punch-ca"><code id="punchCa">8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx</code><button class="btn-secondary" id="copyCa" type="button">Copy</button></div>
     <div class="btn-row">
-      <a class="btn-primary sol" href="https://pump.fun/coin/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx" target="_blank" rel="noopener">View on pump.fun →</a>
+      <a class="btn-primary sol" href="https://pump.fun/coin/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx" target="_blank" rel="noopener">Buy PUNCH in the pump.fun app</a>
       <a class="btn-secondary" href="https://solscan.io/token/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx" target="_blank" rel="noopener">View on Solscan</a>
+    </div>
+    <div class="punch-buy">
+      <p class="status-line"><b>New to crypto?</b> Pay by card or Apple Pay inside the pump.fun app, then buy PUNCH. Hold $50 of PUNCH for a PunchCard Membership.</p>
+      <figure class="punch-qr"><img id="punchQr" alt="QR code: open PUNCH in the pump.fun app" width="160" height="160"><figcaption>Scan on your phone to open PUNCH in pump.fun</figcaption></figure>
     </div>
     <p class="status-line">New to pump.fun? <a href="https://pump.fun/join/Punchcard_Team" target="_blank" rel="noopener">Join with PunchCard’s code</a> for a lower trading fee (0.40% instead of 0.45%; pump.fun shares part of its fee with PunchCard).</p>
     <p class="status-line">Only trust the CA posted here and on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a>. Anything else is not PUNCH.</p>
@@ -185,6 +196,10 @@
     if (all.length) document.getElementById('log').innerHTML = all.map(function (e) { return e.html; }).join('');
   });
 })();
+</script>
+<script type="module">
+import { qrImg } from '/launchpad/qr.js';
+if (matchMedia('(min-width: 760px) and (hover: hover)').matches) qrImg('https://pump.fun/coin/8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx', 480).then((u) => { document.getElementById('punchQr').src = u; }).catch(() => {});
 </script>
 </body>
 </html>
