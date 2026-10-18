@@ -139,7 +139,7 @@
       <div class="burn-split">
         <div><span>Weekly buy-and-burn</span><b id="tWeekly">…</b></div>
         <div><span>Paid at PunchCard businesses</span><b id="tPos">…</b></div>
-        <div><span>Burned by the community</span><b id="tOther">…</b></div>
+        <div><span>Other burns</span><b id="tOther">…</b></div>
       </div>
     </div>
     <p>As the network grows, PUNCH burns two ways. When a customer pays with PUNCH at a PunchCard business, that PUNCH is burned instead of being sent to the shop. And 20% of PunchCard’s service fee from every launch buys PUNCH on the market and burns it every week.</p>
@@ -211,7 +211,7 @@
       var ev = res[1] && res[1].events, posRaw = ev && ev.byKind.pos ? Number(ev.byKind.pos.raw) : 0;
       document.getElementById('tWeekly').textContent = punch(weeklyRaw);
       document.getElementById('tPos').textContent = punch(posRaw);
-      // Community = everything else the supply shows burned (including any before tracking began).
+      // Other = everything else the supply shows burned: anyone burning PUNCH, pump.fun boosts, and any before tracking began.
       document.getElementById('tOther').textContent = punch(Math.max(0, total - weeklyRaw - posRaw));
       document.getElementById('burnTotal').hidden = false;
     }
@@ -230,7 +230,7 @@
         return { t: x.at * 1000, html: '<li><a href="https://solscan.io/tx/' + encodeURIComponent(x.burn_sig) + '" target="_blank" rel="noopener"><span><b>Burned ' + punch(x.punch_raw) + '</b> · bought with ' + sol(x.sol_lamports) + ' of PunchCard’s fee</span><span class="status-line">' + new Date(x.at * 1000).toLocaleDateString() + '</span></a></li>' };
       });
     }
-    var LABEL = { weekly: 'Weekly buy-and-burn', pos: 'Paid at a PunchCard business', community: 'Burned by the community' };
+    var LABEL = { weekly: 'Weekly buy-and-burn', pos: 'Paid at a PunchCard business', community: 'Other burn' };
     var events = (b && b.events && b.events.recent) || [];
     if (events.length) document.getElementById('burnCount').textContent = ' (' + events.length + ')';
     document.getElementById('allBurns').innerHTML = events.length ? events.map(function (x) {
