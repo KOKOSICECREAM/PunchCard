@@ -31,7 +31,9 @@ async function communityLists() {
   const community = coins.filter((c) => !c.team).sort((a, b) => top(b) - top(a) || (b.holders || 0) - (a.holders || 0) || fees(b) - fees(a) || b.launched_at - a.launched_at);
   if (!community.length) return; // sections stay hidden
   document.querySelectorAll('[data-community-section]').forEach((s) => { s.hidden = false; });
-  for (const el of lists) el.innerHTML = community.slice(0, el.dataset.communityList === 'strip' ? 3 : 60).map(card).join('');
+  // Home page strip: the top three by creator fees generated for the business. Launchpad: the full favorites ranking.
+  const byFees = [...community].sort((a, b) => fees(b) - fees(a) || (b.holders || 0) - (a.holders || 0));
+  for (const el of lists) el.innerHTML = (el.dataset.communityList === 'strip' ? byFees.slice(0, 3) : community.slice(0, 60)).map(card).join('');
 }
 
 async function openDoors() {
