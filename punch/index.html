@@ -131,10 +131,14 @@
       <span>PUNCH burned in all, <span id="tPct"></span> of the 1 billion supply. Read live from Solana.</span>
       <div class="burn-split">
         <div><span>Weekly buy-and-burn</span><b id="tWeekly">…</b></div>
-        <div><span>Paid at PunchCard businesses and other burns</span><b id="tOther">…</b></div>
+        <div><span>Paid at PunchCard businesses</span><b id="tPos">…</b></div>
+        <div><span>Burned by the community</span><b id="tOther">…</b></div>
       </div>
     </div>
     <p>As the network grows, PUNCH burns two ways. When a customer pays with PUNCH at a PunchCard business, that PUNCH is burned instead of being sent to the shop. And 20% of PunchCard’s service fee from every launch buys PUNCH on the market and burns it every week.</p>
+    <h3 class="burn-h3">Every burn</h3>
+    <p class="status-line">Every PUNCH burn on Solana, whoever made it, with its transaction. New burns appear within about 10 minutes.</p>
+    <ul class="coin-list" id="allBurns"><li class="status-line">Loading…</li></ul>
     <h3 class="burn-h3">Weekly buy-and-burn</h3>
     <p>20% of PunchCard’s service fee from every token launched on the PunchCard Launchpad buys PUNCH on the market and burns it. Every burn is public, with its transactions.</p>
     <div class="burn-stats" id="burnStats" hidden>
@@ -191,8 +195,11 @@
       var total = 1e15 - Number(res[2]), weeklyRaw = res[1] ? Number(res[1].punchBurnedRaw || 0) : 0;
       document.getElementById('tBurned').textContent = Math.round(total / 1e6).toLocaleString();
       document.getElementById('tPct').textContent = (total / 1e13).toFixed(2) + '%';
+      var ev = res[1] && res[1].events, posRaw = ev && ev.byKind.pos ? Number(ev.byKind.pos.raw) : 0;
       document.getElementById('tWeekly').textContent = punch(weeklyRaw);
-      document.getElementById('tOther').textContent = punch(Math.max(0, total - weeklyRaw));
+      document.getElementById('tPos').textContent = punch(posRaw);
+      // Community = everything else the supply shows burned (including any before tracking began).
+      document.getElementById('tOther').textContent = punch(Math.max(0, total - weeklyRaw - posRaw));
       document.getElementById('burnTotal').hidden = false;
     }
     var manual = (res[0].entries || []).map(function (e) {
@@ -210,6 +217,12 @@
         return { t: x.at * 1000, html: '<li><a href="https://solscan.io/tx/' + encodeURIComponent(x.burn_sig) + '" target="_blank" rel="noopener"><span><b>Burned ' + punch(x.punch_raw) + '</b> · bought with ' + sol(x.sol_lamports) + ' of PunchCard’s fee</span><span class="status-line">' + new Date(x.at * 1000).toLocaleDateString() + '</span></a></li>' };
       });
     }
+    var LABEL = { weekly: 'Weekly buy-and-burn', pos: 'Paid at a PunchCard business', community: 'Burned by the community' };
+    var events = (b && b.events && b.events.recent) || [];
+    document.getElementById('allBurns').innerHTML = events.length ? events.map(function (x) {
+      return '<li><a href="https://solscan.io/tx/' + encodeURIComponent(x.sig) + '" target="_blank" rel="noopener"><span><b>' + punch(x.raw) + '</b> · ' + (LABEL[x.kind] || 'Burn') +
+        (x.kind === 'community' && x.burner ? ' (' + esc(x.burner.slice(0, 4) + '…' + x.burner.slice(-4)) + ')' : '') + '</span><span class="status-line">' + new Date(x.at * 1000).toLocaleDateString() + '</span></a></li>';
+    }).join('') : '<li class="status-line">The list is being prepared. The total above already counts every burn.</li>';
     var all = manual.concat(weekly).sort(function (a, c) { return c.t - a.t; });
     if (all.length) document.getElementById('log').innerHTML = all.map(function (e) { return e.html; }).join('');
   });
