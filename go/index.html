@@ -612,7 +612,14 @@ $('launch').addEventListener('click', async () => {
       const signed = prep.txs ? await signTxs(prep.txs) : await signTx(prep.tx);
       lx.phase(2, 'Launching on Solana', 'registering · creating · usually 10–30 seconds');
       try { res = await api('/api/launch/submit', { mint: prep.mint, ...(prep.txs ? { txs: signed } : { tx: signed }), nonce: prep.nonce, ticket: prep.ticket }); res.twoStep = prep.twoStep; break; }
-      catch (e) { if (attempt < 2 && /blockhash|expired|block height/i.test(e.message)) continue; throw e; }
+      catch (e) {
+        if (attempt < 2 && /blockhash|expired|block height/i.test(e.message)) continue;
+        // Phones can drop the connection while the launch confirms. Before showing an error, check whether the
+        // launch actually landed (PunchCard finishes the registration on its own within a few minutes).
+        const landed = await launchLanded(prep.mint);
+        if (landed) { res = { mint: prep.mint, live: true, recovered: true }; break; }
+        throw e;
+      }
     }
     if (res.twoStep) { // step 2: the first buy + burn, now that the token is live
       lx.phase(1, 'Approve your first buy', 'step 2 of 2 · buy + fair-launch burn');
@@ -629,6 +636,16 @@ $('launch').addEventListener('click', async () => {
     canLaunch();
   }
 });
+
+/** Did this launch land even though the request failed? Polls the token for up to ~40 s. */
+async function launchLanded(mint) {
+  for (let i = 0; i < 8; i++) {
+    const c = await api(`/api/coins/${encodeURIComponent(mint)}`).catch(() => null);
+    if (c && (c.launchSent || (c.status && c.status !== 'prepared'))) return true;
+    await new Promise((r) => setTimeout(r, 5000));
+  }
+  return false;
+}
 
 // ---------- 5. Done ----------
 // PunchCard-branded QR: softly rounded modules in ink, corner eyes in PunchCard red and green, and the
