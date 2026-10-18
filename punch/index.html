@@ -55,6 +55,13 @@
   .punch-steps b { font-size: 1.05rem; }
   .punch-steps p { margin: 0; color: var(--ink-mid); line-height: 1.55; font-size: .95rem; }
   .punch-why { margin: 0; padding: .9rem 1.1rem; border-left: 4px solid var(--sol); background: rgba(61,90,74,.07); border-radius: 0 12px 12px 0; line-height: 1.6; }
+  .burn-more { margin-top: .6rem; border-top: 1px solid var(--border); }
+  .burn-more summary { cursor: pointer; padding: .8rem 0; font-weight: 600; color: var(--terra); list-style: none; display: flex; align-items: center; gap: .4rem; }
+  .burn-more summary::-webkit-details-marker { display: none; }
+  .burn-more summary::before { content: '+'; display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; border: 1.5px solid currentColor; font-size: .9rem; line-height: 1; }
+  .burn-more[open] summary::before { content: '–'; }
+  .burn-more[open] { padding-bottom: .6rem; }
+  .burn-more .coin-list { max-height: 26rem; overflow-y: auto; }
 </style>
 </head>
 <body>
@@ -136,10 +143,13 @@
       </div>
     </div>
     <p>As the network grows, PUNCH burns two ways. When a customer pays with PUNCH at a PunchCard business, that PUNCH is burned instead of being sent to the shop. And 20% of PunchCard’s service fee from every launch buys PUNCH on the market and burns it every week.</p>
-    <h3 class="burn-h3">Every burn</h3>
-    <p class="status-line">Every PUNCH burn on Solana, whoever made it, with its transaction. New burns appear within about 10 minutes.</p>
-    <ul class="coin-list" id="allBurns"><li class="status-line">Loading…</li></ul>
-    <h3 class="burn-h3">Weekly buy-and-burn</h3>
+    <details class="burn-more">
+      <summary>See every burn<span id="burnCount"></span></summary>
+      <p class="status-line">Every PUNCH burn on Solana, whoever made it, with its transaction. New burns appear within about 10 minutes.</p>
+      <ul class="coin-list" id="allBurns"><li class="status-line">Loading…</li></ul>
+    </details>
+    <details class="burn-more">
+    <summary>Weekly buy-and-burn details</summary>
     <p>20% of PunchCard’s service fee from every token launched on the PunchCard Launchpad buys PUNCH on the market and burns it. Every burn is public, with its transactions.</p>
     <div class="burn-stats" id="burnStats" hidden>
       <div><span>PunchCard fee counted</span><b id="bIncome">…</b></div>
@@ -149,6 +159,7 @@
     </div>
     <ul class="coin-list" id="log"><li class="status-line">None yet. Each one will be listed here with its transaction.</li></ul>
     <p class="status-line">Counted from Oct 5, 2026. Weeks under 0.05 SOL roll over; big weeks are split so a buy never moves the price more than 6%. Burned PUNCH is gone for good.</p>
+    </details>
   </section>
 
   <section class="panel" aria-labelledby="noexpH">
@@ -219,6 +230,7 @@
     }
     var LABEL = { weekly: 'Weekly buy-and-burn', pos: 'Paid at a PunchCard business', community: 'Burned by the community' };
     var events = (b && b.events && b.events.recent) || [];
+    if (events.length) document.getElementById('burnCount').textContent = ' (' + events.length + ')';
     document.getElementById('allBurns').innerHTML = events.length ? events.map(function (x) {
       var shop = x.kind === 'pos' && x.note ? /^(.*?) · POS payment(?: · (\S+))?/.exec(x.note) : null; // "KOKOS Ice Cream · POS payment · $1.09"
       var label = shop && shop[1] && !/^PUNCH$/.test(shop[1]) ? 'Paid at ' + esc(shop[1]) + (shop[2] ? ' (' + esc(shop[2]) + ')' : '') : (LABEL[x.kind] || 'Burn');
