@@ -129,7 +129,7 @@ async function load() {
       <div><span class="pill ${st.pill}">${st.label}</span>${st.ends && st.ends > now() ? ` <span class="status-line" id="cd"></span>` : ''}</div>
       <p>${st.text}</p>
       <div class="stats">
-        <div class="stat"><small>${c.status === 'HandedOver' ? 'Saved for holders' : 'Held for the business'}</small><b>${sol(c.feesInVaultLamports)} SOL</b></div>
+        ${c.status === 'HandedOver' && hp ? '' : `<div class="stat"><small>${c.status === 'HandedOver' ? 'Saved for holders' : 'Held for the business'}</small><b>${sol(c.feesInVaultLamports)} SOL</b></div>`}
         <div class="stat"><small>Waiting at pump.fun</small><b>${sol(c.feesPendingAtPumpLamports)} SOL</b></div>
         <div class="stat"><small>Paid to the owner</small><b>${sol(c.businessPaidLamports ?? c.ownerPaidLamports)} SOL</b></div>
         ${hp ? `<div class="stat"><small>Paid to holders</small><b>${sol(c.feesCommunityPaidLamports)} SOL</b></div>
