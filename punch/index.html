@@ -220,7 +220,9 @@
     var LABEL = { weekly: 'Weekly buy-and-burn', pos: 'Paid at a PunchCard business', community: 'Burned by the community' };
     var events = (b && b.events && b.events.recent) || [];
     document.getElementById('allBurns').innerHTML = events.length ? events.map(function (x) {
-      return '<li><a href="https://solscan.io/tx/' + encodeURIComponent(x.sig) + '" target="_blank" rel="noopener"><span><b>' + punch(x.raw) + '</b> · ' + (LABEL[x.kind] || 'Burn') +
+      var shop = x.kind === 'pos' && x.note ? /^(.*?) · POS payment(?: · (\S+))?/.exec(x.note) : null; // "KOKOS Ice Cream · POS payment · $1.09"
+      var label = shop && shop[1] && !/^PUNCH$/.test(shop[1]) ? 'Paid at ' + esc(shop[1]) + (shop[2] ? ' (' + esc(shop[2]) + ')' : '') : (LABEL[x.kind] || 'Burn');
+      return '<li><a href="https://solscan.io/tx/' + encodeURIComponent(x.sig) + '" target="_blank" rel="noopener"><span><b>' + punch(x.raw) + '</b> · ' + label +
         (x.kind === 'community' && x.burner ? ' (' + esc(x.burner.slice(0, 4) + '…' + x.burner.slice(-4)) + ')' : '') + '</span><span class="status-line">' + new Date(x.at * 1000).toLocaleDateString() + '</span></a></li>';
     }).join('') : '<li class="status-line">The list is being prepared. The total above already counts every burn.</li>';
     var all = manual.concat(weekly).sort(function (a, c) { return c.t - a.t; });
