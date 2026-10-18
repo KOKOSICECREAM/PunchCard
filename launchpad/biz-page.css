@@ -58,3 +58,6 @@
 /* token card: the owner invitation */
 .cp-owner { padding: 1.2rem 1.3rem; border-radius: 18px; border: 1.5px dashed var(--border-mid); background: var(--paper-card); }
 .cp-owner p { margin: 0; color: var(--ink-mid); line-height: 1.6; max-width: 60ch; }
+/* numbers: owner and holder payouts flow evenly (3 to 5 figures) */
+.cp-page .stats { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+.cp-page .stat small + b + small { display: block; margin-top: .15rem; }

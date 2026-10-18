@@ -38,6 +38,9 @@ async function load() {
   const perks = perkCfg.perks || [], site = prof.site || null, host = site?.host || hostOf(c.business.website);
   document.title = `${c.business.name} · ${c.coinName} ($${c.ticker}) — PunchCard`;
   const st = statusOf(c), claimed = c.status === 'HandedOver' || c.status === 'Attested';
+  // Tokens that share fees with holders: what holders have received and the next payout.
+  const hp = c.holderPayouts?.next || null;
+  const when = (t) => new Date(t * 1000).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   // Token card: unclaimed, not approved, no dedicated page. No business photos or website text until the owner says yes.
   const card = c.pageLevel === 'card' && !document.body.dataset.mint;
   const newNote = params.get('new') ? `<div class="notice ok"><b>It’s live.</b> Share this page with ${esc(c.business.name)} so the owner can claim their fees. <button class="btn-secondary" id="copyLink" type="button" style="margin-left:0.5rem">Copy link</button></div>` : '';
@@ -129,6 +132,9 @@ async function load() {
         <div class="stat"><small>${c.status === 'HandedOver' ? 'Saved for holders' : 'Held for the business'}</small><b>${sol(c.feesInVaultLamports)} SOL</b></div>
         <div class="stat"><small>Waiting at pump.fun</small><b>${sol(c.feesPendingAtPumpLamports)} SOL</b></div>
         <div class="stat"><small>Paid to the owner</small><b>${sol(c.businessPaidLamports ?? c.ownerPaidLamports)} SOL</b></div>
+        ${hp ? `<div class="stat"><small>Paid to holders</small><b>${sol(c.feesCommunityPaidLamports)} SOL</b></div>
+        <div class="stat"><small>${hp.status === 'building' ? 'Building for the next holder payout' : 'Holder payout sending now'}</small><b>${sol(hp.lamports)} SOL</b>
+          <small>${hp.status === 'building' ? `sends about ${when(hp.payAfter)}` : hp.status === 'posted' ? `sends ${when(hp.payAfter)}` : 'being sent'}</small></div>` : ''}
       </div>
       <div class="btn-row">
         ${c.status === 'Open' ? `<a class="btn-primary sol" href="/launchpad/claim/?mint=${esc(mint)}">I own this business</a>` : ''}
