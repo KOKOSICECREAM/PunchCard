@@ -201,9 +201,11 @@
     , fetch('https://api.mainnet-beta.solana.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTokenSupply', params: ['8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx'] }) })
       .then(function (r) { return r.json(); }).then(function (j) { return j.result.value.amount; }).catch(function () { return null; })
   ]).then(function (res) {
-    // Every burn from any source lowers the supply, so 1B minus supply is the true total.
-    if (res[2]) {
-      var total = 1e15 - Number(res[2]), weeklyRaw = res[1] ? Number(res[1].punchBurnedRaw || 0) : 0;
+    // Every burn from any source lowers the supply, so 1B minus supply is the true total. Our backend reads it
+    // (Solana's public server refuses browsers on punchcard.club); the public server is only a fallback.
+    var supply = (res[1] && res[1].events && res[1].events.supplyRaw) || res[2];
+    if (supply) {
+      var total = 1e15 - Number(supply), weeklyRaw = res[1] ? Number(res[1].punchBurnedRaw || 0) : 0;
       document.getElementById('tBurned').textContent = Math.round(total / 1e6).toLocaleString();
       document.getElementById('tPct').textContent = (total / 1e13).toFixed(2) + '%';
       var ev = res[1] && res[1].events, posRaw = ev && ev.byKind.pos ? Number(ev.byKind.pos.raw) : 0;
