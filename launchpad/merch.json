@@ -1,0 +1,13 @@
+{
+  "CNfzT1Ha63GTeJ99N9ii73HzCwyLUTXj3mbiwCyvtZD3": {
+    "store": "https://store.halo.com/br101/bnice",
+    "seller": "Halo",
+    "ships": "US shipping only for now",
+    "giving": "PunchCard will donate a share of every sale to help small businesses and their owners in France.",
+    "items": [
+      { "name": "$BNICE Tee", "detail": "Gildan cotton tee", "price": "$19.39", "url": "https://store.halo.com/br101/bnice/product-1049", "img": "/merch/bnice/tee.webp" },
+      { "name": "$BNICE Crewneck", "detail": "Gildan crewneck sweatshirt", "price": "$32.35", "url": "https://store.halo.com/br101/bnice/product-564", "img": "/merch/bnice/crewneck.webp" },
+      { "name": "$BNICE Cap", "detail": "Port & Co 5-panel twill cap", "price": "$22.63", "url": "https://store.halo.com/br101/bnice/product-1940", "img": "/merch/bnice/cap.webp" }
+    ]
+  }
+}

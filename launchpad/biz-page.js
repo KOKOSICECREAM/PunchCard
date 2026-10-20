@@ -33,7 +33,8 @@ async function load() {
   if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) { $('main').innerHTML = '<p class="notice bad">No token address in the link.</p>'; return; }
   let c;
   try { c = await api('/api/coins/' + mint); } catch (e) { $('main').innerHTML = `<p class="notice bad">${esc(e.message)}</p>`; return; }
-  const [prof, perkCfg] = await Promise.all([api(`/api/coins/${mint}/profile`).catch(() => ({})), api(`/api/perks?mint=${mint}`).catch(() => ({}))]);
+  const [prof, perkCfg, merchAll] = await Promise.all([api(`/api/coins/${mint}/profile`).catch(() => ({})), api(`/api/perks?mint=${mint}`).catch(() => ({})),
+    fetch('/launchpad/merch.json').then((r) => r.json()).catch(() => ({}))]);
   if (!prof.record) { const v = await api(`/api/verify?mint=${mint}`).catch(() => null); if (v?.official) prof.record = v.record; } // older cached profiles
   const perks = perkCfg.perks || [], site = prof.site || null, host = site?.host || hostOf(c.business.website);
   document.title = `${c.business.name} · ${c.coinName} ($${c.ticker}) — PunchCard`;
@@ -91,6 +92,21 @@ async function load() {
         <li><b>Show it at the counter.</b> Your pass is good for 5 minutes and shows a live clock.</li>
         <li><b>Staff scan and redeem.</b> They see a green VALID and tap the gold button, so each perk is used once per period.</li>
       </ol>` : '';
+  // Merch: product cards that open the store's own product page (sizes, payment and shipping happen there).
+  const m = merchAll[mint];
+  const merch = m?.items?.length ? `
+    <section class="cp-sec cp-merch">
+      <p class="cp-lbl">Merch</p>
+      <h2>Wear $${esc(c.ticker)}.</h2>
+      <div class="cp-merch-grid">${m.items.map((i) => `
+        <a class="cp-merch-item" href="${esc(i.url)}" target="_blank" rel="noopener">
+          <img src="${esc(i.img)}" alt="${esc(i.name)}" loading="lazy" width="600" height="600">
+          <span class="nm">${esc(i.name)}</span>
+          <span class="dt">${esc(i.detail)}</span>
+          <span class="pr">${esc(i.price)}<span class="go">Get it</span></span>
+        </a>`).join('')}</div>
+      <p class="status-line">Sold by PunchCard through ${esc(m.seller)}, which handles sizes, payment and delivery. ${esc(m.ships)}. Prices and stock as listed at ${esc(m.seller)}. ${esc(m.giving || '')}${prof.brand || !claimed ? ` Fan merch, not made or endorsed by ${esc(c.business.name)}.` : ''} <a href="${esc(m.store)}" target="_blank" rel="noopener">See the full store</a></p>
+    </section>` : '';
   $('main').innerHTML = `
     ${removedNote}${retiredNote}${newNote}${firstBuyNote}
     <section class="cp-hero">
@@ -111,6 +127,7 @@ async function load() {
     </section>
     ${card ? '' : ownStory || words}
     ${tokenInfo}
+    ${merch}
     ${card ? `<section class="cp-sec cp-owner">
       <p class="cp-lbl">For the owner</p>
       <h2>Is this your business?</h2>
