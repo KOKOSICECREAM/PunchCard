@@ -147,6 +147,7 @@ footer { background: var(--ink); color: var(--paper); padding: 2.5rem 3rem; }
   .nav-logo { font-size: 1.2rem; }
   .nav-links { gap: 0.9rem; }
   .nav-links a { font-size: 0.78rem; }
+  .nav-more { display: none; } /* "Loyalty Rewards" -> "Loyalty" so the menu fits a phone */
   .door { padding: 1.75rem 1.25rem; }
   .facts { grid-template-columns: 1fr; gap: 0.15rem; }
   .facts dd { margin-bottom: 0.5rem; }
@@ -651,3 +652,4 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .vf-home h2 em { font-style: normal; color: var(--terra); }
 @media (max-width: 940px) { .vf-home { margin-inline: 1.25rem; } }
 .pill.verified { background: var(--sol-pale); color: var(--sol); text-decoration: none; }
+@media (max-width: 380px) { nav { padding-left: 0.9rem; padding-right: 0.9rem; } .nav-links { gap: 0.7rem; } .nav-logo { font-size: 1.05rem; } .brand-mark { margin-right: 0.35rem; } }
