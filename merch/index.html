@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PunchCard Merch: community-inspired apparel</title>
+<meta name="description" content="Community-inspired merch from PunchCard, celebrating the people behind local businesses. A share of every sale is donated.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PunchCard">
+<meta property="og:url" content="https://punchcard.club/merch/">
+<meta property="og:title" content="PunchCard Merch: community-inspired apparel">
+<meta property="og:description" content="Community-inspired merch celebrating the people behind local businesses. A share of every sale is donated.">
+<meta property="og:image" content="https://punchcard.club/og/merch.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="PunchCard Merch">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@punchcard_club">
+<meta name="twitter:title" content="PunchCard Merch: community-inspired apparel">
+<meta name="twitter:description" content="Community-inspired merch celebrating the people behind local businesses. A share of every sale is donated.">
+<meta name="twitter:image" content="https://punchcard.club/og/merch.png">
+<meta name="theme-color" content="#f8f4ec">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+  .merch-page { display: grid; gap: 2.2rem; }
+  .merch-kicker { font-family: 'Courier Prime', monospace; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--terra); margin: 0 0 .4rem; }
+  .merch-col { display: grid; gap: 1.1rem; padding: 1.4rem; border-radius: 20px; background: var(--paper-card); border: 1px solid var(--border-mid); }
+  .merch-col-head { display: grid; gap: .5rem; max-width: 42rem; }
+  .merch-col-head h2 { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(1.6rem, 5vw, 2.2rem); margin: 0; text-wrap: balance; }
+  .merch-stripe { display: flex; width: 4.5rem; height: 5px; border-radius: 3px; overflow: hidden; }
+  .merch-stripe i { flex: 1; } .merch-stripe i:nth-child(1) { background: #002395; } .merch-stripe i:nth-child(2) { background: #fff; box-shadow: inset 0 0 0 1px var(--border-mid); } .merch-stripe i:nth-child(3) { background: #ed2939; }
+  .merch-col-head p { margin: 0; line-height: 1.65; color: var(--ink-mid); }
+  .merch-give { margin: 0; padding: .8rem 1rem; border-left: 4px solid var(--sol); background: rgba(61,90,74,.07); border-radius: 0 12px 12px 0; line-height: 1.55; }
+  .merch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 1rem; }
+  .merch-item { display: grid; gap: .25rem; align-content: start; padding: .8rem .8rem 1rem; border-radius: 16px; background: var(--paper); border: 1.5px solid var(--border-mid); color: var(--ink); text-decoration: none; transition: transform .15s, border-color .15s; }
+  .merch-item:hover, .merch-item:focus-visible { transform: translateY(-2px); border-color: var(--terra); color: var(--ink); }
+  .merch-item img { width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; border-radius: 10px; background: #fff; }
+  .merch-item .tag { justify-self: start; margin-top: .5rem; padding: .15rem .55rem; border-radius: 999px; background: var(--terra); color: #fff; font-family: 'Courier Prime', monospace; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+  .merch-item .nm { font-family: 'Lora', serif; font-weight: 700; font-size: 1.1rem; margin-top: .3rem; }
+  .merch-item .dt { font-size: .85rem; color: var(--ink-mid); }
+  .merch-item .pr { display: flex; align-items: center; justify-content: space-between; margin-top: .5rem; font-family: 'Courier Prime', monospace; font-weight: 700; }
+  .merch-item .go { padding: .35rem .85rem; border-radius: 999px; background: var(--terra); color: #fff; font-family: 'Lora', serif; font-size: .9rem; }
+  .merch-fine { margin: 0; font-size: .85rem; line-height: 1.55; color: var(--ink-mid); }
+  .merch-next { display: grid; gap: .5rem; padding: 1.2rem 1.4rem; border-radius: 20px; border: 1.5px dashed var(--border-mid); }
+  .merch-next h2 { margin: 0; font-family: 'Lora', serif; font-size: 1.3rem; }
+  .merch-next p { margin: 0; line-height: 1.6; color: var(--ink-mid); }
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><img class="brand-mark" src="/brand/punchcard.svg" alt="" width="30" height="30">Punch<span>Card</span><small>.club</small></a>
+  <ul class="nav-links">
+    <li><a href="/loyalty/">Loyalty Rewards</a></li>
+    <li><a href="/launchpad/">Launchpad</a></li>
+  </ul>
+</nav>
+
+<main class="app-wrap merch-page">
+  <div>
+    <p class="merch-kicker">PunchCard Merch</p>
+    <h1>Community merch. <em>Inspired by the people behind the counter.</em></h1>
+    <p class="lede">Designs that celebrate the shops, workers and neighbors that make a street feel like home. A share of every sale is donated to help local businesses and their people.</p>
+  </div>
+
+  <section class="merch-col" aria-labelledby="bniceH">
+    <div class="merch-col-head">
+      <p class="merch-kicker">Nice, France</p>
+      <h2 id="bniceH">BNICE · Stand Your Ground</h2>
+      <span class="merch-stripe" aria-hidden="true"><i></i><i></i><i></i></span>
+      <p>A tribute to the store manager who stood firm to protect his neighborhood shop in Nice, France, on October 17th. A minimalist emblem with the French tricolour, for everyone who stands up for the shops and people on their street.</p>
+      <p class="merch-give">PunchCard will donate a share of every sale from this collection to help local shops and workers in France, starting with those affected by the recent damage in Nice.</p>
+    </div>
+    <div class="merch-grid">
+      <a class="merch-item" href="https://store.halo.com/br101/bnice/product-1049" target="_blank" rel="noopener">
+        <img src="/merch/bnice/tee.webp" alt="BNICE Stand Your Ground Tribute Tee, tan, BNICE logo with a blue, white and red stripe" width="600" height="600" loading="lazy">
+        <span class="tag">Tribute tee</span>
+        <span class="nm">BNICE “Stand Your Ground” Tee</span>
+        <span class="dt">Classic heavyweight cotton tee</span>
+        <span class="pr">$19.39<span class="go">Get it</span></span>
+      </a>
+      <a class="merch-item" href="https://store.halo.com/br101/bnice/product-1755" target="_blank" rel="noopener">
+        <img src="/merch/bnice/hooded-tee.webp" alt="BNICE hooded athletic tee, red, BNICE logo with a blue, white and red stripe" width="600" height="600" loading="lazy">
+        <span class="nm">BNICE Hooded Tee</span>
+        <span class="dt">Lightweight hooded athletic tee</span>
+        <span class="pr">$35.59<span class="go">Get it</span></span>
+      </a>
+      <a class="merch-item" href="https://store.halo.com/br101/bnice/product-703" target="_blank" rel="noopener">
+        <img src="/merch/bnice/fan-jersey.webp" alt="BNICE women's fan jersey, red, BNICE logo with a blue, white and red stripe" width="600" height="600" loading="lazy">
+        <span class="nm">BNICE Fan Jersey</span>
+        <span class="dt">Women’s fan jersey</span>
+        <span class="pr">$35.59<span class="go">Get it</span></span>
+      </a>
+    </div>
+    <p class="merch-fine">Sold by PunchCard through Halo, which handles sizes, payment and delivery. US shipping only for now. Prices and stock as listed at Halo. Community-inspired designs, not made or endorsed by any business or brand. <a href="https://store.halo.com/br101/bnice" target="_blank" rel="noopener">See the full BNICE store</a></p>
+  </section>
+
+  <section class="merch-next">
+    <h2>More collections soon</h2>
+    <p>Every collection starts with a story from a community: a shop, a worker, a moment worth celebrating. Have one? Tell us on <a href="https://t.me/punchcardclub" target="_blank" rel="noopener">Telegram</a> or <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">X</a>.</p>
+  </section>
+</main>
+</body>
+</html>
