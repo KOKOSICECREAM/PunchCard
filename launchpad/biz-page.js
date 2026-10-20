@@ -134,7 +134,7 @@ async function load() {
         <div class="stat"><small>Paid to the owner</small><b>${sol(c.businessPaidLamports ?? c.ownerPaidLamports)} SOL</b></div>
         ${hp ? `<div class="stat"><small>Paid to holders</small><b>${sol(c.feesCommunityPaidLamports)} SOL</b></div>
         <div class="stat"><small>${hp.status === 'building' ? 'Building for the next holder payout' : 'Holder payout sending now'}</small><b>${sol(hp.lamports)} SOL</b>
-          <small>${hp.status === 'building' ? `sends about ${when(hp.payAfter)}` : hp.status === 'posted' ? `sends ${when(hp.payAfter)}` : 'being sent'}</small></div>` : ''}
+          <small>${hp.status === 'building' ? (hp.minLamports && BigInt(hp.lamports) < BigInt(hp.minLamports) ? `sends once it reaches ${sol(hp.minLamports)} SOL` : `sends about ${when(hp.payAfter)}`) : hp.status === 'posted' ? `sends ${when(hp.payAfter)}` : 'being sent'}</small></div>` : ''}
       </div>
       <div class="btn-row">
         ${c.status === 'Open' ? `<a class="btn-primary sol" href="/launchpad/claim/?mint=${esc(mint)}">I own this business</a>` : ''}
