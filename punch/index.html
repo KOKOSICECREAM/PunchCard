@@ -26,20 +26,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
 <style>
-  .burn-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; margin: .8rem 0 1rem; }
-  .burn-stats div { padding: .8rem .9rem; border-radius: 12px; border: 1px solid var(--border-mid); background: var(--paper-card); display: grid; gap: .15rem; }
-  .burn-stats span { font-size: .8rem; color: var(--ink-mid); }
-  .burn-stats b { font-variant-numeric: tabular-nums; }
-  .burn-stats .hot { background: var(--terra); border-color: var(--terra); color: #fff; }
-  .burn-stats .hot span { color: rgba(255,255,255,.85); }
   .burn-total { display: grid; gap: .4rem; padding: 1.1rem 1.2rem; border-radius: 16px; background: #1c1812; color: #f6efe2; margin-bottom: 1rem; }
   .burn-total > b { font-family: 'Special Elite', cursive; font-weight: 400; font-size: clamp(2rem, 7vw, 2.8rem); color: #f4d9a7; line-height: 1; font-variant-numeric: tabular-nums; }
   .burn-total > span { font-size: .9rem; color: rgba(246,239,226,.75); }
-  .burn-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: .6rem; margin-top: .4rem; }
-  .burn-split div { display: grid; gap: .1rem; padding: .6rem .8rem; border-radius: 10px; background: rgba(246,239,226,.08); }
-  .burn-split span { font-size: .78rem; color: rgba(246,239,226,.7); }
-  .burn-split b { font-variant-numeric: tabular-nums; }
-  .burn-h3 { margin: 1.2rem 0 .3rem; font-size: 1.05rem; }
   .punch-buy { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: .6rem; }
   .punch-buy > p { flex: 1 1 18rem; margin: 0; }
   .punch-qr { display: none; margin: 0; text-align: center; }
@@ -55,13 +44,6 @@
   .punch-steps b { font-size: 1.05rem; }
   .punch-steps p { margin: 0; color: var(--ink-mid); line-height: 1.55; font-size: .95rem; }
   .punch-why { margin: 0; padding: .9rem 1.1rem; border-left: 4px solid var(--sol); background: rgba(61,90,74,.07); border-radius: 0 12px 12px 0; line-height: 1.6; }
-  .burn-more { margin-top: .6rem; border-top: 1px solid var(--border); }
-  .burn-more summary { cursor: pointer; padding: .8rem 0; font-weight: 600; color: var(--terra); list-style: none; display: flex; align-items: center; gap: .4rem; }
-  .burn-more summary::-webkit-details-marker { display: none; }
-  .burn-more summary::before { content: '+'; display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; border: 1.5px solid currentColor; font-size: .9rem; line-height: 1; }
-  .burn-more[open] summary::before { content: '–'; }
-  .burn-more[open] { padding-bottom: .6rem; }
-  .burn-more .coin-list { max-height: 26rem; overflow-y: auto; }
 </style>
 </head>
 <body>
@@ -133,33 +115,11 @@
 
   <section class="panel" aria-labelledby="logH">
     <h2 id="logH">PUNCH burned</h2>
-    <div class="burn-total" id="burnTotal" hidden>
+    <div class="burn-total">
       <b id="tBurned">…</b>
-      <span>PUNCH burned in all, <span id="tPct"></span> of the 1 billion supply. Read live from Solana.</span>
-      <div class="burn-split">
-        <div><span>Weekly buy-and-burn</span><b id="tWeekly">…</b></div>
-        <div><span>Paid at PunchCard businesses</span><b id="tPos">…</b></div>
-        <div><span>Other burns</span><b id="tOther">…</b></div>
-      </div>
+      <span>PUNCH burned to date<span id="tPct"></span>. Every burn, from any source, read live from Solana.</span>
     </div>
-    <p>As the network grows, PUNCH burns two ways. When a customer pays with PUNCH at a PunchCard business, that PUNCH is burned instead of being sent to the shop. And 20% of PunchCard’s service fee from every launch buys PUNCH on the market and burns it every week.</p>
-    <details class="burn-more">
-      <summary>See every burn<span id="burnCount"></span></summary>
-      <p class="status-line">Every PUNCH burn on Solana, whoever made it, with its transaction. New burns appear within about 10 minutes.</p>
-      <ul class="coin-list" id="allBurns"><li class="status-line">Loading…</li></ul>
-    </details>
-    <details class="burn-more">
-    <summary>Weekly buy-and-burn details</summary>
-    <p>20% of PunchCard’s service fee from every token launched on the PunchCard Launchpad buys PUNCH on the market and burns it. Every burn is public, with its transactions.</p>
-    <div class="burn-stats" id="burnStats" hidden>
-      <div><span>PunchCard fee counted</span><b id="bIncome">…</b></div>
-      <div><span>Set aside for burns (20%)</span><b id="bDue">…</b></div>
-      <div><span>Spent buying PUNCH</span><b id="bSpent">…</b></div>
-      <div class="hot"><span>PUNCH burned</span><b id="bPunch">…</b></div>
-    </div>
-    <ul class="coin-list" id="log"><li class="status-line">None yet. Each one will be listed here with its transaction.</li></ul>
-    <p class="status-line">Counted from Oct 5, 2026. Weeks under 0.05 SOL roll over; big weeks are split so a buy never moves the price more than 6%. Burned PUNCH is gone for good.</p>
-    </details>
+    <p>PUNCH burns two ways. When a customer pays with PUNCH at a PunchCard business, that PUNCH is burned. And 20% of PunchCard’s service fee from every launch buys PUNCH and burns it each week. Burned PUNCH is gone for good.</p>
   </section>
 
   <section class="panel" aria-labelledby="noexpH">
@@ -192,56 +152,14 @@
     var pick = function () { var r = document.createRange(); r.selectNodeContents(ca); var s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Selected'; };
     if (navigator.clipboard) navigator.clipboard.writeText(ca.textContent.trim()).then(function () { btn.textContent = 'Copied'; }, pick); else pick();
   });
-  var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-  var sol = function (l) { return (Number(l || 0) / 1e9).toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' SOL'; };
-  var punch = function (r) { return Math.round(Number(r || 0) / 1e6).toLocaleString() + ' PUNCH'; };
-  Promise.all([
-    fetch('/punch/buybacks.json').then(function (r) { return r.json(); }).catch(function () { return { entries: [] }; }),
-    fetch('https://punchcard-launchpad.quiet-mode-468e.workers.dev/api/punch-burns').then(function (r) { return r.json(); }).catch(function () { return null; })
-    , fetch('https://api.mainnet-beta.solana.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTokenSupply', params: ['8HJY9GTiEGgPoUAs3YSRiwLUukZKhKcH1ngqLB8qcBxx'] }) })
-      .then(function (r) { return r.json(); }).then(function (j) { return j.result.value.amount; }).catch(function () { return null; })
-  ]).then(function (res) {
-    // Every burn from any source lowers the supply, so 1B minus supply is the true total. Our backend reads it
-    // (Solana's public server refuses browsers on punchcard.club); the public server is only a fallback.
-    var supply = (res[1] && res[1].events && res[1].events.supplyRaw) || res[2];
-    if (supply) {
-      var total = 1e15 - Number(supply), weeklyRaw = res[1] ? Number(res[1].punchBurnedRaw || 0) : 0;
-      document.getElementById('tBurned').textContent = Math.round(total / 1e6).toLocaleString();
-      document.getElementById('tPct').textContent = (total / 1e13).toFixed(2) + '%';
-      var ev = res[1] && res[1].events, posRaw = ev && ev.byKind.pos ? Number(ev.byKind.pos.raw) : 0;
-      document.getElementById('tWeekly').textContent = punch(weeklyRaw);
-      document.getElementById('tPos').textContent = punch(posRaw);
-      // Other = everything else the supply shows burned: anyone burning PUNCH, pump.fun boosts, and any before tracking began.
-      document.getElementById('tOther').textContent = punch(Math.max(0, total - weeklyRaw - posRaw));
-      document.getElementById('burnTotal').hidden = false;
-    }
-    var manual = (res[0].entries || []).map(function (e) {
-      var what = e.kind === 'burn' ? 'Burned ' + esc(e.punch) + ' PUNCH' : 'Bought back ' + esc(e.punch) + ' PUNCH for ' + esc(e.sol) + ' SOL';
-      return { t: Date.parse(e.date) || 0, html: '<li><a href="https://solscan.io/tx/' + encodeURIComponent(e.tx) + '" target="_blank" rel="noopener"><span><b>' + what + '</b>' + (e.note ? ' · ' + esc(e.note) : '') + '</span><span class="status-line">' + esc(e.date) + '</span></a></li>' };
-    });
-    var b = res[1], weekly = [];
-    if (b) {
-      document.getElementById('bIncome').textContent = sol(b.incomeLamports);
-      document.getElementById('bDue').textContent = sol(b.dueLamports);
-      document.getElementById('bSpent').textContent = sol(b.spentLamports);
-      document.getElementById('bPunch').textContent = punch(b.punchBurnedRaw);
-      document.getElementById('burnStats').hidden = false;
-      weekly = (b.burns || []).map(function (x) {
-        return { t: x.at * 1000, html: '<li><a href="https://solscan.io/tx/' + encodeURIComponent(x.burn_sig) + '" target="_blank" rel="noopener"><span><b>Burned ' + punch(x.punch_raw) + '</b> · bought with ' + sol(x.sol_lamports) + ' of PunchCard’s fee</span><span class="status-line">' + new Date(x.at * 1000).toLocaleDateString() + '</span></a></li>' };
-      });
-    }
-    var LABEL = { weekly: 'Weekly buy-and-burn', pos: 'Paid at a PunchCard business', community: 'Other burn' };
-    var events = (b && b.events && b.events.recent) || [];
-    if (events.length) document.getElementById('burnCount').textContent = ' (' + events.length + ')';
-    document.getElementById('allBurns').innerHTML = events.length ? events.map(function (x) {
-      var shop = x.kind === 'pos' && x.note ? /^(.*?) · POS payment(?: · (\S+))?/.exec(x.note) : null; // "KOKOS Ice Cream · POS payment · $1.09"
-      var label = shop && shop[1] && !/^PUNCH$/.test(shop[1]) ? 'Paid at ' + esc(shop[1]) + (shop[2] ? ' (' + esc(shop[2]) + ')' : '') : (LABEL[x.kind] || 'Burn');
-      return '<li><a href="https://solscan.io/tx/' + encodeURIComponent(x.sig) + '" target="_blank" rel="noopener"><span><b>' + punch(x.raw) + '</b> · ' + label +
-        (x.kind === 'community' && x.burner ? ' (' + esc(x.burner.slice(0, 4) + '…' + x.burner.slice(-4)) + ')' : '') + '</span><span class="status-line">' + new Date(x.at * 1000).toLocaleDateString() + '</span></a></li>';
-    }).join('') : '<li class="status-line">The list is being prepared. The total above already counts every burn.</li>';
-    var all = manual.concat(weekly).sort(function (a, c) { return c.t - a.t; });
-    if (all.length) document.getElementById('log').innerHTML = all.map(function (e) { return e.html; }).join('');
-  });
+  // Every burn from any source lowers the supply, so 1 billion minus the supply is the total burned.
+  // One request to PunchCard's server (Solana's public server refuses browsers on punchcard.club).
+  fetch('https://punchcard-launchpad.quiet-mode-468e.workers.dev/api/punch-supply').then(function (r) { return r.json(); }).then(function (j) {
+    var total = 1e15 - Number(j.supplyRaw);
+    if (!(total >= 0)) throw new Error('no supply');
+    document.getElementById('tBurned').textContent = Math.round(total / 1e6).toLocaleString();
+    document.getElementById('tPct').textContent = ', ' + (total / 1e13).toFixed(2) + '% of the 1 billion supply';
+  }).catch(function () { document.getElementById('tBurned').textContent = 'Live total unavailable right now'; });
 })();
 </script>
 <script type="module">
