@@ -78,6 +78,12 @@
     <p class="select-foot">Ranked by creator fees generated for the business, from public on-chain data. Launched by users, not by PunchCard or the businesses they name. <a href="/launchpad/#community">See all →</a></p>
   </section>
 
+  <section class="select-sec" data-latest-section hidden aria-labelledby="llH">
+    <div class="select-head"><h2 id="llH">Just <em>launched</em></h2><p>The newest PunchCard tokens, live from the chain. Every one is listed here with its official CA as soon as it launches.</p></div>
+    <ol class="ll-list" data-latest-launches data-count="10"></ol>
+    <p class="ll-foot status-line">Updates every minute. Launched by users and businesses, not a recommendation to buy. Always check the CA before you trade.</p>
+  </section>
+
   <section class="go-promo" aria-labelledby="goH">
     <div class="go-promo-main">
       <div class="go-promo-icon" aria-hidden="true"><img src="/go/icon-512.png" alt="" width="112" height="112"></div>
@@ -162,6 +168,7 @@
 </script>
 <script type="module" src="/launchpad/select.js"></script>
 <script type="module" src="/launchpad/community.js"></script>
+<script type="module" src="/launchpad/latest.js"></script>
 <script type="module">
 import { qrImg } from '/launchpad/qr.js';
 import { mountVerify } from '/launchpad/verify.js';
