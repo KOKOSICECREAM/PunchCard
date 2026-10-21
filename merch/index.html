@@ -51,11 +51,19 @@
   .drop-item .pr { font-family: 'Courier Prime', monospace; font-weight: 700; color: #f4d9a7; }
   .drop-item .go { padding: .45rem 1rem; border-radius: 999px; background: #f4d9a7; color: #17130e; font-family: 'Lora', serif; font-weight: 700; font-size: .9rem; }
   .drop-item .badge { position: absolute; top: .9rem; left: .9rem; z-index: 1; padding: .2rem .6rem; border-radius: 999px; background: #ed2939; color: #fff; font-family: 'Courier Prime', monospace; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }
-  @media (max-width: 680px) { .drop-grid { grid-template-columns: minmax(0, 1fr); } .drop-item .pic { aspect-ratio: 4 / 3; } }
+  @media (max-width: 680px) {
+    .drop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+    .drop-item img { inset: 1.9rem .8rem .6rem; width: calc(100% - 1.6rem); height: calc(100% - 2.5rem); }
+    .drop-item .info { padding: .3rem .8rem .9rem; }
+    .drop-item .nm { font-size: .98rem; }
+    .drop-item .dt { font-size: .78rem; }
+    .drop-item .buy { flex-wrap: wrap; gap: .4rem; }
+    .drop-item .go { padding: .4rem .85rem; font-size: .85rem; }
+    .drop-item .badge { top: .6rem; left: .6rem; font-size: .62rem; }
+  }
+  @media (max-width: 340px) { .drop-grid { grid-template-columns: minmax(0, 1fr); } }
   .drop .merch-fine { color: rgba(246,239,226,.6); }
   .drop .merch-fine a { color: #f4d9a7; }
-  @media (max-width: 720px) { .drop-grid { grid-template-columns: 1fr 1fr; } .drop-item.feature { grid-column: 1 / -1; grid-row: auto; } .drop-item.feature img { max-height: 340px; } .drop-item img { max-height: 190px; } .drop-item .info { flex-direction: column; align-items: flex-start; } }
-  @media (max-width: 420px) { .drop-grid { grid-template-columns: 1fr; } }
   .merch-fine { margin: 0; font-size: .85rem; line-height: 1.55; color: var(--ink-mid); }
   .merch-next { display: grid; gap: .5rem; padding: 1.2rem 1.4rem; border-radius: 20px; border: 1.5px dashed var(--border-mid); }
   .merch-next h2 { margin: 0; font-family: 'Lora', serif; font-size: 1.3rem; }
@@ -98,6 +106,18 @@
       <a class="drop-item" href="https://store.halo.com/br101/bnice/product-1850?color_id=17967&amp;top=%20&amp;bottom=%20&amp;yearcombo=2027&amp;name=Your%20Name&amp;number=00&amp;design_id=194&amp;pset=4&amp;logo=85192FD9-97A3-2C71-64EB87050BFD5174&amp;photo=1&amp;isUploaded=0&amp;fc1=000000&amp;fc2=862633" target="_blank" rel="noopener">
         <span class="pic"><img src="/merch/bnice/beanie.webp" alt="BNICE beanie: black knit beanie with a leather patch showing BNICE and a blue, white and red stripe" width="812" height="891" loading="lazy"></span>
         <span class="info"><span class="nm">BNICE Beanie</span><span class="dt">Leather patch with the tricolour · knit beanie</span><span class="buy"><span class="pr">$19.39</span><span class="go">Get it</span></span></span>
+      </a>
+      <a class="drop-item" href="https://store.halo.com/br101/bnice/product-1828?color_id=17745&amp;top=%20&amp;bottom=%20&amp;yearcombo=2027&amp;name=Your%20Name&amp;number=00&amp;design_id=194&amp;pset=4&amp;logo=851C275C-96BE-29DF-F832B43F315AFC56&amp;photo=1&amp;isUploaded=0&amp;fc1=FFFFFF&amp;fc2=C7AF87" target="_blank" rel="noopener">
+        <span class="pic"><img src="/merch/bnice/tumbler.webp" alt="BNICE tumbler: black 40oz tumbler with white BNICE and a blue, white and red stripe" width="376" height="855" loading="lazy"></span>
+        <span class="info"><span class="nm">BNICE Tumbler</span><span class="dt">40oz stainless steel tumbler</span><span class="buy"><span class="pr">$36.67</span><span class="go">Get it</span></span></span>
+      </a>
+      <a class="drop-item" href="https://store.halo.com/br101/bnice/product-1798?color_id=17613&amp;top=%20&amp;bottom=%20&amp;yearcombo=2027&amp;name=Your%20Name&amp;number=00&amp;design_id=194&amp;pset=4&amp;logo=85192FD9-97A3-2C71-64EB87050BFD5174&amp;photo=1&amp;isUploaded=0&amp;fc1=FFFFFF&amp;fc2=C7AF87" target="_blank" rel="noopener">
+        <span class="pic"><img src="/merch/bnice/backpack.webp" alt="BNICE backpack: black Carhartt backpack with BNICE and a blue, white and red stripe" width="594" height="882" loading="lazy"></span>
+        <span class="info"><span class="nm">BNICE Backpack</span><span class="dt">Carhartt 28L Foundry backpack</span><span class="buy"><span class="pr">$40.99</span><span class="go">Get it</span></span></span>
+      </a>
+      <a class="drop-item" href="https://store.halo.com/br101/bnice/product-2083?color_id=19293&amp;top=%20&amp;bottom=%20&amp;yearcombo=2027&amp;name=Your%20Name&amp;number=00&amp;design_id=194&amp;pset=4&amp;logo=85192FD9-97A3-2C71-64EB87050BFD5174&amp;photo=1&amp;isUploaded=0&amp;fc1=B3A369&amp;fc2=FFFFFF" target="_blank" rel="noopener">
+        <span class="pic"><img src="/merch/bnice/quarter-zip.webp" alt="BNICE quarter-zip: red athletic pullover with BNICE and a blue, white and red stripe on the chest" width="643" height="890" loading="lazy"></span>
+        <span class="info"><span class="nm">BNICE Quarter-Zip</span><span class="dt">Athletic 1/4 zip pullover</span><span class="buy"><span class="pr">$36.67</span><span class="go">Get it</span></span></span>
       </a>
     </div>
     <p class="merch-fine">Sold by PunchCard through Halo, which handles sizes, colors, payment and delivery. US shipping only for now. Prices and stock as listed at Halo. Community-inspired designs, not made or endorsed by any business or brand. <a href="https://store.halo.com/br101/bnice" target="_blank" rel="noopener">See the full BNICE store</a></p>
