@@ -38,24 +38,20 @@
   .drop-head h2 span { display: block; font-size: .5em; color: #f4d9a7; margin-top: .35rem; }
   .drop-head p { margin: 0; line-height: 1.65; color: rgba(246,239,226,.8); }
   .drop-give { margin: 0; padding: .8rem 1rem; border-left: 4px solid #f4d9a7; background: rgba(244,217,167,.08); border-radius: 0 12px 12px 0; line-height: 1.55; color: #f6efe2; }
-  .drop-grid { display: grid; grid-template-columns: 1.25fr 1fr; grid-template-rows: auto auto; gap: 1rem; }
+  .drop-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
   .drop-item { position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; background: radial-gradient(120% 90% at 50% 30%, #3b3125 0%, #231d16 70%); color: #f6efe2; text-decoration: none; text-align: left; border: 1px solid rgba(246,239,226,.1); transition: border-color .2s, transform .2s; }
-  .drop-item.feature { grid-row: span 2; }
-  .drop-item .pic, .drop-item .info { width: 100%; box-sizing: border-box; }
-  .drop-item.feature img { width: 88%; }
   .drop-item:hover, .drop-item:focus-visible { border-color: #f4d9a7; transform: translateY(-3px); color: #f6efe2; }
-  .drop-item .pic { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; padding: 1.4rem 1.4rem .4rem; min-height: 0; }
-  .drop-item img { display: block; width: auto; max-width: 100%; height: auto; max-height: 260px; object-fit: contain; filter: drop-shadow(0 18px 24px rgba(0,0,0,.45)); transition: transform .35s; }
-  .drop-item.feature .pic { padding: 2.6rem 2rem 1rem; }
-  .drop-item.feature img { max-height: 520px; }
-  .drop-item.feature .nm { font-size: 1.4rem; }
-  .drop-item:hover img { transform: scale(1.04) rotate(-1deg); }
-  .drop-item .info { display: flex; align-items: flex-end; justify-content: space-between; gap: .8rem; padding: .9rem 1.1rem 1.1rem; }
-  .drop-item .nm { display: block; font-family: 'Lora', serif; font-weight: 700; font-size: 1.1rem; }
-  .drop-item .dt { display: block; font-size: .84rem; color: rgba(246,239,226,.65); margin-top: .15rem; }
-  .drop-item .pr { display: block; font-family: 'Courier Prime', monospace; font-weight: 700; color: #f4d9a7; margin-top: .35rem; }
-  .drop-item .go { flex: none; padding: .45rem 1rem; border-radius: 999px; background: #f4d9a7; color: #17130e; font-family: 'Lora', serif; font-weight: 700; font-size: .9rem; }
-  .drop-item .badge { position: absolute; top: .9rem; left: .9rem; padding: .2rem .6rem; border-radius: 999px; background: #ed2939; color: #fff; font-family: 'Courier Prime', monospace; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }
+  .drop-item .pic { position: relative; display: block; aspect-ratio: 1; }
+  .drop-item img { position: absolute; inset: 2.4rem 1.4rem 1rem; width: calc(100% - 2.8rem); height: calc(100% - 3.4rem); object-fit: contain; filter: drop-shadow(0 18px 24px rgba(0,0,0,.45)); transition: transform .35s; }
+  .drop-item:hover img { transform: scale(1.05) rotate(-1deg); }
+  .drop-item .info { flex: 1; display: flex; flex-direction: column; gap: .15rem; padding: .4rem 1.1rem 1.1rem; }
+  .drop-item .nm { font-family: 'Lora', serif; font-weight: 700; font-size: 1.1rem; line-height: 1.3; }
+  .drop-item .dt { font-size: .84rem; color: rgba(246,239,226,.65); }
+  .drop-item .buy { align-self: stretch; margin-top: auto; padding-top: .7rem; display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+  .drop-item .pr { font-family: 'Courier Prime', monospace; font-weight: 700; color: #f4d9a7; }
+  .drop-item .go { padding: .45rem 1rem; border-radius: 999px; background: #f4d9a7; color: #17130e; font-family: 'Lora', serif; font-weight: 700; font-size: .9rem; }
+  .drop-item .badge { position: absolute; top: .9rem; left: .9rem; z-index: 1; padding: .2rem .6rem; border-radius: 999px; background: #ed2939; color: #fff; font-family: 'Courier Prime', monospace; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }
+  @media (max-width: 680px) { .drop-grid { grid-template-columns: minmax(0, 1fr); } .drop-item .pic { aspect-ratio: 4 / 3; } }
   .drop .merch-fine { color: rgba(246,239,226,.6); }
   .drop .merch-fine a { color: #f4d9a7; }
   @media (max-width: 720px) { .drop-grid { grid-template-columns: 1fr 1fr; } .drop-item.feature { grid-column: 1 / -1; grid-row: auto; } .drop-item.feature img { max-height: 340px; } .drop-item img { max-height: 190px; } .drop-item .info { flex-direction: column; align-items: flex-start; } }
@@ -91,18 +87,17 @@
       <p class="drop-give">PunchCard will donate a share of every sale from this collection to help local shops and workers in France, starting with those affected by the recent damage in Nice.</p>
     </div>
     <div class="drop-grid">
-      <a class="drop-item feature" href="https://store.halo.com/br101/bnice/product-1049" target="_blank" rel="noopener">
-        <span class="badge">Tribute tee</span>
-        <span class="pic"><img src="/merch/bnice/tee.webp" alt="BNICE Stand Your Ground Tribute Tee: tan tee, BNICE with a blue, white and red stripe" width="808" height="890"></span>
-        <span class="info"><span><span class="nm">“Stand Your Ground” Tee</span><span class="dt">BNICE with the tricolour · classic cotton</span><span class="pr">$19.39</span></span><span class="go">Get it</span></span>
+      <a class="drop-item" href="https://store.halo.com/br101/bnice/product-1049" target="_blank" rel="noopener">
+        <span class="badge">Tribute tee</span><span class="pic"><img src="/merch/bnice/tee.webp" alt="BNICE Stand Your Ground Tribute Tee: tee with BNICE and a blue, white and red stripe" width="808" height="890" loading="lazy"></span>
+        <span class="info"><span class="nm">“Stand Your Ground” Tee</span><span class="dt">BNICE with the tricolour · classic cotton tee</span><span class="buy"><span class="pr">$19.39</span><span class="go">Get it</span></span></span>
       </a>
       <a class="drop-item" href="https://store.halo.com/br101/bnice/product-541" target="_blank" rel="noopener">
-        <span class="pic"><img src="/merch/bnice/hoodie.webp" alt="BNICE hoodie: sand hoodie, plain white BNICE" width="740" height="891" loading="lazy"></span>
-        <span class="info"><span><span class="nm">BNICE Hoodie</span><span class="dt">Plain BNICE · pullover hoodie</span><span class="pr">$36.67</span></span><span class="go">Get it</span></span>
+        <span class="pic"><img src="/merch/bnice/hoodie.webp" alt="BNICE hoodie: sand hoodie with plain white BNICE" width="740" height="891" loading="lazy"></span>
+        <span class="info"><span class="nm">BNICE Hoodie</span><span class="dt">Plain BNICE · pullover hoodie</span><span class="buy"><span class="pr">$36.67</span><span class="go">Get it</span></span></span>
       </a>
-      <a class="drop-item" href="https://store.halo.com/br101/bnice/product-1460" target="_blank" rel="noopener">
-        <span class="pic"><img src="/merch/bnice/heavy-tee.webp" alt="BNICE heavyweight tee: sand Comfort Colors tee, plain white BNICE" width="851" height="831" loading="lazy"></span>
-        <span class="info"><span><span class="nm">BNICE Heavyweight Tee</span><span class="dt">Plain BNICE · Comfort Colors</span><span class="pr">$30.19</span></span><span class="go">Get it</span></span>
+      <a class="drop-item" href="https://store.halo.com/br101/bnice/product-1850?color_id=17967&amp;top=%20&amp;bottom=%20&amp;yearcombo=2027&amp;name=Your%20Name&amp;number=00&amp;design_id=194&amp;pset=4&amp;logo=85192FD9-97A3-2C71-64EB87050BFD5174&amp;photo=1&amp;isUploaded=0&amp;fc1=000000&amp;fc2=862633" target="_blank" rel="noopener">
+        <span class="pic"><img src="/merch/bnice/beanie.webp" alt="BNICE beanie: black knit beanie with a leather patch showing BNICE and a blue, white and red stripe" width="812" height="891" loading="lazy"></span>
+        <span class="info"><span class="nm">BNICE Beanie</span><span class="dt">Leather patch with the tricolour · knit beanie</span><span class="buy"><span class="pr">$19.39</span><span class="go">Get it</span></span></span>
       </a>
     </div>
     <p class="merch-fine">Sold by PunchCard through Halo, which handles sizes, colors, payment and delivery. US shipping only for now. Prices and stock as listed at Halo. Community-inspired designs, not made or endorsed by any business or brand. <a href="https://store.halo.com/br101/bnice" target="_blank" rel="noopener">See the full BNICE store</a></p>
