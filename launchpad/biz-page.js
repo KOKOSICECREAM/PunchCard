@@ -18,7 +18,7 @@ function statusOf(c) {
       text: `An owner verified this business${c.inTime ? '' : ' after the 30 days, so they receive future fees only'}. Payout to ${short(c.owner)} happens automatically when the check window ends.` };
   }
   if (c.deadline && now() >= c.deadline) return { pill: 'holders', label: 'Unclaimed: holders share the fees', text: 'The owner didn’t claim within 30 days, so this token’s holders share its creator fees until an owner claims.' };
-  return { pill: 'open', label: 'Waiting for the owner', ends: c.deadline, text: `Creator fees are held for ${esc(c.business.name)}. The owner has until the deadline to claim them; after that, holders share them.` };
+  return { pill: 'open', label: 'Waiting for the owner', ends: c.deadline, text: `Creator fees are held for ${esc(c.business.name)}. The owner has until the deadline to verify ownership and claim them; after that, holders share them.` };
 }
 
 function perksHtml(c, perks) {
