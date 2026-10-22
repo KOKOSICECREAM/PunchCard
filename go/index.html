@@ -283,7 +283,7 @@
   <!-- 0. Open inside a wallet -->
   <section id="s-open" hidden aria-labelledby="h-open">
     <h1 id="h-open">Launch a token for a business <em>you love.</em></h1>
-    <p class="lede">PunchCard Go runs inside your wallet app, where connecting and approving just work. Pick yours:</p>
+    <p class="lede" id="openLede">PunchCard Go runs inside your wallet app, where connecting and approving just work. Pick yours:</p>
     <div class="wallet-links" id="walletLinks"></div>
     <p class="muted">Already in a wallet's browser or on a computer with a wallet extension? <a href="#" id="tryHere">Continue here</a>.</p>
     <p class="muted">Standing in the shop? Even better: when you launch, you can hand the owner their claim code on the spot.</p>
@@ -448,7 +448,12 @@ const browse = {
   Solflare: `https://solflare.com/ul/v1/browse/${encodeURIComponent(here)}?ref=${encodeURIComponent(location.origin)}`,
   Backpack: `https://backpack.app/ul/v1/browse/${encodeURIComponent(here)}?ref=${encodeURIComponent(location.origin)}`,
 };
-$('walletLinks').innerHTML = Object.entries(browse).map(([n, u]) => `<a class="btn-secondary big" href="${esc(u)}">Open in ${n}</a>`).join('')
+// On a computer, wallets are browser extensions: offer those instead of the phone apps' "open in" links.
+const onPhone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const extensions = { Phantom: 'https://phantom.app/download', Solflare: 'https://solflare.com/download', Backpack: 'https://backpack.app/downloads' };
+if (!onPhone) { $('openLede').textContent = 'On a computer, PunchCard Go works with a Solana wallet extension in this browser. Add one, then reload this page:'; }
+$('walletLinks').innerHTML = (onPhone ? Object.entries(browse).map(([n, u]) => `<a class="btn-secondary big" href="${esc(u)}">Open in ${n}</a>`)
+  : Object.entries(extensions).map(([n, u]) => `<a class="btn-secondary big" href="${esc(u)}" target="_blank" rel="noopener">Get ${n} for this browser</a>`)).join('')
   + (CLUSTER === 'devnet' ? '<p class="muted">On the test network, use Solflare: Phantom’s phone app can’t sign test-network launches yet.</p>' : '');
 $('tryHere').addEventListener('click', (e) => { e.preventDefault(); show('s-wallet'); });
 splashDone.then(() => show(hasWallet() ? 's-wallet' : 's-open')); // wallets register during the splash
