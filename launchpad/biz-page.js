@@ -36,10 +36,10 @@ async function load() {
   const [prof, perkCfg, stories] = await Promise.all([api(`/api/coins/${mint}/profile`).catch(() => ({})), api(`/api/perks?mint=${mint}`).catch(() => ({})),
     fetch('/launchpad/token-stories.json').then((r) => r.json()).catch(() => ({}))]);
   // A commemorative token's own story (launchpad/token-stories.json): its title, story and owner note replace the business listing's.
-  const story = stories[mint] || null;
+  const tokenStory = stories[mint] || null;
   if (!prof.record) { const v = await api(`/api/verify?mint=${mint}`).catch(() => null); if (v?.official) prof.record = v.record; } // older cached profiles
   const perks = perkCfg.perks || [], site = prof.site || null, host = site?.host || hostOf(c.business.website);
-  document.title = story ? `${story.title} ($${c.ticker}) — PunchCard` : `${c.business.name} · ${c.coinName} ($${c.ticker}) — PunchCard`;
+  document.title = tokenStory ? `${tokenStory.title} ($${c.ticker}) — PunchCard` : `${c.business.name} · ${c.coinName} ($${c.ticker}) — PunchCard`;
   const st = statusOf(c), claimed = c.status === 'HandedOver' || c.status === 'Attested';
   // Tokens that share fees with holders: what holders have received and the next payout.
   const hp = c.holderPayouts?.next || null;
@@ -98,29 +98,29 @@ async function load() {
     ${removedNote}${retiredNote}${newNote}${firstBuyNote}
     <section class="cp-hero">
       <div>
-        <div class="cp-kicker">${story ? esc(story.kicker) : `${c.business.city ? esc(c.business.city) + ' · ' : ''}${card ? 'Community token' : 'Community page'}`}</div>
-        <h1>${esc(story ? story.title : c.business.name)}</h1>
-        <p class="cp-token">${story || c.coinName.trim().toLowerCase() === c.business.name.trim().toLowerCase() ? '' : esc(c.coinName) + ' · '}<b>$${esc(c.ticker)}</b></p>
-        ${story ? `<p class="cp-thanks">${esc(story.tagline)}</p>` : c.description ? `<p class="cp-thanks">“${esc(c.description)}”</p>` : `<p class="cp-thanks">A thank-you to the people behind ${esc(c.business.name)}, from their community.</p>`}
+        <div class="cp-kicker">${tokenStory ? esc(tokenStory.kicker) : `${c.business.city ? esc(c.business.city) + ' · ' : ''}${card ? 'Community token' : 'Community page'}`}</div>
+        <h1>${esc(tokenStory ? tokenStory.title : c.business.name)}</h1>
+        <p class="cp-token">${tokenStory || c.coinName.trim().toLowerCase() === c.business.name.trim().toLowerCase() ? '' : esc(c.coinName) + ' · '}<b>$${esc(c.ticker)}</b></p>
+        ${tokenStory ? `<p class="cp-thanks">${esc(tokenStory.tagline)}</p>` : c.description ? `<p class="cp-thanks">“${esc(c.description)}”</p>` : `<p class="cp-thanks">A thank-you to the people behind ${esc(c.business.name)}, from their community.</p>`}
         <div class="cp-ctas">
           <a class="btn-primary sol" href="https://pump.fun/coin/${esc(mint)}" target="_blank" rel="noopener">Get $${esc(c.ticker)} on pump.fun</a>
           ${!card && c.business.website && !prof.brand ? `<a class="btn-secondary" href="${esc(c.business.website)}" target="_blank" rel="noopener">Visit ${esc(host || 'their site')}</a>` : ''}
           ${!card && prof.mapsUrl ? `<a class="btn-secondary" href="${esc(prof.mapsUrl)}" target="_blank" rel="noopener">Directions</a>` : ''}
         </div>
-        <div class="cp-badge">${claimed ? `<span class="pill owned">Business identity verified</span>` : story ? `<span class="pill open">Made by the community</span></div><div hidden>` : `<span class="pill open">Made by the community</span><span>Own ${esc(c.business.name)}? <a href="/launchpad/claim/?mint=${esc(mint)}">Claim this page</a></span>`}${c.burnTier ? ' ' + honourPill(c.burnTier) : ''}${prof.record ? ` <a class="pill verified" href="https://solscan.io/account/${esc(prof.record)}" target="_blank" rel="noopener" title="This token's PunchCard record on Solana">Verified on Solana</a>` : ''}</div>
-      ${story ? `<p class="cp-brand-note">${esc(story.note)}</p>` : ''}${!story && prof.brand ? `<p class="cp-brand-note">A commemorative community token, made by fans. Not affiliated with or endorsed by ${esc(c.business.name)} or its brand.</p>` : ''}
+        <div class="cp-badge">${claimed ? `<span class="pill owned">Business identity verified</span>` : tokenStory ? `<span class="pill open">Made by the community</span></div><div hidden>` : `<span class="pill open">Made by the community</span><span>Own ${esc(c.business.name)}? <a href="/launchpad/claim/?mint=${esc(mint)}">Claim this page</a></span>`}${c.burnTier ? ' ' + honourPill(c.burnTier) : ''}${prof.record ? ` <a class="pill verified" href="https://solscan.io/account/${esc(prof.record)}" target="_blank" rel="noopener" title="This token's PunchCard record on Solana">Verified on Solana</a>` : ''}</div>
+      ${tokenStory ? `<p class="cp-brand-note">${esc(tokenStory.note)}</p>` : ''}${!tokenStory && prof.brand ? `<p class="cp-brand-note">A commemorative community token, made by fans. Not affiliated with or endorsed by ${esc(c.business.name)} or its brand.</p>` : ''}
       </div>
-      ${story?.hideArt ? '' : `<div class="cp-art"><img src="${API}/img/${esc(mint)}" alt="${esc(c.business.name)}" onerror="this.parentNode.style.display='none'"></div>`}
+      ${tokenStory?.hideArt ? '' : `<div class="cp-art"><img src="${API}/img/${esc(mint)}" alt="${esc(c.business.name)}" onerror="this.parentNode.style.display='none'"></div>`}
     </section>
-    ${story ? `<section class="cp-sec cp-story"><p class="cp-lbl">The story</p>${story.story.map((t) => `<p>${esc(t)}</p>`).join('')}</section>` : card ? '' : ownStory || words}
+    ${tokenStory ? `<section class="cp-sec cp-story"><p class="cp-lbl">The story</p>${tokenStory.story.map((t) => `<p>${esc(t)}</p>`).join('')}</section>` : card ? '' : ownStory || words}
     ${tokenInfo}
-    ${story && !claimed ? `<section class="cp-sec cp-owner">
+    ${tokenStory && !claimed ? `<section class="cp-sec cp-owner">
       <p class="cp-lbl">Claims</p>
-      <h2>${esc(story.owner.heading)}</h2>
-      <p>${esc(story.owner.text)}${c.deadline ? ` Ownership must be verified by ${new Date(c.deadline * 1000).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}.` : ''}</p>
+      <h2>${esc(tokenStory.owner.heading)}</h2>
+      <p>${esc(tokenStory.owner.text)}${c.deadline ? ` Ownership must be verified by ${new Date(c.deadline * 1000).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}.` : ''}</p>
       <div class="cp-ctas"><a class="btn-primary sol" href="mailto:hello@punchcard.club?subject=%24BNICE">Email PunchCard</a><a class="btn-secondary" href="/launchpad/owners/">How claiming works</a></div>
     </section>` : ''}
-    ${card && !story ? `<section class="cp-sec cp-owner">
+    ${card && !tokenStory ? `<section class="cp-sec cp-owner">
       <p class="cp-lbl">For the owner</p>
       <h2>Is this your business?</h2>
       <p>${esc(c.business.name)}’s community made this token as a thank-you. Its creator fees are being held for the business. Claim them, and this becomes your full page on PunchCard: your story, photos and perks for your customers.</p>
@@ -162,7 +162,7 @@ async function load() {
     </section>
     <section class="panel">
       <h2>Details</h2>
-      <p class="status-line">${esc(story ? story.place : c.business.address || '')}${!story && c.business.website && !prof.brand ? ` · <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(host)}</a>` : ''}</p>
+      <p class="status-line">${esc(tokenStory ? tokenStory.place : c.business.address || '')}${!tokenStory && c.business.website && !prof.brand ? ` · <a href="${esc(c.business.website)}" target="_blank" rel="noopener">${esc(host)}</a>` : ''}</p>
       <p class="status-line">Launched by <span class="mono">${esc(short(c.launcher))}</span>${c.launchedAt ? ' on ' + new Date(c.launchedAt * 1000).toLocaleDateString() : ''}${c.deadline && !claimed ? ` · claim deadline ${new Date(c.deadline * 1000).toLocaleString()}` : ''}</p>
       ${Number(c.launchBurnTokens || 0) > 0 ? `<p class="status-line">${ICONS.flame} <b>Fair launch:</b> the launcher's ${(c.firstBuyLamports / 1e9).toLocaleString()} SOL first buy was capped at 0.5% of the supply; <b>${Math.round(Number(c.launchBurnTokens) / 1e6).toLocaleString()} tokens were burned</b> at launch.${c.burnTier ? ` ${honourPill(c.burnTier)}` : ''}</p>` : ''}
       <div id="punchBurned"></div>
