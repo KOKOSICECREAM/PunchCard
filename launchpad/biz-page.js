@@ -37,6 +37,7 @@ async function load() {
     fetch('/launchpad/token-stories.json').then((r) => r.json()).catch(() => ({}))]);
   // A commemorative token's own story (launchpad/token-stories.json): its title, story and owner note replace the business listing's.
   const tokenStory = stories[mint] || null;
+  if (tokenStory) c.business = { ...c.business, name: 'the business' }; // the story page doesn't name the shop anywhere
   if (!prof.record) { const v = await api(`/api/verify?mint=${mint}`).catch(() => null); if (v?.official) prof.record = v.record; } // older cached profiles
   const perks = perkCfg.perks || [], site = prof.site || null, host = site?.host || hostOf(c.business.website);
   document.title = tokenStory ? `${tokenStory.title} ($${c.ticker}) — PunchCard` : `${c.business.name} · ${c.coinName} ($${c.ticker}) — PunchCard`;
@@ -146,7 +147,7 @@ async function load() {
           <small>${hp.status === 'building' ? (hp.minLamports && BigInt(hp.lamports) < BigInt(hp.minLamports) ? `sends once it reaches ${sol(hp.minLamports)} SOL` : `sends about ${when(hp.payAfter)}`) : hp.status === 'posted' ? `sends ${when(hp.payAfter)}` : 'being sent'}</small></div>` : ''}
       </div>
       <div class="btn-row">
-        ${c.status === 'Open' ? `<a class="btn-primary sol" href="/launchpad/claim/?mint=${esc(mint)}">I own this business</a>` : ''}
+        ${c.status === 'Open' && !tokenStory ? `<a class="btn-primary sol" href="/launchpad/claim/?mint=${esc(mint)}">I own this business</a>` : ''}
         <button class="btn-secondary" id="payout" type="button">Pay out now</button>
         <a class="btn-secondary" href="${explorer('token', mint)}" target="_blank" rel="noopener">View on Solscan</a>
       </div>
