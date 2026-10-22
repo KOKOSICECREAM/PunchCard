@@ -89,11 +89,17 @@ function pickWallet(wallets) {
   return new Promise((resolve) => {
     const d = document.createElement('dialog');
     d.className = 'wallet-pick';
-    const rows = wallets.length
-      ? wallets.map((w, i) => `<button type="button" class="wallet-row" data-i="${i}">${w.icon ? `<img src="${esc(w.icon)}" alt="" width="32" height="32">` : '<span class="wallet-dot" aria-hidden="true"></span>'}<span>${esc(w.name)}</span></button>`).join('')
-      : isMobile()
-        ? `<p>No wallet in this browser. Open this page inside your wallet app:</p>${MOBILE_APPS.map(([n, u]) => `<a class="wallet-row" href="${esc(u())}"><span class="wallet-dot" aria-hidden="true"></span><span>Open in ${n}</span></a>`).join('')}<p class="status-line">Using another wallet? Open its app, go to its built-in browser and visit this page.</p>`
-        : `<p>No Solana wallet found in this browser. Install one, then reload this page:</p>${INSTALL.map(([n, u]) => `<a class="wallet-row" href="${u}" target="_blank" rel="noopener"><span class="wallet-dot" aria-hidden="true"></span><span>Get ${n}</span></a>`).join('')}`;
+    // The three main Solana wallets always appear, on every device: installed ones connect; missing ones offer the
+    // extension (computer) or reopen this page inside the wallet's app (phone). Any other installed wallet is listed too.
+    const have = new Set(wallets.map((w) => w.name.toLowerCase()));
+    const dot = '<span class="wallet-dot" aria-hidden="true"></span>';
+    const installed = wallets.map((w, i) => `<button type="button" class="wallet-row" data-i="${i}">${w.icon ? `<img src="${esc(w.icon)}" alt="" width="32" height="32">` : dot}<span>${esc(w.name)}</span></button>`);
+    const missing = (isMobile() ? MOBILE_APPS.map(([n, u]) => [n, u(), `Open in ${n}`, false]) : INSTALL.map(([n, u]) => [n, u, `Get ${n}`, true]))
+      .filter(([n]) => !have.has(n.toLowerCase()))
+      .map(([, u, label, ext]) => `<a class="wallet-row get" href="${esc(u)}"${ext ? ' target="_blank" rel="noopener"' : ''}>${dot}<span>${esc(label)}</span></a>`);
+    const rows = installed.join('') + (missing.length
+      ? `<p class="wallet-note">${wallets.length ? 'Or use' : isMobile() ? 'No wallet in this browser. Open this page inside your wallet app:' : 'No Solana wallet in this browser yet. Add one, then reload this page:'}</p>${missing.join('')}`
+      : '');
     d.innerHTML = `<div class="wallet-inner"><h2>${wallets.length ? 'Choose your wallet' : 'Connect a Solana wallet'}</h2><div class="wallet-list">${rows}</div><button type="button" class="btn-secondary wallet-close">Cancel</button></div>`;
     const done = (v) => { d.close(); d.remove(); resolve(v); };
     d.addEventListener('click', (e) => {

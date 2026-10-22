@@ -681,3 +681,6 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .ll-foot { text-align: center; margin-top: .8rem; color: var(--ink-mid); font-size: .85rem; }
 @media (max-width: 640px) { .ll-full { display: none; } .ll-short { display: inline; } }
 @media (max-width: 520px) { .ll-row { grid-template-areas: "main main" "meta meta" "ca ca"; } .ll-meta { justify-content: flex-start; } }
+.wallet-note { margin: .6rem 0 .1rem; font-size: .85rem; color: var(--ink-mid); }
+.wallet-row.get { color: var(--ink); text-decoration: none; border-style: dashed; }
+.wallet-row.get .wallet-dot { background: var(--border-mid); }
