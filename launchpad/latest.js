@@ -15,17 +15,18 @@ const ago = (t) => {
   return d === 1 ? 'yesterday' : `${d} days ago`;
 };
 const shortCa = (m) => `${m.slice(0, 4)}…${m.slice(-4)}`;
-let SHORT = null;
+let SHORT = null, STORIES = {};
 
 function row(c) {
+  const st = STORIES[c.mint]; // commemorative tokens show their own title (launchpad/token-stories.json)
   const page = c.page ? c.page.replace(/^https:\/\/punchcard\.club/, '') : SHORT[c.mint] || `/launchpad/coin/?mint=${encodeURIComponent(c.mint)}`;
   const fresh = Math.floor(Date.now() / 1000) - c.launched_at < 86400;
   const tag = c.team ? '<span class="ll-tag sel">PunchCard Select</span>' : '<span class="ll-tag">Community</span>';
   return `<li class="ll-row">
     <a class="ll-main" href="${esc(page)}">
       <img src="${API}/img/${encodeURIComponent(c.mint)}" alt="" width="52" height="52" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
-      <span class="ll-txt"><span class="ll-top"><b>$${esc(c.ticker)}</b> <span class="ll-name">${esc(c.coin_name || c.business_name)}</span></span>
-        <small>${esc(c.business_name)}${c.city ? ' · ' + esc(c.city) : ''}${c.country ? ', ' + esc(c.country) : ''}</small></span>
+      <span class="ll-txt"><span class="ll-top"><b>$${esc(c.ticker)}</b> <span class="ll-name">${esc(st ? st.listName : c.coin_name || c.business_name)}</span></span>
+        <small>${st ? esc(st.place) : `${esc(c.business_name)}${c.city ? ' · ' + esc(c.city) : ''}${c.country ? ', ' + esc(c.country) : ''}`}</small></span>
     </a>
     <span class="ll-meta">${fresh ? '<span class="ll-new">New</span>' : ''}${tag}<time data-t="${Number(c.launched_at)}">${ago(c.launched_at)}</time></span>
     <span class="ll-ca"><span class="ll-lbl">CA</span><code title="${esc(c.mint)}"><span class="ll-full">${esc(c.mint)}</span><span class="ll-short">${shortCa(c.mint)}</span></code><button type="button" class="ll-copy" data-ca="${esc(c.mint)}" aria-label="Copy the official CA for $${esc(c.ticker)}">Copy CA</button>
@@ -39,7 +40,8 @@ async function load() {
   const [{ coins = [] }, short] = await Promise.all([
     fetch(`${API}/api/coins?t=${Math.floor(Date.now() / 60000)}`).then((r) => r.json()).catch(() => ({})),
     SHORT ? Promise.resolve(SHORT) : fetch('/launchpad/short-links.json').then((r) => r.json()).catch(() => ({})),
-  ]);
+    fetch('/launchpad/token-stories.json').then((r) => r.json()).catch(() => ({})),
+  ]).then(([a, b, c]) => { STORIES = c; return [a, b]; });
   SHORT = short;
   const latest = coins.filter((c) => c.launched_at).sort((a, b) => b.launched_at - a.launched_at);
   if (!latest.length) return;

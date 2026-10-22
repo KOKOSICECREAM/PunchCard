@@ -62,3 +62,4 @@
 .cp-page .stats { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
 .cp-page .stat small + b + small { display: block; margin-top: .15rem; }
 
+.cp-story p { margin: 0; font-family: 'Lora', serif; font-size: 1.08rem; line-height: 1.7; max-width: 62ch; }
