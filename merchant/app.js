@@ -2,6 +2,7 @@
 // (price + 6-hour change, holders) and manage perks. Talks to /api/merchant/* with an 8-hour session token.
 // ?net=devnet uses the test network (remembered for the tab).
 import { esc, short, connectWallet, signMessage, signTextAsTx } from '/launchpad/lp.js';
+import { qrImg } from '/launchpad/qr.js';
 
 const DEVNET = (() => {
   try {
@@ -40,6 +41,7 @@ const when = (t) => new Date(t * 1000).toLocaleString([], { weekday: 'short', mo
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning,' : h < 18 ? 'Good afternoon,' : 'Good evening,'; };
 
 // ---------- sign in ----------
+const phone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function signInView(msg = '') {
   $('tabs').hidden = true; $('switch').hidden = true;
   app.innerHTML = `<section class="m-signin">
@@ -48,10 +50,13 @@ function signInView(msg = '') {
     <p>Sign in with the wallet you verified your business with. It's a free signature: nothing is sent and nothing is charged.</p>
     ${msg ? `<div class="m-msg">${msg}</div>` : ''}
     <button class="m-btn wide" type="button" id="signin">Connect owner wallet</button>
+    ${phone ? '' : `<div class="m-phone"><img id="phoneQr" alt="QR code to open PunchCard Merchant on your phone" width="132" height="132">
+      <p><b>Owner wallet on your phone?</b> Scan this with your phone camera, then tap Connect and open it in your wallet app.</p></div>`}
     <p style="font-size:.82rem">No token yet? Someone may have made one for you. <a href="/launchpad/owners/">Find your business</a></p>
     ${DEVNET ? '<p style="font-size:.78rem">Test network</p>' : ''}
   </section>`;
   $('signin').onclick = signIn;
+  if (!phone) qrImg(location.origin + '/merchant/' + (DEVNET ? '?net=devnet' : '')).then((u) => { const i = $('phoneQr'); if (i) i.src = u; }).catch(() => {});
 }
 async function signIn() {
   const btn = $('signin'); btn.classList.add('m-busy'); btn.textContent = 'Connecting…';

@@ -1,5 +1,5 @@
 // PunchCard Merchant: network-first (always fresh when online); the API and wallets are never cached.
-const CACHE = 'punchcard-merchant-v1';
+const CACHE = 'punchcard-merchant-v2';
 const SHELL = ['/merchant/', '/merchant/app.js', '/site.css', '/launchpad/lp.js', '/brand/punchcard.svg'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))); self.clients.claim(); });
