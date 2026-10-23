@@ -27,6 +27,7 @@ function showMessage(html) {
 }
 
 function showPass(p) {
+  if (p.online) return showCode(p);
   const el = overlay(), url = `https://punchcard.club/pass/?id=${p.id}`;
   el.innerHTML = `<div class="pp-card">
     <div class="pp-brand"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> Perk Pass</span></div>
@@ -58,6 +59,28 @@ function showPass(p) {
     } else document.getElementById('ppLeft').textContent = `Valid for ${Math.floor(left / 60)}:${pad(left % 60)}`;
   };
   tick(); clearInterval(timer); timer = setInterval(tick, 250);
+}
+
+/** Online perk: the pass shows the holder's single-use discount code. */
+function showCode(p) {
+  const el = overlay();
+  el.innerHTML = `<div class="pp-card">
+    <div class="pp-brand"><img src="/brand/punchcard.svg" alt="" width="28" height="28"><span>Punch<b>Card</b> Perk Pass</span></div>
+    <div class="pp-biz">${esc(p.business)}</div>
+    <div class="pp-perk">${esc(p.perk)}</div>
+    <div class="pp-holes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="pp-hint">Your discount code</p>
+    <div class="pp-code mono" id="ppCode">${esc(p.code || '')}</div>
+    <button class="btn-primary pp-copy" type="button">Copy code</button>
+    <p class="pp-hint">${p.description ? esc(p.description) + ' ' : ''}Use it at checkout on ${esc(p.business)}’s website. It works once and is just for you.</p>
+    <button class="btn-secondary pp-close" type="button">Done</button>
+  </div>`;
+  el.hidden = false;
+  el.querySelector('.pp-close').onclick = close;
+  el.querySelector('.pp-copy').onclick = async (e) => {
+    try { await navigator.clipboard.writeText(p.code); e.target.textContent = 'Copied'; }
+    catch { const r = document.createRange(); r.selectNodeContents(document.getElementById('ppCode')); getSelection().removeAllRanges(); getSelection().addRange(r); }
+  };
 }
 
 /** Customer flow. `status` (optional) is an element for progress text. */

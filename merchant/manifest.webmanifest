@@ -1,0 +1,17 @@
+{
+  "name": "PunchCard Merchant",
+  "short_name": "Merchant",
+  "description": "For business owners on PunchCard: your creator fees, your token and your perks.",
+  "id": "/merchant/",
+  "start_url": "/merchant/",
+  "scope": "/merchant/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8f4ec",
+  "theme_color": "#17130e",
+  "icons": [
+    { "src": "/go/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/go/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/go/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
