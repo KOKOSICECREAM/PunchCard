@@ -53,12 +53,12 @@ function bannerHtml(st, now) {
   const when = new Date(st.opensAt * 1000).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
   if (now < st.opensAt) return `<div class="od-left"><p class="od-kicker">Open Doors · ${esc(when)}</p>
       <h2 class="od-title">${st.cap} launches. ${hours} hours.</h2>
-      <p class="od-sub">Any PunchCard member can launch a token for a local business they love. First come, first served.</p>
+      <p class="od-sub">Any PunchCard member can launch a token for a local business they love. One launch per wallet, first come, first served.</p>
       <div class="od-ctas"><a class="od-btn" href="/launchpad/how/#membership">Get ready: become a member</a><a class="od-link" href="/open-doors/">Share</a></div></div>
     <div class="od-right"><p class="od-label">Doors open in</p><div class="od-clock" data-od-to="${st.opensAt}">${clock(st.opensAt - now)}</div>${holes(st.cap, 0)}<p class="od-label">${st.cap} spots</p></div>`;
   if (st.open) return `<div class="od-left"><p class="od-kicker od-live"><span class="od-dot"></span>Open Doors is live</p>
       <h2 class="od-title">${st.remaining} of ${st.cap} spots left.</h2>
-      <p class="od-sub">Any PunchCard member can launch a token for a local business they love, right now.</p>
+      <p class="od-sub">Any PunchCard member can launch a token for a local business they love, right now. One launch per wallet.</p>
       <div class="od-ctas"><a class="od-btn" href="/go/">Launch a token</a><a class="od-link" href="/launchpad/how/#membership">Membership</a></div></div>
     <div class="od-right"><p class="od-label">Doors close in</p><div class="od-clock" data-od-to="${st.closesAt}">${clock(st.closesAt - now)}</div>${holes(st.cap, st.used)}<p class="od-label">${st.used} launched · ${st.remaining} left</p></div>`;
   if (now < st.closesAt) return `<div class="od-left"><p class="od-kicker">Open Doors</p>
