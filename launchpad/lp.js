@@ -163,6 +163,8 @@ const chainFor = (w) => (w.std.chains || []).includes(`solana:${CLUSTER}`) ? `so
 
 const newSession = () => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : String(Math.random()).slice(2) + Date.now());
 const looksLikeLink = (q) => /^https?:|goo\.gl|google\.[a-z.]+\/maps/i.test(q);
+// A web address typed or pasted (pyl.nl, www.shop.com/about): offered as "Use this website" so approved online businesses can be found.
+const looksLikeSite = (q) => looksLikeLink(q) || /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}(\/\S*)?$/i.test(q);
 
 /** What to send to the API for a search box: the picked place ID, or whatever was pasted. */
 export const businessQuery = (input) => ({ maps: input.dataset.placeId || input.value.trim(), session: input.dataset.session });
@@ -191,9 +193,9 @@ export function businessSearch(input, onPick) {
     list.hidden = false; input.setAttribute('aria-expanded', 'true'); active = -1;
   };
   const pick = (it) => {
-    input.value = it.detail ? `${it.name}, ${it.detail}` : it.name;
+    input.value = it.site ? it.placeId : it.detail ? `${it.name}, ${it.detail}` : it.name;
     input.dataset.placeId = it.placeId; input.dataset.session = session;
-    session = newSession(); close(); onPick?.(it);
+    session = newSession(); close(); onPick?.(it.site ? { ...it, name: it.placeId } : it);
   };
   const search = async (q) => {
     const my = ++seq;
@@ -208,7 +210,12 @@ export function businessSearch(input, onPick) {
     delete input.dataset.placeId; delete input.dataset.session;
     clearTimeout(timer); seq++;
     const q = input.value.trim();
-    if (q.length < 3 || looksLikeLink(q)) return close();
+    if (q.length < 3) return close();
+    if (looksLikeSite(q)) { // a link or website: one option that looks it up as typed
+      items = [{ name: /google|goo\.gl/i.test(q) ? 'Use this Google Maps link' : 'Use this website', detail: q, placeId: q, site: true }];
+      render(''); active = 0; mark();
+      return;
+    }
     timer = setTimeout(() => search(q), 250);
   });
   input.addEventListener('keydown', (e) => {
