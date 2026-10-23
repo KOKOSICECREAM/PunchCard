@@ -21,10 +21,12 @@ function statusOf(c) {
   return { pill: 'open', label: 'Waiting for the owner', ends: c.deadline, text: `Creator fees are held for ${esc(c.business.name)}. The owner has until the deadline to verify ownership and claim them; after that, holders share them.` };
 }
 
+const howOften = (d) => (Number(d) >= 3650 ? 'Once per holder. ' : Number(d) === 1 ? 'Once a day. ' : Number(d) === 7 ? 'Once a week. ' : Number(d) === 30 ? 'Once a month. ' : `Once every ${esc(d)} days. `);
 function perksHtml(c, perks) {
   if (perks.length) return perks.map((x) => `<div class="cp-perk"><span class="need">${x.member ? 'PunchCard Members · ' : ''}Hold $${esc(x.minUsd)} of ${esc(x.holdTicker || c.ticker)}</span><b>${esc(x.title)}</b>
-    <small>${x.member ? 'Once a day at each participating PunchCard business. ' : x.oneTime ? `Once every ${esc(x.everyDays)} days. ` : ''}Show your PunchCard Perk Pass at the counter.</small>
-    <button class="btn-primary pass-btn" type="button" data-perk="${esc(x.id)}">Get my PunchCard Perk Pass</button><span class="pass-status" role="status"></span></div>`).join('');
+    ${x.description ? `<small>${esc(x.description)}</small>` : ''}
+    <small>${x.member ? 'Once a day at each participating PunchCard business. ' : x.oneTime ? howOften(x.everyDays) : ''}${x.kind === 'online' ? 'Your pass shows a discount code to use at checkout.' : 'Show your PunchCard Perk Pass at the counter.'}</small>
+    <button class="btn-primary pass-btn" type="button" data-perk="${esc(x.id)}">${x.kind === 'online' ? 'Get my discount code' : 'Get my PunchCard Perk Pass'}</button><span class="pass-status" role="status"></span></div>`).join('');
   return `<div class="cp-perk soon"><span class="need">Coming soon</span><b>PunchCard Perk Pass</b>
     <small>${c.status === 'HandedOver' ? `${esc(c.business.name)} can add a thank-you for ${esc(c.ticker)} holders here.` : `Perks are chosen by the owner. Once ${esc(c.business.name)} claims this page, they can add a thank-you for ${esc(c.ticker)} holders.`}</small></div>`;
 }
@@ -89,7 +91,12 @@ async function load() {
         <div id="mineOut" role="status"></div>
       </div>` : ''}
     </section>`;
-  const howPass = perks.length ? `
+  const howPass = perks.length && perks.every((x) => x.kind === 'online') ? `
+      <ol class="cp-how">
+        <li><b>Open your pass.</b> Tap the button and approve a free message in your wallet. Nothing is sent and your tokens never move.</li>
+        <li><b>Get your code.</b> Your pass shows a single-use discount code just for you.</li>
+        <li><b>Use it at checkout.</b> Enter the code on the business’s website.</li>
+      </ol>` : perks.length ? `
       <ol class="cp-how">
         <li><b>Open your pass.</b> Tap the button and approve a free message in your wallet. Nothing is sent and your tokens never move.</li>
         <li><b>Show it at the counter.</b> Your pass is good for 5 minutes and shows a live clock.</li>

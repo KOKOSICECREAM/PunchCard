@@ -606,6 +606,8 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .pp-hint, .pp-why { margin: 0; font-size: .85rem; line-height: 1.5; color: rgba(246,239,226,.8); }
 .pp-why { font-size: 1rem; color: #f6efe2; }
 .pp .pp-close { width: 100%; }
+.pp-code { font-size: clamp(1.5rem, 8vw, 2.1rem); letter-spacing: .08em; padding: .6rem 1rem; border-radius: 14px; background: rgba(246,239,226,.1); border: 1px dashed rgba(244,217,167,.6); color: #f4d9a7; user-select: all; word-break: break-all; text-align: center; }
+.pp .pp-copy { width: 100%; }
 @media (prefers-reduced-motion: reduce) { .pp-card, .pp-card::after { animation: none; } }
 
 /* PunchCard GO promo (home) */
