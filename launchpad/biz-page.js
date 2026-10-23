@@ -119,7 +119,7 @@ async function load() {
       <p class="cp-lbl">Claims</p>
       <h2>${esc(tokenStory.owner.heading)}</h2>
       <p>${esc(tokenStory.owner.text)}${c.deadline ? ` Ownership must be verified by ${new Date(c.deadline * 1000).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}.` : ''}</p>
-      <div class="cp-ctas"><a class="btn-primary sol" href="mailto:hello@punchcard.club?subject=%24BNICE">Email PunchCard</a><a class="btn-secondary" href="/launchpad/owners/">How claiming works</a></div>
+      <div class="cp-ctas"><a class="btn-primary sol" href="mailto:hello@punchcard.club?subject=%24${encodeURIComponent(c.ticker)}">Email PunchCard</a><a class="btn-secondary" href="/launchpad/owners/">How claiming works</a></div>
     </section>` : ''}
     ${card && !tokenStory ? `<section class="cp-sec cp-owner">
       <p class="cp-lbl">For the owner</p>
