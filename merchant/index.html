@@ -75,7 +75,11 @@
   .m-signin { min-height: 80dvh; display: grid; align-content: center; gap: 1.1rem; text-align: center; }
   .m-signin h1 { margin: 0; font-family: 'Special Elite', cursive; font-weight: 400; font-size: 2.1rem; line-height: 1.05; }
   .m-signin p { margin: 0; color: var(--ink-mid); line-height: 1.55; }
-  .m-chart { display: block; width: 100%; height: 70px; }
+  .m-price { display: flex; align-items: baseline; justify-content: space-between; gap: .8rem; }
+  .m-price b { font-family: 'Special Elite', cursive; font-weight: 400; font-size: 1.9rem; font-variant-numeric: tabular-nums; }
+  .m-chg { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .m-chg small { font-weight: 400; color: var(--ink-mid); font-size: .78rem; }
+  .m-chg.up { color: var(--sol); } .m-chg.down { color: var(--terra); }
   [data-screen] { display: none; } [data-screen].on { display: grid; }
 </style>
 </head>
@@ -109,14 +113,11 @@
       <p class="m-sub">Fees go straight to your wallet FuEN…Zmqj with every trade. 20% of your share goes to PYL holders, as you chose.</p>
     </div>
     <div class="m-card">
-      <div class="m-row"><p class="m-label">$PYL today</p><span class="m-pill">Live</span></div>
-      <svg class="m-chart" viewBox="0 0 300 70" preserveAspectRatio="none" aria-label="Price over the last 24 hours">
-        <polyline fill="none" stroke="#a83a20" stroke-width="2.5" points="0,52 25,48 50,50 75,40 100,42 125,33 150,36 175,28 200,30 225,22 250,26 275,18 300,20"/>
-      </svg>
-      <div class="m-stats">
-        <div class="m-stat"><b>$0.0₄21</b><span>price</span></div>
-        <div class="m-stat"><b>$21.4K</b><span>market cap</span></div>
+      <div class="m-row"><p class="m-label">$PYL</p><span class="m-pill">Live</span></div>
+      <div class="m-price"><b>$0.0₄21</b><span class="m-chg up">+4.2% <small>last 6 h</small></span></div>
+      <div class="m-stats" style="grid-template-columns:repeat(2,minmax(0,1fr))">
         <div class="m-stat"><b>38</b><span>holders</span></div>
+        <div class="m-stat"><b>+5</b><span>new holders this week</span></div>
       </div>
       <div class="m-row"><a class="m-btn ghost" href="#">Your page</a><a class="m-btn ghost" href="#">pump.fun</a><a class="m-btn ghost" href="#">Share</a></div>
     </div>
