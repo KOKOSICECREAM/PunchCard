@@ -708,3 +708,27 @@ button:disabled { opacity: 0.55; cursor: default; transform: none !important; }
 .wallet-note { margin: .6rem 0 .1rem; font-size: .85rem; color: var(--ink-mid); }
 .wallet-row.get { color: var(--ink); text-decoration: none; border-style: dashed; }
 .wallet-row.get .wallet-dot { background: var(--border-mid); }
+
+/* Top launches leaderboard (launchpad/top.js) */
+.tl-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.tl-row a { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: .9rem; padding: .75rem 1rem; border-radius: 16px; background: var(--paper-card); border: 1px solid var(--border-mid); color: var(--ink); text-decoration: none; transition: transform .15s, border-color .15s; }
+.tl-row a:hover, .tl-row a:focus-visible { transform: translateY(-2px); border-color: var(--terra); }
+.tl-row.first a { background: #17130e; color: #f6efe2; border-color: #17130e; box-shadow: 0 12px 28px rgba(23,19,14,.18); }
+.tl-rank { width: 2.4rem; text-align: center; font-family: 'Special Elite', cursive; font-size: 2rem; line-height: 1; color: var(--terra); }
+.tl-row.first .tl-rank { color: #f4d9a7; font-size: 2.4rem; }
+.tl-row img { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; background: var(--paper); }
+.tl-main { min-width: 0; display: grid; gap: .2rem; }
+.tl-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.tl-name b { font-family: 'Courier Prime', monospace; margin-right: .3rem; }
+.tl-main small { color: var(--ink-mid); font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-row.first .tl-main small { color: rgba(246,239,226,.7); }
+.tl-bar { display: block; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; margin-top: .2rem; }
+.tl-bar i { display: block; height: 100%; border-radius: 3px; background: var(--terra); }
+.tl-row.first .tl-bar { background: rgba(246,239,226,.15); }
+.tl-row.first .tl-bar i { background: #f4d9a7; }
+.tl-fees { display: grid; justify-items: end; text-align: right; }
+.tl-fees b { font-family: 'Special Elite', cursive; font-weight: 400; font-size: 1.5rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.tl-row.first .tl-fees b { color: #f4d9a7; }
+.tl-fees small { font-size: .72rem; color: var(--ink-mid); }
+.tl-row.first .tl-fees small { color: rgba(246,239,226,.65); }
+@media (max-width: 520px) { .tl-row a { grid-template-columns: auto auto minmax(0, 1fr); } .tl-fees { grid-column: 2 / -1; justify-items: start; text-align: left; display: flex; gap: .4rem; align-items: baseline; } .tl-rank { width: 1.8rem; font-size: 1.6rem; } .tl-row img { width: 46px; height: 46px; } }
