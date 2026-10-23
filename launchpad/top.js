@@ -13,7 +13,7 @@ function row(c, i, top) {
   const place = st ? st.place : [c.city, c.country].filter(Boolean).join(', ');
   return `<li class="tl-row${i === 0 ? ' first' : ''}"><a href="${esc(href)}">
     <span class="tl-rank">${i + 1}</span>
-    <img src="${API}/img/${encodeURIComponent(c.mint)}" alt="" width="56" height="56" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
+    <img src="${st?.hideArt ? '/brand/punchcard.svg' : `${API}/img/${encodeURIComponent(c.mint)}`}" alt="" width="56" height="56" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
     <span class="tl-main"><span class="tl-name"><b>$${esc(c.ticker)}</b> ${esc(st ? st.listName : c.business_name)}</span>
       <small>${esc(place)}${c.holders ? ` · ${Number(c.holders).toLocaleString()} ${Number(c.holders) === 1 ? 'holder' : 'holders'}` : ''}</small>
       <span class="tl-bar" aria-hidden="true"><i style="width:${pct}%"></i></span></span>

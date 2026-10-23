@@ -24,7 +24,7 @@ function row(c) {
   const tag = c.team ? '<span class="ll-tag sel">PunchCard Select</span>' : '<span class="ll-tag">Community</span>';
   return `<li class="ll-row">
     <a class="ll-main" href="${esc(page)}">
-      <img src="${API}/img/${encodeURIComponent(c.mint)}" alt="" width="52" height="52" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
+      <img src="${st?.hideArt ? '/brand/punchcard.svg' : `${API}/img/${encodeURIComponent(c.mint)}`}" alt="" width="52" height="52" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
       <span class="ll-txt"><span class="ll-top"><b>$${esc(c.ticker)}</b> <span class="ll-name">${esc(st ? st.listName : c.coin_name || c.business_name)}</span></span>
         <small>${st ? esc(st.place) : `${esc(c.business_name)}${c.city ? ' · ' + esc(c.city) : ''}${c.country ? ', ' + esc(c.country) : ''}`}</small></span>
     </a>

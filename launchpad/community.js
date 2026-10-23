@@ -15,7 +15,7 @@ let SHORT = {}, STORIES = {}; // mint -> short link (launchpad/short-links.json)
 function card(c) {
   const badge = c.claimed ? '<span class="sel-badge ok">Community-launched · Claimed by the owner</span>' : '<span class="sel-badge">Community-launched · Unclaimed</span>';
   return `<a class="sel-card" href="${esc(c.page ? c.page.replace(/^https:\/\/punchcard\.club/, '') : SHORT[c.mint] || `/launchpad/coin/?mint=${encodeURIComponent(c.mint)}`)}">
-    <img src="${API}/img/${encodeURIComponent(c.mint)}" alt="" width="64" height="64" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
+    <img src="${STORIES[c.mint]?.hideArt ? '/brand/punchcard.svg' : `${API}/img/${encodeURIComponent(c.mint)}`}" alt="" width="64" height="64" loading="lazy" onerror="this.onerror=null;this.src='/brand/punchcard.svg'">
     <span><b>${esc(c.ticker)} · ${esc(STORIES[c.mint]?.listName || c.business_name)}</b><small>${esc(STORIES[c.mint]?.place || [c.city, c.country].filter(Boolean).join(', '))}</small>${badge}
     <small class="sel-stats">${c.holders ? `${Number(c.holders).toLocaleString()} holders` : 'New'}${Number(c.feesGeneratedLamports) > 0 ? ` · ${(Number(c.feesGeneratedLamports) / 1e9).toFixed(2)} SOL in creator fees` : ''}${c.burnTier ? ` · ${honourPill(c.burnTier)}` : ''}</small></span></a>`;
 }
