@@ -37,6 +37,39 @@ async function communityLists() {
   for (const el of lists) el.innerHTML = (el.dataset.communityList === 'strip' ? byFees.slice(0, 3) : community.slice(0, 60)).map(card).join('');
 }
 
+// ---------- Open Doors banner: live countdown + 24 punch-card holes (one per spot, punched out as spots are taken) ----------
+const pad = (n) => String(n).padStart(2, '0');
+function clock(secs) {
+  const s = Math.max(0, secs), d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  const unit = (v, l) => `<span class="od-unit"><b>${pad(v)}</b><small>${l}</small></span>`;
+  return (d ? unit(d, 'days') : '') + unit(h, 'hrs') + unit(m, 'min') + unit(x, 'sec');
+}
+function holes(cap, used) {
+  return `<div class="od-holes" role="img" aria-label="${cap - used} of ${cap} spots left">${Array.from({ length: cap }, (_, i) =>
+    `<span class="od-hole${i < used ? ' taken' : ''}"></span>`).join('')}</div>`;
+}
+function bannerHtml(st, now) {
+  const hours = Math.round((st.closesAt - st.opensAt) / 3600);
+  const when = new Date(st.opensAt * 1000).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+  if (now < st.opensAt) return `<div class="od-left"><p class="od-kicker">Open Doors · ${esc(when)}</p>
+      <h2 class="od-title">${st.cap} launches. ${hours} hours.</h2>
+      <p class="od-sub">Any PunchCard member can launch a token for a local business they love. First come, first served.</p>
+      <div class="od-ctas"><a class="od-btn" href="/launchpad/how/#membership">Get ready: become a member</a><a class="od-link" href="/open-doors/">Share</a></div></div>
+    <div class="od-right"><p class="od-label">Doors open in</p><div class="od-clock" data-od-to="${st.opensAt}">${clock(st.opensAt - now)}</div>${holes(st.cap, 0)}<p class="od-label">${st.cap} spots</p></div>`;
+  if (st.open) return `<div class="od-left"><p class="od-kicker od-live"><span class="od-dot"></span>Open Doors is live</p>
+      <h2 class="od-title">${st.remaining} of ${st.cap} spots left.</h2>
+      <p class="od-sub">Any PunchCard member can launch a token for a local business they love, right now.</p>
+      <div class="od-ctas"><a class="od-btn" href="/go/">Launch a token</a><a class="od-link" href="/launchpad/how/#membership">Membership</a></div></div>
+    <div class="od-right"><p class="od-label">Doors close in</p><div class="od-clock" data-od-to="${st.closesAt}">${clock(st.closesAt - now)}</div>${holes(st.cap, st.used)}<p class="od-label">${st.used} launched · ${st.remaining} left</p></div>`;
+  if (now < st.closesAt) return `<div class="od-left"><p class="od-kicker">Open Doors</p>
+      <h2 class="od-title">All ${st.cap} spots are taken.</h2>
+      <p class="od-sub">Thank you! Every one of them is now a token for a local business. Follow <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> and <a href="https://t.me/punchcardclub" target="_blank" rel="noopener">Telegram</a> for the next Open Doors.</p>
+      <div class="od-ctas"><a class="od-btn" href="/launchpad/#latest">See the new launches</a></div></div>
+    <div class="od-right">${holes(st.cap, st.cap)}<p class="od-label">${st.cap} of ${st.cap} launched</p></div>`;
+  return null;
+}
+
+let odTick = null;
 async function openDoors() {
   const els = document.querySelectorAll('[data-open-doors]');
   if (!els.length) return;
@@ -44,18 +77,28 @@ async function openDoors() {
   if (!st || st.mode !== 'open-doors') { // no date yet: optional "coming soon" teaser (launchpad/open-doors.json)
     const t = await fetch('/launchpad/open-doors.json').then((r) => r.json()).catch(() => null);
     if (!t?.tease || st?.mode === 'public') return;
-    for (const el of els) { el.innerHTML = `<b>Coming soon: Open Doors.</b> For ${t.hours || 24} hours, any PunchCard member can launch a token for a local business they love. ${t.cap || 24} spots. Date announced on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> and <a href="https://t.me/punchcardclub" target="_blank" rel="noopener">Telegram</a>.`; el.hidden = false; }
+    for (const el of els) {
+      el.innerHTML = `<div class="od-left"><p class="od-kicker">Coming soon</p><h2 class="od-title">Open Doors.</h2>
+        <p class="od-sub">For ${t.hours || 24} hours, any PunchCard member can launch a token for a local business they love. ${t.cap || 24} spots. Date announced on <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> and <a href="https://t.me/punchcardclub" target="_blank" rel="noopener">Telegram</a>.</p></div>
+        <div class="od-right">${holes(t.cap || 24, 0)}</div>`;
+      el.hidden = false;
+    }
     return;
   }
   const now = Math.floor(Date.now() / 1000);
-  let html;
-  const hours = Math.round((st.closesAt - st.opensAt) / 3600);
-  if (now < st.opensAt) html = `<b>Open Doors:</b> for ${hours} hours, any PunchCard member can launch a token for a local business they love. ${st.cap} spots. Starts in <b>${until(st.opensAt)}</b> (${new Date(st.opensAt * 1000).toLocaleString()}).`;
-  else if (st.open) html = `<b>Open Doors is on!</b> Any PunchCard member can launch for a local business: <b>${st.remaining} of ${st.cap} spots left</b> · closes in ${until(st.closesAt)}. <a href="/go/">Launch a token →</a>`;
-  else if (now < st.closesAt) html = `<b>Open Doors:</b> all ${st.cap} spots are taken. Thank you! Follow <a href="https://x.com/punchcard_club" target="_blank" rel="noopener">@punchcard_club</a> for the next one.`;
-  else return;
+  const html = bannerHtml(st, now);
+  if (!html) return;
   for (const el of els) { el.innerHTML = html; el.hidden = false; }
   if (st.open) document.querySelectorAll('[data-hide-when-open]').forEach((e) => { e.hidden = true; });
+  // Tick every second; refresh the spots every 30 s, and right away when a countdown reaches zero.
+  clearInterval(odTick);
+  let last = Date.now();
+  odTick = setInterval(() => {
+    const t = Math.floor(Date.now() / 1000);
+    let zero = false;
+    document.querySelectorAll('[data-od-to]').forEach((c) => { const left = Number(c.dataset.odTo) - t; if (left <= 0) zero = true; c.innerHTML = clock(left); });
+    if (zero || Date.now() - last > 30_000) { last = Date.now(); clearInterval(odTick); openDoors(); }
+  }, 1000);
 }
 
 communityLists();
