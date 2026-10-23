@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PunchCard Merchant</title>
+<meta name="description" content="For business owners on PunchCard: your creator fees, your token and your perks, in one place.">
+<meta name="theme-color" content="#17130e">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/brand/punchcard.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Lora:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<style>
+  body { background: var(--paper); min-height: 100dvh; }
+  .m-top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: .8rem; padding: calc(.7rem + env(safe-area-inset-top, 0px)) 1rem .7rem; background: #17130e; color: #f6efe2; }
+  .m-brand { display: flex; align-items: center; gap: .5rem; color: #f6efe2; text-decoration: none; font-family: 'Special Elite', cursive; font-size: 1.1rem; }
+  .m-brand small { font-family: 'Courier Prime', monospace; font-size: .62rem; letter-spacing: .16em; color: #f4d9a7; text-transform: uppercase; }
+  .m-switch { display: flex; align-items: center; gap: .45rem; padding: .35rem .7rem .35rem .4rem; border-radius: 999px; background: rgba(246,239,226,.1); border: 1px solid rgba(246,239,226,.18); color: #f6efe2; font: inherit; font-size: .85rem; }
+  .m-switch img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; background: #fff; }
+  .m-wrap { max-width: 560px; margin: 0 auto; padding: 1rem 1rem calc(5.5rem + env(safe-area-inset-bottom, 0px)); display: grid; gap: 1rem; }
+  .m-hello { display: grid; gap: .2rem; }
+  .m-hello p { margin: 0; color: var(--ink-mid); font-size: .9rem; }
+  .m-hello h1 { margin: 0; font-family: 'Special Elite', cursive; font-weight: 400; font-size: 1.7rem; line-height: 1.1; }
+  .m-card { border-radius: 18px; background: var(--paper-card); border: 1px solid var(--border-mid); padding: 1rem 1.1rem; display: grid; gap: .7rem; }
+  .m-card.dark { background: #17130e; color: #f6efe2; border-color: #17130e; }
+  .m-label { margin: 0; font-family: 'Courier Prime', monospace; font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--terra); }
+  .m-card.dark .m-label { color: #f4d9a7; }
+  .m-big { font-family: 'Special Elite', cursive; font-size: 2.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+  .m-big small { font-family: 'Inter', sans-serif; font-size: .9rem; color: rgba(246,239,226,.7); margin-left: .3rem; }
+  .m-sub { margin: 0; font-size: .88rem; color: var(--ink-mid); line-height: 1.5; }
+  .m-card.dark .m-sub { color: rgba(246,239,226,.72); }
+  .m-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+  .m-stat { border-radius: 12px; padding: .6rem .7rem; background: rgba(246,239,226,.07); border: 1px solid rgba(246,239,226,.12); display: grid; gap: .1rem; }
+  .m-stat b { font-variant-numeric: tabular-nums; font-size: 1.05rem; overflow-wrap: anywhere; }
+  .m-stat span { font-size: .72rem; color: rgba(246,239,226,.65); }
+  .m-card:not(.dark) .m-stat { background: var(--paper); border-color: var(--border); }
+  .m-card:not(.dark) .m-stat span { color: var(--ink-mid); }
+  .m-row { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+  .m-pill { padding: .2rem .6rem; border-radius: 999px; font-size: .72rem; font-weight: 600; background: var(--sol-pale); color: var(--sol); white-space: nowrap; }
+  .m-pill.warm { background: var(--terra-pale); color: var(--terra); }
+  .m-pill.paused { background: var(--paper-warm); color: var(--ink-faded); }
+  .m-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+  .m-perk { border-radius: 14px; border: 1px solid var(--border-mid); background: var(--paper); padding: .8rem .9rem; display: grid; gap: .35rem; }
+  .m-perk b { font-family: 'Lora', serif; font-size: 1.05rem; }
+  .m-perk p { margin: 0; font-size: .86rem; color: var(--ink-mid); line-height: 1.45; }
+  .m-perk .meta { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .m-perk .acts { display: flex; gap: .5rem; margin-top: .2rem; }
+  .m-btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; padding: .7rem 1.1rem; border-radius: 999px; border: 0; background: var(--sol); color: #fff; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; }
+  .m-btn.gold { background: #f4d9a7; color: #17130e; }
+  .m-btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--border-mid); padding: .45rem .9rem; font-size: .85rem; }
+  .m-btn.wide { width: 100%; }
+  .m-field { display: grid; gap: .3rem; }
+  .m-field label { font-weight: 600; font-size: .88rem; }
+  .m-field small { color: var(--ink-mid); font-size: .78rem; }
+  .m-field input, .m-field textarea, .m-field select { font: inherit; padding: .65rem .75rem; border-radius: 10px; border: 1px solid var(--border-mid); background: #fff; color: var(--ink); width: 100%; box-sizing: border-box; }
+  .m-field textarea { min-height: 4.5rem; resize: vertical; }
+  .m-seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: .4rem; }
+  .m-seg label { display: grid; gap: .1rem; padding: .6rem .7rem; border-radius: 12px; border: 1.5px solid var(--border-mid); background: #fff; font-weight: 600; font-size: .88rem; cursor: pointer; }
+  .m-seg label small { font-weight: 400; color: var(--ink-mid); font-size: .74rem; }
+  .m-seg input { display: none; }
+  .m-seg label:has(input:checked) { border-color: var(--sol); background: var(--sol-pale); }
+  .m-toggle { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .m-sw { position: relative; width: 48px; height: 28px; flex: none; border-radius: 999px; background: var(--sol); }
+  .m-sw::after { content: ""; position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; }
+  .m-sw.off { background: var(--border-mid); } .m-sw.off::after { right: auto; left: 3px; }
+  .m-tabs { position: fixed; top: auto; bottom: 0; left: 0; right: 0; z-index: 10; margin: 0; border-bottom: 0; backdrop-filter: none; display: grid; grid-template-columns: repeat(3, 1fr); background: #fffdf8; border-top: 1px solid var(--border-mid); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .m-tabs a { display: grid; justify-items: center; gap: .15rem; padding: .55rem 0 .6rem; color: var(--ink-faded); text-decoration: none; font-size: .74rem; font-weight: 600; }
+  .m-tabs a.on { color: var(--terra); }
+  .m-tabs svg { width: 22px; height: 22px; }
+  .m-pay { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .8rem; padding: .55rem 0; border-top: 1px dashed var(--border); font-size: .88rem; }
+  .m-pay:first-child { border-top: 0; }
+  .m-pay b { font-variant-numeric: tabular-nums; }
+  .m-pay span { color: var(--ink-mid); font-size: .78rem; }
+  .m-signin { min-height: 80dvh; display: grid; align-content: center; gap: 1.1rem; text-align: center; }
+  .m-signin h1 { margin: 0; font-family: 'Special Elite', cursive; font-weight: 400; font-size: 2.1rem; line-height: 1.05; }
+  .m-signin p { margin: 0; color: var(--ink-mid); line-height: 1.55; }
+  .m-chart { display: block; width: 100%; height: 70px; }
+  [data-screen] { display: none; } [data-screen].on { display: grid; }
+</style>
+</head>
+<body>
+<header class="m-top">
+  <a class="m-brand" href="/merchant/"><img src="/brand/punchcard.svg" alt="" width="26" height="26"><span>Merchant<br><small>PunchCard</small></span></a>
+  <button class="m-switch" type="button" data-hide-signin><img src="/merch/bnice/tee.webp" alt=""><span>$PYL</span></button>
+</header>
+
+<main class="m-wrap">
+  <!-- 0. Sign in -->
+  <section class="m-signin" data-screen="signin">
+    <img src="/brand/punchcard.svg" alt="" width="64" height="64" style="justify-self:center">
+    <h1>Your business, your token, your perks.</h1>
+    <p>Sign in with the wallet you verified your business with. It's a free signature: nothing is sent and nothing is charged.</p>
+    <button class="m-btn wide" type="button">Connect owner wallet</button>
+    <p style="font-size:.82rem">No token yet? Someone may have made one for you. <a href="/launchpad/owners/">Find your business</a></p>
+  </section>
+
+  <!-- 1. Overview -->
+  <section data-screen="home" style="gap:1rem">
+    <div class="m-hello"><p>Good afternoon,</p><h1>Power Your Lifestyle</h1></div>
+    <div class="m-card dark">
+      <p class="m-label">Creator fees paid to you</p>
+      <div class="m-big">0.84<small>SOL · about $87</small></div>
+      <div class="m-stats">
+        <div class="m-stat"><b>0.012</b><span>today</span></div>
+        <div class="m-stat"><b>0.21</b><span>last 7 days</span></div>
+        <div class="m-stat"><b>0.003</b><span>waiting at pump.fun</span></div>
+      </div>
+      <p class="m-sub">Fees go straight to your wallet FuEN…Zmqj with every trade. 20% of your share goes to PYL holders, as you chose.</p>
+    </div>
+    <div class="m-card">
+      <div class="m-row"><p class="m-label">$PYL today</p><span class="m-pill">Live</span></div>
+      <svg class="m-chart" viewBox="0 0 300 70" preserveAspectRatio="none" aria-label="Price over the last 24 hours">
+        <polyline fill="none" stroke="#a83a20" stroke-width="2.5" points="0,52 25,48 50,50 75,40 100,42 125,33 150,36 175,28 200,30 225,22 250,26 275,18 300,20"/>
+      </svg>
+      <div class="m-stats">
+        <div class="m-stat"><b>$0.0₄21</b><span>price</span></div>
+        <div class="m-stat"><b>$21.4K</b><span>market cap</span></div>
+        <div class="m-stat"><b>38</b><span>holders</span></div>
+      </div>
+      <div class="m-row"><a class="m-btn ghost" href="#">Your page</a><a class="m-btn ghost" href="#">pump.fun</a><a class="m-btn ghost" href="#">Share</a></div>
+    </div>
+    <div class="m-card">
+      <div class="m-row"><p class="m-label">Your perks</p><a href="#" class="m-pill warm">2 live</a></div>
+      <p class="m-sub">Holders used your perks <b>7 times</b> this week.</p>
+      <a class="m-btn gold wide" href="#">Manage perks</a>
+    </div>
+  </section>
+
+  <!-- 2. Perks -->
+  <section data-screen="perks" style="gap:1rem">
+    <div class="m-hello"><p>Thank your holders</p><h1>Your perks</h1></div>
+    <ul class="m-list">
+      <li class="m-perk"><div class="m-row"><b>Free first month of coaching</b><span class="m-pill">Live</span></div>
+        <p>Start any coaching plan with the first month on us.</p>
+        <div class="meta"><span class="m-pill warm">Hold $50 of PYL</span><span class="m-pill warm">Once per holder</span><span class="m-pill warm">Online code</span></div>
+        <p style="font-size:.78rem">23 of 50 codes left · used 27 times</p>
+        <div class="acts"><button class="m-btn ghost" type="button">Edit</button><button class="m-btn ghost" type="button">Pause</button></div></li>
+      <li class="m-perk"><div class="m-row"><b>15% off any nutrition plan</b><span class="m-pill paused">Paused</span></div>
+        <p>For PYL holders, every month.</p>
+        <div class="meta"><span class="m-pill warm">Hold $25 of PYL</span><span class="m-pill warm">Monthly</span><span class="m-pill warm">Online code</span></div>
+        <div class="acts"><button class="m-btn ghost" type="button">Edit</button><button class="m-btn ghost" type="button">Resume</button></div></li>
+    </ul>
+    <div class="m-card">
+      <div class="m-toggle"><div><p class="m-label">PunchCard Member perk</p><p class="m-sub">10% off for anyone holding $50 of PUNCH. Puts you in front of every PunchCard member.</p></div><span class="m-sw" role="switch" aria-checked="true"></span></div>
+    </div>
+    <a class="m-btn wide" href="#">Add a perk</a>
+  </section>
+
+  <!-- 3. Perk editor -->
+  <section data-screen="edit" style="gap:.9rem">
+    <div class="m-hello"><p>New perk</p><h1>What's the thank-you?</h1></div>
+    <div class="m-field"><label for="t">Title</label><input id="t" value="Free first month of coaching" maxlength="60"><small>Short and clear. 60 characters max.</small></div>
+    <div class="m-field"><label for="d">What it is</label><textarea id="d" maxlength="240">Start any coaching plan with the first month on us.</textarea><small>Plain text, no links. 240 characters max.</small></div>
+    <div class="m-field"><label for="h">Who qualifies</label><select id="h"><option>Holds at least $50 of PYL</option><option>Holds at least $25 of PYL</option><option>Holds at least $100 of PYL</option></select></div>
+    <div class="m-field"><label for="o">How often</label><select id="o"><option>Once per holder</option><option>Once a day</option><option>Once a week</option><option>Once a month</option></select></div>
+    <div class="m-field"><label>Where</label>
+      <div class="m-seg"><label><input type="radio" name="w">In person<small>Staff scan the holder's pass</small></label><label><input type="radio" name="w" checked>Online<small>The pass shows a discount code</small></label></div></div>
+    <div class="m-field"><label for="c">Discount codes</label><textarea id="c" placeholder="One code per line">PYL-7QK2
+PYL-9MZT
+PYL-3HVA</textarea><small>Single-use codes from your shop, one per line. Each holder gets one per period. You'll see how many are left.</small></div>
+    <button class="m-btn wide" type="button">Save and publish</button>
+    <p class="m-sub" style="text-align:center">Shows on your token page right away. Perks are your offer to your customers; you can change or pause them any time.</p>
+  </section>
+
+  <!-- 4. Fees detail -->
+  <section data-screen="fees" style="gap:1rem">
+    <div class="m-hello"><p>Every payment, on chain</p><h1>Creator fees</h1></div>
+    <div class="m-card">
+      <div class="m-stats"><div class="m-stat"><b>0.84</b><span>paid to you</span></div><div class="m-stat"><b>0.21</b><span>to holders</span></div><div class="m-stat"><b>0.09</b><span>PunchCard fee</span></div></div>
+      <div>
+        <div class="m-pay"><b>Claim payout</b><b>0.069 SOL</b><span>Sat Oct 24 · everything held before your claim</span><a href="#">Solscan</a></div>
+        <div class="m-pay"><b>Trading fees</b><b>0.012 SOL</b><span>Today · direct from pump.fun</span><a href="#">Solscan</a></div>
+        <div class="m-pay"><b>Trading fees</b><b>0.031 SOL</b><span>Yesterday · direct from pump.fun</span><a href="#">Solscan</a></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="m-tabs" data-hide-signin>
+  <a href="#home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Overview</a>
+  <a href="#fees"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10.5c0-1 1.1-1.8 2.5-1.8s2.5.8 2.5 1.8-1 1.5-2.5 1.5-2.5.6-2.5 1.6 1.1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/></svg>Fees</a>
+  <a href="#perks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 11h18M8 7V5M16 7V5"/><circle cx="7" cy="15" r="1"/><circle cx="11" cy="15" r="1"/></svg>Perks</a>
+</nav>
+<script>
+  // Mockup only: ?screen=signin|home|perks|edit|fees
+  const s = new URLSearchParams(location.search).get('screen') || 'home';
+  document.querySelector(`[data-screen="${s}"]`).classList.add('on');
+  if (s === 'signin') document.querySelectorAll('[data-hide-signin]').forEach((e) => { e.style.display = 'none'; });
+  document.querySelectorAll('.m-tabs a').forEach((a) => a.classList.toggle('on', a.hash === '#' + (s === 'edit' ? 'perks' : s)));
+</script>
+</body>
+</html>
