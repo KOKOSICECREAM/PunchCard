@@ -72,10 +72,10 @@
     <p class="select-foot">Ranked by what's actually been paid to each business. Business-approved means the owner joined; it's not a recommendation to buy. <a href="/launchpad/#select">See all on the launchpad →</a></p>
   </section>
 
-  <section class="select-sec" data-community-section hidden aria-labelledby="comH">
-    <div class="select-head"><h2 id="comH">Community <em>launches</em></h2><p>Launched by fans for the local spots they love. The top three by creator fees generated for the business.</p></div>
-    <div class="select-grid" data-community-list="strip"></div>
-    <p class="select-foot">Ranked by creator fees generated for the business, from public on-chain data. Launched by users, not by PunchCard or the businesses they name. <a href="/launchpad/#community">See all →</a></p>
+  <section class="select-sec" data-top-section hidden aria-labelledby="tlH">
+    <div class="select-head"><h2 id="tlH">Top <em>launches</em></h2><p>The community tokens that have generated the most creator fees for their business so far. Updates every minute.</p></div>
+    <ol class="tl-list" data-top-launches data-count="5"></ol>
+    <p class="select-foot">Ranked by creator fees generated for the business, from public on-chain data. Launched by users, not by PunchCard or the businesses they name. Not a recommendation to buy. <a href="/launchpad/#community">See all →</a></p>
   </section>
 
   <section class="select-sec" data-latest-section hidden aria-labelledby="llH">
@@ -169,6 +169,7 @@
 <script type="module" src="/launchpad/select.js"></script>
 <script type="module" src="/launchpad/community.js"></script>
 <script type="module" src="/launchpad/latest.js"></script>
+<script type="module" src="/launchpad/top.js"></script>
 <script type="module">
 import { qrImg } from '/launchpad/qr.js';
 import { mountVerify } from '/launchpad/verify.js';
